@@ -1,0 +1,48 @@
+#!/bin/bash
+
+# TEST CASE SPEC FILE
+# This file is generated/updated using the test framework web interface.
+# Manual updates on test servers are lost when the test package is re-installed.
+#
+# Last modified: Friday 31st of May 2013 9:49:16
+#
+
+# These settings must be in BASH script format, they are sourced by other scripts.
+SPEC_FA_NAME="LDAP"
+SPEC_UC_NAME="LDAP_COM_BULK_IMPORT_APPEND"
+SPEC_TC_ID=578
+SPEC_TC_SLOGAN="Test missing mandatory options"
+SPEC_TC_TYPE="FT"
+SPEC_TC_POLARITY="negative"
+SPEC_TC_PRIORITY="low"
+SPEC_TC_AUTOMATED=1
+SPEC_TC_DEPENDENT_ONLY=0
+SPEC_TC_TIMEOUT=300
+SPEC_TC_TEST_PASSCODE=0
+SPEC_TC_AUTHOR="xdansan"
+SPEC_TC_AUTOMATOR="xsimrea"
+# this parameter is not interpreted by harness
+SPEC_TC_DISABLED=0
+
+# Please do not remove the comment lines below.
+# They are used as section locators by the test harness.
+
+# BEGIN_PRE_CONDITIONS
+#LDAP running
+# END_PRE_CONDITIONS
+
+
+# BEGIN_MANUAL_STEPS
+#1: Call manage-COM.bsh with missing "action" parameter, but with valid "domain" and "input file" ones.
+#2: Call manage-COM.bsh with missing "domain" parameter, but with valid "action" and "input file" ones.
+#3: Call manage-COM.bsh with missing "input file" parameter, but with valid "action" and "domain" ones.
+#Expect error return in all cases
+# END_MANUAL_STEPS
+
+# BEGIN_POST_CONDITIONS
+#Check for the following messages:
+#1: ERROR : An action must be specified. Please select one of the following [-a, -l, -m or -r]
+#2: ERROR : Must specify a domain [-d] when importing a file
+#3: ERROR : Must specify an input file
+#(actual error mesage for test 3 "to be supplied")
+# END_POST_CONDITIONS

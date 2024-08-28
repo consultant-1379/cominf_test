@@ -1,0 +1,15 @@
+#!/bin/bash
+
+# TEST SUITE SPEC FILE
+# This file is generated/updated using the test framework web interface.
+# Manual updates on test servers are lost when the test package is re-installed.
+#
+# Last modified: Thursday 13th of March 2014 13:27:33
+#
+SPEC_TS_NAME=DDC_Regression_linux
+SPEC_TS_ID=57
+SPEC_TS_SLOGAN="Regression tests for TOR systems"
+SPEC_TS_TIMEOUT=300
+SPEC_TS_AUTHOR="ejennco"
+SPEC_TS_INDEPENDENT=0
+SPEC_TS_TC_IDS=(910 944 902 904 924 922 921 940 918 1073 1074 1075 966)

@@ -1,0 +1,24 @@
+LDAP Directory Manager password
+PASSWD
+Enter user name:
+u549NotExist
+Enter user name:
+u549a,u549b
+Enter user name:
+u549a%
+Enter user name:
+u549a
+Enter COM role names to remove as a comma separated list:
+r549b:target2:r549b
+Enter COM role names to remove as a comma separated list:
+r549a, target2:r549b
+Enter COM role names to remove as a comma separated list:
+r549a,target2:r549b,r549a
+Enter COM role names to remove as a comma separated list:
+r549%a
+Enter COM role names to remove as a comma separated list:
+r549a,target2:r549b
+Please confirm that you want to proceed with requested actions*
+No
+
+

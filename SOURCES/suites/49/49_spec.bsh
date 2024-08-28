@@ -1,0 +1,15 @@
+#!/bin/bash
+
+# TEST SUITE SPEC FILE
+# This file is generated/updated using the test framework web interface.
+# Manual updates on test servers are lost when the test package is re-installed.
+#
+# Last modified: Friday 24th of January 2014 15:27:52
+#
+SPEC_TS_NAME=DDC_Regression_test
+SPEC_TS_ID=49
+SPEC_TS_SLOGAN="This is a test suite to be run for regression testing DDC assuming correct setup on server"
+SPEC_TS_TIMEOUT=300
+SPEC_TS_AUTHOR="ejennco"
+SPEC_TS_INDEPENDENT=1
+SPEC_TS_TC_IDS=(708 739 713 709 759 864 865 866 714 718 721 722 723 724 746 725 726 727 728 729 760 730 731 787 732 735 761 788 747 748 749 750 751 752 656 1076)

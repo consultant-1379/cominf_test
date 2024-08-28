@@ -1,0 +1,15 @@
+#!/bin/bash
+
+# TEST SUITE SPEC FILE
+# This file is generated/updated using the test framework web interface.
+# Manual updates on test servers are lost when the test package is re-installed.
+#
+# Last modified: Tuesday 23rd of April 2013 10:29:37
+#
+SPEC_TS_NAME=X86_CLUSTER_POSTINSTALL_CONFIG
+SPEC_TS_ID=30
+SPEC_TS_SLOGAN="Post install configuration test cases that change the state of the OSS. These must be in order of sequence as per II document."
+SPEC_TS_TIMEOUT=36000
+SPEC_TS_AUTHOR="eeidle"
+SPEC_TS_INDEPENDENT=1
+SPEC_TS_TC_IDS=(641 642 637 643 689 754 690 672 686 674 768 762 794 772 783 784 785 656 765 606 789)

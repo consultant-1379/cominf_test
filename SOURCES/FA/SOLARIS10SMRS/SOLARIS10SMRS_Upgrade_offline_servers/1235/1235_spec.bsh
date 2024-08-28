@@ -1,0 +1,55 @@
+#!/bin/bash
+
+# TEST CASE SPEC FILE
+# This file is generated/updated using the test framework web interface.
+# Manual updates on test servers are lost when the test package is re-installed.
+#
+# Last modified: Monday 16th of December 2013 7:36:11
+#
+
+# These settings must be in BASH script format, they are sourced by other scripts.
+SPEC_FA_NAME="SOLARIS10SMRS"
+SPEC_UC_NAME="SOLARIS10SMRS_Upgrade_offline_servers"
+SPEC_TC_ID=1235
+SPEC_TC_SLOGAN="Large Upgrade "
+SPEC_TC_TYPE="FT"
+SPEC_TC_POLARITY="positive"
+SPEC_TC_PRIORITY="high"
+SPEC_TC_AUTOMATED=0
+SPEC_TC_DEPENDENT_ONLY=0
+SPEC_TC_TIMEOUT=300
+SPEC_TC_TEST_PASSCODE=0
+SPEC_TC_AUTHOR="xsougha"
+SPEC_TC_AUTOMATOR="xsougha"
+# this parameter is not interpreted by harness
+SPEC_TC_DISABLED=0
+
+# Please do not remove the comment lines below.
+# They are used as section locators by the test harness.
+
+# BEGIN_PRE_CONDITIONS
+#NESS connected to OSS MS.
+#NEDSS connected to NESS. 
+#
+#<Path under "Verification Specification for Cominf Feature Test for 14.0":
+#
+#Bi-directional SMRS High Availability/Upgrade of offline servers       
+#>
+# END_PRE_CONDITIONS
+
+
+# BEGIN_MANUAL_STEPS
+#Follow the installation instructions in "COMInf Services Installation Instructions" to perform a large upgrade 
+#on the NESS and NEDSS.
+#Make a note of the ERICsmrsbi-dir package before and after upgrade to ensure the upgrade has been done.
+#Make a note of /etc/release before and after upgrade to ensure the upgrade has been done if there is a
+#version change of Solaris between upgrade paths. 
+# END_MANUAL_STEPS
+
+# BEGIN_POST_CONDITIONS
+#Connectivity between OSS Master Server, NESS and NEDSS remains intact.
+#Packinfo info of SMRS has changed according to revision specified in baseline.
+#Confirm that the contents of /etc/release has changed if there is a version change of Solaris between
+#upgrade paths.
+#Verify that the ERICsmrsbi-dir package has been upgraded on the Offline Servers as well as the Online Servers. 
+# END_POST_CONDITIONS

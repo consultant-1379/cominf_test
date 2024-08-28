@@ -1,0 +1,62 @@
+set timeout 20
+
+spawn -noecho /ericsson/sdee/bin/add_user.sh -S /bin/bash -i 12000 -u test9999 -c ass_ope
+/usr/local/bin/expect {
+	"LDAP Directory Manager password:" {
+	} timeout {
+		exit 1
+	}
+}
+sleep 0.15
+send "PPPPPPPP\r"
+/usr/local/bin/expect {
+	"New local user password:" {
+	} timeout {
+		exit 2
+	}
+}
+sleep 0.15
+send "passw0rd\r"
+/usr/local/bin/expect {
+	"Re-enter password:" {
+	} timeout {
+		exit 3
+	}
+}
+sleep 0.15
+send "passw0rd\r"
+/usr/local/bin/expect {
+	"New local user description \\\[OSS-RC user\\\]:" {
+	} timeout {
+		exit 4
+	}
+}
+sleep 0.15
+send "\r"
+/usr/local/bin/expect {
+	"Create a local user \\\[test9999\\\]" {
+	} timeout {
+		exit 5
+	}
+}
+sleep 0.15
+send "Yes\r"
+/usr/local/bin/expect {
+	"" {
+	} timeout {
+		exit 6
+	}
+}
+sleep 0.15
+send "\r"
+
+trap {
+	if [catch {wait -i -1} output] return
+	if {[lindex $output [expr [llength $output] -1]] != 0 } {
+		exit [lindex $output [expr [llength $output] -1]]
+	}
+} SIGCHLD
+
+set timeout 300
+/usr/local/bin/expect EOF
+sleep 2

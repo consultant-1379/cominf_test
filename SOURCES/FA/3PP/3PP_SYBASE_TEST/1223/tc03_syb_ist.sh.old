@@ -1,0 +1,144 @@
+#!/bin/ksh
+
+#--------------------------------------------------------------------------
+# Ericsson AB    SCRIPT
+#--------------------------------------------------------------------------
+#
+# (c) Ericsson AB 2007 - All rights reserved.
+# 
+# The copyright to the computer program(s) herein is the property
+# of Ericsson AB, Sweden. The programs may be used and/or copied
+# only with the written permission from Ericsson AB or
+# in accordance with the terms and conditions stipulated in the
+# agreement/contract under which the program(s) have been supplied.
+# 
+#------ History ----------------------------------------------------------- 
+# Rev		Date		Prepared		Description
+#
+# PA1		071002		XRSOLFR			Checks the product revision of a package in ist_run
+# PA2		071127		XRSOLFR			Ignore space in apr number
+#--------------------------------------------------------------------------
+#
+#   Name       : check_ist.sh
+#
+#   Description: Checks the product revision of a package in ist_run
+#
+#   Arguments  : Check for following arguments:
+#					-d = debug
+#					-e = check for ERIC
+#					-r = rev for ERIC
+#					-x = check for EXTR
+#					-t = rev for EXTR
+#
+
+
+# Init --------------------------------------------
+# Get the name of our product from the framework
+echo "[INPUT:PRODUCT]"
+read PROD
+
+# Default package names
+ERIC_PKG="ERIC${PROD}"
+EXTR_PKG="EXTR${PROD}"
+
+RETURN_STATUS=0
+
+CHECK_ERIC=0
+CHECK_EXTR=0
+
+while getopts "der:xt:" option
+do
+    case $option in
+		d) DEBUG=1;;
+		e) CHECK_ERIC=1;;
+		r) ERIC_REV=${OPTARG};;
+		x) CHECK_EXTR=1;;
+		t) EXTR_REV=${OPTARG};;
+   esac
+done
+
+if [ $DEBUG ]; then
+    set -x
+fi
+# -------------------------------------------------
+
+
+# Mandatory information ---------------------------
+echo "[OUTPUT:TESTCASENAME:tc3_${PROD}]"
+echo "[OUTPUT:TESTCASEDESCRIPTION:Checks the product revision of a package in ist_run]"
+echo "[OUTPUT:SCRIPTVERSION:PA2]"
+# -------------------------------------------------
+
+# Compare a revision to the one found with 3ppinfo.sh
+check_rev ()
+{
+	if [ "$2" ]; then
+	  VERIFICATION="$2"
+	else
+	  VERIFICATION="$1"
+	fi
+ 
+	/ericsson/eric3pp/bin/3ppinfo.sh -status | \
+		nawk -v verifyString="${VERIFICATION}" '
+			BEGIN {
+				returnValue=1;
+				gsub(" ", "", verifyString);
+			}
+			/'${1}'/ {
+				gsub(" ", "");
+				if(index($0, verifyString)) {
+					returnValue=0;
+     				}
+			}
+			END { 
+				exit returnValue; 
+			}
+		' 
+	RETURNCODE=$?
+	if [ "$2" ]; then
+		if [[ $RETURNCODE -eq 0 ]]; then
+			# Success!
+			echo "ist_run revision for $1 is correct!"
+		else
+			RETURN_STATUS=1 # Comparison failed
+			RETURN_STATUS_REASON="${RETURN_STATUS_REASON}Revision for $1 is not correct in ist_run. "
+		fi
+	else
+		# No revision passed as parameter
+		# Then we just check that we have an entry
+		if [[ $RETURNCODE -eq 0 ]]; then
+			# Success!
+			echo "ist_run has an entry for $1"
+		else
+			RETURN_STATUS=1 # No entry in ist_run
+			RETURN_STATUS_REASON="${RETURN_STATUS_REASON}No entry exists for $1 in ist_run. "		
+		fi
+	fi		
+}
+
+
+# Do the test -------------------------------------
+#
+
+if [[ $CHECK_ERIC -eq 1 ]]; then
+	check_rev "$ERIC_PKG" "$ERIC_REV"
+fi
+
+if [[ $CHECK_EXTR -eq 1 ]]; then
+	check_rev "$EXTR_PKG" "$EXTR_REV"
+fi
+
+#
+# -------------------------------------------------
+
+
+
+# Return status and reason ------------------------
+if [ "$RETURN_STATUS_REASON" ]; then
+  echo [OUTPUT:REASON:$RETURN_STATUS_REASON]
+fi
+
+exit $RETURN_STATUS
+# -------------------------------------------------
+
+

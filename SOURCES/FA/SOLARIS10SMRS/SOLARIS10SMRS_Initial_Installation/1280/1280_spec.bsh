@@ -1,0 +1,66 @@
+#!/bin/bash
+
+# TEST CASE SPEC FILE
+# This file is generated/updated using the test framework web interface.
+# Manual updates on test servers are lost when the test package is re-installed.
+#
+# Last modified: Monday 16th of December 2013 8:50:52
+#
+
+# These settings must be in BASH script format, they are sourced by other scripts.
+SPEC_FA_NAME="SOLARIS10SMRS"
+SPEC_UC_NAME="SOLARIS10SMRS_Initial_Installation"
+SPEC_TC_ID=1280
+SPEC_TC_SLOGAN="SMO Users creation "
+SPEC_TC_TYPE="FT"
+SPEC_TC_POLARITY="positive"
+SPEC_TC_PRIORITY="high"
+SPEC_TC_AUTOMATED=1
+SPEC_TC_DEPENDENT_ONLY=0
+SPEC_TC_TIMEOUT=300
+SPEC_TC_TEST_PASSCODE=0
+SPEC_TC_AUTHOR="xnavema"
+SPEC_TC_AUTOMATOR="xnavema"
+# this parameter is not interpreted by harness
+SPEC_TC_DISABLED=0
+
+# Please do not remove the comment lines below.
+# They are used as section locators by the test harness.
+
+# BEGIN_PRE_CONDITIONS
+#Precondition 
+#OSS server connected with NESS 
+#
+#<PATH Under "Verification Specification for Cominf Feature Test for 14.0":Bi-directional SMRS Initial Installation/Server Installation>
+# END_PRE_CONDITIONS
+
+
+# BEGIN_MANUAL_STEPS
+#Action 1 :
+#/opt/ericsson/nms_cif_cs/etc/unsupported/bin/cstest -s ONRM_CS -ns masterservice lt FtpService 
+# END_MANUAL_STEPS
+
+# BEGIN_POST_CONDITIONS
+#root@atrcxb1014> /opt/ericsson/nms_cif_cs/etc/unsupported/bin/cstest -s ONRM_CS -ns masterservice lt FtpService
+#SubNetwork=ONRM_ROOT_MO,FtpServer=SMRSMASTERLRAN-oss1,FtpService=l-smobackup-oss1
+#SubNetwork=ONRM_ROOT_MO,FtpServer=SMRSMASTERLRAN-oss1,FtpService=l-smoconfig-oss1
+#SubNetwork=ONRM_ROOT_MO,FtpServer=SMRSMASTERLRAN-oss1,FtpService=l-smokeystore-oss1
+#SubNetwork=ONRM_ROOT_MO,FtpServer=SMRSMASTERLRAN-oss1,FtpService=l-smoswstore-oss1
+#SubNetwork=ONRM_ROOT_MO,FtpServer=SMRSMASTERWRAN-oss1,FtpService=smo-backup-oss1
+#SubNetwork=ONRM_ROOT_MO,FtpServer=SMRSMASTERWRAN-oss1,FtpService=smo-config-oss1
+#SubNetwork=ONRM_ROOT_MO,FtpServer=SMRSMASTERWRAN-oss1,FtpService=smo-keystore-oss1
+#SubNetwork=ONRM_ROOT_MO,FtpServer=SMRSMASTERWRAN-oss1,FtpService=smo-swstore-oss1
+#SubNetwork=ONRM_ROOT_MO,FtpServer=SMRSSLAVE-CORE-atclvm200,FtpService=corepmu-atclvm200
+#SubNetwork=ONRM_ROOT_MO,FtpServer=SMRSSLAVE-LRAN-atclvm200,FtpService=l-back-atclvm200
+#SubNetwork=ONRM_ROOT_MO,FtpServer=SMRSSLAVE-LRAN-atclvm200,FtpService=l-key-atclvm200
+#SubNetwork=ONRM_ROOT_MO,FtpServer=SMRSSLAVE-LRAN-atclvm200,FtpService=l-sws-atclvm200
+#SubNetwork=ONRM_ROOT_MO,FtpServer=SMRSSLAVE-WRAN-atclvm200,FtpService=w-back-atclvm200
+#SubNetwork=ONRM_ROOT_MO,FtpServer=SMRSSLAVE-WRAN-atclvm200,FtpService=w-key-atclvm200
+#SubNetwork=ONRM_ROOT_MO,FtpServer=SMRSSLAVE-WRAN-atclvm200,FtpService=w-sws-atclvm200
+#SubNetwork=ONRM_ROOT_MO,FtpServer=SMRSSLAVE-atclvm200,FtpService=backup-atclvm200
+#SubNetwork=ONRM_ROOT_MO,FtpServer=SMRSSLAVE-atclvm200,FtpService=cmdown-atclvm200
+#SubNetwork=ONRM_ROOT_MO,FtpServer=SMRSSLAVE-atclvm200,FtpService=cmup-atclvm200
+#SubNetwork=ONRM_ROOT_MO,FtpServer=SMRSSLAVE-atclvm200,FtpService=keystore-atclvm200
+#SubNetwork=ONRM_ROOT_MO,FtpServer=SMRSSLAVE-atclvm200,FtpService=pmup-atclvm200
+#SubNetwork=ONRM_ROOT_MO,FtpServer=SMRSSLAVE-atclvm200,FtpService=swstore-atclvm200 
+# END_POST_CONDITIONS

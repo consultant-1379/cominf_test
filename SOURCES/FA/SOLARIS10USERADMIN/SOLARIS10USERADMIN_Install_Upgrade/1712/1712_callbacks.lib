@@ -1,0 +1,215 @@
+#!/bin/bash
+#################################################################################
+#
+#
+#       COPYRIGHT (C) ERICSSON RADIO SYSTEMS AB, Sweden
+#
+#       The copyright to the document(s) herein is the property of
+#       Ericsson Radio Systems AB, Sweden.
+#
+#       The document(s) may be used and/or copied only with the written
+#       permission from Ericsson Radio Systems AB or in accordance with
+#       the terms and conditions stipulated in the agreement/contract
+#       under which the document(s) have been supplied.
+#
+#################################################################################
+
+
+# ATCOMINF Test Callback Library
+
+# Revision History
+# <date>	xsougha		First Version 
+
+# Complete the callbacks in this library to automate the test case.
+#
+# Callbacks are stateless, it is not possible to set a global variable in one callback 
+# and access it it in another.
+#
+# Callbacks are called by the test harness in the following order:
+#
+# tc_setup() 		# Called only for independent TC execution mode to setup TC
+# tc_precon()		# Conditions that should exist before TC can run
+# tc_test()		# Runs the test for this TC
+# tc_postcon()		# Conditions that should/should not exist after successful TC 
+# tc_cleanup()		# Called only for independent TC execution mode to cleanup after TC
+
+# All callbacks must PASS for a TC PASS result
+
+#################################################################################
+#
+# CALLBACK: TC_SETUP
+#
+# This callback function is only called if the harness execution mode is 'AT_INDEPENDENT'
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_setup() {
+	return 0
+}
+#################################################################################
+
+#################################################################################
+#
+# CALLBACK: TC_PRECON
+#
+# This callback function checks the correct conditions exist to run the TC.
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+ 
+tc_precon() {
+	# Removing any pre-existing ldif file under /var/tmp
+	rm -rf /var/tmp/*.ldif
+
+        # Creating a backup ldif file for default Security Policy settings
+        echo "dn: cn=SecurityPolicy,dc=vts,dc=com
+changetype: modify
+replace: pwdMaxAge" >> /var/tmp/1712_default_security_settings.ldif
+
+        # Adding entry for "pwdMaxAge" in 1712_modify_security_policy.ldif 
+        ldapsearch -D "cn=directory manager" -w ldappass -b "dc=vts,dc=com" "(&(objectclass=ldapsubentry)(cn=securitypolicy))" | grep "pwdMaxAge" >> /var/tmp/1712_default_security_settings.ldif || {
+                echo "Failed to take backup of default security settings"
+                return 1
+        }
+
+	echo "-" >> /var/tmp/1712_default_security_settings.ldif
+	echo "replace: pwdMinAge" >> /var/tmp/1712_default_security_settings.ldif
+
+        # Adding entry for "pwdMinAge" in 1712_modify_security_policy.ldif
+        ldapsearch -D "cn=directory manager" -w ldappass -b "dc=vts,dc=com" "(&(objectclass=ldapsubentry)(cn=securitypolicy))" | grep "pwdMinAge" >> /var/tmp/1712_default_security_settings.ldif || {
+                echo "Failed to take backup of default security settings"
+                return 1
+        }
+
+	echo "-" >> /var/tmp/1712_default_security_settings.ldif
+	echo "replace: pwdExpireWarning" >> /var/tmp/1712_default_security_settings.ldif
+
+        # Adding entry for "pwdExpireWarning" in 1712_modify_security_policy.ldif
+        ldapsearch -D "cn=directory manager" -w ldappass -b "dc=vts,dc=com" "(&(objectclass=ldapsubentry)(cn=securitypolicy))" | grep "pwdExpireWarning" >> /var/tmp/1712_default_security_settings.ldif || {
+                echo "Failed to take backup of default security settings"
+                return 1
+        }
+
+	# Displaying the contents of the backup security settings to be restored later
+	cat /var/tmp/1712_default_security_settings.ldif
+
+	return 0
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_TEST
+#
+# This callback function runs the test.
+# The harness compares the return code to the SPEC_TC_TEST_PASSCODE value set in the test spec.
+#
+# Return or exit codes:
+#    SPEC_TC_TEST_PASSCODE 	success
+# != SPEC_TC_TEST_PASSCODE 	failure
+ 
+tc_test() {
+        # Creating a new file to modify LDAP security settings on LDAP server
+        echo "dn: cn=SecurityPolicy,dc=vts,dc=com
+changetype: modify
+replace: pwdMaxAge
+pwdMaxAge: 900
+-
+replace: pwdMinAge
+pwdMinAge: 300
+-
+replace: pwdExpireWarning
+pwdExpireWarning: 300" > /var/tmp/1712_modify_security_policy.ldif
+
+	# Performing ldapmodify with the changed security settings
+	ldapmodify -D "cn=directory manager" -w ldappass -a -v -f /var/tmp/1712_modify_security_policy.ldif || {
+		echo "Failed to perform ldapmodify with the changed security settings"
+		return 1 
+	}
+
+	return 0
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_POSTCON
+#
+# This callback function checks expected results.
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_postcon() {
+	# Performing ldapsearch for pwdMaxAge to verify whether security settings got modified correctly
+	ldapsearch -D "cn=directory manager" -w ldappass -b "dc=vts,dc=com" "(&(objectclass=ldapsubentry)(cn=securitypolicy))" | grep "pwdMaxAge: 900" || {
+		echo "Failed to perform ldapsearch of pwdMaxAge for desired security settings"
+		return 11
+	}
+
+	# Performing ldapsearch for pwdMinAge to verify whether security settings got modified correctly
+        ldapsearch -D "cn=directory manager" -w ldappass -b "dc=vts,dc=com" "(&(objectclass=ldapsubentry)(cn=securitypolicy))" | grep "pwdMinAge: 300" || {
+                echo "Failed to perform ldapsearch of pwdMinAge for desired security settings"
+                return 12
+        }
+
+        # Performing ldapsearch for pwdMinAge to verify whether security settings got modified correctly
+        ldapsearch -D "cn=directory manager" -w ldappass -b "dc=vts,dc=com" "(&(objectclass=ldapsubentry)(cn=securitypolicy))" | grep "pwdExpireWarning: 300" || {
+                echo "Failed to perform ldapsearch of pwdExpireWarning for desired security settings"
+                return 3
+        }
+
+	# Returning back to the default ldap security settings
+        ldapmodify -D "cn=directory manager" -w ldappass -a -v -f /var/tmp/1712_default_security_settings.ldif || {
+                echo "Failed to perform ldapmodify with the changed security settings"
+                return 4
+        }
+
+        # Performing ldapsearch for pwdMaxAge to verify whether security settings got reset correctly
+        ldapsearch -D "cn=directory manager" -w ldappass -b "dc=vts,dc=com" "(&(objectclass=ldapsubentry)(cn=securitypolicy))" | grep "pwdMaxAge: 0" || {
+                echo "Failed to perform ldapsearch of pwdMaxAge for desired security settings"
+                return 5
+        }
+
+        # Performing ldapsearch for pwdMinAge to verify whether security settings got reset correctly
+        ldapsearch -D "cn=directory manager" -w ldappass -b "dc=vts,dc=com" "(&(objectclass=ldapsubentry)(cn=securitypolicy))" | grep "pwdMinAge: 3600" || {
+                echo "Failed to perform ldapsearch of pwdMinAge for desired security settings"
+                return 6
+        }
+
+        # Performing ldapsearch for pwdMinAge to verify whether security settings got reset correctly
+        ldapsearch -D "cn=directory manager" -w ldappass -b "dc=vts,dc=com" "(&(objectclass=ldapsubentry)(cn=securitypolicy))" | grep "pwdExpireWarning: 604800" || {
+                echo "Failed to perform ldapsearch of pwdExpireWarning for desired security settings"
+                return 7
+        }
+
+	return 0
+}  	
+#################################################################################
+
+
+################################################################################ 
+#
+# CALLBACK: TC_CLEANUP
+#
+# This callback function is only called if the harness execution mode is 'AT_INDEPENDENT'
+# 
+# This callback restores the target system to the state it was in before the TC 
+# was run. It rolls back changes made by callbacks tc_setup() and tc_test()
+# 
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_cleanup() {
+	# Removing any temporary files used
+#	rm -rf *.exp /var/tmp/*.ldif 
+	
+	return 0
+}

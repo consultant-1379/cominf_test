@@ -1,0 +1,261 @@
+#!/bin/bash
+#################################################################################
+#
+#
+#       COPYRIGHT (C) ERICSSON RADIO SYSTEMS AB, Sweden
+#
+#       The copyright to the document(s) herein is the property of
+#       Ericsson Radio Systems AB, Sweden.
+#
+#       The document(s) may be used and/or copied only with the written
+#       permission from Ericsson Radio Systems AB or in accordance with
+#       the terms and conditions stipulated in the agreement/contract
+#       under which the document(s) have been supplied.
+#
+#################################################################################
+
+
+# ATCOMINF Test Callback Library
+
+# Revision History
+# <date>	<signum>	<details>
+
+# Complete the callbacks in this library to automate the test case.
+#
+# Callbacks are stateless, it is not possible to set a global variable in one callback 
+# and access it it in another.
+#
+# Callbacks are called by the test harness in the following order:
+#
+# tc_setup() 		# Called only for independent TC execution mode to setup TC
+# tc_precon()		# Conditions that should exist before TC can run
+# tc_test()		# Runs the test for this TC
+# tc_postcon()		# Conditions that should/should not exist after successful TC 
+# tc_cleanup()		# Called only for independent TC execution mode to cleanup after TC
+
+# All callbacks must PASS for a TC PASS result
+
+#################################################################################
+#
+# CALLBACK: TC_SETUP
+#
+# This callback function is only called if the harness execution mode is 'AT_INDEPENDENT'
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_setup() {
+
+	# Coded to fail in case TC_AUTOMATED=1 before automation completed
+	# Change return code as required
+
+	return 0
+
+}
+#################################################################################
+
+#################################################################################
+#
+# CALLBACK: TC_PRECON
+#
+# This callback function checks the correct conditions exist to run the TC.
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+ 
+tc_precon() {
+
+	# Coded to fail in case TC_AUTOMATED=1 before automation completed
+	# Change return code as required
+
+        IsIIorUpgradeSuccessful
+VALUE=$?
+echo "++++++++++++++++++++++++++++++++++++++Value=$VALUE+++++++++++++++++++++++++"
+if [ "$VALUE" -eq "1" -o "$VALUE" -eq "2" ]; then
+   echo "return 0"
+   return 0
+else
+   echo "return 1"
+   return 1
+fi
+
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_TEST
+#
+# This callback function runs the test.
+# The harness compares the return code to the SPEC_TC_TEST_PASSCODE value set in the test spec.
+#
+# Return or exit codes:
+#    SPEC_TC_TEST_PASSCODE 	success
+# != SPEC_TC_TEST_PASSCODE 	failure
+ 
+tc_test() {
+
+	# Coded to fail in case TC_AUTOMATED=1 before automation complete
+	# Change return code as required
+
+Evalue=1
+
+for Dname in /export /home /var/opt/ericsson /ossrc/3pp /ossrc/upgrade /ossrc/sybdev/oss/sybdata /ossrc/sybdev/oss/syblog /ossrc/sybdev/fm/fmsybdata /ossrc/sybdev/fm/fmsyblog /ossrc/sybdev/pm/pmsybdata /ossrc/sybdev/pm/pmsyblog /ossrc/sybdev/sybmaster /ossrc/dbdumps /ossrc/versant /var/opt/ericsson/nms_umts_pms_seg/segment1 /var/opt/ericsson/eba_ebsw/data /var/opt/ericsson/eba_rede/data /var/opt/ericsson/eba_ebsg/data /var/opt/ericsson/eba_rtt/data /var/opt/ericsson/eba_ebss/data /var/opt/ericsson/ccpdm/pm_storage /var/ericsson/ddc_data /var/opt/ericsson/nms_cosm/polled_data /var/opt/ericsson/sgw/outputfiles
+
+do
+        if [ -d $Dname ]
+        then
+                #echo "dir presetnt $Dname"
+                first_count=0
+first_set=$(ls -ld $Dname | cut -f1 -d " " | cut -c2,3,4)
+second_set=$(ls -ld $Dname | cut -f1 -d " " | cut -c5,6,7)
+third_set=$(ls -ld  $Dname | cut -f1 -d " " | cut -c8,9,10)
+
+first_value=$(echo "$first_set" | sed 's/[^<b>]\{1\}/& /g')
+for per_val in $first_value
+do
+        if [ "$per_val" == "r" ]
+        then
+                first_found=4
+        elif [ "$per_val" == "w" ]
+        then
+                first_found=2
+        elif [ "$per_val" == "x" ]
+        then
+                first_found=1
+        elif [ "$per_val" == "-" ]
+        then
+                first_found=0
+        else
+                echo "Invalid option"
+        fi
+        first_count=`expr $first_count + $first_found`
+done
+
+second_count=0
+second_value=$(echo "$second_set" | sed 's/[^<b>]\{1\}/& /g')
+for per_val in $second_value
+do
+        if [ "$per_val" == "r" ]
+        then
+                second_found=4
+        elif [ "$per_val" == "w" ]
+        then
+                second_found=2
+        elif [ "$per_val" == "x" ]
+        then
+                second_found=1
+        elif [ "$per_val" == "-" ]
+        then
+                second_found=0
+        else
+                echo "Invalid option"
+        fi
+        second_count=`expr $second_count + $second_found`
+done
+
+third_count=0
+third_value=$(echo "$third_set" | sed 's/[^<b>]\{1\}/& /g')
+for per_val in $third_value
+do
+        if [ "$per_val" == "r" ]
+        then
+                third_found=4
+        elif [ "$per_val" == "w" ]
+        then
+                third_found=2
+        elif [ "$per_val" == "x" ]
+        then
+                third_found=1
+        elif [ "$per_val" == "-" ]
+        then
+                third_found=0
+        else
+                echo "Invalid option"
+        fi
+        third_count=`expr $third_count + $third_found`
+done
+
+total_permission=$first_count$second_count$third_count
+#echo "Total permission is : $total_permission"
+
+        if [ "$Dname" != /var/ericsson/ddc_data -a "$Dname" != /var/opt/ericsson/eba_rede/data ] && [ "$total_permission" -le "755" ]
+        then
+                 echo "Directory permission of $Dname is $total_permission : Default permission is 755"
+        elif [ "$Dname" != "/var/ericsson/ddc_data" -a "$Dname" != "/var/opt/ericsson/eba_rede/data" ] && [ "$total_permission" -gt "755" ]
+        then
+                 echo "Error : Directory permission of $Dname is $total_permission : Default permission is 755"
+                 Evalue=$?
+        fi
+        if [ "$Dname" == "/var/ericsson/ddc_data" -o "$Dname" == "/var/opt/ericsson/eba_rede/data" ] && [ "$total_permission" -le "775" ]
+        then
+                echo "Directory permission of $Dname is $total_permission : Default permission is 775"
+        elif [ "$Dname" == "/var/ericsson/ddc_data" -o "$Dname" == "/var/opt/ericsson/eba_rede/data" ] && [ "$total_permission" -gt "775" ]
+        then
+                echo "Error : Directory permission of $Dname is $total_permission : Default permission is 775"
+                Evalue=$?
+        fi
+
+else
+        echo "Directory $Dname doesnot exist"
+fi
+
+done
+
+if [ $Evalue -eq 0 ]; then
+        return 1
+else
+        return 0
+fi
+
+
+}
+
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_POSTCON
+#
+# This callback function checks expected results.
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_postcon() {
+
+	# Coded to fail in case TC_AUTOMATED=1 before automation complete.
+	# Change return code as required
+
+	return 0
+
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_CLEANUP
+#
+# This callback function is only called if the harness execution mode is 'AT_INDEPENDENT'
+# 
+# This callback restores the target system to the state it was in before the TC 
+# was run. It rolls back changes made by callbacks tc_setup() and tc_test()
+# 
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_cleanup() {
+
+	# Coded to fail in case TC_AUTOMATED=1 before automation complete
+	# Change return code as required
+
+	return 0
+
+}

@@ -1,0 +1,136 @@
+#!/bin/ksh
+
+#--------------------------------------------------------------------------
+# Ericsson AB    SCRIPT
+#--------------------------------------------------------------------------
+#
+# (c) Ericsson AB 2007 - All rights reserved.
+# 
+# The copyright to the computer program(s) herein is the property
+# of Ericsson AB, Sweden. The programs may be used and/or copied
+# only with the written permission from Ericsson AB or
+# in accordance with the terms and conditions stipulated in the
+# agreement/contract under which the program(s) have been supplied.
+# 
+#------ History ----------------------------------------------------------- 
+# Rev   Date    Prepared        Description
+#
+# PA1   070925  EASHIMA         Checks if files and/or directories have proper write permissions. They should not have world write permissions.
+#--------------------------------------------------------------------------
+#
+#   Name       : check_permission.sh
+#
+#   Description: Generic check file/directory access permission testscript
+#
+#   Arguments  : Check for following arguments:
+#					-d = debug
+#					-p = directory paths in a colon-separated list
+#					-f = file paths in a colon-separated list
+#                                       -r = recursive
+#					-n = testcase name
+#
+
+
+# Init --------------------------------------------
+RETURN_STATUS=0
+RECURSE=FALSE
+while getopts "drf:p:n:" option
+do
+    case $option in
+		d) DEBUG=1;;
+		r) RECURSE=TRUE;;
+		f) FILE_PATHS=`echo $OPTARG | sed -e "s/:/ /g"`;;
+		p) DIR_PATHS=`echo $OPTARG | sed -e "s/:/ /g"`;;
+		n) TEST_CASE=$OPTARG;;			 
+   esac
+done
+
+if [ $DEBUG ]; then
+    set -x
+fi
+# -------------------------------------------------
+
+# Mandatory information ---------------------------
+echo "[OUTPUT:TESTCASENAME:${TEST_CASE}]"
+echo "[OUTPUT:TESTCASEDESCRIPTION:Tests if files and/or directories have proper write permissions]"
+echo "[OUTPUT:SCRIPTVERSION:PA1]"
+# -------------------------------------------------
+
+
+
+# Checks directory permissions ------------------
+check_directory ()
+{
+       if [ ! -d "${1}" ]; then
+		RETURN_STATUS=1 #Failed, directory does not exist
+		DIRECTORY_STATUS="${DIRECTORY_STATUS:=Missing directories}:${1}"
+	else 
+	   VARIABLE=`ls -ld ${1} | nawk '{print$1}' | cut -c9`
+           if [ $VARIABLE  = "w" ]; then
+	      RETURN_STATUS=1 #Failed, file does not exist
+	      DIRECTORY_STATUS="${DIRECTORY_STATUS:=directory has world write access}:${1}"             
+           elif [ $RECURSE = "TRUE" ]; then
+			for i in `ls -lRt ${1} | grep -v total | grep -v '/' | nawk '{print$1}'`
+			do
+                               LINK=`echo ${i}| cut -c1`
+			       if [ $LINK != "l" ]; then
+				     VARIABLE=`echo ${i}| cut -c9`
+				     if [ $VARIABLE  = "w" ]; then
+					RETURN_STATUS=1 #Failed, file does not exist
+					DIRECTORY_STATUS="${DIRECTORY_STATUS:=One of the file/subdirectory has world write access}:${1}"
+					break
+				     fi
+                               fi
+			done
+	   fi
+      fi
+}
+
+# Checks file permissions ------------------
+check_file ()
+{
+	if [ ! -f "${1}" ]; then
+		RETURN_STATUS=1 #Failed, directory does not exist
+		FILE_STATUS="${FILE_STATUS:=Missing files}:${1}"
+	else
+	    for i in `ls -lrt ${1} | nawk '{print$1}'`
+            do
+	
+               VARIABLE=`echo ${i}| cut -c9`
+               if [ $VARIABLE  = "w" ]; then
+
+	          RETURN_STATUS=1 #Failed, file does not exist
+	          FILE_STATUS="${FILE_STATUS:=file has world write access}:${1}"
+                  break
+               fi
+            done
+	fi
+}
+
+
+
+# Do the test -------------------------------------
+
+# Check that the directories exist
+for foo in $DIR_PATHS; do
+	check_directory $foo
+done
+
+# Check that the files exist
+for foo in $FILE_PATHS; do
+	check_file $foo
+done
+
+if [[ $RETURN_STATUS -ne 0 ]]; then
+	RETURN_STATUS_REASON="$DIRECTORY_STATUS $FILE_STATUS"
+fi
+
+       
+# Return status and reason ------------------------
+if [ "$RETURN_STATUS_REASON" ]; then
+  echo [OUTPUT:REASON:$RETURN_STATUS_REASON]
+fi
+
+exit $RETURN_STATUS
+# -------------------------------------------------
+

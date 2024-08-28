@@ -1,0 +1,271 @@
+#!/bin/bash
+#################################################################################
+#
+#
+#	   COPYRIGHT (C) ERICSSON RADIO SYSTEMS AB, Sweden
+#
+#	   The copyright to the document(s) herein is the property of
+#	   Ericsson Radio Systems AB, Sweden.
+#
+#	   The document(s) may be used and/or copied only with the written
+#	   permission from Ericsson Radio Systems AB or in accordance with
+#	   the terms and conditions stipulated in the agreement/contract
+#	   under which the document(s) have been supplied.
+#
+#################################################################################
+
+
+# ATCOMINF Test Callback Library
+
+# Revision History
+# 13/09/12	xkalbha		Initial version
+
+# Complete the callbacks in this library to automate the test case.
+#
+# Callbacks are stateless, it is not possible to set a global variable in one callback 
+# and access it it in another.
+#
+# Callbacks are called by the test harness in the following order:
+#
+# tc_setup() 		# Called only for independent TC execution mode to setup TC
+# tc_precon()		# Conditions that should exist before TC can run
+# tc_test()		# Runs the test for this TC
+# tc_postcon()		# Conditions that should/should not exist after successful TC 
+# tc_cleanup()		# Called only for independent TC execution mode to clenup after TC
+
+# All callbacks must PASS for a TC PASS result
+
+#################################################################################
+#
+# CALLBACK: TC_SETUP
+#
+# This callback function is only called if the harness execution mode is 'AT_INDEPENDENT'
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_setup() {
+
+	return 0
+
+}
+#################################################################################
+
+#################################################################################
+#
+# CALLBACK: TC_PRECON
+#
+# This callback function checks the correct conditions exist to run the TC.
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+ 
+tc_precon() {
+
+	grep smrs_master "/etc/inet/hosts" || { echo "No smrs_master created"; return 1; }
+
+	# Check slave account on smrs_master
+	
+	# Check slave account on NEDSS
+	name=`hostname`
+	nedssfile="../../nedssIP."${name}
+	[ -r ${nedssfile} ] || { echo "No $nedssfile found"; return 3; }
+	NEDSSIP=$(cat $nedssfile)
+	POSIX_USER_EXISTS w-sws-nedssv4 z$NEDSSIP || { echo "w-sws-nedssv4 does not exist on NEDSS $?"; return 3; }
+
+	CHECK_SLAVE_EXISTS nedssv4
+
+	return 0
+
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_TEST
+#
+# This callback function runs the test.
+# The harness compares the return code to the SPEC_TC_TEST_PASSCODE value set in the test spec.
+#
+# Return or exit codes:
+#	SPEC_TC_TEST_PASSCODE 	success
+# != SPEC_TC_TEST_PASSCODE 	failure
+ 
+tc_test() {
+	
+	# remove aif group on OSS master, so can see if restart of BI_SMRS_MC is done
+	groupdel aif 
+   
+	# Mark output of smlog so can see if done restart
+	SMLOG_MARK_STATUS
+	
+	
+	su - nmsadm -c "/opt/ericsson/nms_bismrs_mc/bin/add_aif.sh -n WRAN -a aif403 -p passwo12 -s nedssv4 -b -f" || { echo "Failed to add aif user $?"; return 1; }
+	
+	# wait to allow time for restart
+	sleep 60
+
+	# Prove BI_SMRS_MC has been restarted 
+	SMLOG_SEARCH_FROM_MARK "SMRS reconfig" || { echo "smlog search failed or bismrs restarted $?"; return 4; }
+
+	return 0
+
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_POSTCON
+#
+# This callback function checks expected results.
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_postcon() {
+
+
+	# check if smrsuser can ssh without password
+	cat > sshexp.tmp <<EOF
+        set timeout 10
+        spawn  su - nmsadm -c "ssh smrsuser@smrs_master echo Bhavana test"
+        expect {"password:" {exit 1} default {exit 0}}
+EOF
+	/usr/local/bin/expect sshexp.tmp >ssh.out
+	[ $? -eq 0 ] ||  echo "ssh asked for password while nmsadm tried to connect to smrs master as smrsuser" 
+	grep "Bhavana test" ssh.out ||  echo "password-less ssh to smrs_master as smrsuser failed" 
+
+	# Check user created on smrs_master
+	#POSIX_REMOTE_USER_EXISTS aif403 smrs_master || { echo "aif403 User not created"; return 1; }
+	ssh smrs_master "grep aif403 /etc/passwd"  || { echo "User aif403 not created"; return 2; }
+	# Check AIF account on NEDSS
+	name=`hostname`
+	nedssfile="../../nedssIP."${name}
+	[ -r ${nedssfile} ] || { echo "No $nedssfile found"; return 3; }
+	NEDSSIP=$(cat $nedssfile)
+	POSIX_USER_EXISTS aif403 z$NEDSSIP || { echo "aif403 not exist on NEDSS"; return 2; }
+
+
+	# Check aif group on OSS and smrs_master and NEDSS
+	grep ^aif /etc/group || { echo "AIF group does not exist on OSS"; return 3; }
+	ssh root@smrs_master 'grep ^aif /etc/group' || { echo "AIF group does not exist on smrs_master $?"; return 4; }
+	ssh root@smrs_master ssh $NEDSSIP 'grep ^aif /etc/group' || { echo "AIF group does not exist on NEDSS $?"; return 5; }
+
+	# Check cannot login as user on smrs_master
+	echo "trying to login as aif403 on smrs_master"
+	cmd="ssh aif403@smrs_master echo Bhavana test "
+	${AT_BIN}/con_ex.bsh -d 403l.in -o 403l.exp -c "${cmd}"
+	retval=$?
+	[ $retval -ne 0 ] && { echo Failed to create expect script for login $retval; return 6; }
+	/usr/local/bin/expect 403l.exp >output.tmp 
+	grep "Bhavana test" output.tmp && {
+		echo "Error managed to login as user aif403 on smrs-master $?, output was:"
+		cat output.tmp
+		echo End of output
+		return 7
+	}
+
+	# Check cannot login as user on NEDSS
+	echo "Trying to login as aif403 on NEDSS"	
+	cmd="ssh -t root@smrs_master ssh aif403@$NEDSSIP echo xkalbha test"
+	${AT_BIN}/con_ex.bsh -d 403l.in -o 403l2.exp -c "${cmd}"
+	retval=$?
+	[ $retval -ne 0 ] && { echo Failed to create expect script for login $retval; return 8; }
+	/usr/local/bin/expect 403l2.exp >output2.tmp 
+	 grep "xkalbha test" output2.tmp && { echo "Error managed to login as user aif403 on nedss $?"; return 9; }
+
+	# Check sftp access is to WRAN as the top level directory 
+	# Put a file into the /export/WRAN directory (both for NEDSS and smrs_master)
+	date > 403.txt
+	date > 403b.txt
+	cp 403.txt /var/opt/ericsson/smrsstore/WRAN/403.txt 
+	cp 403b.txt /var/opt/ericsson/smrsstore/WRAN/403b.txt 
+	# Now remove local file
+	rm -f 403.txt
+	rm -f 403b.txt
+	# Prove its not there
+	[ -r 403.txt ] && { echo "Should have deleted 403.txt"; return 10; }
+	[ -r 403b.txt ] && { echo "Should have deleted 403.txt"; return 11; }
+	# Now retrieve file from smrs_master using account
+	cmd="sftp aif403@smrs_master:403.txt"
+	${AT_BIN}/con_ex.bsh -d 403l.in -o 403sftp.exp -c "${cmd}"
+	retval=$?
+	[ $retval -ne 0 ] && { echo Failed to create expect script for sftp $retval; return 12; }
+	/usr/local/bin/expect 403sftp.exp || { echo "Error sftp failure as user $?"; return 13; }
+	# Prove we now have file 
+	[ -r 403.txt ] || { echo "Failed to retrieve file"; return 14; }
+	# Now retrieve file from NEDSS using account
+	cmd="sftp aif403@$NEDSSIP:403b.txt"
+	${AT_BIN}/con_ex.bsh -d 403l.in -o 403bsftp.exp -c "${cmd}"
+	retval=$?
+	[ $retval -ne 0 ] && { echo Failed to create expect script for sftp $retval; return 15; }
+	/usr/local/bin/expect 403bsftp.exp || { echo "Error sftp failure as user $?"; return 16; }
+	# Prove we now have file 
+	[ -r 403b.txt ] || { echo "Failed to retrieve file $?"; return 17; }
+
+	# Check autointegration
+	 /opt/ericsson/nms_cif_cs/etc/unsupported/bin/cstest -s ONRM_CS -ns masterservice lt FtpService| grep aif403 || { echo "AutoIntegration user does not exist"; return 18; }
+
+	# Prove user can't access /LRAN
+	cmd="sftp aif403@smrs_master:../LRAN"
+	${AT_BIN}/con_ex.bsh -d 403l.in -o 403sftp2.exp -c "${cmd}"
+	retval=$?
+	[ $retval -ne 0 ] && { echo Failed to create expect script for sftp2 $retval; return 19; }
+	# Although the sftp will fail, it will still return success error code
+	# But error message will be in the .out file
+	/usr/local/bin/expect 403sftp2.exp > 403lran.out || { echo "Error sftp2 failure as user $?"; return 20; }
+	grep 'File "/../LRAN" not found' 403lran.out || { echo "Accessed LRAN ok"; return 21; }
+
+	# Prove user can't access /GRAN
+	cmd="sftp aif403@smrs_master:../GRAN"
+	${AT_BIN}/con_ex.bsh -d 403l.in -o 403sftp3.exp -c "${cmd}"
+	retval=$?
+	[ $retval -ne 0 ] && { echo Failed to create expect script for sftp3 $retval; return 22; }
+	# Although the sftp will fail, it will still return success error code
+	# But error message will be in the .out file
+	/usr/local/bin/expect 403sftp3.exp > 403gran.out || { echo "Error sftp3 failure as user $?"; return 23; }
+	grep 'File "/../GRAN" not found' 403gran.out || { echo "Accessed GRAN ok"; return 24; }
+
+
+	# Check for errors or warnings
+	# Check contents of /var/opt/ericsson/log/add_aif.sh_log_<date>
+	# Assume the last one that matches the pattern is our file
+	filename=$(ls -rt /var/opt/ericsson/log/add_aif.sh_log_* | tail -1)
+	grep -i error $filename
+	retval=$?
+	[ $retval -ne 1 ] && { echo "Error in add_aif log, see above $retval"; return 25; }
+	# Don't want warnings except the ones about permanently added ip address to
+	# known hosts
+	grep -v "Warning: Permanently added" | grep -i warning $filename 
+	retval=$?
+	[ $retval -ne 1 ] && { echo "Warning in add_aif log, see above $retval"; return 26; }
+
+	return 0
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_CLEANUP
+#
+# This callback function is only called if the harness execution mode is 'AT_INDEPENDENT'
+# 
+# This callback restores the target system to the state it was in before the TC 
+# was run. It rolls back changes made by callbacks tc_setup() and tc_test()
+# 
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_cleanup() {
+
+
+	return 0
+
+}

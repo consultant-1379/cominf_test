@@ -1,0 +1,20 @@
+
+LDAP Directory Manager password: 
+Enter the name of the COM alias to modify: nonExistAlias
+ERROR : [nonExistAlias] does not exist as an alias in domain [vts.com].
+Enter the name of the COM alias to modify: a585a,a585b
+Only one alias can be supplied.
+Enter the name of the COM alias to modify: a585a
+Enter the name of the COM role name to add: r585a,r585b
+Only one role can be supplied.
+Enter the name of the COM role name to add: nonExistRole
+ERROR : [nonExistRole] does not exist as a role in domain [vts.com].
+Enter the name of the COM role name to add: r585b%
+/ericsson/ocs/lib/common_functions.lib: line 190: printf: `]': invalid format character
+/ericsson/ocs/lib/common_functions.lib: line 201: printf: `]': invalid format character
+ERROR : [r585bEnter the name of the COM role name to add: r585b
+
+Please confirm that you want to proceed with requested actions - Yes or No [No] A
+Please enter Yes or No 
+Please confirm that you want to proceed with requested actions - Yes or No [No] No
+INFO : confirmProceed: negative response, script exiting

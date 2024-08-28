@@ -1,0 +1,259 @@
+#!/bin/bash
+#################################################################################
+#
+#
+#       COPYRIGHT (C) ERICSSON RADIO SYSTEMS AB, Sweden
+#
+#       The copyright to the document(s) herein is the property of
+#       Ericsson Radio Systems AB, Sweden.
+#
+#       The document(s) may be used and/or copied only with the written
+#       permission from Ericsson Radio Systems AB or in accordance with
+#       the terms and conditions stipulated in the agreement/contract
+#       under which the document(s) have been supplied.
+#
+#################################################################################
+
+
+# ATCOMINF Test Callback Library
+
+# Revision History
+# <date>	<signum>	<details>
+# 2012-08-17    xfeldan    Initial version
+
+# Complete the callbacks in this library to automate the test case.
+#
+# Callbacks are stateless, it is not possible to set a global variable in one callback 
+# and access it it in another.
+#
+# Callbacks are called by the test harness in the following order:
+#
+# tc_setup() 		# Called only for independent TC execution mode to setup TC
+# tc_precon()		# Conditions that should exist before TC can run
+# tc_test()		# Runs the test for this TC
+# tc_postcon()		# Conditions that should/should not exist after successful TC 
+# tc_cleanup()		# Called only for independent TC execution mode to clenup after TC
+
+# All callbacks must PASS for a TC PASS result
+
+#################################################################################
+#
+# CALLBACK: TC_SETUP
+#
+# This callback function is only called if the harness execution mode is 'AT_INDEPENDENT'
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_setup() {
+
+	return 0
+
+}
+#################################################################################
+
+#################################################################################
+#
+# CALLBACK: TC_PRECON
+#
+# This callback function checks the correct conditions exist to run the TC.
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+ 
+tc_precon() {
+
+	DHCP_SERVER_INSTALLED || {
+		echo "DHCP server not installed"
+		return 1
+	}
+
+	DHCP_SERVER_RUNNING &>/dev/null || {
+		echo "DHCP server not running"
+		return 2
+	}
+
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_TEST
+#
+# This callback function runs the test.
+# The harness compares the return code to the SPEC_TC_TEST_PASSCODE value set in the test spec.
+#
+# Return or exit codes:
+#    SPEC_TC_TEST_PASSCODE 	success
+# != SPEC_TC_TEST_PASSCODE 	failure
+ 
+tc_test() {
+
+	i=1
+	echo "Create LTE client with missing parameters" # 1-7
+	all_params=" -a 1.2.3.4 -h ahostname -i valid -s 2.2.2.2 -p /var/tmp/arf.txt -t valid -u 1"
+	for param in " -a 1.2.3.4" " -h ahostname" " -i valid" " -s 2.2.2.2" " -p /var/tmp/arf.txt" " -t valid" " -u 1"; do
+		/ericsson/ocs/bin/ai_manager.sh -add lte_client ${all_params//$param/} 2>$i.out&& {
+			echo "Creation of test LTE client with missing parameter, ${param:1:3}, did not return error code"
+			return $i
+		}
+		let i=i+1
+	done
+
+	echo "Create LTE client with invalid IP address to -a parameter" # 8
+	/ericsson/ocs/bin/ai_manager.sh -add lte_client -a invalid -h valid -i valid -s 2.2.2.2 -p /var/tmp/arf.txt -t "1.3.5.7" -u 1 2>/dev/null >$i.out&& {
+		echo "Creation of test LTE client with invalid parameters did not return error code"
+		return $i
+	}
+	let i=i+1
+	echo "Create LTE client with invalid IP address to -s parameter" # 9
+	/ericsson/ocs/bin/ai_manager.sh -add lte_client -a 2.8.1.8 -h valid -i valid -s invalid -p /var/tmp/arf.txt -t "1.3.5.7" -u 1 2>/dev/null >$i.out&& {
+		echo "Creation of test LTE client with invalid parameters did not return error code"
+		return $i
+	}
+	let i=i+1
+
+	echo "Create LTE client with invalid number of timeservers" # 10, 11
+	for param in " " "1.1.1.1 2.2.2.2 3.3.3.3"; do
+		/ericsson/ocs/bin/ai_manager.sh -add lte_client -a 2.8.1.8 -h valid -i valid -s 2.2.2.2 -p /var/tmp/arf.txt -t "$param" -u 0 2>/dev/null >$i.out&& {
+			echo "Creation of test LTE client with invalid number of timeservers ($i) did not return error code"
+			return $i
+		}
+		let i=i+1
+	done
+
+	echo "Create LTE client invalid IP address to -t parameter" # 12
+	/ericsson/ocs/bin/ai_manager.sh -add lte_client -a 1.1.1.1 -h valid -i valid -s 2.2.2.2 -p /var/tmp/arf.txt -t "50.50.2000" -u 1 >$i.out 2>&1&& {
+		echo "Creation of test LTE client with invalid IP address to -t parameter"
+		return $i
+	}
+	let i=i+1
+
+	echo "Create LTE client invalid offset to -u parameter" # 13
+	/ericsson/ocs/bin/ai_manager.sh -add lte_client -a 1.1.1.1 -h valid -i valid -s 2.2.2.2 -p /var/tmp/arf.txt -t "50.50.2.20" -u "" >$i.out 2>&1&& {
+		echo "Creation of test LTE client with invalid offset to -u parameter"
+		return $i
+	}
+	let i=i+1
+
+	echo "Create LTE client additional invalid parameter" # 14
+	/ericsson/ocs/bin/ai_manager.sh -add lte_client -a 1.1.1.1 -h valid -i valid -s 2.2.2.2 -p /var/tmp/arf.txt -t "valid valid" -u 1 -m invalid >$i.out 2>&1&& {
+		echo "Creation of test LTE client with additional invalid parameter did not return error code"
+		return $i
+	}
+	return 0
+
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_POSTCON
+#
+# This callback function checks expected results.
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_postcon() {
+
+	# Usage statement should be in the output of only some invalid commands
+	for i in 1 2 3 4 5 6 7 13 14; do
+		grep "\-add client -a <ip address>" $i.out >/dev/null|| {
+			echo "Usage statement not found in output of test $i"
+			return $i
+		}
+	done
+
+	i=1
+	grep "You must specify an address using the -a parameter" $i.out>/dev/null || {
+		echo "Could not find error message in test $i"
+		cat $i.out
+		return $i
+	}
+	let i=i+1
+	grep "You must specify a hostname using the -h parameter" $i.out>/dev/null || {
+		echo "Could not find error message in test $i"
+		cat $i.out
+		return $i
+	}
+	let i=i+1
+	grep "You must specify a client identifier" $i.out>/dev/null || {
+		echo "Could not find error message in test $i"
+		cat $i.out
+		return $i
+	}
+	let i=i+1
+	grep "You must specify a SMRS server address" $i.out>/dev/null || {
+		echo "Could not find error message in test $i"
+		cat $i.out
+		return $i
+	}
+	let i=i+1
+	grep "You must specify a summary file path" $i.out>/dev/null || {
+		echo "Could not find error message in test $i"
+		cat $i.out
+		return $i
+	}
+	let i=i+1
+	grep "You must specify primary/secondary/both" $i.out>/dev/null || {
+		echo "Could not find error message in test $i"
+		cat $i.out
+		return $i
+	}
+	for i in 7 13; do
+		grep "You must specify a universal time offset" $i.out>/dev/null || {
+			echo "Could not find error message in test $i"
+			cat $i.out
+			return $i
+		}
+	done
+
+	for i in 8 9 10 12; do
+		grep "Invalid IP address" $i.out>/dev/null || {
+			echo "Could not find error message in test $i"
+			return $i
+		}
+	done
+
+	i=11
+	grep "Too many timeservers, specify one or two timeservers" $i.out>/dev/null || {
+		echo "Could not find error message in test $i"
+		return $i
+	}
+
+	i=14
+	grep "illegal option -- m" $i.out>/dev/null || {
+		echo "Could not find error message in test $i"
+		return $i
+	}
+	return 0
+
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_CLEANUP
+#
+# This callback function is only called if the harness execution mode is 'AT_INDEPENDENT'
+# 
+# This callback restores the target system to the state it was in before the TC 
+# was run. It rolls back changes made by callbacks tc_setup() and tc_test()
+# 
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_cleanup() {
+
+	rm -f *.out
+	return 0
+
+}

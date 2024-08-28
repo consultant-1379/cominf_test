@@ -1,0 +1,15 @@
+#!/bin/bash
+
+# TEST SUITE SPEC FILE
+# This file is generated/updated using the test framework web interface.
+# Manual updates on test servers are lost when the test package is re-installed.
+#
+# Last modified: Friday 18th of January 2013 10:11:01
+#
+SPEC_TS_NAME=SPARC_MS_SANITY_CHECKS
+SPEC_TS_ID=26
+SPEC_TS_SLOGAN="Common Sanity Checks for SPARC OSS. These must not change the state of the Server"
+SPEC_TS_TIMEOUT=300
+SPEC_TS_AUTHOR="ebatric"
+SPEC_TS_INDEPENDENT=1
+SPEC_TS_TC_IDS=(720 742 192 803 637 765 507 606 804 789 781)

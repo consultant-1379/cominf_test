@@ -1,0 +1,11 @@
+#!/bin/bash
+rm -f big.import
+echo "DOMAIN 1.com" >> big.import
+roles="r6010"
+for i in {1..1000}
+do
+	roles="$roles,r601$i"	
+	echo "ALIAS a601$i r601$i" >> big.import
+done
+echo "ROLE $roles" >> big.import
+echo "ALIAS a6010 $roles" >> big.import

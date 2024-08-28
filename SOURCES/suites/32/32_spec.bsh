@@ -1,0 +1,15 @@
+#!/bin/bash
+
+# TEST SUITE SPEC FILE
+# This file is generated/updated using the test framework web interface.
+# Manual updates on test servers are lost when the test package is re-installed.
+#
+# Last modified: Thursday 29th of November 2012 14:37:27
+#
+SPEC_TS_NAME=eeigocoX86_CLUSTER_ROBUSTNESS
+SPEC_TS_ID=32
+SPEC_TS_SLOGAN="General robustness test suite, which includes reboots and failovers/switchover test cases"
+SPEC_TS_TIMEOUT=300
+SPEC_TS_AUTHOR="eeigoco"
+SPEC_TS_INDEPENDENT=1
+SPEC_TS_TC_IDS=(795)

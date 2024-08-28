@@ -1,0 +1,232 @@
+#!/bin/bash
+#################################################################################
+#
+#
+#       COPYRIGHT (C) ERICSSON RADIO SYSTEMS AB, Sweden
+#
+#       The copyright to the document(s) herein is the property of
+#       Ericsson Radio Systems AB, Sweden.
+#
+#       The document(s) may be used and/or copied only with the written
+#       permission from Ericsson Radio Systems AB or in accordance with
+#       the terms and conditions stipulated in the agreement/contract
+#       under which the document(s) have been supplied.
+#
+#################################################################################
+
+
+# ATCOMINF Test Callback Library
+
+# Revision History
+#2013-5-12      epelene         Checks that the specified managed services in Solaris SMF are restarted if they are killed
+
+# Complete the callbacks in this library to automate the test case.
+#
+# Callbacks are stateless, it is not possible to set a global variable in one callback 
+# and access it it in another.
+#
+# Callbacks are called by the test harness in the following order:
+#
+# tc_setup() 		# Called only for independent TC execution mode to setup TC
+# tc_precon()		# Conditions that should exist before TC can run
+# tc_test()		# Runs the test for this TC
+# tc_postcon()		# Conditions that should/should not exist after successful TC 
+# tc_cleanup()		# Called only for independent TC execution mode to cleanup after TC
+
+# All callbacks must PASS for a TC PASS result
+
+#################################################################################
+#
+# CALLBACK: TC_SETUP
+#
+# This callback function is only called if the harness execution mode is 'AT_INDEPENDENT'
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_setup() {
+
+        #Coded to pass
+
+	return 0 
+
+}
+#################################################################################
+
+#################################################################################
+#
+# CALLBACK: TC_PRECON
+#
+# This callback function checks the correct conditions exist to run the TC.
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+ 
+tc_precon() {
+
+	# Coded to pass
+
+	return 0
+
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_TEST
+#
+# This callback function runs the test.
+# The harness compares the return code to the SPEC_TC_TEST_PASSCODE value set in the test spec.
+#
+# Return or exit codes:
+#    SPEC_TC_TEST_PASSCODE 	success
+# != SPEC_TC_TEST_PASSCODE 	failure
+ 
+tc_test() {
+
+ # Init --------------------------------------------
+        PS_STRING="/usr/ucb/ps -auxww"
+        # Get the name of our product from the framework
+       # echo "[INPUT:PRODUCT]"
+       # read PROD
+    
+        RETURN_STATUS=0
+
+check_svc_online ()
+{
+  for foo in $SERVICES; do
+        svcadm clear ${foo};
+        stopnow=0;
+        found=0;
+        while [[ $found -ne 1 ]]&&[[ $stopnow -ne 5 ]];do
+                # Count lines that includes $foo
+                PROCS=`svcs -a 2>/dev/null | grep ${foo} | cut -d' ' -f1 | wc -l`
+                # Count lines that includes $foo and are online
+                ONLINE_PROCS=`svcs -a 2>/dev/null | grep ${foo} | cut -d' ' -f1 | grep online | wc -l`
+
+                # Check if all of the services were online
+                if [ ! $PROCS = $ONLINE_PROCS ]&&[ $stopnow -eq 5 ];
+                        then
+                                RETURN_STATUS_REASON="${RETURN_STATUS_REASON:=Services offline}:${foo}"
+                                RETURN_STATUS=1
+                        else
+                                found=1;
+                fi
+                stopnow=$(($stopnow+1))
+                sleep $timeout
+         done
+    done
+
+  if [ "$RETURN_STATUS" -ne 1 ];then
+       echo "SMF services are online"
+  fi
+}
+
+kill_svc_procs ()
+{
+
+   MYSELF=$$
+
+  for process in $PROCESSES; do
+                PID=`$PS_STRING  | grep ${process} | grep -v grep | grep -v $MYSELF | nawk '{print $2}'`
+                if [ ! -z "$PID" ]; then
+                        kill -9 $PID 2>/dev/null
+                fi
+                sleep $timeout
+  for service in $SERVICES; do
+                svcadm clear ${service}
+  done
+               # Check to see if restarted with new pid
+              stopnow=0;
+              while [[ $stopnow -ne 5 ]]&&[[ -z $NEW_PID ]];do
+                sleep $timeout
+                NEW_PID=`$PS_STRING  | grep ${process} | grep -v grep | grep -v $MYSELF |  nawk '{print $2}'`
+                stopnow="$(($stopnow + 1))"
+             done
+
+             if [ -z "$NEW_PID" ];then
+                RETURN_STATUS_REASON="${RETURN_STATUS_REASON:=Process not restarted}:${process}"
+                return 1
+             else
+                echo "Process $process restarted after kill"
+             fi
+
+  done
+}
+
+# main ---------------
+if [ "${PROD}" = "syb" ]; then
+        svc_online
+        RESULT=$?
+        if [ $RESULT -ne 0 ]; then
+                RETURN_STATUS_REASON="${RETURN_STATUS_REASON}Sybase SMF services cannot be enabled"
+                echo [OUTPUT:REASON:$RETURN_STATUS_REASON]
+                return 1
+        fi
+fi
+
+check_svc_online
+kill_svc_procs
+check_svc_online
+
+if [ "${PROD}" = "syb" ]; then
+        svc_online
+        RESULT=$?
+        if [ $RESULT -ne 0 ]; then
+                RETURN_STATUS_REASON="${RETURN_STATUS_REASON}Sybase SMF services cannot be enabled"
+                echo [OUTPUT:REASON:$RETURN_STATUS_REASON]
+                return 1
+        fi
+fi
+
+
+	return 0
+
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_POSTCON
+#
+# This callback function checks expected results.
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_postcon() {
+
+
+	# Coded to pass
+
+	return 0
+
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_CLEANUP
+#
+# This callback function is only called if the harness execution mode is 'AT_INDEPENDENT'
+# 
+# This callback restores the target system to the state it was in before the TC 
+# was run. It rolls back changes made by callbacks tc_setup() and tc_test()
+# 
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_cleanup() {
+
+       # Coded to pass
+
+        return 0
+
+}

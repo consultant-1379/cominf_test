@@ -1,0 +1,234 @@
+#!/bin/bash
+#################################################################################
+#
+#
+#       COPYRIGHT (C) ERICSSON RADIO SYSTEMS AB, Sweden
+#
+#       The copyright to the document(s) herein is the property of
+#       Ericsson Radio Systems AB, Sweden.
+#
+#       The document(s) may be used and/or copied only with the written
+#       permission from Ericsson Radio Systems AB or in accordance with
+#       the terms and conditions stipulated in the agreement/contract
+#       under which the document(s) have been supplied.
+#
+#################################################################################
+
+
+# ATCOMINF Test Callback Library
+
+# Revision History
+# <date>	<signum>	<details>
+
+# Complete the callbacks in this library to automate the test case.
+#
+# Callbacks are stateless, it is not possible to set a global variable in one callback 
+# and access it it in another.
+#
+# Callbacks are called by the test harness in the following order:
+#
+# tc_setup() 		# Called only for independent TC execution mode to setup TC
+# tc_precon()		# Conditions that should exist before TC can run
+# tc_test()		# Runs the test for this TC
+# tc_postcon()		# Conditions that should/should not exist after successful TC 
+# tc_cleanup()		# Called only for independent TC execution mode to cleanup after TC
+
+# All callbacks must PASS for a TC PASS result
+
+#################################################################################
+#
+# CALLBACK: TC_SETUP
+#
+# This callback function is only called if the harness execution mode is 'AT_INDEPENDENT'
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_setup() {
+
+	# Coded to fail in case TC_AUTOMATED=1 before automation completed
+	# Change return code as required
+
+	return 0
+
+}
+#################################################################################
+
+#################################################################################
+#
+# CALLBACK: TC_PRECON
+#
+# This callback function checks the correct conditions exist to run the TC.
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+ 
+tc_precon() {
+
+	# Coded to fail in case TC_AUTOMATED=1 before automation completed
+	# Change return code as required
+        # Natallia - testing git push
+
+ECHO=/usr/bin/echo
+EGREP=/usr/bin/egrep
+ISQL=/opt/sybase/sybase/OCS-15_0/bin/isql
+SA=sa
+SA_PW=sybase11
+SYB_TEST_DIR=/var/tmp/sybase_test_auto
+mkdir -p $SYB_TEST_DIR
+DSQUERY=masterdataservice
+PATH=/opt/sybase/sybase/ASE-15_0/bin:/opt/sybase/sybase/ASE-15_0/install:$PATH
+LD_LIBRARY_PATH=/opt/sybase/sybase/ASE-15_0/lib:$LD_LIBRARY_PATH
+LD_LIBRARY_PATH_64=/opt/sybase/sybase/ASE-15_0/lib:$LD_LIBRARY_PATH_64
+PATH=/opt/sybase/sybase/OCS-15_0/bin:$PATH
+LD_LIBRARY_PATH=/opt/sybase/sybase/OCS-15_0/lib:/opt/sybase/sybase/OCS-15_0/lib3p64:/opt/sybase/sybase/OCS-15_0/lib3p:$LD_LIBRARY_PATH
+INCLUDE=/opt/sybase/sybase/OCS-15_0/include:$INCLUDE
+LIB=/opt/sybase/sybase/OCS-15_0/lib:$LIB
+LD_LIBRARY_PATH_64=/opt/sybase/sybase/OCS-15_0/lib:/opt/sybase/sybase/OCS-15_0/lib3p64:/opt/sybase/sybase/OCS-15_0/lib3p:$LD_LIBRARY_PATH_64
+PATH=/opt/sybase/sybase/DBISQL/bin:$PATH
+PATH=/opt/sybase/sybase/ASEP/bin:$PATH
+PATH=/opt/sybase/sybase/RPL-15_0/bin:$PATH
+PATH=/opt/sybase/sybase/ASE-15_0/bin:/opt/sybase/sybase/ASE-15_0/install:$PATH
+LD_LIBRARY_PATH=/opt/sybase/sybase/ASE-15_0/lib:$LD_LIBRARY_PATH
+LD_LIBRARY_PATH_64=/opt/sybase/sybase/ASE-15_0/lib:$LD_LIBRARY_PATH_64
+PATH=/opt/sybase/sybase/OCS-15_0/bin:$PATH
+LD_LIBRARY_PATH=/opt/sybase/sybase/OCS-15_0/lib:/opt/sybase/sybase/OCS-15_0/lib3p64:/opt/sybase/sybase/OCS-15_0/lib3p:$LD_LIBRARY_PATH
+INCLUDE=/opt/sybase/sybase/OCS-15_0/include:$INCLUDE
+LIB=/opt/sybase/sybase/OCS-15_0/lib:$LIB
+LD_LIBRARY_PATH_64=/opt/sybase/sybase/OCS-15_0/lib:/opt/sybase/sybase/OCS-15_0/lib3p64:/opt/sybase/sybase/OCS-15_0/lib3p:$LD_LIBRARY_PATH_64
+PATH=/opt/sybase/sybase/DBISQL/bin:$PATH
+PATH=/opt/sybase/sybase/ASEP/bin:$PATH
+PATH=/opt/sybase/sybase/RPL-15_0/bin:$PATH
+PATH=/opt/sybase/sybase/ASE-15_0/jobscheduler/bin:$PATH
+PATH=/opt/sybase/sybase/UAF-2_5/bin:$PATH
+SYBASE_UA=/opt/sybase/sybase/UAF-2_5
+SYBASE_PLATFORM=sunx
+LD_LIBRARY_PATH=/opt/sybase/sybase/DataAccess64/ODBC/lib:/opt/sybase/sybase/DataAccess64/ODBC/dm/lib64:$LD_LIBRARY_PATH
+LD_LIBRARY_PATH_64=/opt/sybase/sybase/DataAccess64/ODBC/lib:/opt/sybase/sybase/DataAccess64/ODBC/dm/lib64:$LD_LIBRARY_PATH_64
+PATH=/opt/sybase/sybase/SCC-3_2/bin:$PATH
+SCC_JAVA_HOME=/opt/sybase/sybase/shared/JRE-6_0_24
+SYBASE_JRE6=/opt/sybase/sybase/shared/JRE-6_0_24
+SYBASE_JRE6_32=/opt/sybase/sybase/shared/JRE-6_0_24
+SYBASE_JRE6_64=/opt/sybase/sybase/shared/JRE-6_0_24
+SYBASE_OCS=OCS-15_0
+SCROOT=/opt/sybase/sybase/shared/sybcentral600
+SYBROOT=/opt/sybase/sybase
+SYBASE=/opt/sybase/sybase
+SYBASE_ASE=ASE-15_0
+SYBASE_JRE_RTDS=/opt/sybase/sybase/shared/JRE-6_0_24
+SYBASE_WS=WS-15_0
+ERROR=0
+export ECHO EGREP ISQL SA DSQUERY  SA_PW SYB_TEST_DIR PATH LD_LIBRARY_PATH LD_LIBRARY_PATH INCLUDE LIB SYBASE_WS SYBASE_ASE SYBASE_JRE_RTDS SYBASE SYBROOT SCROOT SYBASE_OCS SYBASE_JRE6_64 SYBASE_JRE6_32 SYBASE_JRE6 
+
+
+######## TC2
+
+$ISQL -U$SA -P$SA_PW -o$SYB_TEST_DIR/tc2.txt -w9000 << END
+sp_lmconfig
+go
+END
+
+$EGREP -e "OK" -e "Permanent" $SYB_TEST_DIR/tc2.txt
+if [[ $? -eq 0 ]]; then
+$ECHO "OK - ASE_CORE license status is OK/Permanent"
+else 
+$ECHO "Error! Not OK - ASE_CORE license status is not OK/Permanent, see below:"
+$SYB_TEST_DIR/tc2.txt
+ERROR=1
+
+fi
+
+rm $SYB_TEST_DIR/tc2.txt
+
+$EGREP -e "LT=AR" /opt/sybase/sybase//ASE-15_0/sysam/sysam.properties.template
+if [[ $? -eq 0 ]]; then
+$ECHO "OK - LT=AR line present in /opt/sybase/sybase//ASE-15_0/sysam/sysam.properties.template"
+else 
+$ECHO "Error! Not OK - LT=AR line not present in /opt/sybase/sybase//ASE-15_0/sysam/sysam.properties.template"
+ERROR=1
+
+fi
+
+$EGREP -e "LT=SR" /opt/sybase/sybase//ASE-15_0/sysam/sysam.properties.template
+if [[ ! $? -eq 0 ]]; then
+$ECHO "OK - LT=SR line not present in /opt/sybase/sybase//ASE-15_0/sysam/sysam.properties.template"
+else 
+$ECHO "Error! Not OK - LT=SR line present in /opt/sybase/sybase//ASE-15_0/sysam/sysam.properties.template"
+ERROR=1
+
+fi
+
+
+
+	return $ERROR
+
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_TEST
+#
+# This callback function runs the test.
+# The harness compares the return code to the SPEC_TC_TEST_PASSCODE value set in the test spec.
+#
+# Return or exit codes:
+#    SPEC_TC_TEST_PASSCODE 	success
+# != SPEC_TC_TEST_PASSCODE 	failure
+ 
+tc_test() {
+
+	# Coded to fail in case TC_AUTOMATED=1 before automation complete
+	# Change return code as required
+
+	return 0
+
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_POSTCON
+#
+# This callback function checks expected results.
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_postcon() {
+
+	# Coded to fail in case TC_AUTOMATED=1 before automation complete.
+	# Change return code as required
+
+	return 0
+
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_CLEANUP
+#
+# This callback function is only called if the harness execution mode is 'AT_INDEPENDENT'
+# 
+# This callback restores the target system to the state it was in before the TC 
+# was run. It rolls back changes made by callbacks tc_setup() and tc_test()
+# 
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_cleanup() {
+
+	# Coded to fail in case TC_AUTOMATED=1 before automation complete
+	# Change return code as required
+
+	return 0
+
+}

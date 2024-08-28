@@ -1,0 +1,72 @@
+#!/bin/bash
+
+# TEST CASE SPEC FILE
+# This file is generated/updated using the test framework web interface.
+# Manual updates on test servers are lost when the test package is re-installed.
+#
+# Last modified: Tuesday 17th of December 2013 9:55:36
+#
+
+# These settings must be in BASH script format, they are sourced by other scripts.
+SPEC_FA_NAME="SOLARIS10MIGRATION"
+SPEC_UC_NAME="SOLARIS10MIGRATION_SUN_TO_ISC_DHCP"
+SPEC_TC_ID=1770
+SPEC_TC_SLOGAN="Verifying syntax for ISC-DHCP entries. "
+SPEC_TC_TYPE="FT"
+SPEC_TC_POLARITY="positive"
+SPEC_TC_PRIORITY="high"
+SPEC_TC_AUTOMATED=0
+SPEC_TC_DEPENDENT_ONLY=0
+SPEC_TC_TIMEOUT=300
+SPEC_TC_TEST_PASSCODE=0
+SPEC_TC_AUTHOR="xnavsur"
+SPEC_TC_AUTOMATOR="xnavsur"
+# this parameter is not interpreted by harness
+SPEC_TC_DISABLED=0
+
+# Please do not remove the comment lines below.
+# They are used as section locators by the test harness.
+
+# BEGIN_PRE_CONDITIONS
+#<path under "Verification Specification for Cominf Feature Test for 14.0 ":
+#Upgrade/Migration/Migration from SUN-DHCP to ISC-DHCP 
+#>  
+#This testcase verifies that all the options from SUN-DHCP are added to ISC-DHCP.
+#
+#Precondition :
+#1.All the clients /hosts are migrated sucessfully to ISC-DHCP.
+#
+#
+# END_PRE_CONDITIONS
+
+
+# BEGIN_MANUAL_STEPS
+#Action 1:
+#Verify the format of /usr/local/etc/dhcpd.conf_static.
+#This file should have entries for all the options mentioned for the cleint.
+#dhclient.conf dhcpd.conf dhcpd.conf_static dhcpd.conf_subnet dhcpd6.conf dhcpd6.conf_static dhcpd6.conf_subnet sudoers sudoers.d
+#
+#The above files should exist in the directory
+#
+#For example, client added in SUN-DHCP format through ai_manager.sh : eRBS01_SITEtest2
+#IP=13.12.12.2
+#TFTPsrvN=13.12.12.10
+#OptBootF="/LRAN/smrsslave1/AIF/Site1eRBS15/summaryFile.xml"
+#NTPservs=10.42.52.99
+#UTCoffst=23005253 .
+#Entry in the dhcp.conf_static :
+#host eRBS01_SITEtest2 {
+#option dhcp-client-identifier "eRBS01_SITEtest2";
+#fixed-address 13.12.12.2;
+#option tftp-server-name "13.12.12.10";
+#option bootfile-name "/LRAN/smrsslave1/AIF/Site1eRBS15/summaryFile.xml";
+#}
+#
+#
+# END_MANUAL_STEPS
+
+# BEGIN_POST_CONDITIONS
+#Result 1 :
+#All the options mentioned in SUN-DHCP are added to ISC-DHCP.
+#
+# END_POST_CONDITIONS

@@ -1,0 +1,439 @@
+#!/bin/bash
+#################################################################################
+#
+#
+#	   COPYRIGHT (C) ERICSSON RADIO SYSTEMS AB, Sweden
+#
+#	   The copyright to the document(s) herein is the property of
+#	   Ericsson Radio Systems AB, Sweden.
+#
+#	   The document(s) may be used and/or copied only with the written
+#	   permission from Ericsson Radio Systems AB or in accordance with
+#	   the terms and conditions stipulated in the agreement/contract
+#	   under which the document(s) have been supplied.
+#
+#################################################################################
+
+
+# ATCOMINF Test Callback Library
+
+# Revision History
+# 20/09/13	xkalbha		Initial test for invalid options to add alias to user
+
+# Complete the callbacks in this library to automate the test case.
+#
+# Callbacks are stateless, it is not possible to set a global variable in one callback 
+# and access it it in another.
+#
+# Callbacks are called by the test harness in the following order:
+#
+# tc_setup() 		# Called only for independent TC execution mode to setup TC
+# tc_precon()		# Conditions that should exist before TC can run
+# tc_test()		# Runs the test for this TC
+# tc_postcon()		# Conditions that should/should not exist after successful TC 
+# tc_cleanup()		# Called only for independent TC execution mode to clenup after TC
+
+# All callbacks must PASS for a TC PASS result
+
+#################################################################################
+#
+# CALLBACK: TC_SETUP
+#
+# This callback function is only called if the harness execution mode is 'AT_INDEPENDENT'
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_setup() {
+
+
+
+	# Replace PASSWD with the correct credentials
+	for ii in *.in; do
+		sed "s/^PASSWD$/$LDAP_SUPERUSER_PASSWD/" $ii > $ii.tmp
+	done
+
+	
+#-------------------------------------------------------------------------------
+# Create a test user  
+#-------------------------------------------------------------------------------
+
+	CMD='/ericsson/sdee/bin/add_user.sh -t COM_ONLY -d 1.com -n u499a -i 1499 -C bhavana -y'
+	${AT_BIN}/con_ex.bsh -d 499adduser.in.tmp -o 499adduser.exp -c "$CMD" || {
+		echo "Failed to generate /usr/local/bin/expect script, $?"
+		return 1
+	}
+
+	/usr/local/bin/expect 499adduser.exp &&{
+		echo "Failed to create user, error code $?"
+		return 2
+	}
+
+#-------------------------------------------------------------------------------
+# Create a 2nd test user  
+#-------------------------------------------------------------------------------
+
+	CMD='/ericsson/sdee/bin/add_user.sh -t COM_ONLY -d 1.com -n u499b -i 2499 -C bhavana -y'
+	${AT_BIN}/con_ex.bsh -d 499adduser.in.tmp -o 499adduser.exp -c "$CMD" || {
+		echo "Failed to generate /usr/local/bin/expect script, $?"
+		return 3
+	}
+
+	/usr/local/bin/expect 499adduser.exp && {
+		echo "Failed to create user, error code $?"
+		return 4
+	}
+	
+#-------------------------------------------------------------------------------
+# Create a test role
+#-------------------------------------------------------------------------------
+
+	CMD='/ericsson/sdee/bin/manage_COM.bsh -a role -d 1.com -R role499 -y'
+	${AT_BIN}/con_ex.bsh -d 499.in.tmp -o 499addrole.exp -c "$CMD" || {
+		echo "Failed to generate /usr/local/bin/expect script, $?"
+		return 5
+	}
+
+	/usr/local/bin/expect 499addrole.exp || {
+		echo "Failed to create role, error code $?"
+		return 6
+	}
+#-------------------------------------------------------------------------------
+# Create a test alias
+#-------------------------------------------------------------------------------
+
+	CMD='/ericsson/sdee/bin/manage_COM.bsh -a alias -d 1.com -A alias499 -R role499 -y'
+	${AT_BIN}/con_ex.bsh -d 499.in.tmp -o 499addrole.exp -c "$CMD" || {
+		echo "Failed to generate /usr/local/bin/expect script, $?"
+		return 7
+	}
+
+	/usr/local/bin/expect 499addrole.exp || {
+		echo "Failed to create alias, error code $?"
+		return 8
+	}
+
+#-------------------------------------------------------------------------------
+# Create a test target
+#-------------------------------------------------------------------------------
+
+	CMD='/ericsson/sdee/bin/manage_COM_privs.bsh -a target -d 1.com -u u499a -T target1 -y'
+	${AT_BIN}/con_ex.bsh -d 499.in.tmp -o 499addtarget.exp -c "$CMD" || {
+		echo "Failed to generate /usr/local/bin/expect script, $?"
+		return 9
+	}
+
+	/usr/local/bin/expect 499addtarget.exp || {
+		echo "Failed to create target, error code $?"
+		return 10
+	}
+	
+	return 0
+}
+
+#################################################################################
+#
+# CALLBACK: TC_PRECON
+#
+# This callback function checks the correct conditions exist to run the TC.
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+ 
+tc_precon() {
+
+#-------------------------------------------------------------------------------
+#  Check LDAP is running
+#-------------------------------------------------------------------------------
+
+	LDAP_SERVER_UP || {
+		echo "LDAP server not running"
+		return 1
+	}
+
+#-------------------------------------------------------------------------------
+#  Test user is present
+#-------------------------------------------------------------------------------
+
+	/usr/bin/ldapsearch -D 'cn=Directory Manager' -w $LDAP_SUPERUSER_PASSWD -b uid=u499a,ou=people,dc=1,dc=com objectclass=* > u499.out || {
+		echo "Failed to do LDAP search"
+		return 1
+	}
+	grep 'ericssonUserAuthenticationScope: target1' u499.out || {
+		echo "Failed to find target1 for user u499a"
+		return 2
+	}
+	/usr/bin/ldapsearch -D 'cn=Directory Manager' -w $LDAP_SUPERUSER_PASSWD -b cn=role499,ou=role,ou=com,dc=1,dc=com objectclass=* | grep 'cn: role499' || {
+		echo "Failed to find 499"
+		return 3
+	}
+
+	/usr/bin/ldapsearch -D 'cn=Directory Manager' -w $LDAP_SUPERUSER_PASSWD -b uid=u499b,ou=people,dc=1,dc=com objectclass=* > u499.out || {
+		echo "Failed to do LDAP search"
+		return 4
+	}
+	grep 'ericssonUserAuthenticationScope' u499.out && {
+		echo "Found authentication for user u499b"
+		return 5
+	}
+	/usr/bin/ldapsearch -D 'cn=Directory Manager' -w $LDAP_SUPERUSER_PASSWD -b role=alias499,ou=rolealias,ou=com,dc=1,dc=com objectclass=* | grep 'role: alias499' || {
+		echo "Failed to find 499"
+		return 6
+	}
+
+	return 0
+
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_TEST
+#
+# This callback function runs the test.
+# The harness compares the return code to the SPEC_TC_TEST_PASSCODE value set in the test spec.
+#
+# Return or exit codes:
+#	SPEC_TC_TEST_PASSCODE 	success
+# != SPEC_TC_TEST_PASSCODE 	failure
+ 
+tc_test() {
+
+	/ericsson/sdee/bin/manage_COM_privs.bsh -a alias -d 1.com -u u499a -A alias499 -y -e && { echo "Extra option -e passed"; return 1; }
+
+	#Add to user with no targets
+	CMD='/ericsson/sdee/bin/manage_COM_privs.bsh -a alias -d 1.com -u u499b -A alias499 -y'
+	${AT_BIN}/con_ex.bsh -d 499.in.tmp -o 499adduser.exp -c "$CMD" || {
+		echo "Failed to generate /usr/local/bin/expect script, $?"
+		return 2
+	}
+
+	/usr/local/bin/expect 499adduser.exp
+	retval=$?
+	[ $retval -ne 1 ] || { echo "Expected error code 1 when no targets $?"; return 3; }
+
+	/ericsson/sdee/bin/manage_COM_privs.bsh -a aliases -d 1.com -u u499a -A alias499 -y && { echo "Aliases instead of alias msg error"; return 4; }
+
+	/ericsson/sdee/bin/manage_COM_privs.bsh -a alias -d -u u499a -A alias499 -y  && { echo "No domain name"; return 5; }
+
+	/ericsson/sdee/bin/manage_COM_privs.bsh -a alias -d -u -A alias499 -y && { echo "No domain and no username"; return 6; }
+
+	/ericsson/sdee/bin/manage_COM_privs.bsh -a alias -d wrong.com -u u499a -A alias499 -y && { echo "Invalid domain name"; return 7; }
+
+	#Add to user with no targets
+	CMD='/ericsson/sdee/bin/manage_COM_privs.bsh -a alias -d 1.com -u u499not -A alias499 -y'
+	${AT_BIN}/con_ex.bsh -d 499.in.tmp -o 499adduser.exp -c "$CMD" || {
+		echo "Failed to generate /usr/local/bin/expect script, $?"
+		return 8
+	}
+
+	/usr/local/bin/expect 499adduser.exp
+	retval=$?
+	[ $retval -ne 1 ] && { echo "Expected error code 1 when no user ?"; return 9; }
+
+	#Add to user with alias that doesn't exist
+	CMD='/ericsson/sdee/bin/manage_COM_privs.bsh -a alias -d 1.com -u u499a -A alias499NEW -y'
+	${AT_BIN}/con_ex.bsh -d 499.in.tmp -o 499adduser.exp -c "$CMD" || {
+		echo "Failed to generate /usr/local/bin/expect script, $?"
+		return 10
+	}
+
+	/usr/local/bin/expect 499adduser.exp
+	retval=$?
+	[ $retval -ne 1 ] && { echo "Expected error code 1 when wrong rule $?"; return 11; }
+
+	#Add to user but answer No to proceed
+	CMD='/ericsson/sdee/bin/manage_COM_privs.bsh -a alias -d 1.com -u u499a -A alias499'
+	${AT_BIN}/con_ex.bsh -d 499No.in.tmp -o 499adduser.exp -c "$CMD" || {
+		echo "Failed to generate /usr/local/bin/expect script, $?"
+		return 12
+	}
+
+	/usr/local/bin/expect 499adduser.exp ||{ echo "Expected success when answer No $?"; return 13; }
+
+	# Run as bsim
+	su - bsim -c '/ericsson/sdee/bin/manage_COM_privs.bsh -a alias -d 1.com -u u499a -A alias499 -y'
+	retval=$?
+	[ $retval -eq 126 ] && { echo "Managed to run as bsim $retval"; return 14; }
+
+
+	#Add to user with target that is > 50 chars
+	CMD='/ericsson/sdee/bin/manage_COM_privs.bsh -a alias -d 1.com -u u499a -A target78901234567890123456789012345678901234567890:alias499 -y'
+	${AT_BIN}/con_ex.bsh -d 499.in.tmp -o 499adduser.exp -c "$CMD" || {
+		echo "Failed to generate /usr/local/bin/expect script, $?"
+		return 15
+	}
+	/usr/local/bin/expect 499adduser.exp
+	retval=$?
+	[ $retval -eq 1 ] || { echo "Wrong return on target > 50 $retval"; return 16; }
+
+	#Add to user with target that is start _
+	CMD='/ericsson/sdee/bin/manage_COM_privs.bsh -a alias -d 1.com -u u499a -A _target:alias499 -y'
+	${AT_BIN}/con_ex.bsh -d 499.in.tmp -o 499adduser.exp -c "$CMD" || {
+		echo "Failed to generate /usr/local/bin/expect script, $?"
+		return 17
+	}
+	/usr/local/bin/expect 499adduser.exp
+	retval=$?
+	[ $retval -eq 1 ] || { echo "Wrong return on target start _ $retval"; return 18; }
+
+	#Add to user with target that is start numeric
+	CMD='/ericsson/sdee/bin/manage_COM_privs.bsh -a alias -d 1.com -u u499a -A 1target:alias499 -y'
+	${AT_BIN}/con_ex.bsh -d 499.in.tmp -o 499adduser.exp -c "$CMD" || {
+		echo "Failed to generate /usr/local/bin/expect script, $?"
+		return 19
+	}
+	/usr/local/bin/expect 499adduser.exp
+	retval=$?
+	[ $retval -eq 1 ] || { echo "Wrong return on target start numeric $retval"; return 20; }
+
+	#Add to user with target that is start hyphen
+	CMD='/ericsson/sdee/bin/manage_COM_privs.bsh -a alias -d 1.com -u u499a -A -target:alias499 -y'
+	${AT_BIN}/con_ex.bsh -d 499.in -o 499adduser.exp -c "$CMD" || {
+		echo "Failed to generate /usr/local/bin/expect script, $?"
+		return 21
+	}
+	/usr/local/bin/expect 499adduser.exp
+	retval=$?
+	[ $retval -eq 1 ] || { echo "Wrong return on target start hyphen $retval"; return 22; }
+
+	#Add to user with target that is end hyphen
+	CMD='/ericsson/sdee/bin/manage_COM_privs.bsh -a alias -d 1.com -u u499a -A target-:alias499 -y'
+	${AT_BIN}/con_ex.bsh -d 499.in.tmp -o 499adduser.exp -c "$CMD" || {
+		echo "Failed to generate /usr/local/bin/expect script, $?"
+		return 23
+	}
+	/usr/local/bin/expect 499adduser.exp
+	retval=$?
+	[ $retval -eq 1 ] || { echo "Wrong return on target end hyphen $retval"; return 24; }
+
+	#Add to user with target that is end _
+	CMD='/ericsson/sdee/bin/manage_COM_privs.bsh -a alias -d 1.com -u u499a -A target_:alias499 -y'
+	${AT_BIN}/con_ex.bsh -d 499.in.tmp -o 499adduser.exp -c "$CMD" || {
+		echo "Failed to generate /usr/local/bin/expect script, $?"
+		return 25
+	}
+	/usr/local/bin/expect 499adduser.exp
+	retval=$?
+	[ $retval -eq 1 ] || { echo "Wrong return on target end underscore $retval"; return 26; }
+
+	#Add to user with target that contains %
+	/ericsson/sdee/bin/manage_COM_privs.bsh -a alias -d 1.com -u u499a -A ta%rget:alias499 -y
+	retval=$?
+	[ $retval -eq 1 ] || { echo "Wrong return on target with percent $retval"; return 27; }
+
+	#Add to user with extra : in
+	CMD='/ericsson/sdee/bin/manage_COM_privs.bsh -a alias -d 1.com -u u499a -A alias499:target7:alias499 -y'
+	${AT_BIN}/con_ex.bsh -d 499.in.tmp -o 499adduser.exp -c "$CMD" || {
+		echo "Failed to generate /usr/local/bin/expect script, $?"
+		return 28
+	}
+	/usr/local/bin/expect 499adduser.exp
+	retval=$?
+	[ $retval -eq 1 ] || { echo "Wrong return on multiple : $retval"; return 29; }
+
+	#Add to user with wrong option combination
+	/ericsson/sdee/bin/manage_COM_privs.bsh -a alias -d 1.com -u u499a -R target1:alias499 -y
+	retval=$?
+	[ $retval -eq 1 ] || { echo "Wrong return on invalid option combination : $retval"; return 30; }
+
+	return 0
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_POSTCON
+#
+# This callback function checks expected results.
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_postcon() {
+
+	
+
+	CONSOLE_OUTPUT_CONTAINS "illegal option -- e" || { echo "No illegal option e error msg"; return 4; }
+	CONSOLE_OUTPUT_CONTAINS "ERROR : Invalid modifier [aliases] for action [add]." || { echo "No aliases error msg"; return 6; }
+	CONSOLE_OUTPUT_CONTAINS "ERROR : checkOptionUsage: Domain [-u] does not exist in LDAP." || { echo "No domain -u error msg"; return 7; }
+	CONSOLE_OUTPUT_CONTAINS "ERROR : checkOptionUsage: Domain [wrong.com] does not exist in LDAP." || { echo "No domain wrong.com error msg"; return 8; }
+	CONSOLE_OUTPUT_CONTAINS "ERROR : Requested user [u499not] does not exist in domain [1.com]" || { echo "Non existant user error msg"; return 9; }
+	CONSOLE_OUTPUT_CONTAINS "WARNING : [alias499NEW] does not exist in 1.com's alias list - ignored." || { echo "No invalid alias warning msg"; return 10; }
+	CONSOLE_OUTPUT_CONTAINS "ERROR : No valid alias supplied" || { echo "No invalid alias error msg"; return 11; }
+	CONSOLE_OUTPUT_CONTAINS "INFO : confirmProceed: negative response, script exiting" || { echo "No cancel message for the answer No"; return 12; }
+	CONSOLE_OUTPUT_CONTAINS "You must be root to run this script!" || { echo "No permission denied msg"; return 13; }
+	CONSOLE_OUTPUT_CONTAINS "ERROR : Targets cannot contain more than 49 characters." || { echo "No targets 49 char length"; return 15; }
+	CONSOLE_OUTPUT_CONTAINS "ERROR : Invalid target name [_target]; target names must start with an alpha character" || { echo "No _target msg"; return 16; }
+	CONSOLE_OUTPUT_CONTAINS "ERROR : Invalid target name [1target]; target names must start with an alpha character" || { echo "No 1target msg"; return 17; }
+	CONSOLE_OUTPUT_CONTAINS "ERROR : Invalid target name [target-]; target names must end with an alphanumeric character" || { echo "No -target msg"; return 18; }
+	CONSOLE_OUTPUT_CONTAINS "ERROR : Invalid target name [target_]; target names must end with an alphanumeric character" || { echo "No target- msg"; return 19; }
+	CONSOLE_OUTPUT_CONTAINS "ERROR : Special character [%] is not valid in an alias name." || { echo "No error for percent"; return 20; }
+	CONSOLE_OUTPUT_CONTAINS "ERROR : Invalid option combination." || { echo "No invalid option msg"; return 21; }
+
+
+
+
+
+
+	
+
+	return 0
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_CLEANUP
+#
+# This callback function is only called if the harness execution mode is 'AT_INDEPENDENT'
+# 
+# This callback restores the target system to the state it was in before the TC 
+# was run. It rolls back changes made by callbacks tc_setup() and tc_test()
+# 
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_cleanup() {
+
+	echo "Deleting test user 1"
+        ${AT_BIN}/con_ex.bsh -d 499.in.tmp -o 499remuser.exp -c "/ericsson/sdee/bin/del_user.sh -d 1.com -n u499a -y" || {
+                echo "Failed to generate /usr/local/bin/expect script, $?"
+                return 1
+        }
+
+        /usr/local/bin/expect 499remuser.exp >/dev/null || {
+                echo "Failed to delete user, error code $?"
+                return 2
+        }
+		echo "Deleting test user 2"
+        ${AT_BIN}/con_ex.bsh -d 499.in.tmp -o 499remuser.exp -c "/ericsson/sdee/bin/del_user.sh -d 1.com -n u499b -y" || {
+                echo "Failed to generate /usr/local/bin/expect script, $?"
+                return 3
+        }
+
+        /usr/local/bin/expect 499remuser.exp >/dev/null || {
+                echo "Failed to delete user, error code $?"
+                return 4
+        }
+		
+	  # Remove roles
+	echo "Deleting test user roles"
+        ${AT_BIN}/con_ex.bsh -d 499.in.tmp -o 499_expect.exp -c "/ericsson/sdee/bin/manage_COM.bsh -r role -d 1.com -R role499 -y " -r
+        /usr/local/bin/expect 499_expect.exp >/dev/null || {
+                echo "Could not delete role added to 1.com domain - FAIL"
+                return 7
+        }
+
+	
+	# Remove temporary files
+	rm -f *.exp
+	rm -f *.out
+}

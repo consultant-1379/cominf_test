@@ -1,0 +1,9 @@
+LDAP Directory Manager password
+PASSWD
+Enter user name:
+u531
+Enter target names to remove as a comma separated list*
+target1,target3
+Please confirm that you want to proceed with requested actions
+Yes
+

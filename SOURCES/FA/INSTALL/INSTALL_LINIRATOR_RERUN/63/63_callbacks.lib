@@ -1,0 +1,196 @@
+#!/bin/bash
+#################################################################################
+#
+#
+#       COPYRIGHT (C) ERICSSON RADIO SYSTEMS AB, Sweden
+#
+#       The copyright to the document(s) herein is the property of
+#       Ericsson Radio Systems AB, Sweden.
+#
+#       The document(s) may be used and/or copied only with the written
+#       permission from Ericsson Radio Systems AB or in accordance with
+#       the terms and conditions stipulated in the agreement/contract
+#       under which the document(s) have been supplied.
+#
+#################################################################################
+
+
+# ATCOMINF Test Callback Library
+
+# Revision History
+# 2012-06025    xbahzam    Initial test for valid values for LDAP DN and password
+# 2012-08-17    xsimrea    Added checks on GET_CONFIG_SECTION
+
+# Complete the callbacks in this library to automate the test case
+# Callbacks are called by the test harness in the following order:
+#
+# tc_setup() 		# Called only for independent TC execution mode to setup TC
+# tc_precon()		# Conditions that should exist before TC can run
+# tc_test()		# Runs the test for this TC
+# tc_postcon()		# Conditions that should/should not exist after successful TC 
+# tc_cleanup()		# Called only for independent TC execution mode to clenup after TC
+
+
+#################################################################################
+#
+# CALLBACK: TC_SETUP
+#
+# This callback function is only called if the harness execution mode is 'AT_INDEPENDENT'
+# In this mode, a TC should set up its own inputs, i.e. it does not depend on outputs 
+# from another TC. 
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_setup() {
+
+	return 0
+}
+#################################################################################
+
+#################################################################################
+#
+# CALLBACK: TC_PRECON
+#
+# This callback function checks the correct conditions exist to run the TC.
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+ 
+tc_precon() {
+
+	RHEL_INSTALLED || { echo "Wrong RHEL $?"; return 1; }
+	CHECK_PROFILE om_serv_master || { echo "Wrong params.cfg $?"; return 2; }
+	POSIX_USER_EXISTS ldapadm || { echo "No ldapadm $?"; return 4; }
+	return 0
+
+}
+#################################################################################
+
+###############################################################################
+#
+# function: create_run_inirator
+#
+# Arguments:
+#   $1 input prompt/value files
+#   $2 name of expect script to run
+#
+# Return values:
+#   1 Invalid arguments
+#   2 Failed to create expect script
+#   3 Failed to copy expect script
+#   4 Failed to run expect script
+#
+create_run_inirator() {
+	[ -z "$1" ] && return 1
+	[ -z "$2" ] && return 1
+
+	# Run con_ex.bsh to create expect script
+	${AT_BIN}/con_ex.bsh -d $1 -o $2 -c "/opt/ericsson/cominf_core/bin/cominf_inirator.bsh -i"
+	retval=$?
+	[ $retval -ne 0 ] && { echo Failed to create expect $2 script $retval; return 2; }
+
+	# Run linirator with expect script on secondary
+	scp $2 ${SEC}:
+	[ $? -ne 0 ] && { echo "Failed to copy expect script to sec"; return 3; }
+	ssh ${SEC} "expect $2"
+	retval=$?
+	# Check > 1 as Ctrl C returns 1
+	[ $retval -gt 1 ] && { echo "Failed to run expect script on sec $retval"; return 4; }
+
+	return 0
+}
+
+#################################################################################
+#
+# CALLBACK: TC_TEST
+#
+# This callback function runs the test.
+# The harness compares the return code to the SPEC_TC_TEST_PASSCODE value set in the test spec.
+#
+# Return or exit codes:
+#    SPEC_TC_TEST_PASSCODE 	success
+# != SPEC_TC_TEST_PASSCODE 	failure
+ 
+tc_test() {
+
+	# Find secondary name
+	GET_CONFIG_SECTION $G_CONFIG_INI_FILE host CONFIG om_serv_slave > slave_tmp_file || {
+        echo Error $? reading config section: $G_CONFIG_INI_FILE host CONFIG om_serv_slave
+        return 2
+    }
+	[ $? -ne 0 ] && { echo "Failed to read config.ini to get sec"; return 2; }
+	SEC=$(awk -F= '$1 ~ /^HOST_NAME/{print $2;exit}' slave_tmp_file)
+	[ "${SEC:-notset}" = "notset" ] && { echo "Sec host not found"; return 3; }
+
+	create_run_inirator 63a.in 63a.exp || return $?
+
+	create_run_inirator 63b.in 63b.exp || return $?
+
+	create_run_inirator 63c.in 63c.exp || return $?
+	
+	return 0
+
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_POSTCON
+#
+# This callback function checks expected results.
+# The return code decides the final test case verdict.
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_postcon() {
+
+	#Check console does not contain error messages
+	CONSOLE_OUTPUT_CONTAINS error
+	[ $? -eq 0 ] && { echo error msg found; return 3; }
+	
+	#Check console does not contain error messages
+	CONSOLE_OUTPUT_CONTAINS "Not a valid"
+	[ $? -eq 0 ] && { echo not valid msg found; return 4; }
+
+	return 0
+
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_CLEANUP
+# 
+# This callback restores the target system to the state it was in before the TC 
+# was run. It rolls back changes made by callbacks tc_setup() and tc_test()
+# 
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_cleanup() {
+
+	rm -f 63a.exp
+	rm -f 63b.exp
+	rm -f 63c.exp
+	# Find secondary name
+	SEC=$(awk -F= '$1 ~ /^HOST_NAME/{print $2;exit}' slave_tmp_file)
+	[ "${SEC:-notset}" = "notset" ] && { echo "Sec host not found"; return 3; }
+	
+	ssh ${SEC} 'rm -f 63a.exp'
+	ssh ${SEC} 'rm -f 63b.exp'
+	ssh ${SEC} 'rm -f 63c.exp'
+
+	rm -f slave_tmp_file
+
+
+	return 0
+
+}

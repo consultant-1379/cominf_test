@@ -1,0 +1,169 @@
+#!/bin/bash
+#################################################################################
+#
+#
+#       COPYRIGHT (C) ERICSSON RADIO SYSTEMS AB, Sweden
+#
+#       The copyright to the document(s) herein is the property of
+#       Ericsson Radio Systems AB, Sweden.
+#
+#       The document(s) may be used and/or copied only with the written
+#       permission from Ericsson Radio Systems AB or in accordance with
+#       the terms and conditions stipulated in the agreement/contract
+#       under which the document(s) have been supplied.
+#
+#################################################################################
+
+
+# ATCOMINF Test Callback Library
+
+# Revision History
+# 03-Aug-2012     xfeldan    First pass
+# 06-Aug-2012     xsimrea    Afer review comments
+
+# Complete the callbacks in this library to automate the test case.
+#
+# Callbacks are stateless, it is not possible to set a global variable in one callback 
+# and access it it in another.
+#
+# Callbacks are called by the test harness in the following order:
+#
+# tc_setup() 		# Called only for independent TC execution mode to setup TC
+# tc_precon()		# Conditions that should exist before TC can run
+# tc_test()		# Runs the test for this TC
+# tc_postcon()		# Conditions that should/should not exist after successful TC 
+# tc_cleanup()		# Called only for independent TC execution mode to clenup after TC
+
+# All callbacks must PASS for a TC PASS result
+
+#################################################################################
+#
+# CALLBACK: TC_SETUP
+#
+# This callback function is only called if the harness execution mode is 'AT_INDEPENDENT'
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_setup() {
+
+	# Replace PASSWD with the correct credentials
+	for ii in *.in; do
+		sed "s/^PASSWD$/$LDAP_SUPERUSER_PASSWD/" $ii > $ii.tmp
+	done
+
+}
+#################################################################################
+
+#################################################################################
+#
+# CALLBACK: TC_PRECON
+#
+# This callback function checks the correct conditions exist to run the TC.
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+ 
+tc_precon() {
+
+	LDAP_SERVER_UP || {
+		echo "LDAP server not running"
+		return 1
+	}
+	id bsim && {
+		echo "Non-root user, bsim, does not exist"
+		return 2
+	}
+	return 0
+
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_TEST
+#
+# This callback function runs the test.
+# The harness compares the return code to the SPEC_TC_TEST_PASSCODE value set in the test spec.
+#
+# Return or exit codes:
+#    SPEC_TC_TEST_PASSCODE 	success
+# != SPEC_TC_TEST_PASSCODE 	failure
+ 
+tc_test() {
+
+	echo "Test 1: missing parameters"
+	set +o pipefail
+	/ericsson/sdee/bin/migrate_domain.bsh | grep -i "ERROR: One of options -d, -s must be specified."|| {
+		echo "Missing parameters not rejected"
+		return 1
+	}
+
+	echo "Test 2: invalid parameters"
+	/ericsson/sdee/bin/migrate_domain.bsh -d \"\"
+	CONSOLE_OUTPUT_CONTAINS "ERROR: Domain [""] does not exist." && {
+		echo "Invalid parameters not rejected"
+		return 2
+	}
+
+	echo "Test 3: additional invalid parameters"
+	# Note: I really do mean this order or re-direction
+	/ericsson/sdee/bin/migrate_domain.bsh -d sausage -w roll 2>&1 1>/dev/null|grep -i "illegal option -- w"|| {
+		echo "Illegal option to migrate_domain not detected"
+		return 3
+	}
+
+	echo "Test 4: verify migrate_domain can only be run as root"
+	# Note: this test is definitively successful if a non-root user
+	# does not have execute permission on the script
+	su -c "/ericsson/sdee/bin/migrate_domain.bsh -d test" bsim && {
+		echo "Running migrate_domain as non-root user did not return non-zero error code"
+		return 4
+	}
+	return 0
+
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_POSTCON
+#
+# This callback function checks expected results.
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_postcon() {
+
+	return 0
+
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_CLEANUP
+#
+# This callback function is only called if the harness execution mode is 'AT_INDEPENDENT'
+# 
+# This callback restores the target system to the state it was in before the TC 
+# was run. It rolls back changes made by callbacks tc_setup() and tc_test()
+# 
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_cleanup() {
+
+	# Tidy up extra files
+	rm -f *.in.tmp *.exp
+
+	return 0
+}

@@ -1,0 +1,279 @@
+#!/bin/bash
+#################################################################################
+#
+#
+#       COPYRIGHT (C) ERICSSON RADIO SYSTEMS AB, Sweden
+#
+#       The copyright to the document(s) herein is the property of
+#       Ericsson Radio Systems AB, Sweden.
+#
+#       The document(s) may be used and/or copied only with the written
+#       permission from Ericsson Radio Systems AB or in accordance with
+#       the terms and conditions stipulated in the agreement/contract
+#       under which the document(s) have been supplied.
+#
+#################################################################################
+
+
+# ATCOMINF Test Callback Library
+
+# Revision History
+# <date>	<signum>	<details>
+
+# Complete the callbacks in this library to automate the test case.
+#
+# Callbacks are stateless, it is not possible to set a global variable in one callback 
+# and access it it in another.
+#
+# Callbacks are called by the test harness in the following order:
+#
+# tc_setup() 		# Called only for independent TC execution mode to setup TC
+# tc_precon()		# Conditions that should exist before TC can run
+# tc_test()		# Runs the test for this TC
+# tc_postcon()		# Conditions that should/should not exist after successful TC 
+# tc_cleanup()		# Called only for independent TC execution mode to cleanup after TC
+
+# All callbacks must PASS for a TC PASS result
+
+#################################################################################
+#
+# CALLBACK: TC_SETUP
+#
+# This callback function is only called if the harness execution mode is 'AT_INDEPENDENT'
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+. ${AT_LIB}/tst_LDAP.lib
+LDAP_DOMAIN=$(grep "LDAP_DOMAIN" /ericsson/config/config.ini | awk -F"=" '{print $2}')
+dmn=$(LDAP_GET_DOMAIN_DN_FORMAT $LDAP_DOMAIN)
+dmn="ou=people,$dmn"
+TEST_COMMANDS=cmds.cat
+
+tc_setup() {
+
+        # Delete any users that exist in LDAP already
+        while read tlin; do
+                OIFS=$IFS
+                IFS="^"
+                # field 0=test number, 1=command, 2=error message
+                tflds=($tlin)
+                IFS=$OIFS
+                tuser=t1162${tflds[0]}
+                                LDAP_USER_EXISTS $LDAP_DOMAIN $tuser && {
+                        echo "user $tuser already exists"
+                        LDAP_DELETE_USER $LDAP_DOMAIN $tuser || {
+                                echo "Error while deleting user $tuser"
+                                return 1
+                        }
+                                                read
+                }
+        done < $TEST_COMMANDS
+        return 0
+
+}
+#################################################################################
+
+#################################################################################
+#
+# CALLBACK: TC_PRECON
+#
+# This callback function checks the correct conditions exist to run the TC.
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+ 
+tc_precon() {
+
+        
+        # If there are no template files exit
+        templates=`ls *.tmpl 2>/dev/null | wc -l`
+        if [ ${templates} -eq 0 ] ; then
+                echo "There are no templates to process"
+                return 1
+        fi
+
+        LDAP_SERVER_UP || {
+                echo "LDAP server is not runningi: $?"
+                return 1
+        }
+
+        LDAP_DOMAIN_EXISTS $LDAP_DOMAIN || {
+                echo "$LDAP_DOMAIN does not exist"
+                return 1
+        }
+        return 0
+
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_TEST
+#
+# This callback function runs the test.
+# The harness compares the return code to the SPEC_TC_TEST_PASSCODE value set in the test spec.
+#
+# Return or exit codes:
+#    SPEC_TC_TEST_PASSCODE 	success
+# != SPEC_TC_TEST_PASSCODE 	failure
+ 
+tc_test() {
+
+        while read tlin; do
+                OIFS=$IFS
+                IFS="^"
+                # field 0=test number, 1=command, 2=error message
+                tflds=($tlin)
+                IFS=$OIFS
+                tpref=1162-${tflds[0]}
+                templ=${tpref}.tmpl
+                [ -f $templ ] || {
+                echo "Cannot find template file $templ for ${tpref} test"
+                continue
+                }
+                expfile="${tpref}.exp"
+                infile="${tpref}.in"
+                sed -e "s/^PPPPPPPP/${LDAP_SUPERUSER_PASSWD}/" < ${templ} > ${infile}
+                ${AT_BIN}/con_ex.bsh -d ${infile} -o ${expfile} -c "${tflds[1]}" || {
+                        echo "Could not create $expfile from $infile to run ${tflds[1]} : retval $?"
+                        continue
+                        }
+
+                echo "######################################################"
+                echo "TEST - ${tflds[0]}"
+                echo "Running - ${tflds[1]}"
+                echo "######################################################"
+
+                # Run the test
+                tuser=t1162${tflds[0]}
+                echo "Adding user $tuser..."
+                /usr/local/bin/expect  ${expfile} >/dev/null || {
+                        echo "${tflds[2]}: retval $?"
+                        continue
+                        }
+        done < $TEST_COMMANDS
+
+        return 0
+
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_POSTCON
+#
+# This callback function checks expected results.
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_postcon() {
+        local count=1
+        echo "Checking if users now exist in LDAP"
+        while read tlin; do
+                OIFS=$IFS
+                IFS="^"
+                # field 0=test number, 1=command, 2=error message
+                tflds=($tlin)
+                IFS=$OIFS
+                tuser=t1162${tflds[0]}
+                                echo "$LDAP_DOMAIN $tuser"
+                LDAP_USER_EXISTS $LDAP_DOMAIN $tuser || {
+                        echo "user $tuser was not created, exiting...."
+                        return 3
+                }
+                                local shell=$(/usr/bin/ldapsearch -T -D "cn=directory manager" -w ldappass  -b "uid=$tuser,$dmn" "objectclass=posixaccount" |grep loginShell|awk '{print $2}')
+                                local hdir=$(/usr/bin/ldapsearch -T -D "cn=directory manager" -w ldappass  -b "uid=$tuser,$dmn" "objectclass=posixaccount" |grep homeDirectory|awk '{print $2}')
+                                local id=$(/usr/bin/ldapsearch -T -D "cn=directory manager" -w ldappass  -b "uid=$tuser,$dmn" "objectclass=posixaccount" |grep uidNumber|awk '{print $2}')
+                                local desc=$(/usr/bin/ldapsearch -T -D "cn=directory manager" -w ldappass  -b "uid=$tuser,$dmn" "objectclass=posixaccount" |grep description | awk '{print $2}')
+                                [[ ${shell} == "/dev/null" ]] && [[ ${hdir} == "" ]] || {
+                                                echo "ERROR : user $tuser was created with improper shell [$shell] [$dmn] or home directory [$hdir], exiting....."
+                                                return 4
+                                }
+                                if [ $count -eq 3 ]; then
+                                        [[ $id -ge 3000 ]] || {
+                                                echo "ERROR : user $tuser [$id] was not created with id greater than 3000....."
+                                                return 5
+                                        }
+                                fi
+
+                                if [ $count -eq 4 ]; then
+                                        [[ $id -ge 1200 ]] && [[ $id -le 1249 ]] || {
+                                                echo "ERROR : user $tuser [$id] was not created with id between 1200 and 1249...."
+                                                return 5
+                                        }
+                                fi
+
+                                if [ $count -eq 5 ]; then
+                                        [[ $id -ge 1200 ]] && [[ $id -le 1249 ]] && [[ ${desc} == "comment" ]] || {
+                                                echo "ERROR : user $tuser [$id] was not created with given comment..."
+                                                return 6
+                                        }
+                                fi
+
+                                if [ $count -eq 6 ]; then
+                                        [[ $id -eq 1750 ]]  || {
+                                                echo "ERROR : user $tuser [$id] was not created with given UID..."
+                                                return 7
+                                        }
+                                fi
+
+                                ((count++))
+
+        done < $TEST_COMMANDS
+                
+        return 0
+
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_CLEANUP
+#
+# This callback function is only called if the harness execution mode is 'AT_INDEPENDENT'
+# 
+# This callback restores the target system to the state it was in before the TC 
+# was run. It rolls back changes made by callbacks tc_setup() and tc_test()
+# 
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_cleanup() {
+        
+        rm -f *.in *.exp || {
+                echo "Problems removing temporary files"
+                return 1
+        }
+
+        if ! LDAP_SERVER_UP ; then
+                echo "LDAP server is not running"
+        fi
+
+        # Remove all users created
+        while read tlin; do
+                OIFS=$IFS
+                IFS="^"
+                # field 0=test number, 1=command, 2=error message
+                tflds=($tlin)
+                IFS=$OIFS
+                tuser=t1162${tflds[0]}
+                LDAP_USER_EXISTS $LDAP_DOMAIN $tuser && {
+                        echo "Deleting user $tuser"
+                        LDAP_DELETE_USER $LDAP_DOMAIN $tuser || {
+                                echo "Error while deleting user $tuser"
+                                return 1
+                        }
+                }
+        done < $TEST_COMMANDS
+        
+        return 0
+
+}

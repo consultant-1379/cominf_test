@@ -1,0 +1,15 @@
+#!/bin/bash
+
+# TEST SUITE SPEC FILE
+# This file is generated/updated using the test framework web interface.
+# Manual updates on test servers are lost when the test package is re-installed.
+#
+# Last modified: Monday 15th of July 2013 7:16:06
+#
+SPEC_TS_NAME=X86_EU_Upgrade
+SPEC_TS_ID=68
+SPEC_TS_SLOGAN="Test Suite for EU Upgrade"
+SPEC_TS_TIMEOUT=300
+SPEC_TS_AUTHOR="xramhar"
+SPEC_TS_INDEPENDENT=0
+SPEC_TS_TC_IDS=(949 950 951 948 952)

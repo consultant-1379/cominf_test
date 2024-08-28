@@ -1,0 +1,14 @@
+Password
+shroot
+#
+uname -i > /var/tmp/arch_java_ver.txt
+#
+java -version 2>&1 | grep 1.6.0  >> /var/tmp/arch_java_ver.txt
+#
+scp -o StrictHostKeyChecking=no /var/tmp/arch_java_ver.txt root@omsrvm:/var/tmp/arch_java_ver.txt
+Password
+shroot
+#
+rm /var/tmp/arch_java_ver.txt
+#
+exit

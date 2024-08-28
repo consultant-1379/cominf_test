@@ -1,0 +1,18 @@
+Enter Deployment type: (basic standard)
+standard
+Enter IP address of the NTP Source:
+1.1.1.1
+Do you want to setup DHCP on this server? (y n)
+y
+Enter password for BSIM user bsim:
+password
+Confirm password for BSIM user bsim:
+password
+Do you want to setup DHCP for IPv6 on this server? (y n)
+y
+IPv6 address for
+0001:FFFF::ABCD:EF12:2345:6789:0001
+IPv6 subnet for
+0001:FFFF::ABCD:EF12:2345:6789:0001/64
+Enter DNS Domain Name <e.g. dns.companyname.com>:
+\003

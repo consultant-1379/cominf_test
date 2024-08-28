@@ -1,0 +1,3 @@
+05^/ericsson/opendj//bin/chg_user_password.sh -d vts.com -u t116601^Unable to change password for user t116601
+06^/ericsson/opendj/bin/chg_user_password.sh -d vts.com -u t116602^Unable to change password for  user t116602
+07^/ericsson/opendj/bin/chg_user_password.sh -d vts.com -u t116603^Unable to change password for user t116603 

@@ -1,0 +1,28 @@
+LDAP Directory Manager password:
+ldapadmin
+New global user name:
+tstGD968
+Start of uidNumber search range
+1000
+End of uidNumber search range
+59999
+New global user uidNumber
+1005
+New global user type:
+OSS_ONLY
+New global user gidNumber:
+205
+New global user home directory:
+/home/tstGD968
+New global user login shell:
+/usr/bin/tcsh
+New global user password:
+password
+Re-enter password:
+password
+New global user category
+custom
+New global user description
+OSS-RC user
+Continue to create global user
+y

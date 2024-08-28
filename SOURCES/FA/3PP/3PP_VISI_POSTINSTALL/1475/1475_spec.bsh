@@ -1,0 +1,84 @@
+#!/bin/bash
+
+# TEST CASE SPEC FILE
+# This file is generated/updated using the test framework web interface.
+# Manual updates on test servers are lost when the test package is re-installed.
+#
+# Last modified: Thursday 22nd of May 2014 19:10:03
+#
+
+# These settings must be in BASH script format, they are sourced by other scripts.
+SPEC_FA_NAME="3PP"
+SPEC_UC_NAME="3PP_VISI_POSTINSTALL"
+SPEC_TC_ID=1475
+SPEC_TC_SLOGAN="Verify ssl connectivity for older java clients HS49693"
+SPEC_TC_TYPE="FT"
+SPEC_TC_POLARITY="positive"
+SPEC_TC_PRIORITY="high"
+SPEC_TC_AUTOMATED=0
+SPEC_TC_DEPENDENT_ONLY=0
+SPEC_TC_TIMEOUT=300
+SPEC_TC_TEST_PASSCODE=0
+SPEC_TC_AUTHOR="eolikil"
+SPEC_TC_AUTOMATOR="epatnat"
+# this parameter is not interpreted by harness
+SPEC_TC_DISABLED=1
+
+# Please do not remove the comment lines below.
+# They are used as section locators by the test harness.
+
+# BEGIN_PRE_CONDITIONS
+#check if 
+#
+#ERIC and EXTR borland packages are installed ok
+# END_PRE_CONDITIONS
+
+
+# BEGIN_MANUAL_STEPS
+#The below is what you can do to verify the Java 7 hot fix(DECO9810-HF8 or DECO10109-HF 7A) which fixes the SSL handshake failure issue when the TLS_EMPTY_RENEGOTIATION_INFO_SCSV is missing in the cipher list sent by the client.
+#
+#As the issue is not reproducible with client and server using Oracle JDK, you should either reproduce the exact issue(what was encountered with OSS->Node) or use our bank_ssl example. If you want to reproduce the same exact issue, then you should use the same IBM JRE 1.4 and the same security providers which are configured in java.security of the Node’s JRE. If you do not have such setup, then you can use our <VBROKERDIR>/examples/vbroker/security/bank_ssl example to verify if the missing TLS_EMPTY_RENEGOTIATION_INFO_SCSV cipher suite is now present in the ClientHello message sent by the client with the new Java 7 hot fix(DECO9810 or DECO10109). This is the cipher suite missing in the DECO9964 hot fix which was causing the issue.
+#
+#I suggest to follow these steps for the verification. I have also attached the bank_ssl test case I used for testing. There is a readme file inside that you can refer to. And, please refer the client log in the test case for the SSL handshake messages.
+#
+#1. Apply DECO9964 hot fix with which the issue was seen.
+#2. Start the server using JDK 1.5 as 1.4 is not certified with VisiBroker 8.5.
+#3. Make sure the client is using JDK 1.7 and then start the client. You also need to enable JSSE logs to check the SSL handshake messages exchanged between the client and server. For this, you need to add “javax.net.debug=all” property in the client script.
+#4. The ClientHello message should be missing the TLS_EMPTY_RENEGOTIATION_INFO_SCSV cipher suite. That is the reason why renegotiation_info extension is sent by the client as highlighted below. This extension cannot be recognized by the IBM JRE 1.4’s security provider in Node and hence the SSL handshake was failing.
+#5. Then apply the new Java 7 fix(DECO9810 or DECO10109).
+#6. Restart the client and server. Now the missing TLS_EMPTY_RENEGOTIATION_INFO_SCSV cipher suite should be added in the ClientHello message.
+#7. This is the only way to verify the fix if you do not have a setup to reproduce the exact issue raised in incident: 2696752.
+#
+#With the DECO9964 hot fix, the ClientHello message with the DECO9964 hot fix looks as follows:
+#
+#            ClientHello, TLSv1
+#            RandomCookie: GMT: 1398223002 bytes = { 88, 100, 80, 235, 136, 218, 71, 168, 121, 56, 48, 102, 253, 56, 127, 113, 38, 52, 44, 92, 187, 128, 90, 200, 106, 78, 73, 221 }
+#
+#            Session ID: {}
+#            Cipher Suites: [TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA, TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA, TLS_RSA_WITH_AES_128_CBC_SHA, TLS_ECDH_ECDSA_WITH_AES_128_CBC_SHA, TLS_ECDH_RSA_WITH_AES_128_CBC_SHA, TLS_DHE_RSA_WITH_AES_128_CBC_SHA, TLS_DHE_DSS_WITH_AES_128_CBC_SHA, TLS_ECDHE_ECDSA_WITH_RC4_128_SHA, TLS_ECDHE_RSA_WITH_RC4_128_SHA, SSL_RSA_WITH_RC4_128_SHA, TLS_ECDH_ECDSA_WITH_RC4_128_SHA, TLS_ECDH_RSA_WITH_RC4_128_SHA, TLS_ECDHE_ECDSA_WITH_3DES_EDE_CBC_SHA, TLS_ECDHE_RSA_WITH_3DES_EDE_CBC_SHA, SSL_RSA_WITH_3DES_EDE_CBC_SHA, TLS_ECDH_ECDSA_WITH_3DES_EDE_CBC_SHA, TLS_ECDH_RSA_WITH_3DES_EDE_CBC_SHA, SSL_DHE_RSA_WITH_3DES_EDE_CBC_SHA, SSL_DHE_DSS_WITH_3DES_EDE_CBC_SHA, SSL_RSA_WITH_RC4_128_MD5, TLS_ECDHE_ECDSA_WITH_NULL_SHA, TLS_ECDHE_RSA_WITH_NULL_SHA, SSL_RSA_WITH_NULL_SHA, TLS_ECDH_ECDSA_WITH_NULL_SHA, TLS_ECDH_RSA_WITH_NULL_SHA, SSL_RSA_WITH_NULL_MD5, SSL_RSA_WITH_DES_CBC_SHA, SSL_DHE_RSA_WITH_DES_CBC_SHA, SSL_DHE_DSS_WITH_DES_CBC_SHA, SSL_RSA_EXPORT_WITH_RC4_40_MD5, SSL_RSA_EXPORT_WITH_DES40_CBC_SHA, SSL_DHE_RSA_EXPORT_WITH_DES40_CBC_SHA, SSL_DHE_DSS_EXPORT_WITH_DES40_CBC_SHA, TLS_KRB5_WITH_RC4_128_SHA, TLS_KRB5_WITH_RC4_128_MD5, TLS_KRB5_WITH_3DES_EDE_CBC_SHA, TLS_KRB5_WITH_3DES_EDE_CBC_MD5, TLS_KRB5_WITH_DES_CBC_SHA, TLS_KRB5_WITH_DES_CBC_MD5, TLS_KRB5_EXPORT_WITH_RC4_40_SHA, TLS_KRB5_EXPORT_WITH_RC4_40_MD5, TLS_KRB5_EXPORT_WITH_DES_CBC_40_SHA, TLS_KRB5_EXPORT_WITH_DES_CBC_40_MD5]
+#            Compression Methods:
+#            { 0 }
+#            Extension elliptic_curves, curve names: {secp256r1, sect163k1, sect163r2, secp192r1, secp224r1, sect233k1, sect233r1, sect283k1, sect283r1, secp384r1, sect409k1, sect409r1, secp521r1, sect571k1, sect571r1, secp160k1, secp160r1, secp160r2, sect163r1, secp192k1, sect193r1, sect193r2, secp224k1, sect239k1, secp256k1}
+#            Extension ec_point_formats, formats: [uncompressed]
+#            Extension renegotiation_info, renegotiated_connection: <empty>
+#            ***
+#
+#            The ClientHello message with the DECO9810(HF8) or DECO10109(HF 7A)hot fix looks as follows:
+#
+#            *** ClientHello, TLSv1
+#            RandomCookie: GMT: 1400504000 bytes = { 241, 123, 168, 180, 1, 164, 57, 39, 13, 110, 90, 145, 43, 181, 106, 211, 124, 13, 21, 253, 90, 56, 236, 181, 211, 197, 123, 23 }
+#            Session ID: {}
+#            Cipher Suites: [TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA, TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA, TLS_RSA_WITH_AES_128_CBC_SHA, TLS_ECDH_ECDSA_WITH_AES_128_CBC_SHA, TLS_ECDH_RSA_WITH_AES_128_CBC_SHA, TLS_DHE_RSA_WITH_AES_128_CBC_SHA, TLS_DHE_DSS_WITH_AES_128_CBC_SHA, TLS_ECDHE_ECDSA_WITH_RC4_128_SHA, TLS_ECDHE_RSA_WITH_RC4_128_SHA, SSL_RSA_WITH_RC4_128_SHA, TLS_ECDH_ECDSA_WITH_RC4_128_SHA, TLS_ECDH_RSA_WITH_RC4_128_SHA, TLS_ECDHE_ECDSA_WITH_3DES_EDE_CBC_SHA, TLS_ECDHE_RSA_WITH_3DES_EDE_CBC_SHA, SSL_RSA_WITH_3DES_EDE_CBC_SHA, TLS_ECDH_ECDSA_WITH_3DES_EDE_CBC_SHA, TLS_ECDH_RSA_WITH_3DES_EDE_CBC_SHA, SSL_DHE_RSA_WITH_3DES_EDE_CBC_SHA, SSL_DHE_DSS_WITH_3DES_EDE_CBC_SHA, SSL_RSA_WITH_RC4_128_MD5, TLS_EMPTY_RENEGOTIATION_INFO_SCSV, TLS_ECDHE_ECDSA_WITH_NULL_SHA, TLS_ECDHE_RSA_WITH_NULL_SHA, SSL_RSA_WITH_NULL_SHA, TLS_ECDH_ECDSA_WITH_NULL_SHA, TLS_ECDH_RSA_WITH_NULL_SHA, SSL_RSA_WITH_NULL_MD5, SSL_RSA_WITH_DES_CBC_SHA, SSL_DHE_RSA_WITH_DES_CBC_SHA, SSL_DHE_DSS_WITH_DES_CBC_SHA, SSL_RSA_EXPORT_WITH_RC4_40_MD5, SSL_RSA_EXPORT_WITH_DES40_CBC_SHA, SSL_DHE_RSA_EXPORT_WITH_DES40_CBC_SHA, SSL_DHE_DSS_EXPORT_WITH_DES40_CBC_SHA, TLS_KRB5_WITH_RC4_128_SHA, TLS_KRB5_WITH_RC4_128_MD5, TLS_KRB5_WITH_3DES_EDE_CBC_SHA, TLS_KRB5_WITH_3DES_EDE_CBC_MD5, TLS_KRB5_WITH_DES_CBC_SHA, TLS_KRB5_WITH_DES_CBC_MD5, TLS_KRB5_EXPORT_WITH_RC4_40_SHA, TLS_KRB5_EXPORT_WITH_RC4_40_MD5, TLS_KRB5_EXPORT_WITH_DES_CBC_40_SHA, TLS_KRB5_EXPORT_WITH_DES_CBC_40_MD5]
+#            Compression Methods: { 0 }
+#
+#            Extension elliptic_curves, curve names:
+#            {secp256r1, sect163k1, sect163r2, secp192r1, secp224r1, sect233k1, sect233r1, sect283k1, sect283r1, secp384r1, sect409k1, sect409r1, secp521r1, sect571k1, sect571r1, secp160k1, secp160r1, secp160r2, sect163r1, secp192k1, sect193r1, sect193r2, secp224k1, sect239k1, secp256k1}
+#
+#            Extension ec_point_formats, formats: [uncompressed]
+#            =============================================
+#
+# END_MANUAL_STEPS
+
+# BEGIN_POST_CONDITIONS
+#n/a
+# END_POST_CONDITIONS

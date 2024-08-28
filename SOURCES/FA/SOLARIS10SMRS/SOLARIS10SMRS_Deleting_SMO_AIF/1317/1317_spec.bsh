@@ -1,0 +1,65 @@
+#!/bin/bash
+
+# TEST CASE SPEC FILE
+# This file is generated/updated using the test framework web interface.
+# Manual updates on test servers are lost when the test package is re-installed.
+#
+# Last modified: Monday 16th of December 2013 9:14:24
+#
+
+# These settings must be in BASH script format, they are sourced by other scripts.
+SPEC_FA_NAME="SOLARIS10SMRS"
+SPEC_UC_NAME="SOLARIS10SMRS_Deleting_SMO_AIF"
+SPEC_TC_ID=1317
+SPEC_TC_SLOGAN="Verifying Delete Functionality -II "
+SPEC_TC_TYPE="FT"
+SPEC_TC_POLARITY="positive"
+SPEC_TC_PRIORITY="high"
+SPEC_TC_AUTOMATED=1
+SPEC_TC_DEPENDENT_ONLY=0
+SPEC_TC_TIMEOUT=300
+SPEC_TC_TEST_PASSCODE=0
+SPEC_TC_AUTHOR="xsougha"
+SPEC_TC_AUTOMATOR="xsougha"
+# this parameter is not interpreted by harness
+SPEC_TC_DISABLED=0
+
+# Please do not remove the comment lines below.
+# They are used as section locators by the test harness.
+
+# BEGIN_PRE_CONDITIONS
+#OSS Master Server should be connected to the SMRS master service and AIF User should Exist
+#
+#<Path under "Verification Specification for Cominf Feature Test for 14.0":
+#
+#Dismantling Bi-directional SMRS/Deleting SMO service and AIF users
+#>
+# END_PRE_CONDITIONS
+
+
+# BEGIN_MANUAL_STEPS
+#(1):
+#./configure_smrs.sh delete aif
+#
+#
+#(2):
+#/opt/ericsson/nms_cif_cs/etc/unsupported/bin# ./cstest -s ONRM_CS lt FtpService | grep 123456789
+#FTP Service should not exist
+#
+# END_MANUAL_STEPS
+
+# BEGIN_POST_CONDITIONS
+#for (1):
+#
+#What is the name of the user ? < user name>
+#would you like to remove Autointegration FTP Service for that user?(yes no) [yes] (Just press Enter)
+#"INFO Starting ARNE validation of XML file /var/opt/ericsson/arne/FTPServices/jakki156_WRAN_SMRSSERV_AIF_DEL.xml.
+#INFO Starting ARNE import of XML file /var/opt/ericsson/arne/FTPServices/jakki156_WRAN_SMRSSERV_AIF_DEL.xml.
+#INFO jakki156 has been successfully deleted
+#"
+#Note : Check the log files for errors.
+#
+#
+#for (2):
+#There should not be any FTP services.
+# END_POST_CONDITIONS

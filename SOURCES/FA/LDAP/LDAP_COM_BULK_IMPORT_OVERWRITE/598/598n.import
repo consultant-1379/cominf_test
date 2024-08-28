@@ -1,0 +1,4 @@
+DOMAIN 1.com
+ROLE r598b
+ALIAS a598c r598b
+ALIAS a598b

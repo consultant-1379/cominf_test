@@ -1,0 +1,35 @@
+#START of 192.168.0.0
+subnet 192.168.0.0 netmask 255.255.0.0 {
+
+allow unknown-clients;
+option broadcast-address 192.168.255.255;
+option domain-name-servers 192.168.0.1;
+option domain-name "vts.com.";
+option ntp-servers 192.168.0.1;
+option routers 192.168.0.1;
+}
+#END of 192.168.0.0
+#START of 149.170.254.0
+subnet 149.170.254.0 netmask 255.255.255.0 {
+option routers 149.170.254.12;
+option broadcast-address 149.170.254.255;
+option domain-name-servers 1.1.1.1;
+option domain-name "conservapedia.org";
+}
+#END of 149.170.254.0
+#START of 234.234.232.0
+subnet 234.234.232.0 netmask 255.255.248.0 {
+option routers 234.234.234.234;
+option broadcast-address 234.234.239.255;
+option domain-name-servers 1.1.1.1;
+option domain-name "conservapedia.org";
+}
+#END of 234.234.232.0
+#START of 114.41.93.0
+subnet 114.41.93.0 netmask 255.255.255.0 {
+option routers 114.41.93.1;
+option broadcast-address 114.41.93.255;
+option domain-name-servers 127.0.0.1;
+option domain-name "abcdef.com";
+}
+#END of 114.41.93.0

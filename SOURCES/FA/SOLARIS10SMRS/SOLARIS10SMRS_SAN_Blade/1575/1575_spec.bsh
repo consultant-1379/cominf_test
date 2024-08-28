@@ -1,0 +1,59 @@
+#!/bin/bash
+
+# TEST CASE SPEC FILE
+# This file is generated/updated using the test framework web interface.
+# Manual updates on test servers are lost when the test package is re-installed.
+#
+# Last modified: Tuesday 17th of December 2013 4:49:55
+#
+
+# These settings must be in BASH script format, they are sourced by other scripts.
+SPEC_FA_NAME="SOLARIS10SMRS"
+SPEC_UC_NAME="SOLARIS10SMRS_SAN_Blade"
+SPEC_TC_ID=1575
+SPEC_TC_SLOGAN="Configuration of SMRS , O&M Services by Bi-SMRS MC "
+SPEC_TC_TYPE="FT"
+SPEC_TC_POLARITY="positive"
+SPEC_TC_PRIORITY="high"
+SPEC_TC_AUTOMATED=0
+SPEC_TC_DEPENDENT_ONLY=0
+SPEC_TC_TIMEOUT=300
+SPEC_TC_TEST_PASSCODE=0
+SPEC_TC_AUTHOR="xnavema"
+SPEC_TC_AUTOMATOR="xnavema"
+# this parameter is not interpreted by harness
+SPEC_TC_DISABLED=0
+
+# Please do not remove the comment lines below.
+# They are used as section locators by the test harness.
+
+# BEGIN_PRE_CONDITIONS
+#<PATH Under "Verification Specification for Cominf Feature Test for 14.0":Bi-directional SMRS Initial Installation/SAN use in blade deployment >
+# END_PRE_CONDITIONS
+
+
+# BEGIN_MANUAL_STEPS
+#105 65-0580/01400 1.14??: Connecting SMRS servers to an master
+#All configuration of SMRS services on the O&M Services primary and secondary server shall be done by the Bi-SMRS MC product
+#Verify that a single script delivered with the BI-SMRS MC can be used to configure the , NEDSS and O&M functionality for SMRS.
+#
+# END_MANUAL_STEPS
+
+# BEGIN_POST_CONDITIONS
+#Acceptance Criteria
+#
+#A new script shall be included called connect_smrs.sh which will 
+#- update host files
+#- exchange SSH keys
+#- create root directory structures on the OM Serv/NESS
+#- create user accounts on OSS/NESS/OM Serv/NEDSS
+#- define NFS shares on NESS/OM Serv.
+#- create and configure NFS SMF service on the .
+#Configuring the NEDSS will require the following 
+#- updating host files
+#- Creating local accounts 
+#- Updating the NFS shares to mount
+#There will be no connection from an master to the NEDSS all of the configuring of the NEDSS from the server must be done via the SMRS master
+#Where a SAN is deployed the hosts file on the SMRS servers must be updated with details of the NAS and the interface towards the NAS must be configured.
+#The existing Bi-SMRS MC configuration files will remain as they are, but updates will now be made by the connect_smrs.sh script rather than the old create_tree.sh and add_smrs_slave.sh script 
+# END_POST_CONDITIONS

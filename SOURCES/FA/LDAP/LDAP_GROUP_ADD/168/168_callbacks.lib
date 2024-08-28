@@ -1,0 +1,243 @@
+#!/bin/bash
+#################################################################################
+#
+#
+#       COPYRIGHT (C) ERICSSON RADIO SYSTEMS AB, Sweden
+#
+#       The copyright to the document(s) herein is the property of
+#       Ericsson Radio Systems AB, Sweden.
+#
+#       The document(s) may be used and/or copied only with the written
+#       permission from Ericsson Radio Systems AB or in accordance with
+#       the terms and conditions stipulated in the agreement/contract
+#       under which the document(s) have been supplied.
+#
+#################################################################################
+
+
+# ATCOMINF Test Callback Library
+
+# Revision History
+# 07/23/2012	xdansan		Add a group to a domain with an existing group name
+# 08/02/2012	xgeohar		Fill out callbacks / add '/usr/local/bin/expect' processing
+
+# Complete the callbacks in this library to automate the test case.
+#
+# Callbacks are stateless, it is not possible to set a global variable in one callback 
+# and access it it in another.
+#
+# Callbacks are called by the test harness in the following order:
+#
+# tc_setup() 		# Called only for independent TC execution mode to setup TC
+# tc_precon()		# Conditions that should exist before TC can run
+# tc_test()		# Runs the test for this TC
+# tc_postcon()		# Conditions that should/should not exist after successful TC 
+# tc_cleanup()		# Called only for independent TC execution mode to clenup after TC
+
+# All callbacks must PASS for a TC PASS result
+
+LDAP_BIN="/ericsson/sdee/bin"
+
+CONFIG="/ericsson/sdee/ldap_domain_settings/"
+
+
+# These two variables are used in the /usr/local/bin/expect input file strings
+# Group name must be a max of 8 characters
+GNAME=tstgroup
+GID=1043
+
+# /usr/local/bin/expect template and working files
+EXPECT_TMPLT="168.group.add.in"
+EXPECT_WRKNG=${EXPECT_TMPLT}.wkg
+
+# Strings used as replacement strings in sed; '.' are any character
+# Real '.' are escaped
+# This string is used as the replacement for ACTION when creating a group
+CREATE_STRING="Continue to create local group*"
+
+# This string is used as a replacement when deleting a group
+REMOVE_STRING="Remove the local group .${GNAME}. with gidNumber .${GID}. from domain .1\.com. - Yes or No .No."
+
+#################################################################################
+#
+# CALLBACK: TC_SETUP
+#
+# This callback function is only called if the harness execution mode is 'AT_INDEPENDENT'
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_setup() {
+
+	
+	
+	
+
+	
+
+	# Ensure the enviornment does not exceed 8 domains in order to avoid timeout by the harness framework
+	[[ ` ls /ericsson/sdee/ldap_domain_settings/ | wc -l ` -ge 9 ]] && {
+		echo "${CONFIG} contains more than 8 domains - harness will timeout"
+		return 1
+	}
+
+	
+
+	# Replace PASSWD , ACTION with the correct strings in the /usr/local/bin/expect files
+    sed -e "s/^PASSWD$/$LDAP_SUPERUSER_PASSWD/" \
+		-e "s/^ACTION$/$CREATE_STRING/"  ${EXPECT_TMPLT} > ${EXPECT_WRKNG}  || {
+		echo "Failed to replace PASSWD and ACTION holder in /usr/local/bin/expect input files"
+		return 1
+	}
+
+#-------------------------------------------------------------------------------
+#  we add a group to domain 1.com by specifying group name and gid
+#-------------------------------------------------------------------------------
+	${AT_BIN}/con_ex.bsh -d ${EXPECT_WRKNG} -o 168_expadd.exp -c "$LDAP_BIN/add_group.sh -d 1.com -n $GNAME -i $GID" -r
+	/usr/local/bin/expect 168_expadd.exp || {
+		echo "Attempted to create group $GNAME, but failed - FAIL"
+		return 1
+	}
+	return 0
+
+}
+#################################################################################
+
+#################################################################################
+#
+# CALLBACK: TC_PRECON
+#
+# This callback function checks the correct conditions exist to run the TC.
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+ 
+tc_precon() {
+
+	LDAP_SERVER_UP || {
+		echo "LDAP is not running. LDAP_SERVER_UP returned $?" 
+		return 1
+	}
+
+	# search for test group just created
+   	/usr/bin/ldapsearch -D "cn=Directory Manager" -w $LDAP_SUPERUSER_PASSWD -b "ou=group,dc=1,dc=com" "objectclass=*" | grep -w "cn: $GNAME" > /dev/null 2>&1
+	if [[ $? -ne 0 ]] ; then
+		echo "The group $GNAME was NOT found ... This wasn't expected"
+		return 1
+	fi
+	return 0
+
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_TEST
+#
+# This callback function runs the test.
+# The harness compares the return code to the SPEC_TC_TEST_PASSCODE value set in the test spec.
+#
+# Return or exit codes:
+#    SPEC_TC_TEST_PASSCODE 	success
+# != SPEC_TC_TEST_PASSCODE 	failure
+ 
+tc_test() {
+
+	# Change the PASSWD and remove lines 3 and 4 from /usr/local/bin/expect template file
+    sed -e "s/^PASSWD$/$LDAP_SUPERUSER_PASSWD/" \
+    	-e "/^ACTION$/d" \
+		-e "/^Yes$/d"  ${EXPECT_TMPLT} > ${EXPECT_WRKNG}  || {
+		echo "Failed to delete ACTION and Yes lines in /usr/local/bin/expect input files"
+		return 1
+	}
+
+	#-------------------------------------------------------------------------------
+	#  we attempt to add the group added in tc_setup by specifying the group name
+	#-------------------------------------------------------------------------------
+	${AT_BIN}/con_ex.bsh -d ${EXPECT_WRKNG} -o 168_expaddadd.exp -c "$LDAP_BIN/add_group.sh -d 1.com -n $GNAME " -r
+	/usr/local/bin/expect 168_expaddadd.exp && {
+		echo "Attempted to add existing group $GNAME, and succeeded - FAIL"
+		return 1
+	}
+
+	return 0
+
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_POSTCON
+#
+# This callback function checks expected results.
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_postcon() {
+
+	# List all groups and ensure $GNAME is listed
+	/usr/bin/ldapsearch -D "cn=Directory Manager" -w $LDAP_SUPERUSER_PASSWD -b "ou=group,dc=1,dc=com" "objectclass=*" | grep -w "cn: $GNAME" > /dev/null 2>&1
+	[[ $? -ne 0 ]] && {
+		echo "The group $GNAME was NOT found ... This wasn't expected"
+		return 1
+	}
+
+	return 0
+
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_CLEANUP
+#
+# This callback function is only called if the harness execution mode is 'AT_INDEPENDENT'
+# 
+# This callback restores the target system to the state it was in before the TC 
+# was run. It rolls back changes made by callbacks tc_setup() and tc_test()
+# 
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_cleanup() {
+
+	ret=0
+	# Replace the expected create string with the expected remove string
+    sed -e "s/^PASSWD$/$LDAP_SUPERUSER_PASSWD/" \
+		-e "s/^ACTION$/$REMOVE_STRING/"  ${EXPECT_TMPLT} > ${EXPECT_WRKNG}  || {
+		echo "Failed to replace 'PASSWD'/ 'ACTION' holder in /usr/local/bin/expect input files"
+		return 1
+	}
+
+	#-------------------------------------------------------------------------------
+	#  we remove the group added in tc_setup by specifying the group name
+	#-------------------------------------------------------------------------------
+	LDAP_DELETE_GROUP 1.com $GNAME || {
+		echo "Attempted to remove group $GNAME, but failed - FAIL"
+		ret=1
+	}
+
+	# List all groups and ensure $GNAME is NOT listed
+	/usr/bin/ldapsearch -D "cn=Directory Manager" -w $LDAP_SUPERUSER_PASSWD -b "ou=group,dc=1,dc=com" "objectclass=*" | grep -w "cn: $GNAME" > /dev/null 2>&1
+	[[ $? -eq 0 ]] && {
+		echo "The group $GNAME was found ... This wasn't expected"
+		ret=1
+	}
+
+	# remove the generated /usr/local/bin/expect files
+	rm -f *exp ${EXPECT_WRKNG} || {
+		echo "Failed to remove the generated /usr/local/bin/expect file"
+		ret=1
+	}
+
+	return $ret
+
+}

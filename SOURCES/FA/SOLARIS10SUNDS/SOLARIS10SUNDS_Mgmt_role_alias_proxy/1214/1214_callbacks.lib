@@ -1,0 +1,269 @@
+#!/bin/bash
+#################################################################################
+#
+#
+#       COPYRIGHT (C) ERICSSON RADIO SYSTEMS AB, Sweden
+#
+#       The copyright to the document(s) herein is the property of
+#       Ericsson Radio Systems AB, Sweden.
+#
+#       The document(s) may be used and/or copied only with the written
+#       permission from Ericsson Radio Systems AB or in accordance with
+#       the terms and conditions stipulated in the agreement/contract
+#       under which the document(s) have been supplied.
+#
+#################################################################################
+
+
+# ATCOMINF Test Callback Library
+
+# Revision History
+# <date>	<signum>	<details>
+
+# Complete the callbacks in this library to automate the test case.
+#
+# Callbacks are stateless, it is not possible to set a global variable in one callback 
+# and access it it in another.
+#
+# Callbacks are called by the test harness in the following order:
+#
+# tc_setup() 		# Called only for independent TC execution mode to setup TC
+# tc_precon()		# Conditions that should exist before TC can run
+# tc_test()		# Runs the test for this TC
+# tc_postcon()		# Conditions that should/should not exist after successful TC 
+# tc_cleanup()		# Called only for independent TC execution mode to cleanup after TC
+
+# All callbacks must PASS for a TC PASS result
+
+#################################################################################
+#
+# CALLBACK: TC_SETUP
+#
+# This callback function is only called if the harness execution mode is 'AT_INDEPENDENT'
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+. ${AT_LIB}/tst_LDAP.lib
+LDAP_DOMAIN=$(grep "LDAP_DOMAIN" /ericsson/config/config.ini | awk -F"=" '{print $2}')
+
+pkginfo ERICodj 2> /dev/null
+ret=$?
+if [[ $ret == 0 ]]; then
+      	PATH_COM=/ericsson/opendj/bin/manage_COM.bsh
+else
+       	PATH_COM=/ericsson/sdee/bin/manage_COM.bsh
+fi
+
+
+tc_setup() {
+
+    # Left blank intentionally, as derz nothing to setup
+    
+	return 0
+}
+#################################################################################
+
+#################################################################################
+#
+# CALLBACK: TC_PRECON
+#
+# This callback function checks the correct conditions exist to run the TC.
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+ 
+tc_precon() {
+
+        templates=`ls *.tmpl 2>/dev/null | wc -l`
+        if [ ${templates} -eq 0 ] ; then
+                echo "There are no templates to process"
+                return 1
+        fi
+	templ=1214-01.tmpl
+                expfile=1214-01.exp
+        infile=1214-01.in
+                sed -e "s/^PPPPPPPP/${LDAP_SUPERUSER_PASSWD}/" < ${templ} > ${infile}
+        ${AT_BIN}/con_ex.bsh -d ${infile} -o ${expfile} -c "${PATH_COM} -r role -R role121401,role121402 -d vts.com " || {
+                        echo "Could not create $expfile from $infile  : retval $?"
+                        return 1
+                        }
+        echo "######################################################"
+        echo "Removing COM roles from ldap domain "
+        echo "######################################################"
+        /usr/local/bin/expect  ${expfile} >/dev/null || {
+                        echo "No com roles to remove : retval $?"
+                        }
+
+
+        LDAP_SERVER_UP || {
+                echo "LDAP server is not runningi: $?"
+                return 1
+        }
+
+        LDAP_DOMAIN_EXISTS $LDAP_DOMAIN || {
+                echo "$LDAP_DOMAIN does not exist"
+                return 1
+        }
+
+        return 0
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_TEST
+#
+# This callback function runs the test.
+# The harness compares the return code to the SPEC_TC_TEST_PASSCODE value set in the test spec.
+#
+# Return or exit codes:
+#    SPEC_TC_TEST_PASSCODE 	success
+# != SPEC_TC_TEST_PASSCODE 	failure
+tc_test() {
+	
+		templ=1214-01.tmpl
+		expfile=1214-01.exp
+        infile=1214-01.in
+        sed -e "s/^PPPPPPPP/${LDAP_SUPERUSER_PASSWD}/" < ${templ} > ${infile}
+        ${AT_BIN}/con_ex.bsh -d ${infile} -o ${expfile} -c "${PATH_COM} -a role -R role121401,role121402 -d vts.com " || {
+                        echo "Could not create $expfile from $infile  : retval $?"
+                        return 1
+                        }
+        echo "######################################################"
+        echo "Creating role role121401,role121402 for the testcase "
+        echo "######################################################"
+        /usr/local/bin/expect  ${expfile} >/dev/null || {
+                        echo "Creating role Failed : retval $?"
+                        return 1
+                        }
+						
+		# Action 1a	Add the new role alias in to the doamin using manage_COM.bsh -a alias -A <alias name> -R <role1>,<role2>
+		
+		
+        ${AT_BIN}/con_ex.bsh -d ${infile} -o ${expfile} -c "${PATH_COM} -a alias -A alias121401 -R role121401,role121402 -d vts.com " || {
+                        echo "Could not create $expfile from $infile  : retval $?"
+                        return 1
+                        }
+        echo "######################################################"
+        echo "Creating alias alias121401 "
+        echo "######################################################"
+        /usr/local/bin/expect  ${expfile} >/dev/null || {
+                        echo "Creating alias Failed : retval $?"
+                        return 1
+                        }
+		
+		# Action 1b	Add the new role alias in to the doamin using manage_COM.bsh -a alias -A <alias name> 
+		
+		templ=1214-02.tmpl
+		expfile=1214-02.exp
+        infile=1214-02.in
+        sed -e "s/^PPPPPPPP/${LDAP_SUPERUSER_PASSWD}/" < ${templ} > ${infile}
+        ${AT_BIN}/con_ex.bsh -d ${infile} -o ${expfile} -c "${PATH_COM} -a alias -A alias121402 -d vts.com " || {
+                        echo "Could not create $expfile from $infile  : retval $?"
+                        return 1
+                        }
+        echo "######################################################"
+        echo "Creating alias alias121402 "
+        echo "######################################################"
+        /usr/local/bin/expect  ${expfile} >/dev/null || {
+                        echo "Creating alias Failed : retval $?"
+                        return 1
+                        }
+		
+		# Action 2	List the role aliases
+		
+		templ=1214-03.tmpl
+		expfile=1214-03.exp
+        infile=1214-03.in
+        sed -e "s/^PPPPPPPP/${LDAP_SUPERUSER_PASSWD}/" < ${templ} > ${infile}
+        ${AT_BIN}/con_ex.bsh -d ${infile} -o ${expfile} -c "${PATH_COM} -l alias -d vts.com " || {
+                        echo "Could not create $expfile from $infile  : retval $?"
+                        return 1
+                        }
+        echo "######################################################"
+        echo "List the role aliases "
+        echo "######################################################"
+        /usr/local/bin/expect  ${expfile} >/dev/null || {
+                        echo "Listing alias Failed : retval $?"
+                        return 1
+                        }
+		
+		return 0
+}
+						 
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_POSTCON
+#
+# This callback function checks expected results.
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+tc_postcon() {
+	
+	ldapsearch -p 389 -M -T -D "cn=Directory Manager" -w ldappass -b "role=alias121401,ou=rolealias,ou=com,dc=vts,dc=com" "objectclass=*" cn > /dev/null
+	ret1=$?
+	ldapsearch -p 389 -M -T -D "cn=Directory Manager" -w ldappass -b "role=alias121402,ou=rolealias,ou=com,dc=vts,dc=com" "objectclass=*" cn > /dev/null
+	ret2=$?
+	
+	[[ $ret1 -eq 0 && $ret2 -eq 0 ]] || {
+		echo " Aliases alias121401,alias121402 were not created"
+		return 1
+	}
+	
+	return 0
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_CLEANUP
+#
+# This callback function is only called if the harness execution mode is 'AT_INDEPENDENT'
+# 
+# This callback restores the target system to the state it was in before the TC 
+# was run. It rolls back changes made by callbacks tc_setup() and tc_test()
+# 
+# Return or exit codes:
+#  0	success
+# >0 	failure
+tc_cleanup() {
+
+        templ=1214-01.tmpl
+        expfile=1214-01.exp
+        infile=1214-01.in
+        sed -e "s/^PPPPPPPP/${LDAP_SUPERUSER_PASSWD}/" < ${templ} > ${infile}
+
+         ${AT_BIN}/con_ex.bsh -d ${infile} -o ${expfile} -c "${PATH_COM} -r role -R role121401,role121402 -d vts.com " || {
+                        echo "Could not create $expfile from $infile  : retval $?"
+                        return 1
+                        }
+        echo "######################################################"
+        echo "Removing COM roles from ldap domain "
+        echo "######################################################"
+        /usr/local/bin/expect  ${expfile} >/dev/null || {
+                        echo "Removing COM roles from ldap domain Failed : retval $?"
+                        return 1
+                        }
+
+        rm -f *.in *.exp  || {
+                echo "Problems removing temporary files"
+                return 1
+        }
+
+        if ! LDAP_SERVER_UP ; then
+                echo "LDAP server is not running"
+        fi
+        return 0
+
+}
+

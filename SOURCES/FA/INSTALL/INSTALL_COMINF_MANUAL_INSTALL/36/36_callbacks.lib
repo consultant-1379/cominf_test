@@ -1,0 +1,325 @@
+#!/bin/bash
+#################################################################################
+#
+#
+#       COPYRIGHT (C) ERICSSON RADIO SYSTEMS AB, Sweden
+#
+#       The copyright to the document(s) herein is the property of
+#       Ericsson Radio Systems AB, Sweden.
+#
+#       The document(s) may be used and/or copied only with the written
+#       permission from Ericsson Radio Systems AB or in accordance with
+#       the terms and conditions stipulated in the agreement/contract
+#       under which the document(s) have been supplied.
+#
+#################################################################################
+
+
+# ATCOMINF Test Callback Library
+
+# Revision History
+# 2012-06-15    XAMAMCG    Initial test to check setup after inirator run
+# 2012-08-17    xsimrea    Added checks on GET_CONFIG_SECTION
+
+# Complete the callbacks in this library to automate the test case.
+#
+# Callbacks are stateless, it is not possible to set a global variable in one callback 
+# and access it it in another.
+#
+# Callbacks are called by the test harness in the following order:
+#
+# tc_setup() 		# Called only for independent TC execution mode to setup TC
+# tc_precon()		# Conditions that should exist before TC can run
+# tc_test()		# Runs the test for this TC
+# tc_postcon()		# Conditions that should/should not exist after successful TC 
+# tc_cleanup()		# Called only for independent TC execution mode to clenup after TC
+
+# All callbacks must PASS for a TC PASS result
+
+#################################################################################
+#
+# CALLBACK: TC_SETUP
+#
+# This callback function is only called if the harness execution mode is 'AT_INDEPENDENT'
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_setup() {
+
+return 0
+
+}
+#################################################################################
+
+#################################################################################
+#
+# CALLBACK: TC_PRECON
+#
+# This callback function checks the correct conditions exist to run the TC.
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+ 
+tc_precon() {
+	RHEL_INSTALLED
+	retval=$?
+	if [ $retval -ne 0 ]; then
+		echo "Wrong RedHat $retval"
+		return $retval
+	fi
+
+	CHECK_PROFILE om_serv_master
+	retval=$?
+	if [ $retval -ne 0 ]; then
+		echo "Wrong params.cfg $retval"
+		return $retval
+	fi
+
+	return 0
+
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_TEST
+#
+# This callback function runs the test.
+# The harness compares the return code to the SPEC_TC_TEST_PASSCODE value set in the test spec.
+#
+# Return or exit codes:
+#    SPEC_TC_TEST_PASSCODE 	success
+# != SPEC_TC_TEST_PASSCODE 	failure
+ 
+tc_test() {
+
+	iptables -S > iptables.new
+	ip6tables -S > ip6tables.new
+	return 0
+
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_POSTCON
+#
+# This callback function checks expected results.
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_postcon() {
+ 
+	if CHECK_CONFIG_INI standard; then :; else
+		echo "Wrong config.ini $?"
+		return 1
+	fi
+
+	# Check IP v4 Tables 
+    if grep -q -i -- '-P INPUT DROP' iptables.new; then :; else
+		echo "Input packets not dropped"
+		return 2
+	fi
+	if grep -q -i -- '-P FORWARD DROP' iptables.new; then :; else
+		echo "Forward packets not dropped"
+		return 2
+	fi 
+	if grep -q -i -- '-P OUTPUT ACCEPT' iptables.new; then :; else
+		echo "Output packets not accepted"
+		return 2
+	fi 
+	if grep -q -i -- '-A INPUT -i lo -j ACCEPT' iptables.new; then :; else
+		echo "packets from loopback interface not accepted"
+		return 2
+	fi 
+	if grep -q -i -- '-A INPUT -m state --state RELATED,ESTABLISHED -j ACCEPT' iptables.new; then :; else
+		echo "related, established connections  not accepted"
+		return 2
+	fi 
+	if grep -q -i -- '-A INPUT -p tcp -m state --state NEW -m tcp --dport 22 -j ACCEPT' iptables.new; then :; else
+		echo "ssh port not accepted"
+		return 2
+	fi 
+        
+
+	# Check IP v6 Tables 
+    if grep -q -i -- '-P INPUT DROP' ip6tables.new; then :; else
+		echo "v6 Input packets not dropped"
+		return 2
+	fi
+	if grep -q -i -- '-P FORWARD DROP' ip6tables.new; then :; else
+		echo "v6 Forward packets not dropped"
+		return 2
+	fi 
+	if grep -q -i -- '-P OUTPUT ACCEPT' ip6tables.new; then :; else
+		echo "v6 Output packets not accepted"
+		return 2
+	fi 
+	if grep -q -i -- '-A INPUT -i lo -j ACCEPT' ip6tables.new; then :; else
+		echo "v6 packets from loopback interface not accepted"
+		return 2
+	fi 
+	if grep -q -i -- '-A INPUT -m state --state RELATED,ESTABLISHED -j ACCEPT' ip6tables.new; then :; else
+		echo "v6 related, established connections  not accepted"
+		return 2
+    fi
+
+    # Check ldapadm user created
+	if POSIX_USER_EXISTS ldapadm; then :; else
+		echo "ldapadm does not exist $?"
+		return 3
+	fi
+
+	if CHECK_JAVA; then :; else
+		echo "Wrong version of java $?"
+		return 4
+	fi
+
+    #Check contents of config.ini for each service expected
+    # Check DHCP service
+    GET_CONFIG_SECTION $G_CONFIG_INI_FILE service TYPE DHCP > tmp_dhcp_cfg || {
+        echo Error $? reading config section: $G_CONFIG_INI_FILE service TYPE DHCP
+        return 17
+    }
+	ENABLED=`grep -F 'ENABLE=' tmp_dhcp_cfg 2> /dev/null | awk -F = '{print $2}'`
+    if [ "${ENABLED:-notset}" = "notset" ]; then
+		echo "No enabled for DHCP"
+		return 10
+	elif [ "${ENABLED}" != "y" ]; then
+		echo "Enable for DHCP is not y, it is ${ENABLED}!"
+		return 11
+	fi
+
+    # Check NTP service
+    GET_CONFIG_SECTION $G_CONFIG_INI_FILE service TYPE NTP > tmp_ntp_cfg || {
+        echo Error $? reading config section: $G_CONFIG_INI_FILE service TYPE NTP
+        return 18
+    }
+	NTP=`grep -F 'ENABLE=' tmp_ntp_cfg 2> /dev/null | awk -F = '{print $2}'`
+    if [ "${NTP:-notset}" = "notset" ]; then
+		echo "No enabled for NTP"
+		return 12
+	elif [ "${NTP}" != "y" ]; then
+		echo "Enable for NTP is not y, it is ${NTP}!"
+		return 13
+	fi
+
+    # Check DNS service
+    GET_CONFIG_SECTION $G_CONFIG_INI_FILE service TYPE DNS > tmp_dns_cfg || {
+        echo Error $? reading config section: $G_CONFIG_INI_FILE service TYPE DNS
+        return 19
+    }
+	DNS=`grep -F 'ENABLE=' tmp_dns_cfg 2> /dev/null | awk -F = '{print $2}'`
+    if [ "${DNS:-notset}" = "notset" ]; then
+		echo "No enabled for DNS"
+		return 14
+	elif [ "${DNS}" != "y" ]; then
+		echo "Enable for DNS is not y, it is ${DNS}!"
+		return 15
+	fi
+
+    # Check LDAP service
+    GET_CONFIG_SECTION $G_CONFIG_INI_FILE service TYPE LDAP > tmp_ldap_cfg || {
+        echo Error $? reading config section: $G_CONFIG_INI_FILE service TYPE LDAP
+        return 20
+    }
+	LDAP=`grep -F 'ENABLE=' tmp_ldap_cfg 2> /dev/null | awk -F = '{print $2}'`
+    if [ "${LDAP:-notset}" = "notset" ]; then
+		echo "No enabled for LDAP"
+		return 15
+	elif [ "${LDAP}" != "y" ]; then
+		echo "Enable for LDAP is not y, it is ${LDAP}!"
+		return 16
+	fi
+
+	# Find out values for OSS_MASTER name and ip address
+	# and check entry in /etc/hosts for them  
+    for id in {1..8}
+	do
+		OSS_MASTER_NAME=`grep ^OSS_VHN_$id ${G_CONFIG_INI_FILE} 2> /dev/null | awk -F = '{print $2}'`
+		OSS_MASTER_IP=`grep ^OSS_VIP_$id ${G_CONFIG_INI_FILE} 2> /dev/null | awk -F = '{print $2}'`
+        if [ "${OSS_MASTER_NAME:-notset}" = "notset" ]; then
+			echo "No OSS Master hostname for id $id found, skip check /etc/hosts"
+        elif [ "${OSS_MASTER_IP:-notset}" = "notset" ]; then
+			echo "No OSS Master ip for id $id found, skip check /etc/hosts"
+		else
+			if CHECK_HOSTS ${OSS_MASTER_IP} ${OSS_MASTER_NAME}; then :; else
+				echo "No entry in hosts file for OSS $id IP ${OSS_MASTER_IP} HOST ${OSS_MASTER_NAME} RETVAL $?"
+				return 5
+			fi
+		fi
+	done
+
+	# Find out values for OA&M secondary name and ip address
+	# and check entry in /etc/hosts for them
+    GET_CONFIG_SECTION $G_CONFIG_INI_FILE host CONFIG om_serv_slave INST_TYPE cominf > tmp_slave_cfg || {
+        echo Error $? reading config section: $G_CONFIG_INI_FILE host CONFIG om_serv_slave INST_TYPE cominf
+        return 21
+    }
+	SECONDARY_NAME=`grep -F 'HOST_NAME' tmp_slave_cfg 2> /dev/null | awk -F = '{print $2}'`
+	SECONDARY_IP=`grep -F 'IP_ADDR' tmp_slave_cfg 2> /dev/null | awk -F = '{print $2}'`
+	if CHECK_HOSTS ${SECONDARY_IP} ${SECONDARY_NAME}; then :; else
+		echo "No entry in hosts file for IP ${SECONDARY_IP} HOST ${SECONDARY_NAME} RETVAL $?"
+		return 6
+	fi
+	if CHECK_HOSTS ${SECONDARY_IP} om_serv_slave; then :; else
+		echo "No entry in hosts file for IP ${SECONDARY_IP} HOST om_serv_slave RETVAL $?"
+		return 6
+	fi
+
+
+	# Find out values for OA&M primary name and ip address
+	# and check entry in /etc/hosts for them
+	PRIMARY_NAME=`hostname`
+	 
+	PRIMARY_IP=$(ip addr show dev eth0 | grep 'inet ' | awk -F'[ /]*' '{print $3}')
+	if CHECK_HOSTS ${PRIMARY_IP} ${PRIMARY_NAME}; then :; else
+		echo "No entry in hosts file for IP ${PRIMARY_IP} HOST ${PRIMARY_NAME} RETVAL $?"
+		return 7
+	fi
+	if CHECK_HOSTS ${PRIMARY_IP} om_serv_master; then :; else
+		echo "No entry in hosts file for IP ${PRIMARY_IP} HOST om_serv_master RETVAL $?"
+		return 7
+	fi
+	if CHECK_HOSTS ${PRIMARY_IP} smrs_master; then :; else
+		echo "No entry in hosts file for IP ${PRIMARY_IP} HOST smrs_master RETVAL $?"
+		return 7
+	fi
+	return 0
+
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_CLEANUP
+#
+# This callback function is only called if the harness execution mode is 'AT_INDEPENDENT'
+# 
+# This callback restores the target system to the state it was in before the TC 
+# was run. It rolls back changes made by callbacks tc_setup() and tc_test()
+# 
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_cleanup() {
+
+rm -f iptables.new
+rm -f ip6tables.new
+rm -f tmp_dhcp_cfg
+rm -f tmp_ntp_cfg
+rm -f tmp_dns_cfg
+rm -f tmp_ldap_cfg
+rm -f tmp_slave_cfg
+return 0
+
+}

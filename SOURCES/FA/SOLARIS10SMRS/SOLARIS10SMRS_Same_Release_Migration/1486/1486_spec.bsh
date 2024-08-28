@@ -1,0 +1,51 @@
+#!/bin/bash
+
+# TEST CASE SPEC FILE
+# This file is generated/updated using the test framework web interface.
+# Manual updates on test servers are lost when the test package is re-installed.
+#
+# Last modified: Monday 16th of December 2013 11:22:55
+#
+
+# These settings must be in BASH script format, they are sourced by other scripts.
+SPEC_FA_NAME="SOLARIS10SMRS"
+SPEC_UC_NAME="SOLARIS10SMRS_Same_Release_Migration"
+SPEC_TC_ID=1486
+SPEC_TC_SLOGAN="SMRS Same Release Migration Procedure"
+SPEC_TC_TYPE="FT"
+SPEC_TC_POLARITY="positive"
+SPEC_TC_PRIORITY="high"
+SPEC_TC_AUTOMATED=0
+SPEC_TC_DEPENDENT_ONLY=0
+SPEC_TC_TIMEOUT=300
+SPEC_TC_TEST_PASSCODE=0
+SPEC_TC_AUTHOR="xnavsur"
+SPEC_TC_AUTOMATOR="xnavsur"
+# this parameter is not interpreted by harness
+SPEC_TC_DISABLED=0
+
+# Please do not remove the comment lines below.
+# They are used as section locators by the test harness.
+
+# BEGIN_PRE_CONDITIONS
+#<path under "Verification Specification for Cominf Feature Test for 14.0 ":
+#Bi-directional SMRS Upgrade/Same Release Migration 
+#>  
+#NESS and NEDSS configured. All the file systems are mounted on to the nedss and ness,smrs tar file is created and stored successfully.
+# END_PRE_CONDITIONS
+
+
+# BEGIN_MANUAL_STEPS
+#Follow cominf upgrade guide to perform same release migration 
+# END_MANUAL_STEPS
+
+# BEGIN_POST_CONDITIONS
+#1.The document procedure is successfully executed.
+#2.The smrs migration is successful.
+#3.All the data is restored on new ness and nedss.
+#4.All the file system are mounted
+#5.SMRS configuration is updated with new IP address and host name information. 
+#6.The SMRS FtpServers are updated with the new IP addresses in the ONRM.This can be verified by executing the following command:
+#
+#/opt/ericsson/nms_cif_cs/etc/unsupported/bin/cstest -s ONRM_CS lt FtpService 
+# END_POST_CONDITIONS

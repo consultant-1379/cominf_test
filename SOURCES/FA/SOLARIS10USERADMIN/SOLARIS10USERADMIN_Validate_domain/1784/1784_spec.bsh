@@ -1,0 +1,92 @@
+#!/bin/bash
+
+# TEST CASE SPEC FILE
+# This file is generated/updated using the test framework web interface.
+# Manual updates on test servers are lost when the test package is re-installed.
+#
+# Last modified: Monday 6th of January 2014 9:11:39
+#
+
+# These settings must be in BASH script format, they are sourced by other scripts.
+SPEC_FA_NAME="SOLARIS10USERADMIN"
+SPEC_UC_NAME="SOLARIS10USERADMIN_Validate_domain"
+SPEC_TC_ID=1784
+SPEC_TC_SLOGAN="Validating domain using -b option"
+SPEC_TC_TYPE="FT"
+SPEC_TC_POLARITY="positive"
+SPEC_TC_PRIORITY="high"
+SPEC_TC_AUTOMATED=1
+SPEC_TC_DEPENDENT_ONLY=0
+SPEC_TC_TIMEOUT=300
+SPEC_TC_TEST_PASSCODE=0
+SPEC_TC_AUTHOR="xsougha"
+SPEC_TC_AUTOMATOR="xsougha"
+# this parameter is not interpreted by harness
+SPEC_TC_DISABLED=0
+
+# Please do not remove the comment lines below.
+# They are used as section locators by the test harness.
+
+# BEGIN_PRE_CONDITIONS
+#None
+# END_PRE_CONDITIONS
+
+
+# BEGIN_MANUAL_STEPS
+#1.Action:
+#
+#Give invalid domain name with -d option while passing parameter to manage_COM_privs.bsh script as below:
+#
+#bash-3.2# ./manage_COM_privs.bsh -l -u testu2 -d @xyz.com
+#
+#Result:
+#
+#Error should be displayed.
+#
+#2.Action: 
+#
+#Do not mention the DOMAIN name in the batch file shown as below
+#
+#bash-3.2# cat /var/tmp/batchfile
+#ACTION add
+#OBJECT alias
+#testu2 alias2
+#
+#Result: 
+#
+#Error should be displayed.
+#
+#3.Action: 
+#
+#Give different domain names in the batch file (invalid domain name)
+#
+#bash-3.2# cat /var/tmp/batchfile
+#DOMAIN xyz@123.com
+#ACTION add
+#OBJECT alias
+#testu2 alias2
+#
+#
+#Result: 
+#
+#Error should be displayed. 
+#
+#4.Action: 
+#
+#Give two domain names in the batch file and check to add priveleges to user using the script with -b option
+#
+#bash-3.2# cat /var/tmp/batchfile
+#DOMAIN ldap3.com ldap602.com
+#ACTION add
+#OBJECT alias
+#testu2 alias1
+#
+#
+#Result: 
+#
+#Error should be displayed 
+# END_MANUAL_STEPS
+
+# BEGIN_POST_CONDITIONS
+#None
+# END_POST_CONDITIONS

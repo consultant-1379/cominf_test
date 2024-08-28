@@ -1,0 +1,61 @@
+#!/bin/bash
+
+# TEST CASE SPEC FILE
+# This file is generated/updated using the test framework web interface.
+# Manual updates on test servers are lost when the test package is re-installed.
+#
+# Last modified: Tuesday 17th of December 2013 5:32:29
+#
+
+# These settings must be in BASH script format, they are sourced by other scripts.
+SPEC_FA_NAME="SOLARIS10SMRS"
+SPEC_UC_NAME="SOLARIS10SMRS_Modify_Supported_NEs"
+SPEC_TC_ID=1662
+SPEC_TC_SLOGAN="Modify WRAN Network Elements "
+SPEC_TC_TYPE="FT"
+SPEC_TC_POLARITY="positive"
+SPEC_TC_PRIORITY="high"
+SPEC_TC_AUTOMATED=0
+SPEC_TC_DEPENDENT_ONLY=0
+SPEC_TC_TIMEOUT=300
+SPEC_TC_TEST_PASSCODE=0
+SPEC_TC_AUTHOR="xgansre"
+SPEC_TC_AUTOMATOR="xgansre"
+# this parameter is not interpreted by harness
+SPEC_TC_DISABLED=0
+
+# Please do not remove the comment lines below.
+# They are used as section locators by the test harness.
+
+# BEGIN_PRE_CONDITIONS
+#Description -
+#Moving FTP services. Assigning WRAN Network Elements to another SMRS slave
+#Precondition: 
+#2 SMRS slaves connected to the same SMRS master, network elements assigned to one of the slaves
+#
+#Mars Path <Bi-directional SMRS Initial Installation/Modify Supported Network Elements   >
+# END_PRE_CONDITIONS
+
+
+# BEGIN_MANUAL_STEPS
+#Configuration
+#
+#The deleteCheckIntervalSeconds can be reset in /etc/opt/ericsson/nms_bismrs_mc/bismrs.properties. This will require a coldrestart of the BI_SMRS_MC.
+#The default value is 3600 seconds.
+#Conditional Test
+#
+#Move the service using the ARNE GUI or xml file import. 
+#Check that the WRAN services are created on the new SMRS slave and deleted from the original SMRS slave
+# END_MANUAL_STEPS
+
+# BEGIN_POST_CONDITIONS
+#Acceptance Criteria
+#
+#The service shall have moved to the new location.
+#
+#All data contained within the directories will be preserved. 
+#
+#File permissions are preserved.
+#
+#Directories containing data will deleted immediatley
+# END_POST_CONDITIONS

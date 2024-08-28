@@ -1,0 +1,130 @@
+#!/bin/bash
+
+# TEST CASE SPEC FILE
+# This file is generated/updated using the test framework web interface.
+# Manual updates on test servers are lost when the test package is re-installed.
+#
+# Last modified: Monday 16th of December 2013 11:17:02
+#
+
+# These settings must be in BASH script format, they are sourced by other scripts.
+SPEC_FA_NAME="SOLARIS10SUNDS"
+SPEC_UC_NAME="SOLARIS10SUNDS_Importing_privileges"
+SPEC_TC_ID=1494
+SPEC_TC_SLOGAN="Removing targets "
+SPEC_TC_TYPE="FT"
+SPEC_TC_POLARITY="positive"
+SPEC_TC_PRIORITY="high"
+SPEC_TC_AUTOMATED=1
+SPEC_TC_DEPENDENT_ONLY=0
+SPEC_TC_TIMEOUT=300
+SPEC_TC_TEST_PASSCODE=0
+SPEC_TC_AUTHOR="xvinkat"
+SPEC_TC_AUTOMATOR="xvinkat"
+# this parameter is not interpreted by harness
+SPEC_TC_DISABLED=0
+
+# Please do not remove the comment lines below.
+# They are used as section locators by the test harness.
+
+# BEGIN_PRE_CONDITIONS
+#<path to the testcase>
+#
+#
+#SUN-DS/COM LDAP - User Management for 
+#COM-Enabled Nodes/Managing COM targets 
+#,role, role alias attributes for COM user entries/
+#Importing privileges (role/aliases/targets)        
+# END_PRE_CONDITIONS
+
+
+# BEGIN_MANUAL_STEPS
+#1. Mention targets with coma seperation in the export and remove them from the user entry.
+#
+#Ex:
+#
+#bash-3.2# cat /var/tmp/import1
+#DOMAIN atrcus879.com
+#ACTION remove
+#OBJECT target
+#
+#comonly target1
+#bash-3.2#
+#
+#
+#bash-3.2# ./manage_COM_privs.bsh -r target -f /var/tmp/import1 -d atrcus879.com
+#
+#LDAP Directory Manager password:
+#
+#INFO : LDAP Domain [atrcus879.com]
+#INFO : ACTION: [remove]
+#INFO : OBJECT: [target]
+#
+#Continue to remove COM user target(s) from file [/var/tmp/import1] - Yes or No [No] Yes
+#
+#INFO : User [comonly] has type COM_ONLY.
+#INFO : Auto accept active.
+#INFO : Successfully deleted COM authentication scope [target1] from user [comonly].
+#bash-3.2#
+#
+#
+#2.Remove the last target from the user entry of type COM_OSS by specifying the target name in the export file and check whether the user type is changed from COM_OSS to OSS_ONLY or not.
+#
+#Ex:
+#
+#bash-3.2# ./manage_COM_privs.bsh -r target -f /var/tmp/import1 -d atrcus879.com
+#
+#LDAP Directory Manager password:
+#
+#INFO : LDAP Domain [atrcus879.com]
+#INFO : ACTION: [remove]
+#INFO : OBJECT: [target]
+#
+#Continue to remove COM user target(s) from file [/var/tmp/import1] - Yes or No [No] Yes
+#
+#INFO : User [ossonly1] has type COM_OSS.
+#INFO : Auto accept active.
+#INFO : Successfully deleted COM authentication scope [target1] from user [ossonly1].
+#INFO : Successfully deleted COM authentication scope [target2] from user [ossonly1].
+#INFO : Successfully deleted remaining COM authorization scope [tcs2] from user [ossonly1].
+#INFO : Successfully deleted remaining COM authorization scope [tcs3] from user [ossonly1].
+#INFO : User [ossonly1] has been reverted to type OSS_ONLY.
+#bash-3.2#
+#bash-3.2#
+#
+#
+#3. Remove the last target from user entry when the same user entry has other privilages (roles/role aliases) and check whether all privilages are removed or not from the user entry when the last target is removed.
+#
+#Ex:
+#
+#bash-3.2# ./manage_COM_privs.bsh -r target -f /var/tmp/import1 -d atrcus879.com
+#
+#LDAP Directory Manager password:
+#
+#INFO : LDAP Domain [atrcus879.com]
+#INFO : ACTION: [remove]
+#INFO : OBJECT: [target]
+#
+#Continue to remove COM user target(s) from file [/var/tmp/import1] - Yes or No [No] Yes
+#
+#INFO : User [ossonly1] has type COM_OSS.
+#INFO : Auto accept active.
+#INFO : Successfully deleted COM authentication scope [target1] from user [ossonly1].
+#INFO : Successfully deleted COM authentication scope [target2] from user [ossonly1].
+#INFO : Successfully deleted remaining COM authorization scope [tcs2] from user [ossonly1].
+#INFO : Successfully deleted remaining COM authorization scope [tcs3] from user [ossonly1].
+#INFO : User [ossonly1] has been reverted to type OSS_ONLY.
+#
+# END_MANUAL_STEPS
+
+# BEGIN_POST_CONDITIONS
+#1. All targets should be removed from the user entry.
+#
+#2.Target is removed from the user entry and the user type is changed from COM_OSS to OSS_ONLY.
+#
+#3.Target and all privilages are removed from the user entry.
+#
+#
+#
+#
+# END_POST_CONDITIONS

@@ -1,0 +1,200 @@
+#!/bin/bash
+#################################################################################
+#
+#
+#       COPYRIGHT (C) ERICSSON RADIO SYSTEMS AB, Sweden
+#
+#       The copyright to the document(s) herein is the property of
+#       Ericsson Radio Systems AB, Sweden.
+#
+#       The document(s) may be used and/or copied only with the written
+#       permission from Ericsson Radio Systems AB or in accordance with
+#       the terms and conditions stipulated in the agreement/contract
+#       under which the document(s) have been supplied.
+#
+#################################################################################
+
+
+# ATCOMINF Test Callback Library
+
+# Revision History
+# <date>	<signum>	<details>
+
+# Complete the callbacks in this library to automate the test case.
+#
+# Callbacks are stateless, it is not possible to set a global variable in one callback 
+# and access it it in another.
+#
+# Callbacks are called by the test harness in the following order:
+#
+# tc_setup() 		# Called only for independent TC execution mode to setup TC
+# tc_precon()		# Conditions that should exist before TC can run
+# tc_test()		# Runs the test for this TC
+# tc_postcon()		# Conditions that should/should not exist after successful TC 
+# tc_cleanup()		# Called only for independent TC execution mode to cleanup after TC
+
+# All callbacks must PASS for a TC PASS result
+
+#################################################################################
+#
+# CALLBACK: TC_SETUP
+#
+# This callback function is only called if the harness execution mode is 'AT_INDEPENDENT'
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_setup() {
+banner "~~~~~~~~~~"
+echo -e "\t\tTest: ${SPEC_TC_ID}\n\t\t${SPEC_TC_SLOGAN}"
+banner "__________"
+
+	# Coded to fail in case TC_AUTOMATED=1 before automation completed
+	# Change return code as required
+
+        return 0
+
+}
+#################################################################################
+
+#################################################################################
+#
+# CALLBACK: TC_PRECON
+#
+# This callback function checks the correct conditions exist to run the TC.
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+ 
+tc_precon() {
+
+	# Coded to fail in case TC_AUTOMATED=1 before automation completed
+	# Change return code as required
+
+        return 0
+
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_TEST
+#
+# This callback function runs the test.
+# The harness compares the return code to the SPEC_TC_TEST_PASSCODE value set in the test spec.
+#
+# Return or exit codes:
+#    SPEC_TC_TEST_PASSCODE 	success
+# != SPEC_TC_TEST_PASSCODE 	failure
+ 
+tc_test() {
+
+# Coded to fail in case TC_AUTOMATED=1 before automation complete
+	# Change return code as required
+
+#============================================================================
+#
+# List exceptions here (error output strings which are not actual errors!).
+# Start each line with a pipe "|" and finish with escape character "\"
+#
+#============================================================================
+EXCEPTIONS="\
+DBCC execution completed. If DBCC printed error messages, contact a user with\
+|of type 'error' found in\
+|The following IST errors from today where found in\
+|/var/opt/ericsson/nms_cif_ist/log/error\
+|No error files found with the date\
+|The following installation errors with date\
+|found in /var/opt/ericsson/fm/logs/install/error.log\
+|No errors of type\
+|of type 'error' found in\
+|default-debug-level\
+|default-severity\
+|OpenDJ default error log directory changed successfully\
+|log-file.*/var/opt/ericsson/log/OpenDJ//error\
+|that the SOFTWARE will be uninterrupted or error free The LICENSOR's entire liability\
+"
+
+#============================================================================
+#
+# List any Error message strings which should be treated as a warning
+# Start each line with a pipe "|" and finish with escape character "\"
+#
+#============================================================================
+KNOWN_ERRORS="\
+Sybase Bug CR648848 - TR HN81412\
+|Error files directory does not exist.\
+"
+
+	StringSearch -c /opt/ericsson/sck/bin/check_installation_logs.sh -s "error|fail" -e "${EXCEPTIONS}" -w "${KNOWN_ERRORS}"
+
+
+
+# old code below.  Replaced by the function call above.
+
+       # RESULTS=`/opt/ericsson/sck/bin/check_installation_logs.sh |egrep -i "error|fail" |egrep -v "${EXCEPTIONS}"`
+	#RESULTS=`echo -e "${RESULTS1}\n${RESULTS2}\n${RESULTS3}"`
+       # [ -z "${RESULTS}" ] && echo "no errors" && return 0
+
+#
+# check for known workarounds which should show as a warning
+# anything left over is a genuine error and should fail the TC
+#
+#       [[ -n $(echo "${RESULTS}"  | egrep -v "${KNOWN_ERRORS}") ]] && banner "ERROR found" && echo "$RESULTS" && return 1
+#       [[ -n $(echo "${RESULTS}"  | egrep "${KNOWN_ERRORS}") ]] && banner "WA found" && echo "$RESULTS" && return 255
+       # ERRORS=`echo "${RESULTS}"  | egrep -v "${KNOWN_ERRORS}"`
+       # [ -n "${ERRORS}" ] && banner "ERROR found" && echo -e "Error List:\n$ERRORS\n" && return 1
+       # WARNINGS=`echo "${RESULTS}"  | egrep "${KNOWN_ERRORS}"`
+       # [ -n "${WARNINGS}" ] && banner "WA found" && echo -e "Warnings found:\n$WARNINGS\n" && return 0
+       # return 2
+
+}
+
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_POSTCON
+#
+# This callback function checks expected results.
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_postcon() {
+
+	# Coded to fail in case TC_AUTOMATED=1 before automation complete.
+	# Change return code as required
+
+        return 0
+
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_CLEANUP
+#
+# This callback function is only called if the harness execution mode is 'AT_INDEPENDENT'
+# 
+# This callback restores the target system to the state it was in before the TC 
+# was run. It rolls back changes made by callbacks tc_setup() and tc_test()
+# 
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_cleanup() {
+
+	# Coded to fail in case TC_AUTOMATED=1 before automation complete
+	# Change return code as required
+
+        return 0
+
+}

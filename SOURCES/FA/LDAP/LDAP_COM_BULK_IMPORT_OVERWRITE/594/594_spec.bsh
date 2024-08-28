@@ -1,0 +1,60 @@
+#!/bin/bash
+
+# TEST CASE SPEC FILE
+# This file is generated/updated using the test framework web interface.
+# Manual updates on test servers are lost when the test package is re-installed.
+#
+# Last modified: Friday 31st of May 2013 9:50:01
+#
+
+# These settings must be in BASH script format, they are sourced by other scripts.
+SPEC_FA_NAME="LDAP"
+SPEC_UC_NAME="LDAP_COM_BULK_IMPORT_OVERWRITE"
+SPEC_TC_ID=594
+SPEC_TC_SLOGAN="Test valid import files where alias did and did not exist"
+SPEC_TC_TYPE="FT"
+SPEC_TC_POLARITY="positive"
+SPEC_TC_PRIORITY="high"
+SPEC_TC_AUTOMATED=1
+SPEC_TC_DEPENDENT_ONLY=0
+SPEC_TC_TIMEOUT=300
+SPEC_TC_TEST_PASSCODE=0
+SPEC_TC_AUTHOR="xamamcg"
+SPEC_TC_AUTOMATOR="xamamcg"
+# this parameter is not interpreted by harness
+SPEC_TC_DISABLED=0
+
+# Please do not remove the comment lines below.
+# They are used as section locators by the test harness.
+
+# BEGIN_PRE_CONDITIONS
+#1. Role r594a and R594b exists
+#2. Alias a594a exists with role r594a and r594b
+#3. Alias A594b exists with role r594a and r594b
+#4. Alias a594c exists with role r594a and r594b
+#5. Alias a594d exists with role r594a
+#6. Import file 594.import contains:
+#DOMAIN 1.com
+#ROLE r594c,R594d
+#ALIAS a594a r594b,r594c
+#ALIAS a594b r594d
+#ALIAS a594c R594a,r594b
+#ALIAS a594e r594a,r594c
+#ALIAS a594f r594c,r594d
+# END_PRE_CONDITIONS
+
+
+# BEGIN_MANUAL_STEPS
+#1. manage_COM.bsh -a import -d 1.com -f 594.import -o
+#answer Yes to proceed
+# END_MANUAL_STEPS
+
+# BEGIN_POST_CONDITIONS
+#1. Role r594a, R594b, r594c and R594d exists
+#2. Alias a594a exists with role R594b and r594c
+#3. Alias A594b exists with role R594d
+#4. Alias a594c exists with role r594a and R594b
+#5. Alias a594d exists with role r594a
+#6. Alias a594e exists with role r594a and r594c
+#7. Alias a594f exists with role r594c and R594d
+# END_POST_CONDITIONS

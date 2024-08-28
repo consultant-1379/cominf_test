@@ -1,0 +1,158 @@
+#!/bin/bash
+#################################################################################
+#
+#
+#       COPYRIGHT (C) ERICSSON RADIO SYSTEMS AB, Sweden
+#
+#       The copyright to the document(s) herein is the property of
+#       Ericsson Radio Systems AB, Sweden.
+#
+#       The document(s) may be used and/or copied only with the written
+#       permission from Ericsson Radio Systems AB or in accordance with
+#       the terms and conditions stipulated in the agreement/contract
+#       under which the document(s) have been supplied.
+#
+#################################################################################
+
+
+# ATCOMINF Test Callback Library
+
+# Revision History
+# 12/07/12	xkalbha		Initial version testing with GENERIC_NAS
+
+# Complete the callbacks in this library to automate the test case.
+#
+# Callbacks are stateless, it is not possible to set a global variable in one callback 
+# and access it it in another.
+#
+# Callbacks are called by the test harness in the following order:
+#
+# tc_setup() 		# Called only for independent TC execution mode to setup TC
+# tc_precon()		# Conditions that should exist before TC can run
+# tc_test()		# Runs the test for this TC
+# tc_postcon()		# Conditions that should/should not exist after successful TC 
+# tc_cleanup()		# Called only for independent TC execution mode to clenup after TC
+
+# All callbacks must PASS for a TC PASS result
+
+#################################################################################
+#
+# CALLBACK: TC_SETUP
+#
+# This callback function is only called if the harness execution mode is 'AT_INDEPENDENT'
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_setup() {
+	#PREPARE_SMRS
+	return $?
+
+}
+#################################################################################
+
+#################################################################################
+#
+# CALLBACK: TC_PRECON
+#
+# This callback function checks the correct conditions exist to run the TC.
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+ 
+tc_precon() {
+
+	TEST_SOLARIS || { echo "Not Solaris"; return 1; }
+
+	return 0
+
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_TEST
+#
+# This callback function runs the test.
+# The harness compares the return code to the SPEC_TC_TEST_PASSCODE value set in the test spec.
+#
+# Return or exit codes:
+#    SPEC_TC_TEST_PASSCODE 	success
+# != SPEC_TC_TEST_PASSCODE 	failure
+ 
+tc_test() {
+
+	# Mark the bismrs_events.log so know if errors occur
+	LOG_MARK_STATUS /var/opt/ericsson/log/bismrs_events.log 1
+
+	name=`hostname`
+	for i in {1..5}
+	do
+		filename="smrs_user_config_$i"
+		#echo "Config file using is: $filename"
+
+		# Add the smrs master
+		/opt/ericsson/nms_bismrs_mc/bin/configure_smrs.sh add smrs_master -f $filename
+		retval=$?
+		[ $retval -eq 0 ] && { "Unexpected success on configure smrs"; return 2; }
+	done
+	# Check for errors
+	LOG_SEARCH_FROM_MARK /var/opt/ericsson/log/bismrs_events.log error 1
+	retval=$?
+	[ $retval -eq 0 ] && { echo "error found in bismrs_events.log $retval"; return 4; }
+	[ $retval -ne 1 ] && { echo "Search failed in bismrs_events.log $retval"; return 4; }
+	LOG_SEARCH_FROM_MARK /var/opt/ericsson/log/bismrs_events.log warning 1
+	retval=$?
+	[ $retval -eq 0 ] && { echo "warning found in bismrs_events.log $retval"; return 5; }
+	[ $retval -ne 1 ] && { echo "Search failed in bismrs_events.log $retval"; return 5; }
+
+	return 0
+
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_POSTCON
+#
+# This callback function checks expected results.
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_postcon() {
+
+	CONSOLE_OUTPUT_CONTAINS "ERROR Required parameter GEO_REDUNDANT_DEPLOYMENT missing in the config file smrs_user_config_1." || { echo "Missing GEO_REDUNDANT_DEPLOYMENT error in log"; return 1; }
+	CONSOLE_OUTPUT_CONTAINS "ERROR Invalid SMRS_MASTER_IP parameter 10.45.201 in the config file smrs_user_config_2." || { echo "3 digit SMRS_MASTER_IP error in log"; return 2; }
+	CONSOLE_OUTPUT_CONTAINS "ERROR Invalid SMRS_MASTER_IP parameter 10.45.256.1 in the config file smrs_user_config_3." || { echo "256  SMRS_MASTER_IP error in log"; return 3; }
+	CONSOLE_OUTPUT_CONTAINS "ERROR Invalid SMRS_MASTER_IP parameter 10.45.0201.1 in the config file smrs_user_config_4." || { echo "4 char SMRS_MASTER_IP error in log"; return 4; }
+	CONSOLE_OUTPUT_CONTAINS "ERROR Invalid SMRS_MASTER_IP parameter 10.45.201.a in the config file smrs_user_config_5." || { echo "Alpha SMRS_MASTER_IP error in log"; return 5; }
+	return 0
+
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_CLEANUP
+#
+# This callback function is only called if the harness execution mode is 'AT_INDEPENDENT'
+# 
+# This callback restores the target system to the state it was in before the TC 
+# was run. It rolls back changes made by callbacks tc_setup() and tc_test()
+# 
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_cleanup() {
+
+	return 0
+
+}

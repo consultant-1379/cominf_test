@@ -1,0 +1,213 @@
+#!/bin/bash
+#################################################################################
+#
+#
+#       COPYRIGHT (C) ERICSSON RADIO SYSTEMS AB, Sweden
+#
+#       The copyright to the document(s) herein is the property of
+#       Ericsson Radio Systems AB, Sweden.
+#
+#       The document(s) may be used and/or copied only with the written
+#       permission from Ericsson Radio Systems AB or in accordance with
+#       the terms and conditions stipulated in the agreement/contract
+#       under which the document(s) have been supplied.
+#
+#################################################################################
+
+
+# ATCOMINF Test Callback Library
+
+# Revision History
+# <date>	<signum>	<details>
+# 26-9-2012	xdansan		Add a oss_only user as secondary member of the COM group
+
+# Complete the callbacks in this library to automate the test case.
+#
+# Callbacks are stateless, it is not possible to set a global variable in one callback 
+# and access it it in another.
+#
+# Callbacks are called by the test harness in the following order:
+#
+# tc_setup() 		# Called only for independent TC execution mode to setup TC
+# tc_precon()		# Conditions that should exist before TC can run
+# tc_test()		# Runs the test for this TC
+# tc_postcon()		# Conditions that should/should not exist after successful TC 
+# tc_cleanup()		# Called only for independent TC execution mode to clenup after TC
+
+# All callbacks must PASS for a TC PASS result
+
+LDAP_BIN="/ericsson/sdee/bin"
+GNAME="com"
+UNAME="test1"
+WORKFILE="/tmp/tcid302.tmp"
+#################################################################################
+#
+# CALLBACK: TC_SETUP
+#
+# This callback function is only called if the harness execution mode is 'AT_INDEPENDENT'
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_setup() {
+
+
+
+
+
+    
+
+	# Replace PASSWD with the correct credentials
+	for ii in *.in; do
+		sed -e "s/^PASSWD$/$LDAP_SUPERUSER_PASSWD/" \
+			-e "s/UNAME/$UNAME/" $ii > $ii.tmp
+	done
+
+
+#-------------------------------------------------------------------------------
+#  Create test users in 1.com
+#-------------------------------------------------------------------------------
+
+	echo "Creating test user in 1.com"
+	${AT_BIN}/con_ex.bsh -d 302_user.in.tmp -o 302_user.exp -c "$LDAP_BIN/add_user.sh -d 1.com -u $UNAME -i 5201" -r
+	/usr/local/bin/expect 302_user.exp || {
+		echo "Test user was not created in 1.com, error code $?"
+		return 1
+	}
+
+	return 0
+
+}
+#################################################################################
+
+#################################################################################
+#
+# CALLBACK: TC_PRECON
+#
+# This callback function checks the correct conditions exist to run the TC.
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+ 
+tc_precon() {
+
+
+
+	LDAP_SERVER_UP || {
+		echo "LDAP server not running"
+		return 1
+	}
+
+#-------------------------------------------------------------------------------
+#  Check test group is present
+#-------------------------------------------------------------------------------
+
+		echo "checking $GNAME in 1.com"
+   		/usr/bin/ldapsearch -D "cn=Directory Manager" -w $LDAP_SUPERUSER_PASSWD -b "ou=group,dc=1,dc=com" "objectclass=*" | grep -w $GNAME > /dev/null 2>&1
+		if [[ $? -ne 0 ]] ; then
+			echo "The group $GNAME was NOT found in 1.com... This wasn't expected"
+			return 1
+		fi
+
+#-------------------------------------------------------------------------------
+#  Check test user is present
+#-------------------------------------------------------------------------------
+
+	echo "checking $UNAME in 1.com"
+	/usr/bin/ldapsearch -D 'cn=Directory Manager' -w $LDAP_SUPERUSER_PASSWD -b "ou=people,dc=1,dc=com" '(objectclass=posixAccount)' | grep "uid: $UNAME" || {
+		echo "$UNAME user not present in 1.com ... This wasn't expected"
+		return 1
+	}
+
+	return 0
+
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_TEST
+#
+# This callback function runs the test.
+# The harness compares the return code to the SPEC_TC_TEST_PASSCODE value set in the test spec.
+#
+# Return or exit codes:
+#    SPEC_TC_TEST_PASSCODE 	success
+# != SPEC_TC_TEST_PASSCODE 	failure
+ 
+tc_test() {
+>$WORKFILE
+#-------------------------------------------------------------------------------
+#  Add a test user to the com group
+#-------------------------------------------------------------------------------
+
+	echo "adding a test user to the $GNAME group ..."
+	${AT_BIN}/con_ex.bsh -d 302_add_user.in.tmp -o 302_add_user.exp -c "$LDAP_BIN/add_user_to_group.sh -d 1.com -g $GNAME -u $UNAME -y" -r
+	/usr/local/bin/expect 302_add_user.exp > $WORKFILE
+	rc=$?
+	[ $rc -eq 1 ] && grep "ERROR : COM privileges can only be assigned using manage_COM_privs.bsh" $WORKFILE && {
+        echo "Test user was not added to the $GNAME group, error code $rc as expected"
+        return 0
+    } 
+
+	return 0
+
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_POSTCON
+#
+# This callback function checks expected results.
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_postcon() {
+
+#-------------------------------------------------------------------------------
+#  Check that test user was not added
+#-------------------------------------------------------------------------------
+
+	echo "checking $UNAME in 1.com ..."
+	/usr/bin/ldapsearch -D 'cn=Directory Manager' -w $LDAP_SUPERUSER_PASSWD -b uid=$UNAME,ou=people,dc=1,dc=com objectclass=* | grep "gidNumber: $GNAME" || {
+		echo "$UNAME was added to the $GNAME group in 1.com ... This wasn't expected"
+		return 1
+	}
+
+	return 0
+
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_CLEANUP
+#
+# This callback function is only called if the harness execution mode is 'AT_INDEPENDENT'
+# 
+# This callback restores the target system to the state it was in before the TC 
+# was run. It rolls back changes made by callbacks tc_setup() and tc_test()
+# 
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_cleanup() {
+
+
+
+    
+
+	rm $WORKFILE
+
+	return 0
+
+}

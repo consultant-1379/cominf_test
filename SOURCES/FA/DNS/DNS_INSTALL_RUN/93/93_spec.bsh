@@ -1,0 +1,62 @@
+#!/bin/bash
+
+# TEST CASE SPEC FILE
+# This file is generated/updated using the test framework web interface.
+# Manual updates on test servers are lost when the test package is re-installed.
+#
+# Last modified: Friday 31st of May 2013 16:08:48
+#
+
+# These settings must be in BASH script format, they are sourced by other scripts.
+SPEC_FA_NAME="DNS"
+SPEC_UC_NAME="DNS_INSTALL_RUN"
+SPEC_TC_ID=93
+SPEC_TC_SLOGAN="IPv4 DNS lookup"
+SPEC_TC_TYPE="FT"
+SPEC_TC_POLARITY="positive"
+SPEC_TC_PRIORITY="low"
+SPEC_TC_AUTOMATED=1
+SPEC_TC_DEPENDENT_ONLY=0
+SPEC_TC_TIMEOUT=300
+SPEC_TC_TEST_PASSCODE=0
+SPEC_TC_AUTHOR="eshmuna"
+SPEC_TC_AUTOMATOR="eshmuna"
+# this parameter is not interpreted by harness
+SPEC_TC_DISABLED=0
+
+# Please do not remove the comment lines below.
+# They are used as section locators by the test harness.
+
+# BEGIN_PRE_CONDITIONS
+#1. OM primary and Secondary are installed
+#2. Script is running on OM Primary
+#3. DNS server is running on Primary and Secondary
+#4. The /etc/resolv.conf exists and not empty
+#5. vts.com entry exists in  the /etc/resolv.conf
+#
+# END_PRE_CONDITIONS
+
+
+# BEGIN_MANUAL_STEPS
+#1. The DNS functionality can be tested by using 
+#
+#-> dig -x 127.0.0.1
+#-> nslookup localhost
+#-> nslookup
+#   > set debug=10
+#   > <enter ip address of server on network>
+#-> rndc status
+#   number of zones: 3
+#   debug level: 0
+#   xfers running: 0
+#   xfers deferred: 0
+#   soa queries in progress: 0
+#   query logging is OFF
+#   recursive clients: 0/1000
+#   tcp clients: 0/100
+#   server is up and running 
+# END_MANUAL_STEPS
+
+# BEGIN_POST_CONDITIONS
+#None
+# END_POST_CONDITIONS

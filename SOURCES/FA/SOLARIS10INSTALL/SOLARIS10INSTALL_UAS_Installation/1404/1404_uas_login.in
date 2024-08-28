@@ -1,0 +1,20 @@
+Password
+shroot
+#
+/opt/CTXSmf/sbin/ctxnfusesrv -bind `ifconfig -a |grep inet|cut -d ' ' -f2|grep 192` 255.255.255.192
+#
+/opt/CTXSmf/sbin/ctxalt -a `ifconfig -a |grep inet|cut -d ' ' -f2|grep 192` 172.18.117.131
+#
+/opt/CTXSmf/sbin/ctxsrv stop msd
+#
+/opt/CTXSmf/sbin/ctxsrv start msd
+#
+/opt/CTXSmf/sbin/ctxalt  -l|grep -c `ifconfig -a |grep inet|cut -d ' ' -f2|grep 192` > /var/tmp/nat_ip_return_value.txt
+#
+scp -o StrictHostKeyChecking=no /var/tmp/nat_ip_return_value.txt root@omsrvm:/var/tmp/nat_ip_return_value.txt
+Password
+shroot
+#
+rm /var/tmp/nat_ip_return_value.txt 
+#
+exit

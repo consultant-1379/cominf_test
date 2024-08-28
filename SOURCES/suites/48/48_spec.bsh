@@ -1,0 +1,15 @@
+#!/bin/bash
+
+# TEST SUITE SPEC FILE
+# This file is generated/updated using the test framework web interface.
+# Manual updates on test servers are lost when the test package is re-installed.
+#
+# Last modified: Tuesday 5th of February 2013 9:22:27
+#
+SPEC_TS_NAME=X86_CLUSTER_UG_E2E
+SPEC_TS_ID=48
+SPEC_TS_SLOGAN="STAMPING System Upgrade of x86 Cluster"
+SPEC_TS_TIMEOUT=300
+SPEC_TS_AUTHOR="ebatric"
+SPEC_TS_INDEPENDENT=0
+SPEC_TS_TC_IDS=(862 843 845 852 853 859 860 861)

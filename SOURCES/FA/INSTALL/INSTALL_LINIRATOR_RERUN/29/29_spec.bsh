@@ -1,0 +1,72 @@
+#!/bin/bash
+
+# TEST CASE SPEC FILE
+# This file is generated/updated using the test framework web interface.
+# Manual updates on test servers are lost when the test package is re-installed.
+#
+# Last modified: Sunday 31st of March 2013 20:37:23
+#
+
+# These settings must be in BASH script format, they are sourced by other scripts.
+SPEC_FA_NAME="INSTALL"
+SPEC_UC_NAME="INSTALL_LINIRATOR_RERUN"
+SPEC_TC_ID=29
+SPEC_TC_SLOGAN="Linirator, invalid values for deploy type and  NTP"
+SPEC_TC_TYPE="FT"
+SPEC_TC_POLARITY="negative"
+SPEC_TC_PRIORITY="low"
+SPEC_TC_AUTOMATED=0
+SPEC_TC_DEPENDENT_ONLY=0
+SPEC_TC_TIMEOUT=300
+SPEC_TC_TEST_PASSCODE=0
+SPEC_TC_AUTHOR="xamamcg"
+SPEC_TC_AUTOMATOR="xamamcg"
+# this parameter is not interpreted by harness
+SPEC_TC_DISABLED=0
+
+# Please do not remove the comment lines below.
+# They are used as section locators by the test harness.
+
+# BEGIN_PRE_CONDITIONS
+#1/ RHEL_INSTALLED
+#2/ CHECK_PROFILE om_serv_master
+#4/ POSIX_USER_EXISTS ldapadm
+#
+#
+# END_PRE_CONDITIONS
+
+
+# BEGIN_MANUAL_STEPS
+#1/ cp config.ini config.orig
+#2/ iptables -L > iptables.orig
+#3. Run linirator script and answer questions as follows:
+#a. Rubbish for deployment type
+#b. STANDARD for deployment type
+#b. standard when re-ask deployment type 
+#d. answer F to whether want NTP y/n
+#e. answer y when re-asked for NTP y/n
+#f. Invalid IP address for NTP (1.256.1.1)
+#g. Invalid IP address for NTP (1.0001.1.1)
+#h. Invalid IP address for NTP (1:1:1:1::)
+#i. Invalid IP address for NTP (1.1.1.1.1)
+#j. Invalid IP address for NTP (1.1.1)
+#k. Invalid IP address for NTP (1.1..1)
+#l. Invalid IP address for NTP (1.1.0d.1)
+#m. Hit return for NTP IP address
+#n. Hit return for all other values
+#o. Y to confirm values
+# END_MANUAL_STEPS
+
+# BEGIN_POST_CONDITIONS
+#2. iptables -L | diff - iptables.orig
+#3. CONSOLE_OUTPUT_CONTAINS Not a valid answer "rubbish"
+#3. CONSOLE_OUTPUT_CONTAINS Not a valid answer "STANDARD"
+#4. CONSOLE_OUTPUT_CONTAINS Not a valid answer "1.256.1.1"
+#5.  CONSOLE_OUTPUT_CONTAINS Not a valid answer "1.0001.1.1"
+#6. CONSOLE_OUTPUT_CONTAINS Not a valid answer "1:1:1:1::"
+#7. CONSOLE_OUTPUT_CONTAINS Not a valid answer "1.1.1.1.1"
+#8. CONSOLE_OUTPUT_CONTAINS Not a valid answer "1.1.1"
+#9. CONSOLE_OUTPUT_CONTAINS Not a valid answer "1.1..1"
+#10. CONSOLE_OUTPUT_CONTAINS Not a valid answer "1.1.0d.1"
+#
+# END_POST_CONDITIONS

@@ -1,0 +1,53 @@
+#!/bin/bash
+
+# TEST CASE SPEC FILE
+# This file is generated/updated using the test framework web interface.
+# Manual updates on test servers are lost when the test package is re-installed.
+#
+# Last modified: Tuesday 17th of December 2013 9:51:41
+#
+
+# These settings must be in BASH script format, they are sourced by other scripts.
+SPEC_FA_NAME="SOLARIS10MIGRATION"
+SPEC_UC_NAME="SOLARIS10MIGRATION_Same_Release"
+SPEC_TC_ID=1762
+SPEC_TC_SLOGAN="LDAP Migration (prevent migration of password policies)"
+SPEC_TC_TYPE="FT"
+SPEC_TC_POLARITY="positive"
+SPEC_TC_PRIORITY="high"
+SPEC_TC_AUTOMATED=0
+SPEC_TC_DEPENDENT_ONLY=0
+SPEC_TC_TIMEOUT=300
+SPEC_TC_TEST_PASSCODE=0
+SPEC_TC_AUTHOR="xvinkat"
+SPEC_TC_AUTOMATOR="xvinkat"
+# this parameter is not interpreted by harness
+SPEC_TC_DISABLED=0
+
+# Please do not remove the comment lines below.
+# They are used as section locators by the test harness.
+
+# BEGIN_PRE_CONDITIONS
+#<path to the testcase>
+#
+#Upgrade/Migration/Same Release Migration  
+# END_PRE_CONDITIONS
+
+
+# BEGIN_MANUAL_STEPS
+#Follow the section “Restore Service Data” in chapter Same Release New Hardware Migration of the Cominf Upgrade Guide X86.
+#
+#Perform the LDAP migration in interactive mode and also use the option to prevent migration of password policies.
+#
+#Note* 
+#The option to prevent migration of password policies can only be used in case where the ldap domain has changed. 
+# END_MANUAL_STEPS
+
+# BEGIN_POST_CONDITIONS
+#The user whose password has expired is no longer expired
+#The locked user is still locked.
+#All ldap user information and ldap domain information is restored in the new hardware environment.
+#
+#The document procedure executed successfully.
+#No errors were reported in the log files
+# END_POST_CONDITIONS

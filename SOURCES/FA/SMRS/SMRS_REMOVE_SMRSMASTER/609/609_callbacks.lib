@@ -1,0 +1,249 @@
+#!/bin/bash
+#################################################################################
+#
+#
+#       COPYRIGHT (C) ERICSSON RADIO SYSTEMS AB, Sweden
+#
+#       The copyright to the document(s) herein is the property of
+#       Ericsson Radio Systems AB, Sweden.
+#
+#       The document(s) may be used and/or copied only with the written
+#       permission from Ericsson Radio Systems AB or in accordance with
+#       the terms and conditions stipulated in the agreement/contract
+#       under which the document(s) have been supplied.
+#
+#################################################################################
+
+
+# ATCOMINF Test Callback Library
+
+# Revision History
+# <date>	<signum>	<details>
+# 		edavmax?
+# 20121113	xkalbha		update for non-blade
+# Complete the callbacks in this library to automate the test case.
+#
+# Callbacks are stateless, it is not possible to set a global variable in one callback 
+# and access it it in another.
+#
+# Callbacks are called by the test harness in the following order:
+#
+# tc_setup() 		# Called only for independent TC execution mode to setup TC
+# tc_precon()		# Conditions that should exist before TC can run
+# tc_test()		# Runs the test for this TC
+# tc_postcon()		# Conditions that should/should not exist after successful TC 
+# tc_cleanup()		# Called only for independent TC execution mode to clenup after TC
+
+# All callbacks must PASS for a TC PASS result
+
+#################################################################################
+#
+# CALLBACK: TC_SETUP
+#
+# This callback function is only called if the harness execution mode is 'AT_INDEPENDENT'
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_setup() {
+	source /etc/opt/ericsson/nms_bismrs_mc/smrs_config
+	
+	i=0
+	for slave_service_name in ${SMRS_SLAVE_SERVICE_NAME[@]}
+	do
+		#echo $slave_service_name: ${SMRS_SLAVE_SERVICE_ENABLED_NETWORKS[$i]}
+
+		services=''
+		echo ${SMRS_SLAVE_SERVICE_ENABLED_NETWORKS[$i]} | grep GRAN > /dev/null && services=$(echo $services; echo ${G_SMRS_SLAVE_GRAN_FTPSERVICES[@]})
+		echo ${SMRS_SLAVE_SERVICE_ENABLED_NETWORKS[$i]} | grep WRAN > /dev/null && services=$(echo $services; echo ${G_SMRS_SLAVE_WRAN_FTPSERVICES[@]})
+		echo ${SMRS_SLAVE_SERVICE_ENABLED_NETWORKS[$i]} | grep LRAN > /dev/null && services=$(echo $services; echo ${G_SMRS_SLAVE_LRAN_FTPSERVICES[@]})
+
+		for service in ${services[@]}
+		do
+			user=$(echo $service | sed "s/%slave_service_name%/$slave_service_name/g")
+
+			for ip in ${SMRS_SLAVE_SERVICE_NEDSS_IP[@]}
+			do
+				ssh -o "BatchMode=yes" smrs_master "ssh -o 'BatchMode=yes' $ip id $user &> /dev/null" &> /dev/null || {
+					echo $user does not exist on $ip
+					return 1
+				}
+		done
+		
+		ssh -o "BatchMode=yes" smrs_master id $user &> /dev/null || {
+			echo $user does not exist on smrs_master
+			return 2
+		}
+		done
+		i=$(($i+1))
+	done
+
+	# seems to disappear during the run of a test suite
+	# looping max of 5 times to see if it exists
+	
+		mount | grep "/var/opt/ericsson/smrsstore/.*/4SlaveM2"  && { echo "4SlaveM2 exists and needs to be deleted" ; return 3;}
+		
+	return 0
+
+}
+#################################################################################
+
+#################################################################################
+#
+# CALLBACK: TC_PRECON
+#
+# This callback function checks the correct conditions exist to run the TC.
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+ 
+tc_precon() {
+
+	# Replace PASSWD with the correct credentials
+	for ii in *.in; do
+		sed "s/^PASSWD$/$SMRS_MASTER_ROOTPW/" $ii > $ii.tmp
+	done
+
+	source /etc/opt/ericsson/nms_bismrs_mc/smrs_config
+
+	# record smrs_masters ip for postcon testing
+	grep -w smrs_master /etc/inet/hosts | awk '{print $1}'> smrs_master.ip.tmp
+
+	# record nas IP and SMRS_MASTER_IP for postcon testing
+	echo NAS1_IP=$NAS1_IP > bismrsproperties.tmp
+	echo SMRS_MASTER_IP=$SMRS_MASTER_IP >> bismrsproperties.tmp
+
+	return 0
+
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_TEST
+#
+# This callback function runs the test.
+# The harness compares the return code to the SPEC_TC_TEST_PASSCODE value set in the test spec.
+#
+# Return or exit codes:
+#    SPEC_TC_TEST_PASSCODE 	success
+# != SPEC_TC_TEST_PASSCODE 	failure
+ 
+tc_test() {
+	
+	${AT_BIN}/con_ex.bsh -d 609_delete_smrs_master.in -o expect.exp -c "/opt/ericsson/nms_bismrs_mc/bin/configure_smrs.sh delete smrs_master"
+    /usr/local/bin/expect expect.exp && {
+		return 0
+	}
+
+	return 1
+
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_POSTCON
+#
+# This callback function checks expected results.
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_postcon() {
+
+
+	# check the hosts file
+	grep -w smrs_master /etc/inet/hosts && {
+		echo smrs_master still exists in hosts
+		return 1
+	}
+
+	# ensure we cant ssh to what was the smrs master without a password
+	ip=$(cat smrs_master.ip.tmp)
+	ssh -o "BatchMode=yes" $ip ls && {
+		echo still able to ssh to $ip
+		return 1
+	}
+
+	# check for existence of nms and aif groups
+	/usr/local/bin/expect ssh_setup.sh ssh "$ip egrep -w 'nms|aif' /etc/group" shroot && {
+		echo error with groups on $ip
+		return 1
+	}
+
+	# check for existence of smrsuser on what was previously the smrs_master
+	/usr/local/bin/expect ssh_setup.sh ssh "$ip egrep -w 'smrsuser' /etc/passwd" shroot && {
+		echo smrsuser still exists on $ip
+		return 1
+	}
+
+	/usr/local/bin/expect ssh_setup.sh ssh "$ip egrep 'coresmo|gransmo|l-smobackup|l-smoconfig|l-smokeystore|l-smoswstore|smo-backup|smo-config|smo-keystore|smo-swstore' /etc/passwd" shroot && {
+		echo smo user still exists on $ip
+		return 1
+	}
+
+	egrep "coresmo|gransmo|l-smobackup|l-smoconfig|l-smokeystore|l-smoswstore|smo-backup|smo-config|smo-keystore|smo-swstore" /etc/passwd && {
+		echo smo user still exists on OSS master
+		return 1
+	}
+
+	# check for existence of users in ONRM database
+	/opt/ericsson/nms_cif_cs/etc/unsupported/bin/cstest -s ONRM_CS lt FtpService  | grep . && {
+		echo entries still exist in ONRM
+		return 1
+	}
+
+	source bismrsproperties.tmp
+	
+	
+			
+		${AT_BIN}/con_ex.bsh -d ssh.in.tmp -o expect.exp -c "ssh root@$SMRS_MASTER_IP \"test -s /etc/exports \""
+		/usr/local/bin/expect expect.exp && {
+			echo "/etc/exports not empty on smrs master $SMRS_MASTER_IP, Test Failed, rc $?"
+			return 3
+		}
+		
+		sleep 5
+		${AT_BIN}/con_ex.bsh -d ssh.in.tmp -o expect.exp -c "ssh root@$SMRS_MASTER_IP \" mount \""
+		/usr/local/bin/expect expect.exp  | grep smrspool && {
+			echo "All SMRS mounts not unmounted on smrs master $SMRS_MASTER_IP, Test Failed, rc $?"
+			return 4
+		}
+		${AT_BIN}/con_ex.bsh -d ssh.in.tmp -o expect.exp -c "ssh root@$SMRS_MASTER_IP \" cat /etc/vfstab \""
+		/usr/local/bin/expect expect.exp  | grep smrspool && {
+			echo "All SMRS mounts not deleted from  /etc/vfstab on smrs master $SMRS_MASTER_IP, Test Failed, rc $?"
+			return 5
+		}
+
+	
+
+	return 0
+
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_CLEANUP
+#
+# This callback function is only called if the harness execution mode is 'AT_INDEPENDENT'
+# 
+# This callback restores the target system to the state it was in before the TC 
+# was run. It rolls back changes made by callbacks tc_setup() and tc_test()
+# 
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_cleanup() {
+
+	return 0
+
+}

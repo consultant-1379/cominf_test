@@ -1,0 +1,15 @@
+#!/bin/bash
+
+# TEST SUITE SPEC FILE
+# This file is generated/updated using the test framework web interface.
+# Manual updates on test servers are lost when the test package is re-installed.
+#
+# Last modified: Friday 24th of May 2013 17:17:06
+#
+SPEC_TS_NAME=RB_test4
+SPEC_TS_ID=36
+SPEC_TS_SLOGAN="restart server x86"
+SPEC_TS_TIMEOUT=300
+SPEC_TS_AUTHOR="ebatric"
+SPEC_TS_INDEPENDENT=0
+SPEC_TS_TC_IDS=(796)

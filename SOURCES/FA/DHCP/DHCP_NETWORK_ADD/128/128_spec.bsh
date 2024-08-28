@@ -1,0 +1,43 @@
+#!/bin/bash
+
+# TEST CASE SPEC FILE
+# This file is generated/updated using the test framework web interface.
+# Manual updates on test servers are lost when the test package is re-installed.
+#
+# Last modified: Tuesday 14th of May 2013 7:57:24
+#
+
+# These settings must be in BASH script format, they are sourced by other scripts.
+SPEC_FA_NAME="DHCP"
+SPEC_UC_NAME="DHCP_NETWORK_ADD"
+SPEC_TC_ID=128
+SPEC_TC_SLOGAN="Test network creation with DHCP down"
+SPEC_TC_TYPE="FT"
+SPEC_TC_POLARITY="positive"
+SPEC_TC_PRIORITY="high"
+SPEC_TC_AUTOMATED=1
+SPEC_TC_DEPENDENT_ONLY=0
+SPEC_TC_TIMEOUT=300
+SPEC_TC_TEST_PASSCODE=0
+SPEC_TC_AUTHOR="ecilosh"
+SPEC_TC_AUTOMATOR="ecilosh"
+# this parameter is not interpreted by harness
+SPEC_TC_DISABLED=0
+
+# Please do not remove the comment lines below.
+# They are used as section locators by the test harness.
+
+# BEGIN_PRE_CONDITIONS
+#DHCP_SERVER_INSTALLED
+#DHCP6_SERVER_RUNNING and DHCP_SERVER_RUNNING are false
+# END_PRE_CONDITIONS
+
+
+# BEGIN_MANUAL_STEPS
+#Try to create network with DHCP service not running using /ericsson/ocs/bin/ai_manager.sh -add net
+#Check non-zero return code
+# END_MANUAL_STEPS
+
+# BEGIN_POST_CONDITIONS
+#None
+# END_POST_CONDITIONS

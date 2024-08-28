@@ -1,0 +1,202 @@
+#!/bin/bash
+#################################################################################
+#
+#
+#       COPYRIGHT (C) ERICSSON RADIO SYSTEMS AB, Sweden
+#
+#       The copyright to the document(s) herein is the property of
+#       Ericsson Radio Systems AB, Sweden.
+#
+#       The document(s) may be used and/or copied only with the written
+#       permission from Ericsson Radio Systems AB or in accordance with
+#       the terms and conditions stipulated in the agreement/contract
+#       under which the document(s) have been supplied.
+#
+#################################################################################
+
+
+# ATCOMINF Test Callback Library
+
+# Revision History
+# <date>	xsougha		First Version		
+
+# Complete the callbacks in this library to automate the test case.
+#
+# Callbacks are stateless, it is not possible to set a global variable in one callback 
+# and access it it in another.
+#
+# Callbacks are called by the test harness in the following order:
+#
+# tc_setup() 		# Called only for independent TC execution mode to setup TC
+# tc_precon()		# Conditions that should exist before TC can run
+# tc_test()		# Runs the test for this TC
+# tc_postcon()		# Conditions that should/should not exist after successful TC 
+# tc_cleanup()		# Called only for independent TC execution mode to cleanup after TC
+
+# All callbacks must PASS for a TC PASS result
+
+#################################################################################
+#
+# CALLBACK: TC_SETUP
+#
+# This callback function is only called if the harness execution mode is 'AT_INDEPENDENT'
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_setup() {
+	return 0
+}
+#################################################################################
+
+#################################################################################
+#
+# CALLBACK: TC_PRECON
+#
+# This callback function checks the correct conditions exist to run the TC.
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+ 
+tc_precon() {
+	return 0
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_TEST
+#
+# This callback function runs the test.
+# The harness compares the return code to the SPEC_TC_TEST_PASSCODE value set in the test spec.
+#
+# Return or exit codes:
+#    SPEC_TC_TEST_PASSCODE 	success
+# != SPEC_TC_TEST_PASSCODE 	failure
+ 
+tc_test() {
+        # Verifying providing invalid domain name with -d option while passing parameter to manage_COM_privs.bsh script 
+	/ericsson/sdee/bin/manage_COM_privs.bsh -l -u u1784 -d invalid_domain.com
+        CONSOLE_OUTPUT_CONTAINS "ERROR : Domain " ||  {
+                echo "Failed to verify providing invalid domain with -d option"
+                return 1
+        }
+
+	# Creating a new user u1784
+        ${AT_BIN}/con_ex.bsh -d 1784_add_user_u1784.in -o 1784_add_user_u1784.exp -c "/ericsson/sdee/bin/add_user.sh"
+        /usr/local/bin/expect 1784_add_user_u1784.exp
+        CONSOLE_OUTPUT_CONTAINS "OK: Account created" || {
+                echo "Failed to add user u1784"
+                return 1
+        }
+
+        # Do not mention domain name in batch file and try validating domain
+	# Step 1: Create a batch file without mentioning domain name
+	echo "ACTION add
+OBJECT alias
+u1784 alias2" > /var/tmp/batchfile1
+
+	# Step 2: Trying to validate domain
+        ${AT_BIN}/con_ex.bsh -d 1784_validate_domain_without_domain_mention_in_batch_file.in -o 1784_validate_domain_without_domain_mention_in_batch_file.exp -c "/ericsson/sdee/bin/manage_COM_privs.bsh -a alias -d vts.com -f /var/tmp/batchfile1"
+        /usr/local/bin/expect 1784_validate_domain_without_domain_mention_in_batch_file.exp 
+        CONSOLE_OUTPUT_CONTAINS "ERROR : runUserCOMbatchfile: Unable to locate/parse DOMAIN line in batch file" || {
+                echo "Failed to verify validation of domain without mentioning domain name in batchfile"
+                return 1
+        }
+ 
+	# Giving invalid domain names in batch files and trying to validate them
+	# Step 1: Overwrite the batch file with invalid domain name
+	echo "DOMAIN invalid.com
+ACTION add
+OBJECT alias
+u1784 alias2" > /var/tmp/batchfile
+
+	# Step 2: Trying to validate domain
+        ${AT_BIN}/con_ex.bsh -d 1784_validate_domain_invalid_domain_name.in -o 1784_validate_domain_invalid_domain_name.exp -c "/ericsson/sdee/bin/manage_COM_privs.bsh -a alias -d vts.com -f /var/tmp/batchfile"
+        /usr/local/bin/expect 1784_validate_domain_invalid_domain_name.exp
+        CONSOLE_OUTPUT_CONTAINS "ERROR : runUserCOMbatchfile: Domain" || {
+                echo "Failed to verify validation of domain without mentioning domain name in batchfile"
+                return 1
+        }
+
+	# Give 2 domain names in batch file 
+	# Step 1: Overwrite the batch file with 2 domain names
+	echo "DOMAIN vts.com globaldomain
+ACTION add
+OBJECT alias
+u1784 alias2" > /var/tmp/batchfile2
+
+	# Step 2:
+        ${AT_BIN}/con_ex.bsh -d 1784_validate_domain_2_domains.in -o 1784_validate_domain_2_domains.exp -c "/ericsson/sdee/bin/manage_COM_privs.bsh -a alias -d vts.com -f /var/tmp/batchfile2"
+        /usr/local/bin/expect 1784_validate_domain_2_domains.exp
+        CONSOLE_OUTPUT_CONTAINS "ERROR : runUserCOMbatchfile: Found " || {
+                echo "Failed to verify validation of 2 domains in first line of batchfile"
+                return 1
+        }
+
+	# Try the above operation with -b option appended to manage_COM_privs.bsh script
+        ${AT_BIN}/con_ex.bsh -d 1784_validate_domain_2_domains_b.in -o 1784_validate_domain_2_domains_b.exp -c "/ericsson/sdee/bin/manage_COM_privs.bsh -d vts.com -b /var/tmp/batchfile2"
+        /usr/local/bin/expect 1784_validate_domain_2_domains_b.exp
+        CONSOLE_OUTPUT_CONTAINS "ERROR : runUserCOMbatchfile: Found" ||
+{
+                echo "Failed to verify validation of 2 domains in first line of batchfile"
+                return 1
+        }
+
+	return 0
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_POSTCON
+#
+# This callback function checks expected results.
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_postcon() {
+	return 0
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_CLEANUP
+#
+# This callback function is only called if the harness execution mode is 'AT_INDEPENDENT'
+# 
+# This callback restores the target system to the state it was in before the TC 
+# was run. It rolls back changes made by callbacks tc_setup() and tc_test()
+# 
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_cleanup() {
+        # Deleting user u1784
+        ${AT_BIN}/con_ex.bsh -d 1784_del_user_u1784.in -o 1784_del_user_u1784.exp -c "/ericsson/sdee/bin/del_user.sh"
+        /usr/local/bin/expect 1784_del_user_u1784.exp
+        CONSOLE_OUTPUT_CONTAINS "OK: Account deleted" || {
+                echo "Failed to delete user u1784"
+                return 1
+        }
+
+        # Verifying whether user u1784 got successfully deleted
+        ldapsearch -D "cn=directory manager" -w ldappass -b "uid=u1784,ou=people,dc=vts,dc=com" "objectclass=*" && {
+                echo "User u1784 still exists. Failed to delete the same"
+                return 1
+        }
+
+	# Removing temporary unused files
+	rm -rf *.exp /var/tmp/batchfile*
+
+	return 0 
+}

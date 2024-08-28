@@ -1,0 +1,15 @@
+#!/bin/bash
+
+# TEST SUITE SPEC FILE
+# This file is generated/updated using the test framework web interface.
+# Manual updates on test servers are lost when the test package is re-installed.
+#
+# Last modified: Wednesday 7th of November 2012 17:05:53
+#
+SPEC_TS_NAME=DUMMY_SPARC_POSTINSTALL_TESTS
+SPEC_TS_ID=19
+SPEC_TS_SLOGAN="Test cases for postinstall on SPARC"
+SPEC_TS_TIMEOUT=300
+SPEC_TS_AUTHOR="xjithbv"
+SPEC_TS_INDEPENDENT=1
+SPEC_TS_TC_IDS=(611 612 613 645 671 675 192)

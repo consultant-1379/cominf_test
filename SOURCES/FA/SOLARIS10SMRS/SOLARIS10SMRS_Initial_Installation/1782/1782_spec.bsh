@@ -1,0 +1,62 @@
+#!/bin/bash
+
+# TEST CASE SPEC FILE
+# This file is generated/updated using the test framework web interface.
+# Manual updates on test servers are lost when the test package is re-installed.
+#
+# Last modified: Wednesday 18th of December 2013 9:19:46
+#
+
+# These settings must be in BASH script format, they are sourced by other scripts.
+SPEC_FA_NAME="SOLARIS10SMRS"
+SPEC_UC_NAME="SOLARIS10SMRS_Initial_Installation"
+SPEC_TC_ID=1782
+SPEC_TC_SLOGAN="Verify of SMRS configuration by BI SMRS MC from server "
+SPEC_TC_TYPE="FT"
+SPEC_TC_POLARITY="positive"
+SPEC_TC_PRIORITY="high"
+SPEC_TC_AUTOMATED=1
+SPEC_TC_DEPENDENT_ONLY=0
+SPEC_TC_TIMEOUT=300
+SPEC_TC_TEST_PASSCODE=0
+SPEC_TC_AUTHOR="xnavema"
+SPEC_TC_AUTOMATOR="xnavema"
+# this parameter is not interpreted by harness
+SPEC_TC_DISABLED=0
+
+# Please do not remove the comment lines below.
+# They are used as section locators by the test harness.
+
+# BEGIN_PRE_CONDITIONS
+#none
+# END_PRE_CONDITIONS
+
+
+# BEGIN_MANUAL_STEPS
+#Verify integrity of media
+#Configuration
+#
+#One (1) server. One SMRS Master(NESS) server. One NEDSS.
+#Conditional Test
+#
+#On the server, issue the command /opt/ericsson/nms_bismrs_mc/bin/configure_smrs.sh without parameters.
+#Acceptance Criteria
+#
+#A help text will be displayed describing how to use the script.
+#Conditional Test
+#
+#On the server, connect the SMRS Master(NESS). Check the directories /var/opt/ericsson/log (on the ) and /ericsson/smrs/log (on the SMRS Master()).
+#Acceptance Criteria
+#
+#Log files should be visible detailing what actions were performed on each server.
+#Conditional Test
+#
+#On the server, connect the NEDSS. Check the the directories /var/opt/ericsson/log (on the ) and /ericsson/smrs/log (on the SMRS Master() and NEDSS).
+#Acceptance Criteria
+#
+#Log files should be visible detailing what actions were performed on each server. Configuration of the NEDSS should be performed from the SMRS Master(NESS). 
+# END_MANUAL_STEPS
+
+# BEGIN_POST_CONDITIONS
+#none
+# END_POST_CONDITIONS

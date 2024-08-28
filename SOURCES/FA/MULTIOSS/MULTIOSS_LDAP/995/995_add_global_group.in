@@ -1,0 +1,10 @@
+LDAP Directory Manager password:
+ldapadmin
+Start of gidNumber search range
+1000
+End of gidNumber search range
+59999
+New global group gidNumber
+1002
+Continue to create global group
+y

@@ -1,0 +1,4274 @@
+#!/bin/bash
+#################################################################################
+#
+#
+#       COPYRIGHT (C) ERICSSON RADIO SYSTEMS AB, Sweden
+#
+#       The copyright to the document(s) herein is the property of
+#       Ericsson Radio Systems AB, Sweden.
+#
+#       The document(s) may be used and/or copied only with the written
+#       permission from Ericsson Radio Systems AB or in accordance with
+#       the terms and conditions stipulated in the agreement/contract
+#       under which the document(s) have been supplied.
+#
+#################################################################################
+
+
+# ATCOMINF Test Callback Library
+
+# Revision History
+# <date>	<signum>	<details>
+
+# Complete the callbacks in this library to automate the test case.
+#
+# Callbacks are stateless, it is not possible to set a global variable in one callback 
+# and access it it in another.
+#
+# Callbacks are called by the test harness in the following order:
+#
+# tc_setup() 		# Called only for independent TC execution mode to setup TC
+# tc_precon()		# Conditions that should exist before TC can run
+# tc_test()		# Runs the test for this TC
+# tc_postcon()		# Conditions that should/should not exist after successful TC 
+# tc_cleanup()		# Called only for independent TC execution mode to cleanup after TC
+
+# All callbacks must PASS for a TC PASS result
+
+#################################################################################
+#
+# CALLBACK: TC_SETUP
+#
+# This callback function is only called if the harness execution mode is 'AT_INDEPENDENT'
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_setup() {
+
+	# Coded to fail in case TC_AUTOMATED=1 before automation completed
+	# Change return code as required
+
+	return 0
+
+}
+#################################################################################
+
+#################################################################################
+#
+# CALLBACK: TC_PRECON
+#
+# This callback function checks the correct conditions exist to run the TC.
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+ 
+tc_precon() {
+
+	# Coded to fail in case TC_AUTOMATED=1 before automation completed
+	# Change return code as required
+
+	return 0
+
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_TEST
+#
+# This callback function runs the test.
+# The harness compares the return code to the SPEC_TC_TEST_PASSCODE value set in the test spec.
+#
+# Return or exit codes:
+#    SPEC_TC_TEST_PASSCODE 	success
+# != SPEC_TC_TEST_PASSCODE 	failure
+ 
+tc_test() {
+
+	# Coded to fail in case TC_AUTOMATED=1 before automation complete
+	# Change return code as required
+
+
+
+# To check for Shipment
+
+export a=`${IST_RUN} -v`
+
+export a=`${IST_RUN} -v | awk 'NR == 3' | grep "Shipment" | awk '{print $3}' | cut -c22-28`
+
+export b=`${IST_RUN} -v | awk 'NR == 3' | grep "Shipment" | awk '{print $3}' | cut -c22-23`
+
+export c=`${IST_RUN} -v | awk 'NR == 3' | grep "Shipment" | awk '{print $3}' | cut -c25`
+
+export d=`${IST_RUN} -v | awk 'NR == 3' | grep "Shipment" | awk '{print $3}' | cut -c27-28`
+
+if [[ $b -ge 14 && $c -ge 0 && $d -ge 0 ]]; then
+
+   echo "Shipment greater than or equal to 14.0"
+
+else
+
+  echo "Shipment less than 14.0"
+
+  exit 1
+
+fi
+
+#6.1    WP00152 . AIPCM phase out
+
+
+# 1.Verify the server is jumped with OSS-RC 14.1.6 shipment. 
+
+IST_RUN=/opt/ericsson/sck/bin/ist_run
+
+export a=`${IST_RUN} -v`
+
+echo "1. Shipment :\n$a \n"
+
+export a=`${IST_RUN} -v | awk 'NR == 3' | grep "Shipment" | awk '{print $3}' | cut -c22-28`
+
+s=$a
+
+if [[ "$a" == "$s" ]]; then
+     
+  echo "Correct Shipment"
+
+else
+
+  echo "Wrong Shipment"
+
+fi
+
+export a=`${IST_RUN} -v | grep "REV" | awk '{print $5}'`
+
+R=$a
+
+echo "$R"
+
+
+if [[ "$a" == "$R" ]]; then
+
+  echo "Correct Revision"
+
+else
+
+  echo "Wrong Revision"
+
+fi
+
+export a=`${IST_RUN} -v | grep "System Revision" | awk '{print $3}'`
+
+R=$a
+
+echo "$R"
+
+if [ "$a" == "$R" ]; then
+
+  echo "Correct System Revision"
+
+else
+
+  echo "Wrong System Revision"
+
+fi
+
+
+#2.Verify the correct version of ECONFsystem,ERICsck is installed on the initial installed servers. 
+
+#ECONFsystem
+
+export b=`pkginfo -l ECONFsystem`
+
+echo "2. Version of ECONFsystem :\n$b \n"
+
+export b=`pkginfo -l ECONFsystem | grep "VERSION" | awk '{print $2}'`
+
+V=$b
+
+echo "$V"
+
+if [[ "$b" == "$V" ]]; then
+
+  echo "Correct VERSION"
+
+else
+
+  echo "Wrong VERSION"
+
+fi
+
+#ERICsck
+
+export b=`cd /opt/ericsson/sck/java_desktop | pkginfo -l ERICsck`
+
+echo "$b"
+
+echo "2. Version of ERICsck :\n$b \n"
+
+export b=`cd /opt/ericsson/sck/java_desktop | pkginfo -l ERICsck | grep "VERSION" | awk '{print $2}'`
+
+V=$b
+
+echo "$V"
+
+if [[ "$b" == "$V" ]]; then
+
+  echo "Correct VERSION"
+
+else
+
+  echo "Wrong VERSION"
+
+fi
+
+#3. verify the AIPCM feature integration is removed from ECONFsystem,ERICsck. 
+
+#a. check the Feature name is removed from the following files under 
+#"/ericsson/templates/system/appl_info". [aipcm]  
+
+export a=`cd /ericsson/templates/system/appl_info | find .|xargs grep -w -i aipcm`
+
+#b.Check the Package name and the feature name is removed in the belowfile under 
+#"/ericsson/templates/system/pkg_data/". pkg-feature-remove.map 
+
+export a=`cd /ericsson/templates/system/pkg_data | find .|xargs grep -w -i aipcm`
+
+#c. check the aipcm_server MC and aipcm variable is removed.
+
+
+export a=`cd /ericsson/templates/system | cat mc_config.ini|grep -i aipcm_server`
+
+export b=`cd /ericsson/templates/system/ipf_templates | cat mc_table|grep -i aipcm_server`
+
+export c=`cd /ericsson/templates/system/ipf_templates | cat system_end_templ | grep aipcm`
+
+
+#d. check the aipcm configuration is removed from SCK intgration files.
+
+export a=`cd /opt/ericsson/sck | find .|xargs grep aipcm
+
+
+#4.Verify the package and feature are not installed and Ist'd successfully
+
+export a=`cd /ericsson/templates/system/pkg_data | pkginfo -l ERICaipcm 2>&1`
+
+echo "$a"
+
+if [ $? -eq 0 ]; then
+
+  echo "Package and feature are not installed"
+
+else
+
+  echo "Package installed"
+
+fi
+
+export b=`cd /ericsson/templates/system/pkg_data | cist -s |grep aipcm`
+
+echo "$b"
+
+#5. verify the aipcm_server MC is not listed..
+
+smtool=/opt/ericsson/nms_cif_sm/bin/smtool
+
+export a=`cd /ericsson/templates/system/appl_info | ${smtool} config aipcm_server`
+
+echo "$a"
+
+if [[ "$a" == "Unknown target" ]]; then
+
+  echo "Mc not Listed"
+
+else
+
+  echo "Wrong target"
+
+fi
+
+
+export b=`cd /ericsson/templates/system/appl_info | ${smtool} l |grep aipcm_server`
+
+echo "$b"
+
+#6.2    OSS-RC 14 WP00313 - Remove ANR for WCDMA impacts from CEX and Sentinel 
+
+#1.Verify the server is jumped with OSS-RC 14.1.6 shipment. 
+
+IST_RUN=/opt/ericsson/sck/bin/ist_run
+
+export a=`${IST_RUN} -v`
+
+echo "1. Shipment :\n$a \n"
+
+export a=`${IST_RUN} -v | awk 'NR == 3' | grep "Shipment" | awk '{print $3}' | cut -c22-28`
+
+s=$a
+
+if [[ "$a" == "$s" ]]; then
+     
+  echo "Correct Shipment"
+
+else
+
+  echo "Wrong Shipment"
+
+fi
+
+export a=`${IST_RUN} -v | grep "REV" | awk '{print $5}'`
+
+R=$a
+
+echo "$R"
+
+
+if [[ "$a" == "$R" ]]; then
+
+  echo "Correct Revision"
+
+else
+
+  echo "Wrong Revision"
+
+fi
+
+export a=`${IST_RUN} -v | grep "System Revision" | awk '{print $3}'`
+
+R=$a
+
+echo "$R"
+
+if [ "$a" == "$R" ]; then
+
+  echo "Correct System Revision"
+
+else
+
+  echo "Wrong System Revision"
+
+fi
+
+#2.Verify the correct version of ECONFsystem is installed on the initial installed servers. 
+
+export b=`pkginfo -l ECONFsystem`
+
+echo "2. Version of ECONFsystem :\n$b \n"
+
+export b=`pkginfo -l ECONFsystem | grep "VERSION" | awk '{print $2}'`
+
+V=$b
+
+echo "$V"
+
+if [[ "$b" == "$V" ]]; then
+
+  echo "Correct VERSION"
+
+else
+
+  echo "Wrong VERSION"
+
+fi
+
+#3. Verify the WCDMA Self Organizing Network Management Service
+
+#a. check the Feature name is removed from the following files 
+
+cd /ericsson/templates/system/appl_info
+
+export a=`cd /ericsson/templates/system/appl_info | find .|xargs grep -w -i nms_apr_wcdmass`
+
+echo "$a"
+
+if [ -z "${a}" ]; then
+
+
+  echo "Feature name is removed"
+
+else
+
+  echo "Feature name not removed"
+
+fi
+
+#b.Check the Package name and the feature name is removed in the below file under 
+
+cd /ericsson/templates/system/pkg_data
+
+export b=`cd /ericsson/templates/system/pkg_data | find .|xargs grep -w -i nms_apr_wcdmass`
+
+if [ -z "${b}" ]; then
+
+
+  echo "Package name and Feature name is removed"
+
+else
+
+  echo "Package name and Feature name not removed"
+
+fi
+
+#4.Verify the package and feature are not installed and Ist'd successfully 
+
+
+export a=`cd /ericsson/templates/system/pkg_data | pkginfo -l ERICwcdmass 2>&1`
+
+echo "$a"
+
+if [ $? -eq 0 ]; then
+
+  echo "Package and feature are not installed"
+
+else
+
+  echo "Package installed"
+
+fi
+
+export b=`cd /ericsson/templates/system/pkg_data | cist -s |grep nms_apr_wcdmass`
+
+echo "$b"
+
+#6.3    Capture new AXE commands introduced for OSS RC 14.1.6
+
+#1.Verify the server is jumped with OSS-RC 14.1.6 shipment. 
+
+
+IST_RUN=/opt/ericsson/sck/bin/ist_run
+
+export a=`${IST_RUN} -v`
+
+echo "1. Shipment :\n$a \n"
+
+export a=`${IST_RUN} -v | awk 'NR == 3' | grep "Shipment" | awk '{print $3}' | cut -c22-28`
+
+s=$a
+
+if [[ "$a" == "$s" ]]; then
+     
+  echo "Correct Shipment"
+
+else
+
+  echo "Wrong Shipment"
+
+fi
+
+export a=`${IST_RUN} -v | grep "REV" | awk '{print $5}'`
+
+R=$a
+
+echo "$R"
+
+
+if [[ "$a" == "$R" ]]; then
+
+  echo "Correct Revision"
+
+else
+
+  echo "Wrong Revision"
+
+fi
+
+export a=`${IST_RUN} -v | grep "System Revision" | awk '{print $3}'`
+
+R=$a
+
+echo "$R"
+
+if [ "$a" == "$R" ]; then
+
+  echo "Correct System Revision"
+
+else
+
+  echo "Wrong System Revision"
+
+fi
+
+#2.Verify the correct version of ERICaxe is installed on the initial installed servers.
+
+export b=`pkginfo -l ERICaxe`
+
+echo "$b"
+
+echo "Version of ERICaxe :\n$b \n"
+
+export b=`pkginfo -l ERICaxe | grep "VERSION" | awk '{print $2}'`
+
+V=$b
+
+echo "$V"
+
+if [[ "$b" == "$V" ]]; then
+
+  echo "Correct VERSION"
+
+else
+
+  echo "Wrong VERSION"
+
+fi
+
+
+#3.Verify the updated MML commands are updated in /opt/ericsson/bin/activityAdmin
+
+export a=`/opt/ericsson/bin/activityAdmin -list | grep -i mml | grep 'AdvancedRespondingParameters'`
+
+if [ "$a" == "AdvancedRespondingParameters AXE                MML_CMD                              " ]; then 
+
+  echo "AdvancedRespondingParameters is present" 
+
+else
+
+  echo "AdvancedRespondingParameters is not present" 
+
+fi
+
+export a=`/opt/ericsson/bin/activityAdmin -list | grep -i mml | grep 'ApSessionM'`
+
+if [ "$a" == "ApSessionM         AXE                MML_CMD                              " ]; then 
+
+  echo "ApSessionM is present" 
+
+else
+
+  echo "ApSessionM is not present" 
+
+fi
+
+export a=`/opt/ericsson/bin/activityAdmin -list | grep -i mml | grep 'Pm' | awk 'NR == 1'`
+
+if [ "$a" == "Pm                 AXE                MML_CMD                              " ]; then 
+
+  echo "Pm is present" 
+
+else
+
+  echo "Pm is not present" 
+
+fi
+
+export a=`/opt/ericsson/bin/activityAdmin -list | grep -i mml | grep 'PmMeasurementCapabilities'`
+
+if [ "$a" == "PmMeasurementCapabilities AXE                MML_CMD                              " ]; then 
+              
+  echo "PmMeasurementCapabilities is present" 
+
+else
+
+  echo "PmMeasurementCapabilities is not present" 
+fi
+
+export a=`/opt/ericsson/bin/activityAdmin -list | grep -i mml | grep 'Snmp' | awk 'NR == 1'`
+
+if [ "$a" == "Snmp               AXE                MML_CMD                              " ]; then 
+
+  echo "Snmp is present" 
+
+else
+
+  echo "Snmp is not present" 
+
+fi
+
+export a=`/opt/ericsson/bin/activityAdmin -list | grep -i mml | grep 'actionEndTime'`
+
+if [ "$a" == "actionEndTime      AXE                MML_CMD                              " ]; then 
+
+  echo "actionEndTime is present" 
+
+else
+
+  echo "actionEndTime is not present" 
+
+fi
+
+export a=`/opt/ericsson/bin/activityAdmin -list | grep -i mml | grep 'actionId'`
+
+if [ "$a" == "actionId           AXE                MML_CMD                              " ]; then 
+
+  echo "actionId is present" 
+
+else
+
+  echo "actionId is not present" 
+
+fi
+
+export a=`/opt/ericsson/bin/activityAdmin -list | grep -i mml | grep 'actionName'`
+
+if [ "$a" == "actionName         AXE                MML_CMD                              " ]; then 
+
+  echo "actionName is present" 
+
+else
+
+  echo "actionName is not present" 
+
+fi
+
+export a=`/opt/ericsson/bin/activityAdmin -list | grep -i mml | grep 'actionStartTime'`
+
+if [ "$a" == "actionStartTime    AXE                MML_CMD                              " ]; then 
+
+  echo "actionStartTime is present" 
+
+else
+
+  echo "actionStartTime is not present" 
+
+fi
+
+export a=`/opt/ericsson/bin/activityAdmin -list | grep -i mml | grep 'advancedRespondingParametersId'`
+
+if [ "$a" == "advancedRespondingParametersId AXE                MML_CMD                              " ]; then 
+
+  echo "advancedRespondingParametersId is present" 
+
+else
+
+  echo "advancedRespondingParametersId is not present" 
+
+fi
+
+export a=`/opt/ericsson/bin/activityAdmin -list | grep -i mml | grep 'agentAddress'`
+
+if [ "$a" == "agentAddress       AXE                MML_CMD                              " ]; then 
+
+  echo "agentAddress is present" 
+
+else
+
+  echo "agentAddress is not present" 
+
+fi
+
+export a=`/opt/ericsson/bin/activityAdmin -list | grep -i mml | grep 'alignedReportingPeriod'`
+
+if [ "$a" == "alignedReportingPeriod AXE                MML_CMD                              " ]; then 
+
+  echo "alignedReportingPeriod is present" 
+
+else
+
+  echo "alignedReportingPeriod is not present" 
+
+fi
+
+export a=`/opt/ericsson/bin/activityAdmin -list | grep -i mml | grep 'apBladesDn'`
+
+if [ "$a" == "apBladesDn         AXE                MML_CMD                              " ]; then 
+
+  echo "apBladesDn is present" 
+
+else
+
+  echo "apBladesDn is not present" 
+
+fi
+
+export a=`/opt/ericsson/bin/activityAdmin -list | grep -i mml | grep 'apSessionMId'`
+
+if [ "$a" == "apSessionMId       AXE                MML_CMD                              " ]; then 
+
+  echo "apSessionMId is present" 
+
+else
+
+  echo "apSessionMId is not present" 
+
+fi
+
+export a=`/opt/ericsson/bin/activityAdmin -list | grep -i mml | grep 'bioschg'`
+
+if [ "$a" == "bioschg            AXE                MML_CMD                              " ]; then 
+
+  echo "bioschg is present" 
+
+else
+
+  echo "bioschg is not present" 
+
+fi
+
+export a=`/opt/ericsson/bin/activityAdmin -list | grep -i mml | grep 'brp'`
+
+if [ "$a" == "brp                AXE                MML_CMD                              " ]; then 
+
+  echo "brp is present" 
+
+else
+
+  echo "brp is not present" 
+
+fi
+
+export a=`/opt/ericsson/bin/activityAdmin -list | grep -i mml | grep 'cdlVersion'`
+
+if [ "$a" == "cdlVersion         AXE                MML_CMD                              " ]; then 
+
+  echo "cdlVersion is present" 
+
+else
+
+  echo "cdlVersion is not present" 
+
+fi
+
+export a=`/opt/ericsson/bin/activityAdmin -list | grep -i mml | grep 'colour'`
+
+if [ "$a" == "colour             AXE                MML_CMD                              " ]; then 
+
+  echo "colour is present" 
+
+else
+
+  echo "colour is not present" 
+
+fi
+
+export a=`/opt/ericsson/bin/activityAdmin -list | grep -i mml | grep 'configuration' | awk 'NR==1'`
+
+if [ "$a" == "configuration      AXE                MML_CMD                              " ]; then 
+
+  echo "configuration is present" 
+
+else
+
+  echo "configuration is not present" 
+
+fi
+
+export a=`/opt/ericsson/bin/activityAdmin -list | grep -i mml | grep 'configurationId'`
+
+if [ "$a" == "configurationId    AXE                MML_CMD                              " ]; then 
+
+  echo "configurationId is present" 
+
+else
+
+  echo "configurationId is not present" 
+
+fi
+
+export a=`/opt/ericsson/bin/activityAdmin -list | grep -i mml | grep 'cpArchitecture'`
+
+if [ "$a" == "cpArchitecture     AXE                MML_CMD                              " ]; then 
+
+  echo "cpArchitecture is present" 
+
+else
+
+  echo "cpArchitecture is not present" 
+
+fi
+
+export a=`/opt/ericsson/bin/activityAdmin -list | grep -i mml | grep 'cpBladesDn'`
+
+if [ "$a" == "cpBladesDn         AXE                MML_CMD                              " ]; then 
+
+  echo "cpBladesDn is present" 
+
+else
+
+  echo "cpBladesDn is not present" 
+
+fi
+
+export a=`/opt/ericsson/bin/activityAdmin -list | grep -i mml | grep 'exportFromCp' | awk 'NR==1'`
+
+if [ "$a" == "exportFromCp       AXE                MML_CMD                              " ]; then 
+
+  echo "exportFromCp is present" 
+
+else
+
+  echo "exportFromCp is not present" 
+
+fi
+
+export a=`/opt/ericsson/bin/activityAdmin -list | grep -i mml | grep 'exportFromCpCluster'`
+
+if [ "$a" == "exportFromCpCluster AXE                MML_CMD                              " ]; then 
+
+  echo "exportFromCpCluster is present" 
+
+else
+
+  echo "exportFromCpCluster is not present" 
+
+fi
+
+export a=`/opt/ericsson/bin/activityAdmin -list | grep -i mml | grep 'extensionContent' | awk 'NR==2'`
+
+if [ "$a" == "extensionContent   AXE                MML_CMD                              " ]; then 
+
+  echo "extensionContent is present" 
+
+else
+
+  echo "extensionContent is not present" 
+
+fi
+
+export a=`/opt/ericsson/bin/activityAdmin -list | grep -i mml | grep 'AdvancedRespondingParameters'`
+
+if [ "$a" == "AdvancedRespondingParameters AXE                MML_CMD                              " ]; then 
+
+  echo "AdvancedRespondingParameters is present" 
+
+else
+
+  echo "AdvancedRespondingParameters is not present" 
+
+fi
+
+export a=`/opt/ericsson/bin/activityAdmin -list | grep -i mml | grep 'ApSessionM'`
+
+if [ "$a" == "ApSessionM         AXE                MML_CMD                              " ]; then 
+
+  echo "ApSessionM is present" 
+
+else
+
+  echo "ApSessionM is not present" 
+
+fi
+
+export a=`/opt/ericsson/bin/activityAdmin -list | grep -i mml | grep 'Pm' | awk 'NR==1'`
+
+if [ "$a" == "Pm                 AXE                MML_CMD                              " ]; then 
+
+  echo "Pm is present" 
+
+else
+
+  echo "Pm is not present" 
+
+fi
+
+export a=`/opt/ericsson/bin/activityAdmin -list | grep -i mml | grep 'PmMeasurementCapabilities'`
+
+if [ "$a" == "PmMeasurementCapabilities AXE                MML_CMD                              " ]; then 
+
+  echo "PmMeasurementCapabilities is present" 
+
+else
+
+  echo "PmMeasurementCapabilities is not present" 
+
+fi
+
+export a=`/opt/ericsson/bin/activityAdmin -list | grep -i mml | grep 'Snmp' | awk 'NR==1'`
+
+if [ "$a" == "Snmp               AXE                MML_CMD                              " ]; then 
+
+  echo "Snmp is present" 
+
+else
+
+  echo "Snmp is not present" 
+
+fi
+
+export a=`/opt/ericsson/bin/activityAdmin -list | grep -i mml | grep 'actionEndTime'`
+
+if [ "$a" == "actionEndTime      AXE                MML_CMD                              " ]; then 
+
+  echo "actionEndTime is present" 
+
+else
+
+  echo "actionEndTime is not present" 
+
+fi
+
+export a=`/opt/ericsson/bin/activityAdmin -list | grep -i mml | grep 'actionId'`
+
+if [ "$a" == "actionId           AXE                MML_CMD                              " ]; then 
+
+  echo "actionId is present" 
+
+else
+
+  echo "actionId is not present" 
+
+fi
+
+export a=`/opt/ericsson/bin/activityAdmin -list | grep -i mml | grep 'actionName'`
+
+if [ "$a" == "actionName         AXE                MML_CMD                              " ]; then 
+
+  echo "actionName is present" 
+
+else
+
+  echo "actionName is not present" 
+
+fi
+
+export a=`/opt/ericsson/bin/activityAdmin -list | grep -i mml | grep 'actionStartTime'`
+
+if [ "$a" == "actionStartTime    AXE                MML_CMD                              " ]; then 
+
+  echo "actionStartTime is present" 
+
+else
+
+  echo "actionStartTime is not present" 
+
+fi
+
+export a=`/opt/ericsson/bin/activityAdmin -list | grep -i mml | grep 'advancedRespondingParametersId'`
+
+if [ "$a" == "advancedRespondingParametersId AXE                MML_CMD                              " ]; then 
+
+  echo "advancedRespondingParametersId is present" 
+
+else
+
+  echo "advancedRespondingParametersId is not present" 
+
+fi
+
+export a=`/opt/ericsson/bin/activityAdmin -list | grep -i mml | grep 'agentAddress'`
+
+if [ "$a" == "agentAddress       AXE                MML_CMD                              " ]; then 
+
+  echo "agentAddress is present" 
+
+else
+
+  echo "agentAddress is not present" 
+
+fi
+
+export a=`/opt/ericsson/bin/activityAdmin -list | grep -i mml | grep 'alignedReportingPeriod'`
+
+if [ "$a" == "alignedReportingPeriod AXE                MML_CMD                              " ]; then 
+
+  echo "alignedReportingPeriod is present" 
+
+else
+
+  echo "alignedReportingPeriod is not present" 
+
+fi
+
+export a=`/opt/ericsson/bin/activityAdmin -list | grep -i mml | grep 'apBladesDn'`
+
+if [ "$a" == "apBladesDn         AXE                MML_CMD                              " ]; then 
+
+  echo "apBladesDn is present" 
+
+else
+
+  echo "apBladesDn is not present" 
+
+fi
+
+export a=`/opt/ericsson/bin/activityAdmin -list | grep -i mml | grep 'apSessionMId'`
+
+if [ "$a" == "apSessionMId       AXE                MML_CMD                              " ]; then 
+
+  echo "apSessionMId is present" 
+
+else
+
+  echo "apSessionMId is not present" 
+
+fi
+
+export a=`/opt/ericsson/bin/activityAdmin -list | grep -i mml | grep 'bioschg'`
+
+if [ "$a" == "bioschg            AXE                MML_CMD                              " ]; then 
+
+  echo "bioschg is present" 
+
+else
+
+  echo "bioschg is not present" 
+
+fi
+
+export a=`/opt/ericsson/bin/activityAdmin -list | grep -i mml | grep 'brp'`
+
+if [ "$a" == "brp                AXE                MML_CMD                              " ]; then 
+
+  echo "brp is present" 
+
+else
+
+  echo "brp is not present" 
+
+fi
+
+export a=`/opt/ericsson/bin/activityAdmin -list | grep -i mml | grep 'cdlVersion'`
+
+if [ "$a" == "cdlVersion         AXE                MML_CMD                              " ]; then 
+
+  echo "cdlVersion is present" 
+
+else
+
+  echo "cdlVersion is not present" 
+
+fi
+
+export a=`/opt/ericsson/bin/activityAdmin -list | grep -i mml | grep 'colour'`
+
+if [ "$a" == "colour             AXE                MML_CMD                              " ]; then 
+
+  echo "colour is present" 
+
+else
+
+  echo "colour is not present" 
+
+fi
+
+export a=`/opt/ericsson/bin/activityAdmin -list | grep -i mml | grep 'configuration' | awk 'NR==1'`
+
+if [ "$a" == "configuration      AXE                MML_CMD                              " ]; then 
+
+  echo "configuration is present" 
+
+else
+
+  echo "configuration is not present" 
+
+fi
+
+export a=`/opt/ericsson/bin/activityAdmin -list | grep -i mml | grep 'configurationId'`
+
+if [ "$a" == "configurationId    AXE                MML_CMD                              " ]; then 
+
+  echo "configurationId is present" 
+
+else
+
+  echo "configurationId is not present" 
+
+fi
+
+export a=`/opt/ericsson/bin/activityAdmin -list | grep -i mml | grep 'cpArchitecture'`
+
+if [ "$a" == "cpArchitecture     AXE                MML_CMD                              " ]; then 
+
+  echo "cpArchitecture is present" 
+
+else
+
+  echo "cpArchitecture is not present" 
+
+fi
+
+export a=`/opt/ericsson/bin/activityAdmin -list | grep -i mml | grep 'cpBladesDn'`
+
+if [ "$a" == "cpBladesDn         AXE                MML_CMD                              " ]; then 
+
+  echo "cpBladesDn is present" 
+
+else
+
+  echo "cpBladesDn is not present" 
+
+fi
+
+export a=`/opt/ericsson/bin/activityAdmin -list | grep -i mml | grep 'exportFromCp' | awk 'NR==1'`
+
+if [ "$a" == "exportFromCp       AXE                MML_CMD                              " ]; then 
+
+  echo "exportFromCp is present" 
+
+else
+
+  echo "exportFromCp is not present" 
+
+fi
+
+export a=`/opt/ericsson/bin/activityAdmin -list | grep -i mml | grep 'exportFromCpCluster'`
+
+if [ "$a" == "exportFromCpCluster AXE                MML_CMD                              " ]; then 
+
+  echo "exportFromCpCluster is present" 
+
+else
+
+  echo "exportFromCpCluster is not present" 
+
+fi
+
+export a=`/opt/ericsson/bin/activityAdmin -list | grep -i mml | grep 'extensionContent' | awk 'NR==2'`
+
+if [ "$a" == "extensionContent   AXE                MML_CMD                              " ]; then 
+
+  echo "extensionContent is present" 
+
+else
+
+  echo "extensionContent is not present" 
+
+fi
+
+export a=`/opt/ericsson/bin/activityAdmin -list | grep -i mml | grep 'fileLocation'`
+
+if [ "$a" == "fileLocation       AXE                MML_CMD                              " ]; then 
+
+  echo "fileLocation is present" 
+
+else
+
+  echo "fileLocation is not present" 
+
+fi
+
+export a=`/opt/ericsson/bin/activityAdmin -list | grep -i mml | grep 'finalROP'`
+
+if [ "$a" == "finalROP           AXE                MML_CMD                              " ]; then 
+
+  echo "finalROP is present" 
+
+else
+
+  echo "finalROP is not present" 
+
+fi
+
+export a=`/opt/ericsson/bin/activityAdmin -list | grep -i mml | grep 'host' | awk 'NR==1'`
+
+if [ "$a" == "host               AXE                MML_CMD                              " ]; then 
+
+  echo "host is present" 
+
+else
+
+  echo "host is not present" 
+
+fi
+
+export a=`/opt/ericsson/bin/activityAdmin -list | grep -i mml | grep 'importToCp' | awk 'NR==1'`
+
+if [ "$a" == "importToCp         AXE                MML_CMD                              " ]; then 
+
+  echo "importToCp is present" 
+
+else
+
+  echo "importToCp is not present" 
+
+fi
+
+export a=`/opt/ericsson/bin/activityAdmin -list | grep -i mml | grep 'importToCpCluster'`
+
+if [ "$a" == "importToCpCluster  AXE                MML_CMD                              " ]; then 
+
+  echo "importToCpCluster is present" 
+
+else
+
+  echo "importToCpCluster is not present" 
+
+fi
+
+export a=`/opt/ericsson/bin/activityAdmin -list | grep -i mml | grep 'info' | awk 'NR==2'`
+
+if [ "$a" == "info               AXE                MML_CMD                              " ]; then 
+
+  echo "info is present" 
+
+else
+
+  echo "info is not present" 
+
+fi
+
+export a=`/opt/ericsson/bin/activityAdmin -list | grep -i mml | grep 'initDestinationSetDn'`
+
+if [ "$a" == "initDestinationSetDn AXE                MML_CMD                              " ]; then 
+
+  echo "initDestinationSetDn is present" 
+
+else
+
+  echo "initDestinationSetDn is not present" 
+
+fi
+
+export a=`/opt/ericsson/bin/activityAdmin -list | grep -i mml | grep 'isAvailable'`
+
+if [ "$a" == "isAvailable        AXE                MML_CMD                              " ]; then 
+
+  echo "isAvailable is present" 
+
+else
+
+  echo "isAvailable is not present" 
+
+fi
+
+export a=`/opt/ericsson/bin/activityAdmin -list | grep -i mml | grep 'isIncluded'`
+
+if [ "$a" == "isIncluded         AXE                MML_CMD                              " ]; then 
+
+  echo "isIncluded is present" 
+
+else
+
+  echo "isIncluded is not present" 
+
+fi
+
+export a=`/opt/ericsson/bin/activityAdmin -list | grep -i mml | grep 'issuer' | awk 'NR==2'`
+
+if [ "$a" == "issuer             AXE                MML_CMD                              " ]; then 
+
+  echo "issuer is present" 
+
+else
+
+  echo "issuer is not present" 
+
+fi
+
+export a=`/opt/ericsson/bin/activityAdmin -list | grep -i mml | grep 'jobPrioritizationSupport'`
+
+if [ "$a" == "jobPrioritizationSupport AXE                MML_CMD                              " ]; then 
+
+  echo "jobPrioritizationSupport is present" 
+
+else
+
+  echo "jobPrioritizationSupport is not present" 
+
+fi
+
+export a=`/opt/ericsson/bin/activityAdmin -list | grep -i mml | grep 'jobStartStopSupport'`
+
+if [ "$a" == "jobStartStopSupport AXE                MML_CMD                              " ]; then 
+
+  echo "jobStartStopSupport is present" 
+
+else
+
+  echo "jobStartStopSupport is not present" 
+
+fi
+
+export a=`/opt/ericsson/bin/activityAdmin -list | grep -i mml | grep 'keyUsage' | awk 'NR==2'`
+
+if [ "$a" == "keyUsage           AXE                MML_CMD                              " ]; then 
+
+  echo "keyUsage is present" 
+
+else
+
+  echo "keyUsage is not present" 
+
+fi
+
+export a=`/opt/ericsson/bin/activityAdmin -list | grep -i mml | grep 'lastUpdate' | awk 'NR==1'`
+
+if [ "$a" == "lastUpdate         AXE                MML_CMD                              " ]; then 
+
+  echo "lastUpdate is present" 
+
+else
+
+  echo "lastUpdate is not present" 
+
+fi
+
+export a=`/opt/ericsson/bin/activityAdmin -list | grep -i mml | grep 'lockMedia' | awk 'NR==1'`
+
+if [ "$a" == "lockMedia          AXE                MML_CMD                              " ]; then 
+
+  echo "lockMedia is present" 
+
+else
+
+  echo "lockMedia is not present" 
+
+fi
+
+export a=`/opt/ericsson/bin/activityAdmin -list | grep -i mml | grep 'macAddress'`
+
+if [ "$a" == "macAddress         AXE                MML_CMD                              " ]; then 
+
+  echo "macAddress is present" 
+
+else
+
+  echo "macAddress is not present" 
+
+fi
+
+export a=`/opt/ericsson/bin/activityAdmin -list | grep -i mml | grep 'maxNoOfJobs'`
+
+if [ "$a" == "maxNoOfJobs        AXE                MML_CMD                              " ]; then 
+
+  echo "maxNoOfJobs is present" 
+
+else
+
+  echo "maxNoOfJobs is not present" 
+
+fi
+
+export a=`/opt/ericsson/bin/activityAdmin -list | grep -i mml | grep 'maxNoOfMeasurements'`
+
+if [ "$a" == "maxNoOfMeasurements AXE                MML_CMD                              " ]; then 
+
+  echo "maxNoOfMeasurements is present" 
+
+else
+
+  echo "maxNoOfMeasurements is not present" 
+
+fi
+
+export a=`/opt/ericsson/bin/activityAdmin -list | grep -i mml | grep 'maxNoOfPmFiles'`
+
+if [ "$a" == "maxNoOfPmFiles     AXE                MML_CMD                              " ]; then 
+
+  echo "maxNoOfPmFiles is present" 
+
+else
+
+  echo "maxNoOfPmFiles is not present" 
+
+fi
+
+export a=`/opt/ericsson/bin/activityAdmin -list | grep -i mml | grep 'measurementJobSupport'`
+
+if [ "$a" == "measurementJobSupport AXE                MML_CMD                              " ]; then 
+
+  echo "measurementJobSupport is present" 
+
+else
+
+  echo "measurementJobSupport is not present" 
+
+fi
+
+export a=`/opt/ericsson/bin/activityAdmin -list | grep -i mml | grep 'number' | awk 'NR==1'`
+
+if [ "$a" == "number             AXE                MML_CMD                              " ]; then 
+
+  echo "number is present" 
+
+else
+
+  echo "number is not present" 
+
+fi
+
+export a=`/opt/ericsson/bin/activityAdmin -list | grep -i mml | grep 'numberOfCounters'`
+
+if [ "$a" == "numberOfCounters   AXE                MML_CMD                              " ]; then 
+
+  echo "numberOfCounters is present" 
+
+else
+
+  echo "numberOfCounters is not present" 
+
+fi
+
+export a=`/opt/ericsson/bin/activityAdmin -list | grep -i mml | grep 'pmId'`
+
+if [ "$a" == "pmId               AXE                MML_CMD                              " ]; then 
+
+  echo "pmId is present" 
+
+else
+
+  echo "pmId is not present" 
+
+fi
+
+export a=`/opt/ericsson/bin/activityAdmin -list | grep -i mml | grep 'pmMeasurementCapabilitiesId'`
+
+if [ "$a" == "pmMeasurementCapabilitiesId AXE                MML_CMD                              " ]; then 
+
+  echo "pmMeasurementCapabilitiesId is present" 
+
+else
+
+  echo "pmMeasurementCapabilitiesId is not present" 
+
+fi
+
+export a=`/opt/ericsson/bin/activityAdmin -list | grep -i mml | grep 'productVendor'`
+
+if [ "$a" == "productVendor      AXE                MML_CMD                              " ]; then 
+
+  echo "productVendor is present" 
+
+else
+
+  echo "productVendor is not present" 
+
+fi
+
+export a=`/opt/ericsson/bin/activityAdmin -list | grep -i mml | grep 'productionDate'`
+
+if [ "$a" == "productionDate     AXE                MML_CMD                              " ]; then 
+
+  echo "productionDate is present" 
+
+else
+
+  echo "productionDate is not present" 
+
+fi
+
+export a=`/opt/ericsson/bin/activityAdmin -list | grep -i mml | grep 'progressInfo'`
+
+if [ "$a" == "progressInfo       AXE                MML_CMD                              " ]; then 
+
+  echo "progressInfo is present" 
+
+else
+
+  echo "progressInfo is not present" 
+
+fi
+
+export a=`/opt/ericsson/bin/activityAdmin -list | grep -i mml | grep 'progressPercentage'`
+
+if [ "$a" == "progressPercentage AXE                MML_CMD                              " ]; then 
+
+  echo "progressPercentage is present" 
+
+else
+
+  echo "progressPercentage is not present" 
+
+fi
+
+export a=`/opt/ericsson/bin/activityAdmin -list | grep -i mml | grep 'progressReport'`
+
+if [ "$a" == "progressReport     AXE                MML_CMD                              " ]; then 
+
+  echo "progressReport is present" 
+
+else
+
+  echo "progressReport is not present" 
+
+fi
+
+export a=`/opt/ericsson/bin/activityAdmin -list | grep -i mml | grep 'publicKey' | awk 'NR==3'`
+
+if [ "$a" == "publicKey          AXE                MML_CMD                              " ]; then 
+
+  echo "publicKey is present" 
+
+else
+
+  echo "publicKey is not present" 
+
+fi
+
+export a=`/opt/ericsson/bin/activityAdmin -list | grep -i mml | grep 'publicKeyAlgorithm' | awk 'NR==2'`
+
+if [ "$a" == "publicKeyAlgorithm AXE                MML_CMD                              " ]; then 
+
+  echo "publicKeyAlgorithm is present" 
+
+else
+
+  echo "publicKeyAlgorithm is not present" 
+
+fi
+
+export a=`/opt/ericsson/bin/activityAdmin -list | grep -i mml | grep 'realTimeJobSupport'`
+
+if [ "$a" == "realTimeJobSupport AXE                MML_CMD                              " ]; then
+ 
+  echo "realTimeJobSupport is present" 
+
+else
+
+  echo "realTimeJobSupport is not present" 
+
+fi
+
+export a=`/opt/ericsson/bin/activityAdmin -list | grep -i mml | grep 'respDestinationSetDn'`
+
+if [ "$a" == "respDestinationSetDn AXE                MML_CMD                              " ]; then 
+
+  echo "respDestinationSetDn is present" 
+
+else
+
+  echo "respDestinationSetDn is not present" 
+
+fi
+
+export a=`/opt/ericsson/bin/activityAdmin -list | grep -i mml | grep 'scrFileId'`
+
+if [ "$a" == "scrFileId          AXE                MML_CMD                              " ]; then 
+
+  echo "scrFileId is present" 
+
+else
+
+  echo "scrFileId is not present" 
+
+fi
+
+export a=`/opt/ericsson/bin/activityAdmin -list | grep -i mml | grep 'signatureAlgorithm' | awk 'NR==2'`
+
+if [ "$a" == "signatureAlgorithm AXE                MML_CMD                              " ]; then 
+
+  echo "signatureAlgorithm is present" 
+
+else
+
+  echo "signatureAlgorithm is not present" 
+
+fi
+
+export a=`/opt/ericsson/bin/activityAdmin -list | grep -i mml | grep 'slogan'`
+
+if [ "$a" == "slogan             AXE                MML_CMD                              " ]; then 
+
+  echo "slogan is present" 
+
+else
+
+  echo "slogan is not present" 
+
+fi
+
+export a=`/opt/ericsson/bin/activityAdmin -list | grep -i mml | grep 'snmpId'`
+
+if [ "$a" == "snmpId             AXE                MML_CMD                              " ]; then 
+
+  echo "snmpId is present" 
+
+else
+
+  echo "snmpId is not present" 
+
+fi
+
+export a=`/opt/ericsson/bin/activityAdmin -list | grep -i mml | grep 'SrcFile'`
+
+if [ "$a" == "SrcFile            AXE                MML_CMD                              " ]; then 
+
+  echo "SrcFile is present" 
+
+else
+
+  echo "SrcFile is not present" 
+
+fi
+
+export a=`/opt/ericsson/bin/activityAdmin -list | grep -i mml | grep 'subject' | awk 'NR==2'`
+
+if [ "$a" == "subject            AXE                MML_CMD                              " ]; then 
+
+  echo "subject is present" 
+
+else
+
+  echo "subject is not present" 
+
+fi
+
+export a=`/opt/ericsson/bin/activityAdmin -list | grep -i mml | grep 'supported'`
+
+if [ "$a" == "supported          AXE                MML_CMD                              " ]; then 
+
+  echo "supported is present" 
+
+else
+
+  echo "supported is not present" 
+
+fi
+
+export a=`/opt/ericsson/bin/activityAdmin -list | grep -i mml | grep 'thresholdJobSupport'`
+
+if [ "$a" == "thresholdJobSupport AXE                MML_CMD                              " ]; then 
+
+  echo "thresholdJobSupport is present" 
+
+else
+
+  echo "thresholdJobSupport is not present" 
+
+fi
+
+export a=`/opt/ericsson/bin/activityAdmin -list | grep -i mml | grep 'timeActionCompleted'`
+
+if [ "$a" == "timeActionCompleted AXE                MML_CMD                              " ]; then 
+
+  echo "timeActionCompleted is present" 
+
+else
+
+  echo "timeActionCompleted is not present" 
+
+fi
+
+export a=`/opt/ericsson/bin/activityAdmin -list | grep -i mml | grep 'timeActionStarted'`
+
+if [ "$a" == "timeActionStarted  AXE                MML_CMD                              " ]; then 
+
+  echo "timeActionStarted is present" 
+
+else
+
+  echo "timeActionStarted is not present" 
+
+fi
+
+export a=`/opt/ericsson/bin/activityAdmin -list | grep -i mml | grep 'timeOfLastStatusUpdate'`
+
+if [ "$a" == "timeOfLastStatusUpdate AXE                MML_CMD                              " ]; then 
+
+  echo "timeOfLastStatusUpdate is present" 
+
+else
+
+  echo "timeOfLastStatusUpdate is not present" 
+
+fi
+
+export a=`/opt/ericsson/bin/activityAdmin -list | grep -i mml | grep 'transferQueueDn'`
+
+if [ "$a" == "transferQueueDn    AXE                MML_CMD                              " ]; then 
+
+  echo "transferQueueDn is present" 
+
+else
+
+  echo "transferQueueDn is not present" 
+
+fi
+
+export a=`/opt/ericsson/bin/activityAdmin -list | grep -i mml | grep 'unlockMedia'`
+
+if [ "$a" == "unlockMedia        AXE                MML_CMD                              " ]; then 
+
+  echo "unlockMedia is present" 
+
+else
+
+  echo "unlockMedia is not present" 
+
+fi
+
+export a=`/opt/ericsson/bin/activityAdmin -list | grep -i mml | grep 'validFrom' | awk 'NR==2'`
+
+if [ "$a" == "validFrom          AXE                MML_CMD                              " ]; then 
+
+  echo "validFrom is present" 
+
+else
+
+  echo "validFrom is not present" 
+
+fi
+
+export a=`/opt/ericsson/bin/activityAdmin -list | grep -i mml | grep 'validTo' | awk 'NR==2'`
+
+if [ "$a" == "validTo            AXE                MML_CMD                              " ]; then 
+
+  echo "validTo is present" 
+
+else
+
+  echo "validTo is not present" 
+
+fi
+
+export a=`/opt/ericsson/bin/activityAdmin -list | grep -i mml | grep 'ver' | awk 'NR==33'`
+
+if [ "$a" == "ver                AXE                MML_CMD                              " ]; then 
+              
+  echo "ver is present" 
+
+else
+
+  echo "ver is not present" 
+
+fi
+
+
+#4.Verify the updated MML commands are updated in /ericsson/mml/authority/sys_adm_act.data 
+
+
+export a=`cat /ericsson/mml/authority/sys_adm_act.data | grep -i mml |grep 'AdvancedRespondingParameters'`
+
+if [ "$a" == "AdvancedRespondingParameters   MML_CMD" ]; then 
+
+  echo "AdvancedRespondingParameters is present" 
+
+else
+
+  echo "AdvancedRespondingParameters is not present" 
+
+fi
+
+export a=`cat /ericsson/mml/authority/sys_adm_act.data | grep -i mml |grep 'ApSessionM'`
+
+if [ "$a" == "ApSessionM   MML_CMD" ]; then 
+
+  echo "ApSessionM is present" 
+
+else
+
+  echo "ApSessionM is not present" 
+
+fi
+
+export a=`cat /ericsson/mml/authority/sys_adm_act.data | grep -i mml |grep 'Pm' | awk 'NR == 2'`
+
+if [ "$a" == "Pm   MML_CMD" ]; then 
+
+  echo "Pm is present" 
+
+else
+
+  echo "Pm is not present" 
+
+fi
+
+export a=`cat /ericsson/mml/authority/sys_adm_act.data | grep -i mml |grep 'PmMeasurementCapabilities'`
+
+if [ "$a" == "PmMeasurementCapabilities   MML_CMD" ]; then 
+
+  echo "PmMeasurementCapabilities is present" 
+
+else
+
+  echo "PmMeasurementCapabilities is not present" 
+fi
+
+export a=`cat /ericsson/mml/authority/sys_adm_act.data | grep -i mml |grep 'Snmp' | awk 'NR == 1'`
+
+if [ "$a" == "Snmp   MML_CMD" ]; then 
+
+  echo "Snmp is present" 
+
+else
+
+  echo "Snmp is not present" 
+
+fi
+
+export a=`cat /ericsson/mml/authority/sys_adm_act.data | grep -i mml |grep 'actionEndTime'`
+
+if [ "$a" == "actionEndTime   MML_CMD" ]; then 
+
+  echo "actionEndTime is present" 
+
+else
+
+  echo "actionEndTime is not present" 
+
+fi
+
+export a=`cat /ericsson/mml/authority/sys_adm_act.data | grep -i mml |grep 'actionId'`
+
+if [ "$a" == "actionId   MML_CMD" ]; then 
+
+  echo "actionId is present" 
+
+else
+
+  echo "actionId is not present" 
+
+fi
+
+export a=`cat /ericsson/mml/authority/sys_adm_act.data | grep -i mml |grep 'actionName'`
+
+if [ "$a" == "actionName   MML_CMD" ]; then 
+
+  echo "actionName is present" 
+
+else
+
+  echo "actionName is not present" 
+
+fi
+
+export a=`cat /ericsson/mml/authority/sys_adm_act.data | grep -i mml |grep 'actionStartTime'`
+
+if [ "$a" == "actionStartTime   MML_CMD" ]; then 
+
+  echo "actionStartTime is present" 
+
+else
+
+  echo "actionStartTime is not present" 
+
+fi
+
+export a=`cat /ericsson/mml/authority/sys_adm_act.data | grep -i mml |grep 'advancedRespondingParametersId'`
+
+if [ "$a" == "advancedRespondingParametersId   MML_CMD" ]; then 
+
+  echo "advancedRespondingParametersId is present" 
+
+else
+
+  echo "advancedRespondingParametersId is not present" 
+
+fi
+
+export a=`cat /ericsson/mml/authority/sys_adm_act.data | grep -i mml |grep 'agentAddress'`
+
+if [ "$a" == "agentAddress   MML_CMD" ]; then 
+
+  echo "agentAddress is present" 
+
+else
+
+  echo "agentAddress is not present" 
+
+fi
+
+export a=`cat /ericsson/mml/authority/sys_adm_act.data | grep -i mml |grep 'alignedReportingPeriod'`
+
+if [ "$a" == "alignedReportingPeriod   MML_CMD" ]; then 
+
+  echo "alignedReportingPeriod is present" 
+
+else
+
+  echo "alignedReportingPeriod is not present" 
+
+fi
+
+export a=`cat /ericsson/mml/authority/sys_adm_act.data | grep -i mml |grep 'apBladesDn'`
+
+if [ "$a" == "apBladesDn   MML_CMD" ]; then 
+
+  echo "apBladesDn is present" 
+
+else
+
+  echo "apBladesDn is not present" 
+
+fi
+
+export a=`cat /ericsson/mml/authority/sys_adm_act.data | grep -i mml |grep 'apSessionMId'`
+
+if [ "$a" == "apSessionMId   MML_CMD" ]; then 
+
+  echo "apSessionMId is present" 
+
+else
+
+  echo "apSessionMId is not present" 
+
+fi
+
+export a=`cat /ericsson/mml/authority/sys_adm_act.data | grep -i mml |grep 'bioschg'`
+
+if [ "$a" == "bioschg   MML_CMD" ]; then 
+
+  echo "bioschg is present" 
+
+else
+
+  echo "bioschg is not present" 
+
+fi
+
+export a=`cat /ericsson/mml/authority/sys_adm_act.data | grep -i mml |grep 'brp'`
+
+if [ "$a" == "brp   MML_CMD" ]; then 
+
+  echo "brp is present" 
+
+else
+
+  echo "brp is not present" 
+
+fi
+
+export a=`cat /ericsson/mml/authority/sys_adm_act.data | grep -i mml |grep 'cdlVersion'`
+
+if [ "$a" == "cdlVersion   MML_CMD" ]; then 
+
+  echo "cdlVersion is present" 
+
+else
+
+  echo "cdlVersion is not present" 
+
+fi
+
+export a=`cat /ericsson/mml/authority/sys_adm_act.data | grep -i mml |grep 'colour'`
+
+if [ "$a" == "colour   MML_CMD" ]; then 
+
+  echo "colour is present" 
+
+else
+
+  echo "colour is not present" 
+
+fi
+
+export a=`cat /ericsson/mml/authority/sys_adm_act.data | grep -i mml |grep 'configuration' | awk 'NR==1'`
+
+if [ "$a" == "configuration   MML_CMD" ]; then 
+
+  echo "configuration is present" 
+
+else
+
+  echo "configuration is not present" 
+
+fi
+
+export a=`cat /ericsson/mml/authority/sys_adm_act.data | grep -i mml |grep 'configurationId'`
+
+if [ "$a" == "configurationId   MML_CMD" ]; then 
+
+  echo "configurationId is present" 
+
+else
+
+  echo "configurationId is not present" 
+
+fi
+
+export a=`cat /ericsson/mml/authority/sys_adm_act.data | grep -i mml |grep 'cpArchitecture'`
+
+if [ "$a" == "cpArchitecture   MML_CMD" ]; then 
+
+  echo "cpArchitecture is present" 
+
+else
+
+  echo "cpArchitecture is not present" 
+
+fi
+
+export a=`cat /ericsson/mml/authority/sys_adm_act.data | grep -i mml |grep 'cpBladesDn'`
+
+if [ "$a" == "cpBladesDn   MML_CMD" ]; then 
+
+  echo "cpBladesDn is present" 
+
+else
+
+  echo "cpBladesDn is not present" 
+
+fi
+
+export a=`cat /ericsson/mml/authority/sys_adm_act.data | grep -i mml |grep 'exportFromCp' | awk 'NR==1'`
+
+if [ "$a" == "exportFromCp   MML_CMD" ]; then 
+
+  echo "exportFromCp is present" 
+
+else
+
+  echo "exportFromCp is not present" 
+
+fi
+
+export a=`cat /ericsson/mml/authority/sys_adm_act.data | grep -i mml |grep 'exportFromCpCluster'`
+
+if [ "$a" == "exportFromCpCluster   MML_CMD" ]; then 
+
+  echo "exportFromCpCluster is present" 
+
+else
+
+  echo "exportFromCpCluster is not present" 
+
+fi
+
+export a=`cat /ericsson/mml/authority/sys_adm_act.data | grep -i mml |grep 'extensionContent' | awk 'NR==2'`
+
+if [ "$a" == "extensionContent   MML_CMD" ]; then 
+
+  echo "extensionContent is present" 
+
+else
+
+  echo "extensionContent is not present" 
+
+fi
+
+export a=`cat /ericsson/mml/authority/sys_adm_act.data | grep -i mml |grep 'AdvancedRespondingParameters'`
+
+if [ "$a" == "AdvancedRespondingParameters   MML_CMD" ]; then 
+
+  echo "AdvancedRespondingParameters is present" 
+
+else
+
+  echo "AdvancedRespondingParameters is not present" 
+
+fi
+
+export a=`cat /ericsson/mml/authority/sys_adm_act.data | grep -i mml |grep 'ApSessionM'`
+
+if [ "$a" == "ApSessionM   MML_CMD" ]; then 
+
+  echo "ApSessionM is present" 
+
+else
+
+  echo "ApSessionM is not present" 
+
+fi
+
+export a=`cat /ericsson/mml/authority/sys_adm_act.data | grep -i mml |grep 'Pm' | awk 'NR==2'`
+
+if [ "$a" == "Pm   MML_CMD" ]; then 
+
+  echo "Pm is present" 
+
+else
+
+  echo "Pm is not present" 
+
+fi
+
+export a=`cat /ericsson/mml/authority/sys_adm_act.data | grep -i mml |grep 'PmMeasurementCapabilities'`
+
+if [ "$a" == "PmMeasurementCapabilities   MML_CMD" ]; then 
+
+  echo "PmMeasurementCapabilities is present" 
+
+else
+
+  echo "PmMeasurementCapabilities is not present" 
+
+fi
+
+export a=`cat /ericsson/mml/authority/sys_adm_act.data | grep -i mml |grep 'Snmp' | awk 'NR==1'`
+
+if [ "$a" == "Snmp   MML_CMD" ]; then 
+
+  echo "Snmp is present" 
+
+else
+
+  echo "Snmp is not present" 
+
+fi
+
+export a=`cat /ericsson/mml/authority/sys_adm_act.data | grep -i mml |grep 'actionEndTime'`
+
+if [ "$a" == "actionEndTime   MML_CMD" ]; then 
+
+  echo "actionEndTime is present" 
+
+else
+
+  echo "actionEndTime is not present" 
+
+fi
+
+export a=`cat /ericsson/mml/authority/sys_adm_act.data | grep -i mml |grep 'actionId'`
+
+if [ "$a" == "actionId   MML_CMD" ]; then 
+
+  echo "actionId is present" 
+
+else
+
+  echo "actionId is not present" 
+
+fi
+
+export a=`cat /ericsson/mml/authority/sys_adm_act.data | grep -i mml |grep 'actionName'`
+
+if [ "$a" == "actionName   MML_CMD" ]; then 
+
+  echo "actionName is present" 
+
+else
+
+  echo "actionName is not present" 
+
+fi
+
+export a=`cat /ericsson/mml/authority/sys_adm_act.data | grep -i mml |grep 'actionStartTime'`
+
+if [ "$a" == "actionStartTime   MML_CMD" ]; then 
+
+  echo "actionStartTime is present" 
+
+else
+
+  echo "actionStartTime is not present" 
+
+fi
+
+export a=`cat /ericsson/mml/authority/sys_adm_act.data | grep -i mml |grep 'advancedRespondingParametersId'`
+
+if [ "$a" == "advancedRespondingParametersId   MML_CMD" ]; then 
+
+  echo "advancedRespondingParametersId is present" 
+
+else
+
+  echo "advancedRespondingParametersId is not present" 
+
+fi
+
+export a=`cat /ericsson/mml/authority/sys_adm_act.data | grep -i mml |grep 'agentAddress'`
+
+if [ "$a" == "agentAddress   MML_CMD" ]; then 
+
+  echo "agentAddress is present" 
+
+else
+
+  echo "agentAddress is not present" 
+
+fi
+
+export a=`cat /ericsson/mml/authority/sys_adm_act.data | grep -i mml |grep 'alignedReportingPeriod'`
+
+if [ "$a" == "alignedReportingPeriod   MML_CMD" ]; then 
+
+  echo "alignedReportingPeriod is present" 
+
+else
+
+  echo "alignedReportingPeriod is not present" 
+
+fi
+
+export a=`cat /ericsson/mml/authority/sys_adm_act.data | grep -i mml |grep 'apBladesDn'`
+
+if [ "$a" == "apBladesDn   MML_CMD" ]; then 
+
+  echo "apBladesDn is present" 
+
+else
+
+  echo "apBladesDn is not present" 
+
+fi
+
+export a=`cat /ericsson/mml/authority/sys_adm_act.data | grep -i mml |grep 'apSessionMId'`
+
+if [ "$a" == "apSessionMId   MML_CMD" ]; then 
+
+  echo "apSessionMId is present" 
+
+else
+
+  echo "apSessionMId is not present" 
+
+fi
+
+export a=`cat /ericsson/mml/authority/sys_adm_act.data | grep -i mml |grep 'bioschg'`
+
+if [ "$a" == "bioschg   MML_CMD" ]; then 
+
+  echo "bioschg is present" 
+
+else
+
+  echo "bioschg is not present" 
+
+fi
+
+export a=`cat /ericsson/mml/authority/sys_adm_act.data | grep -i mml |grep 'brp'`
+
+if [ "$a" == "brp   MML_CMD" ]; then 
+
+  echo "brp is present" 
+
+else
+
+  echo "brp is not present" 
+
+fi
+
+export a=`cat /ericsson/mml/authority/sys_adm_act.data | grep -i mml |grep 'cdlVersion'`
+
+if [ "$a" == "cdlVersion   MML_CMD" ]; then 
+
+  echo "cdlVersion is present" 
+
+else
+
+  echo "cdlVersion is not present" 
+
+fi
+
+export a=`cat /ericsson/mml/authority/sys_adm_act.data | grep -i mml |grep 'colour'`
+
+if [ "$a" == "colour   MML_CMD" ]; then 
+
+  echo "colour is present" 
+
+else
+
+  echo "colour is not present" 
+
+fi
+
+export a=`cat /ericsson/mml/authority/sys_adm_act.data | grep -i mml |grep 'configuration' | awk 'NR==1'`
+
+if [ "$a" == "configuration   MML_CMD" ]; then 
+
+  echo "configuration is present" 
+
+else
+
+  echo "configuration is not present" 
+
+fi
+
+export a=`cat /ericsson/mml/authority/sys_adm_act.data | grep -i mml |grep 'configurationId'`
+
+if [ "$a" == "configurationId   MML_CMD" ]; then 
+
+  echo "configurationId is present" 
+
+else
+
+  echo "configurationId is not present" 
+
+fi
+
+export a=`cat /ericsson/mml/authority/sys_adm_act.data | grep -i mml |grep 'cpArchitecture'`
+
+if [ "$a" == "cpArchitecture   MML_CMD" ]; then 
+
+  echo "cpArchitecture is present" 
+
+else
+
+  echo "cpArchitecture is not present" 
+
+fi
+
+export a=`cat /ericsson/mml/authority/sys_adm_act.data | grep -i mml |grep 'cpBladesDn'`
+
+if [ "$a" == "cpBladesDn   MML_CMD" ]; then 
+
+  echo "cpBladesDn is present" 
+
+else
+
+  echo "cpBladesDn is not present" 
+
+fi
+
+export a=`cat /ericsson/mml/authority/sys_adm_act.data | grep -i mml |grep 'exportFromCp' | awk 'NR==1'`
+
+if [ "$a" == "exportFromCp   MML_CMD" ]; then 
+
+  echo "exportFromCp is present" 
+
+else
+
+  echo "exportFromCp is not present" 
+
+fi
+
+export a=`cat /ericsson/mml/authority/sys_adm_act.data | grep -i mml |grep 'exportFromCpCluster'`
+
+if [ "$a" == "exportFromCpCluster   MML_CMD" ]; then 
+
+  echo "exportFromCpCluster is present" 
+
+else
+
+  echo "exportFromCpCluster is not present" 
+
+fi
+
+export a=`cat /ericsson/mml/authority/sys_adm_act.data | grep -i mml |grep 'extensionContent'`
+
+if [ "$a" == "extensionContent   MML_CMD" ]; then 
+
+  echo "extensionContent is present" 
+
+else
+
+  echo "extensionContent is not present" 
+
+fi
+
+export a=`cat /ericsson/mml/authority/sys_adm_act.data | grep -i mml |grep 'fileLocation'`
+
+if [ "$a" == "fileLocation   MML_CMD" ]; then 
+
+  echo "fileLocation is present" 
+
+else
+
+  echo "fileLocation is not present" 
+
+fi
+
+export a=`cat /ericsson/mml/authority/sys_adm_act.data | grep -i mml |grep 'finalROP'`
+
+if [ "$a" == "finalROP   MML_CMD" ]; then 
+
+  echo "finalROP is present" 
+
+else
+
+  echo "finalROP is not present" 
+
+fi
+
+export a=`cat /ericsson/mml/authority/sys_adm_act.data | grep -i mml |grep 'host' | awk 'NR==1'`
+
+if [ "$a" == "host   MML_CMD" ]; then 
+
+  echo "host is present" 
+
+else
+
+  echo "host is not present" 
+
+fi
+
+export a=`cat /ericsson/mml/authority/sys_adm_act.data | grep -i mml |grep 'importToCp' | awk 'NR==1'`
+
+if [ "$a" == "importToCp   MML_CMD" ]; then 
+
+  echo "importToCp is present" 
+
+else
+
+  echo "importToCp is not present" 
+
+fi
+
+export a=`cat /ericsson/mml/authority/sys_adm_act.data | grep -i mml |grep 'importToCpCluster'`
+
+if [ "$a" == "importToCpCluster   MML_CMD" ]; then 
+
+  echo "importToCpCluster is present" 
+
+else
+
+  echo "importToCpCluster is not present" 
+
+fi
+
+export a=`cat /ericsson/mml/authority/sys_adm_act.data | grep -i mml |grep 'info' | awk 'NR==2'`
+
+if [ "$a" == "info   MML_CMD" ]; then 
+
+  echo "info is present" 
+
+else
+
+  echo "info is not present" 
+
+fi
+
+export a=`cat /ericsson/mml/authority/sys_adm_act.data | grep -i mml |grep 'initDestinationSetDn'`
+
+if [ "$a" == "initDestinationSetDn   MML_CMD" ]; then 
+
+  echo "initDestinationSetDn is present" 
+
+else
+
+  echo "initDestinationSetDn is not present" 
+
+fi
+
+export a=`cat /ericsson/mml/authority/sys_adm_act.data | grep -i mml |grep 'isAvailable'`
+
+if [ "$a" == "isAvailable   MML_CMD" ]; then 
+
+  echo "isAvailable is present" 
+
+else
+
+  echo "isAvailable is not present" 
+
+fi
+
+export a=`cat /ericsson/mml/authority/sys_adm_act.data | grep -i mml |grep 'isIncluded'`
+
+if [ "$a" == "isIncluded   MML_CMD" ]; then 
+
+  echo "isIncluded is present" 
+
+else
+
+  echo "isIncluded is not present" 
+
+fi
+
+export a=`cat /ericsson/mml/authority/sys_adm_act.data | grep -i mml |grep 'issuer' | awk 'NR==2'`
+
+if [ "$a" == "issuer   MML_CMD" ]; then 
+
+  echo "issuer is present" 
+
+else
+
+  echo "issuer is not present" 
+
+fi
+
+export a=`cat /ericsson/mml/authority/sys_adm_act.data | grep -i mml |grep 'jobPrioritizationSupport'`
+
+if [ "$a" == "jobPrioritizationSupport   MML_CMD" ]; then 
+
+  echo "jobPrioritizationSupport is present" 
+
+else
+
+  echo "jobPrioritizationSupport is not present" 
+
+fi
+
+export a=`cat /ericsson/mml/authority/sys_adm_act.data | grep -i mml |grep 'jobStartStopSupport'`
+
+if [ "$a" == "jobStartStopSupport   MML_CMD" ]; then 
+
+  echo "jobStartStopSupport is present" 
+
+else
+
+  echo "jobStartStopSupport is not present" 
+
+fi
+
+export a=`cat /ericsson/mml/authority/sys_adm_act.data | grep -i mml |grep 'keyUsage' | awk 'NR==2'`
+
+if [ "$a" == "keyUsage   MML_CMD" ]; then 
+
+  echo "keyUsage is present" 
+
+else
+
+  echo "keyUsage is not present" 
+
+fi
+
+export a=`cat /ericsson/mml/authority/sys_adm_act.data | grep -i mml |grep 'lastUpdate' | awk 'NR==1'`
+
+if [ "$a" == "lastUpdate   MML_CMD" ]; then 
+
+  echo "lastUpdate is present" 
+
+else
+
+  echo "lastUpdate is not present" 
+
+fi
+
+export a=`cat /ericsson/mml/authority/sys_adm_act.data | grep -i mml |grep 'lockMedia' | awk 'NR==1'`
+
+if [ "$a" == "lockMedia   MML_CMD" ]; then 
+
+  echo "lockMedia is present" 
+
+else
+
+  echo "lockMedia is not present" 
+
+fi
+
+export a=`cat /ericsson/mml/authority/sys_adm_act.data | grep -i mml |grep 'macAddress'`
+
+if [ "$a" == "macAddress   MML_CMD" ]; then 
+
+  echo "macAddress is present" 
+
+else
+
+  echo "macAddress is not present" 
+
+fi
+
+export a=`cat /ericsson/mml/authority/sys_adm_act.data | grep -i mml |grep 'maxNoOfJobs'`
+
+if [ "$a" == "maxNoOfJobs   MML_CMD" ]; then 
+
+  echo "maxNoOfJobs is present" 
+
+else
+
+  echo "maxNoOfJobs is not present" 
+
+fi
+
+export a=`cat /ericsson/mml/authority/sys_adm_act.data | grep -i mml |grep 'maxNoOfMeasurements'`
+
+if [ "$a" == "maxNoOfMeasurements   MML_CMD" ]; then 
+
+  echo "maxNoOfMeasurements is present" 
+
+else
+
+  echo "maxNoOfMeasurements is not present" 
+
+fi
+
+export a=`cat /ericsson/mml/authority/sys_adm_act.data | grep -i mml |grep 'maxNoOfPmFiles'`
+
+if [ "$a" == "maxNoOfPmFiles   MML_CMD" ]; then 
+
+  echo "maxNoOfPmFiles is present" 
+
+else
+
+  echo "maxNoOfPmFiles is not present" 
+
+fi
+
+export a=`cat /ericsson/mml/authority/sys_adm_act.data | grep -i mml |grep 'measurementJobSupport'`
+
+if [ "$a" == "measurementJobSupport   MML_CMD" ]; then 
+
+  echo "measurementJobSupport is present" 
+
+else
+
+  echo "measurementJobSupport is not present" 
+
+fi
+
+export a=`cat /ericsson/mml/authority/sys_adm_act.data | grep -i mml |grep 'number' | awk 'NR==1'`
+
+if [ "$a" == "number   MML_CMD" ]; then 
+
+  echo "number is present" 
+
+else
+
+  echo "number is not present" 
+
+fi
+
+export a=`cat /ericsson/mml/authority/sys_adm_act.data | grep -i mml |grep 'numberOfCounters'`
+
+if [ "$a" == "numberOfCounters   MML_CMD" ]; then 
+
+  echo "numberOfCounters is present" 
+
+else
+
+  echo "numberOfCounters is not present" 
+
+fi
+
+export a=`cat /ericsson/mml/authority/sys_adm_act.data | grep -i mml |grep 'pmId'`
+
+if [ "$a" == "pmId   MML_CMD" ]; then 
+
+  echo "pmId is present" 
+
+else
+
+  echo "pmId is not present" 
+
+fi
+
+export a=`cat /ericsson/mml/authority/sys_adm_act.data | grep -i mml |grep 'pmMeasurementCapabilitiesId'`
+
+if [ "$a" == "pmMeasurementCapabilitiesId   MML_CMD" ]; then 
+
+  echo "pmMeasurementCapabilitiesId is present" 
+
+else
+
+  echo "pmMeasurementCapabilitiesId is not present" 
+
+fi
+
+export a=`cat /ericsson/mml/authority/sys_adm_act.data | grep -i mml |grep 'productVendor'`
+
+if [ "$a" == "productVendor   MML_CMD" ]; then 
+
+  echo "productVendor is present" 
+
+else
+
+  echo "productVendor is not present" 
+
+fi
+
+export a=`cat /ericsson/mml/authority/sys_adm_act.data | grep -i mml |grep 'productionDate'`
+
+if [ "$a" == "productionDate   MML_CMD" ]; then 
+
+  echo "productionDate is present" 
+
+else
+
+  echo "productionDate is not present" 
+
+fi
+
+export a=`cat /ericsson/mml/authority/sys_adm_act.data | grep -i mml |grep 'progressInfo'`
+
+if [ "$a" == "progressInfo   MML_CMD" ]; then 
+
+  echo "progressInfo is present" 
+
+else
+
+  echo "progressInfo is not present" 
+
+fi
+
+export a=`cat /ericsson/mml/authority/sys_adm_act.data | grep -i mml |grep 'progressPercentage'`
+
+if [ "$a" == "progressPercentage   MML_CMD" ]; then 
+
+  echo "progressPercentage is present" 
+
+else
+
+  echo "progressPercentage is not present" 
+
+fi
+
+export a=`cat /ericsson/mml/authority/sys_adm_act.data | grep -i mml |grep 'progressReport'`
+
+if [ "$a" == "progressReport   MML_CMD" ]; then 
+
+  echo "progressReport is present" 
+
+else
+
+  echo "progressReport is not present" 
+
+fi
+
+export a=`cat /ericsson/mml/authority/sys_adm_act.data | grep -i mml |grep 'publicKey' | awk 'NR==3'`
+
+if [ "$a" == "publicKey   MML_CMD" ]; then 
+
+  echo "publicKey is present" 
+
+else
+
+  echo "publicKey is not present" 
+
+fi
+
+export a=`cat /ericsson/mml/authority/sys_adm_act.data | grep -i mml |grep 'publicKeyAlgorithm' | awk 'NR==2'`
+
+if [ "$a" == "publicKeyAlgorithm   MML_CMD" ]; then 
+
+  echo "publicKeyAlgorithm is present" 
+
+else
+
+  echo "publicKeyAlgorithm is not present" 
+
+fi
+
+export a=`cat /ericsson/mml/authority/sys_adm_act.data | grep -i mml |grep 'realTimeJobSupport'`
+
+if [ "$a" == "realTimeJobSupport   MML_CMD" ]; then 
+
+  echo "realTimeJobSupport is present" 
+
+else
+
+  echo "realTimeJobSupport is not present" 
+
+fi
+
+export a=`cat /ericsson/mml/authority/sys_adm_act.data | grep -i mml |grep 'respDestinationSetDn'`
+
+if [ "$a" == "respDestinationSetDn   MML_CMD" ]; then 
+
+  echo "respDestinationSetDn is present" 
+
+else
+
+  echo "respDestinationSetDn is not present" 
+
+fi
+
+export a=`cat /ericsson/mml/authority/sys_adm_act.data | grep -i mml |grep 'scrFileId'`
+
+if [ "$a" == "scrFileId   MML_CMD" ]; then 
+
+  echo "scrFileId is present" 
+
+else
+
+  echo "scrFileId is not present" 
+
+fi
+
+export a=`cat /ericsson/mml/authority/sys_adm_act.data | grep -i mml |grep 'signatureAlgorithm' | awk 'NR==2'`
+
+if [ "$a" == "signatureAlgorithm   MML_CMD" ]; then 
+
+  echo "signatureAlgorithm is present" 
+
+else
+
+  echo "signatureAlgorithm is not present" 
+
+fi
+
+export a=`cat /ericsson/mml/authority/sys_adm_act.data | grep -i mml |grep 'slogan'`
+
+if [ "$a" == "slogan   MML_CMD" ]; then 
+
+  echo "slogan is present" 
+
+else
+
+  echo "slogan is not present" 
+
+fi
+
+export a=`cat /ericsson/mml/authority/sys_adm_act.data | grep -i mml |grep 'snmpId'`
+
+if [ "$a" == "snmpId   MML_CMD" ]; then 
+
+  echo "snmpId is present" 
+
+else
+
+  echo "snmpId is not present" 
+
+fi
+
+export a=`cat /ericsson/mml/authority/sys_adm_act.data | grep -i mml |grep 'SrcFile'`
+
+if [ "$a" == "SrcFile   MML_CMD" ]; then 
+
+  echo "SrcFile is present" 
+
+else
+
+  echo "SrcFile is not present" 
+
+fi
+
+export a=`cat /ericsson/mml/authority/sys_adm_act.data | grep -i mml |grep 'subject' | awk 'NR==2'`
+
+if [ "$a" == "subject   MML_CMD" ]; then 
+
+  echo "subject is present" 
+
+else
+
+  echo "subject is not present" 
+
+fi
+
+export a=`cat /ericsson/mml/authority/sys_adm_act.data | grep -i mml |grep 'supported'`
+
+if [ "$a" == "supported   MML_CMD" ]; then 
+
+  echo "supported is present" 
+
+else
+
+  echo "supported is not present" 
+
+fi
+
+export a=`cat /ericsson/mml/authority/sys_adm_act.data | grep -i mml |grep 'thresholdJobSupport'`
+
+if [ "$a" == "thresholdJobSupport   MML_CMD" ]; then 
+
+  echo "thresholdJobSupport is present" 
+
+else
+
+  echo "thresholdJobSupport is not present" 
+
+fi
+
+export a=`cat /ericsson/mml/authority/sys_adm_act.data | grep -i mml |grep 'timeActionCompleted'`
+
+if [ "$a" == "timeActionCompleted   MML_CMD" ]; then 
+
+  echo "timeActionCompleted is present" 
+
+else
+
+  echo "timeActionCompleted is not present" 
+
+fi
+
+export a=`cat /ericsson/mml/authority/sys_adm_act.data | grep -i mml |grep 'timeActionStarted'`
+
+if [ "$a" == "timeActionStarted   MML_CMD" ]; then 
+
+  echo "timeActionStarted is present" 
+
+else
+
+  echo "timeActionStarted is not present" 
+
+fi
+
+export a=`cat /ericsson/mml/authority/sys_adm_act.data | grep -i mml |grep 'timeOfLastStatusUpdate'`
+
+if [ "$a" == "timeOfLastStatusUpdate   MML_CMD" ]; then 
+
+  echo "timeOfLastStatusUpdate is present" 
+
+else
+
+  echo "timeOfLastStatusUpdate is not present" 
+
+fi
+
+export a=`cat /ericsson/mml/authority/sys_adm_act.data | grep -i mml |grep 'transferQueueDn'`
+
+if [ "$a" == "transferQueueDn   MML_CMD" ]; then 
+
+  echo "transferQueueDn is present" 
+
+else
+
+  echo "transferQueueDn is not present" 
+
+fi
+
+export a=`cat /ericsson/mml/authority/sys_adm_act.data | grep -i mml |grep 'unlockMedia'`
+
+if [ "$a" == "unlockMedia   MML_CMD" ]; then 
+
+  echo "unlockMedia is present" 
+
+else
+
+  echo "unlockMedia is not present" 
+
+fi
+
+export a=`cat /ericsson/mml/authority/sys_adm_act.data | grep -i mml |grep 'validFrom' | awk 'NR==2'`
+
+if [ "$a" == "validFrom   MML_CMD" ]; then 
+
+  echo "validFrom is present" 
+
+else
+
+  echo "validFrom is not present" 
+
+fi
+
+export a=`cat /ericsson/mml/authority/sys_adm_act.data | grep -i mml |grep 'validTo' | awk 'NR==2'`
+
+if [ "$a" == "validTo   MML_CMD" ]; then 
+
+  echo "validTo is present" 
+
+else
+
+  echo "validTo is not present" 
+
+fi
+
+export a=`cat /ericsson/mml/authority/sys_adm_act.data | grep -i mml |grep 'ver' | awk 'NR==33'`
+
+if [ "$a" == "ver   MML_CMD" ]; then 
+
+  echo "ver is present" 
+
+else
+
+  echo "ver is not present" 
+
+fi
+
+
+#5.Verify the updated MML commands are updated in/ericsson/mml/authority/LZY226356_R1DA02.Z
+
+
+export a=`zcat /ericsson/mml/authority/LZY226356_R1DA02.Z | grep -i mml| grep 'AdvancedRespondingParameters'`
+
+if [ "$a" == "AdvancedRespondingParameters   MML_CMD" ]; then 
+
+  echo "AdvancedRespondingParameters is present" 
+
+else
+
+  echo "AdvancedRespondingParameters is not present" 
+
+fi
+
+export a=`zcat /ericsson/mml/authority/LZY226356_R1DA02.Z | grep -i mml| grep 'ApSessionM'`
+
+if [ "$a" == "ApSessionM   MML_CMD" ]; then 
+
+  echo "ApSessionM is present" 
+
+else
+
+  echo "ApSessionM is not present" 
+
+fi
+
+export a=`zcat /ericsson/mml/authority/LZY226356_R1DA02.Z | grep -i mml| grep 'Pm' | awk 'NR == 2'`
+
+if [ "$a" == "Pm   MML_CMD" ]; then 
+
+  echo "Pm is present" 
+
+else
+
+  echo "Pm is not present" 
+
+fi
+
+export a=`zcat /ericsson/mml/authority/LZY226356_R1DA02.Z | grep -i mml| grep 'PmMeasurementCapabilities' | awk 'NR == 1'`
+
+if [ "$a" == "PmMeasurementCapabilities   MML_CMD" ]; then 
+
+  echo "PmMeasurementCapabilities is present" 
+
+else
+
+  echo "PmMeasurementCapabilities is not present" 
+fi
+
+export a=`zcat /ericsson/mml/authority/LZY226356_R1DA02.Z | grep -i mml| grep 'Snmp' | awk 'NR == 1'`
+
+if [ "$a" == "Snmp   MML_CMD" ]; then 
+
+  echo "Snmp is present" 
+
+else
+
+  echo "Snmp is not present" 
+
+fi
+
+export a=`zcat /ericsson/mml/authority/LZY226356_R1DA02.Z | grep -i mml| grep 'actionEndTime'`
+
+if [ "$a" == "actionEndTime   MML_CMD" ]; then 
+
+  echo "actionEndTime is present" 
+
+else
+
+  echo "actionEndTime is not present" 
+
+fi
+
+export a=`zcat /ericsson/mml/authority/LZY226356_R1DA02.Z | grep -i mml| grep 'actionId'`
+
+if [ "$a" == "actionId   MML_CMD" ]; then 
+
+  echo "actionId is present" 
+
+else
+
+  echo "actionId is not present" 
+
+fi
+
+export a=`zcat /ericsson/mml/authority/LZY226356_R1DA02.Z | grep -i mml| grep 'actionName'`
+
+if [ "$a" == "actionName   MML_CMD" ]; then 
+
+  echo "actionName is present" 
+
+else
+
+  echo "actionName is not present" 
+
+fi
+
+export a=`zcat /ericsson/mml/authority/LZY226356_R1DA02.Z | grep -i mml| grep 'actionStartTime'`
+
+if [ "$a" == "actionStartTime   MML_CMD" ]; then 
+
+  echo "actionStartTime is present" 
+
+else
+
+  echo "actionStartTime is not present" 
+
+fi
+
+export a=`zcat /ericsson/mml/authority/LZY226356_R1DA02.Z | grep -i mml| grep 'advancedRespondingParametersId'`
+
+if [ "$a" == "advancedRespondingParametersId   MML_CMD" ]; then 
+
+  echo "advancedRespondingParametersId is present" 
+
+else
+
+  echo "advancedRespondingParametersId is not present" 
+
+fi
+
+export a=`zcat /ericsson/mml/authority/LZY226356_R1DA02.Z | grep -i mml| grep 'agentAddress'`
+
+if [ "$a" == "agentAddress   MML_CMD" ]; then 
+
+  echo "agentAddress is present" 
+
+else
+
+  echo "agentAddress is not present" 
+
+fi
+
+export a=`zcat /ericsson/mml/authority/LZY226356_R1DA02.Z | grep -i mml| grep 'alignedReportingPeriod' | awk 'NR == 1'`
+
+if [ "$a" == "alignedReportingPeriod   MML_CMD" ]; then 
+
+  echo "alignedReportingPeriod is present" 
+
+else
+
+  echo "alignedReportingPeriod is not present" 
+
+fi
+
+export a=`zcat /ericsson/mml/authority/LZY226356_R1DA02.Z | grep -i mml| grep 'apBladesDn'`
+
+if [ "$a" == "apBladesDn   MML_CMD" ]; then 
+
+  echo "apBladesDn is present" 
+
+else
+
+  echo "apBladesDn is not present" 
+
+fi
+
+export a=`zcat /ericsson/mml/authority/LZY226356_R1DA02.Z | grep -i mml| grep 'apSessionMId'`
+
+if [ "$a" == "apSessionMId   MML_CMD" ]; then 
+
+  echo "apSessionMId is present" 
+
+else
+
+  echo "apSessionMId is not present" 
+
+fi
+
+export a=`zcat /ericsson/mml/authority/LZY226356_R1DA02.Z | grep -i mml| grep 'bioschg'`
+
+if [ "$a" == "bioschg   MML_CMD" ]; then 
+
+  echo "bioschg is present" 
+
+else
+
+  echo "bioschg is not present" 
+
+fi
+
+export a=`zcat /ericsson/mml/authority/LZY226356_R1DA02.Z | grep -i mml| grep 'brp'`
+
+if [ "$a" == "brp   MML_CMD" ]; then 
+
+  echo "brp is present" 
+
+else
+
+  echo "brp is not present" 
+
+fi
+
+export a=`zcat /ericsson/mml/authority/LZY226356_R1DA02.Z | grep -i mml| grep 'cdlVersion'`
+
+if [ "$a" == "cdlVersion   MML_CMD" ]; then 
+
+  echo "cdlVersion is present" 
+
+else
+
+  echo "cdlVersion is not present" 
+
+fi
+
+export a=`zcat /ericsson/mml/authority/LZY226356_R1DA02.Z | grep -i mml| grep 'colour'`
+
+if [ "$a" == "colour   MML_CMD" ]; then 
+
+  echo "colour is present" 
+
+else
+
+  echo "colour is not present" 
+
+fi
+
+export a=`zcat /ericsson/mml/authority/LZY226356_R1DA02.Z | grep -i mml| grep 'configuration' | awk 'NR==1'`
+
+if [ "$a" == "configuration   MML_CMD" ]; then 
+
+  echo "configuration is present" 
+
+else
+
+  echo "configuration is not present" 
+
+fi
+
+export a=`zcat /ericsson/mml/authority/LZY226356_R1DA02.Z | grep -i mml| grep 'configurationId'`
+
+if [ "$a" == "configurationId   MML_CMD" ]; then 
+
+  echo "configurationId is present" 
+
+else
+
+  echo "configurationId is not present" 
+
+fi
+
+export a=`zcat /ericsson/mml/authority/LZY226356_R1DA02.Z | grep -i mml| grep 'cpArchitecture'`
+
+if [ "$a" == "cpArchitecture   MML_CMD" ]; then 
+
+  echo "cpArchitecture is present" 
+
+else
+
+  echo "cpArchitecture is not present" 
+
+fi
+
+export a=`zcat /ericsson/mml/authority/LZY226356_R1DA02.Z | grep -i mml| grep 'cpBladesDn'`
+
+if [ "$a" == "cpBladesDn   MML_CMD" ]; then 
+
+  echo "cpBladesDn is present" 
+
+else
+
+  echo "cpBladesDn is not present" 
+
+fi
+
+export a=`zcat /ericsson/mml/authority/LZY226356_R1DA02.Z | grep -i mml | grep 'exportFromCp' | awk 'NR==1'`
+
+if [ "$a" == "exportFromCp   MML_CMD" ]; then 
+
+  echo "exportFromCp is present" 
+
+else
+
+  echo "exportFromCp is not present" 
+
+fi
+
+export a=`zcat /ericsson/mml/authority/LZY226356_R1DA02.Z | grep -i mml| grep 'exportFromCpCluster'`
+
+if [ "$a" == "exportFromCpCluster   MML_CMD" ]; then 
+
+  echo "exportFromCpCluster is present" 
+
+else
+
+  echo "exportFromCpCluster is not present" 
+
+fi
+
+export a=`zcat /ericsson/mml/authority/LZY226356_R1DA02.Z | grep -i mml| grep 'extensionContent' | awk 'NR==2'`
+
+if [ "$a" == "extensionContent   MML_CMD" ]; then 
+
+  echo "extensionContent is present" 
+
+else
+
+  echo "extensionContent is not present" 
+
+fi
+
+export a=`zcat /ericsson/mml/authority/LZY226356_R1DA02.Z | grep -i mml| grep 'AdvancedRespondingParameters'`
+
+if [ "$a" == "AdvancedRespondingParameters   MML_CMD" ]; then 
+
+  echo "AdvancedRespondingParameters is present" 
+
+else
+
+  echo "AdvancedRespondingParameters is not present" 
+
+fi
+
+export a=`zcat /ericsson/mml/authority/LZY226356_R1DA02.Z | grep -i mml| grep 'ApSessionM'`
+
+if [ "$a" == "ApSessionM   MML_CMD" ]; then 
+
+  echo "ApSessionM is present" 
+
+else
+
+  echo "ApSessionM is not present" 
+
+fi
+
+export a=`zcat /ericsson/mml/authority/LZY226356_R1DA02.Z | grep -i mml| grep 'Pm' | awk 'NR==2'`
+
+if [ "$a" == "Pm   MML_CMD" ]; then 
+
+  echo "Pm is present" 
+
+else
+
+  echo "Pm is not present" 
+
+fi
+
+export a=`zcat /ericsson/mml/authority/LZY226356_R1DA02.Z | grep -i mml| grep 'PmMeasurementCapabilities' | awk 'NR==1'`
+
+if [ "$a" == "PmMeasurementCapabilities   MML_CMD" ]; then 
+
+  echo "PmMeasurementCapabilities is present" 
+
+else
+
+  echo "PmMeasurementCapabilities is not present" 
+
+fi
+
+export a=`zcat /ericsson/mml/authority/LZY226356_R1DA02.Z | grep -i mml| grep 'Snmp' | awk 'NR==1'`
+
+if [ "$a" == "Snmp   MML_CMD" ]; then 
+
+  echo "Snmp is present" 
+
+else
+
+  echo "Snmp is not present" 
+
+fi
+
+export a=`zcat /ericsson/mml/authority/LZY226356_R1DA02.Z | grep -i mml| grep 'actionEndTime'`
+
+if [ "$a" == "actionEndTime   MML_CMD" ]; then 
+
+  echo "actionEndTime is present" 
+
+else
+
+  echo "actionEndTime is not present" 
+
+fi
+
+export a=`zcat /ericsson/mml/authority/LZY226356_R1DA02.Z | grep -i mml| grep 'actionId'`
+
+if [ "$a" == "actionId   MML_CMD" ]; then 
+
+  echo "actionId is present" 
+
+else
+
+  echo "actionId is not present" 
+
+fi
+
+export a=`zcat /ericsson/mml/authority/LZY226356_R1DA02.Z | grep -i mml| grep 'actionName'`
+
+if [ "$a" == "actionName   MML_CMD" ]; then 
+
+  echo "actionName is present" 
+
+else
+
+  echo "actionName is not present" 
+
+fi
+
+export a=`zcat /ericsson/mml/authority/LZY226356_R1DA02.Z | grep -i mml| grep 'actionStartTime'`
+
+if [ "$a" == "actionStartTime   MML_CMD" ]; then 
+
+  echo "actionStartTime is present" 
+
+else
+
+  echo "actionStartTime is not present" 
+
+fi
+
+export a=`zcat /ericsson/mml/authority/LZY226356_R1DA02.Z | grep -i mml| grep 'advancedRespondingParametersId'`
+
+if [ "$a" == "advancedRespondingParametersId   MML_CMD" ]; then 
+
+  echo "advancedRespondingParametersId is present" 
+
+else
+
+  echo "advancedRespondingParametersId is not present" 
+
+fi
+
+export a=`zcat /ericsson/mml/authority/LZY226356_R1DA02.Z | grep -i mml| grep 'agentAddress'`
+
+if [ "$a" == "agentAddress   MML_CMD" ]; then 
+
+  echo "agentAddress is present" 
+
+else
+
+  echo "agentAddress is not present" 
+
+fi
+
+export a=`zcat /ericsson/mml/authority/LZY226356_R1DA02.Z | grep -i mml| grep 'alignedReportingPeriod' | awk 'NR == 1'`
+
+if [ "$a" == "alignedReportingPeriod   MML_CMD" ]; then 
+
+  echo "alignedReportingPeriod is present" 
+
+else
+
+  echo "alignedReportingPeriod is not present" 
+
+fi
+
+export a=`zcat /ericsson/mml/authority/LZY226356_R1DA02.Z | grep -i mml| grep 'apBladesDn'`
+
+if [ "$a" == "apBladesDn   MML_CMD" ]; then 
+
+  echo "apBladesDn is present" 
+
+else
+
+  echo "apBladesDn is not present" 
+
+fi
+
+export a=`zcat /ericsson/mml/authority/LZY226356_R1DA02.Z | grep -i mml| grep 'apSessionMId'`
+
+if [ "$a" == "apSessionMId   MML_CMD" ]; then 
+
+  echo "apSessionMId is present" 
+
+else
+
+  echo "apSessionMId is not present" 
+
+fi
+
+export a=`zcat /ericsson/mml/authority/LZY226356_R1DA02.Z | grep -i mml| grep 'bioschg'`
+
+if [ "$a" == "bioschg   MML_CMD" ]; then 
+
+  echo "bioschg is present" 
+
+else
+
+  echo "bioschg is not present" 
+
+fi
+
+export a=`zcat /ericsson/mml/authority/LZY226356_R1DA02.Z | grep -i mml| grep 'brp'`
+
+if [ "$a" == "brp   MML_CMD" ]; then 
+
+  echo "brp is present" 
+
+else
+
+  echo "brp is not present" 
+
+fi
+
+export a=`zcat /ericsson/mml/authority/LZY226356_R1DA02.Z | grep -i mml| grep 'cdlVersion'`
+
+if [ "$a" == "cdlVersion   MML_CMD" ]; then 
+
+  echo "cdlVersion is present" 
+
+else
+
+  echo "cdlVersion is not present" 
+
+fi
+
+export a=`zcat /ericsson/mml/authority/LZY226356_R1DA02.Z | grep -i mml| grep 'colour'`
+
+if [ "$a" == "colour   MML_CMD" ]; then 
+
+  echo "colour is present" 
+
+else
+
+  echo "colour is not present" 
+
+fi
+
+export a=`zcat /ericsson/mml/authority/LZY226356_R1DA02.Z | grep -i mml| grep 'configuration' | awk 'NR==1'`
+
+if [ "$a" == "configuration   MML_CMD" ]; then 
+
+  echo "configuration is present" 
+
+else
+
+  echo "configuration is not present" 
+
+fi
+
+export a=`zcat /ericsson/mml/authority/LZY226356_R1DA02.Z | grep -i mml| grep 'configurationId'`
+
+if [ "$a" == "configurationId   MML_CMD" ]; then 
+
+  echo "configurationId is present" 
+
+else
+
+  echo "configurationId is not present" 
+
+fi
+
+export a=`zcat /ericsson/mml/authority/LZY226356_R1DA02.Z | grep -i mml| grep 'cpArchitecture'`
+
+if [ "$a" == "cpArchitecture   MML_CMD" ]; then 
+
+  echo "cpArchitecture is present" 
+
+else
+
+  echo "cpArchitecture is not present" 
+
+fi
+
+export a=`zcat /ericsson/mml/authority/LZY226356_R1DA02.Z | grep -i mml| grep 'cpBladesDn'`
+
+if [ "$a" == "cpBladesDn   MML_CMD" ]; then 
+
+  echo "cpBladesDn is present" 
+
+else
+
+  echo "cpBladesDn is not present" 
+
+fi
+
+export a=`zcat /ericsson/mml/authority/LZY226356_R1DA02.Z | grep -i mml| grep 'exportFromCp' | awk 'NR==1'`
+
+if [ "$a" == "exportFromCp   MML_CMD" ]; then 
+
+  echo "exportFromCp is present" 
+
+else
+
+  echo "exportFromCp is not present" 
+
+fi
+
+export a=`zcat /ericsson/mml/authority/LZY226356_R1DA02.Z | grep -i mml| grep 'exportFromCpCluster'`
+
+if [ "$a" == "exportFromCpCluster   MML_CMD" ]; then 
+
+  echo "exportFromCpCluster is present" 
+
+else
+
+  echo "exportFromCpCluster is not present" 
+
+fi
+
+export a=`zcat /ericsson/mml/authority/LZY226356_R1DA02.Z | grep -i mml| grep 'extensionContent' | awk 'NR == 2'`
+
+if [ "$a" == "extensionContent   MML_CMD" ]; then 
+
+  echo "extensionContent is present" 
+
+else
+
+  echo "extensionContent is not present" 
+
+fi
+
+export a=`zcat /ericsson/mml/authority/LZY226356_R1DA02.Z | grep -i mml| grep 'fileLocation' | awk 'NR == 1'`
+
+if [ "$a" == "fileLocation   MML_CMD" ]; then 
+
+  echo "fileLocation is present" 
+
+else
+
+  echo "fileLocation is not present" 
+
+fi
+
+export a=`zcat /ericsson/mml/authority/LZY226356_R1DA02.Z | grep -i mml| grep 'finalROP' | awk 'NR == 1'`
+
+if [ "$a" == "finalROP   MML_CMD" ]; then 
+
+  echo "finalROP is present" 
+
+else
+
+  echo "finalROP is not present" 
+
+fi
+
+export a=`zcat /ericsson/mml/authority/LZY226356_R1DA02.Z | grep -i mml| grep 'host' | awk 'NR==1'`
+
+if [ "$a" == "host   MML_CMD" ]; then 
+
+  echo "host is present" 
+
+else
+
+  echo "host is not present" 
+
+fi
+
+export a=`zcat /ericsson/mml/authority/LZY226356_R1DA02.Z | grep -i mml| grep 'importToCp' | awk 'NR==1'`
+
+if [ "$a" == "importToCp   MML_CMD" ]; then 
+
+  echo "importToCp is present" 
+
+else
+
+  echo "importToCp is not present" 
+
+fi
+
+export a=`zcat /ericsson/mml/authority/LZY226356_R1DA02.Z | grep -i mml| grep 'importToCpCluster'`
+
+if [ "$a" == "importToCpCluster   MML_CMD" ]; then 
+
+  echo "importToCpCluster is present" 
+
+else
+
+  echo "importToCpCluster is not present" 
+
+fi
+
+export a=`zcat /ericsson/mml/authority/LZY226356_R1DA02.Z | grep -i mml| grep 'info' | awk 'NR==2'`
+
+if [ "$a" == "info   MML_CMD" ]; then 
+
+  echo "info is present" 
+
+else
+
+  echo "info is not present" 
+
+fi
+
+export a=`zcat /ericsson/mml/authority/LZY226356_R1DA02.Z | grep -i mml| grep 'initDestinationSetDn'`
+
+if [ "$a" == "initDestinationSetDn   MML_CMD" ]; then 
+
+  echo "initDestinationSetDn is present" 
+
+else
+
+  echo "initDestinationSetDn is not present" 
+
+fi
+
+export a=`zcat /ericsson/mml/authority/LZY226356_R1DA02.Z | grep -i mml| grep 'isAvailable'`
+
+if [ "$a" == "isAvailable   MML_CMD" ]; then 
+
+  echo "isAvailable is present" 
+
+else
+
+  echo "isAvailable is not present" 
+
+fi
+
+export a=`zcat /ericsson/mml/authority/LZY226356_R1DA02.Z | grep -i mml| grep 'isIncluded'`
+
+if [ "$a" == "isIncluded   MML_CMD" ]; then 
+
+  echo "isIncluded is present" 
+
+else
+
+  echo "isIncluded is not present" 
+
+fi
+
+export a=`zcat /ericsson/mml/authority/LZY226356_R1DA02.Z | grep -i mml| grep 'issuer' | awk 'NR==2'`
+
+if [ "$a" == "issuer   MML_CMD" ]; then 
+
+  echo "issuer is present" 
+
+else
+
+  echo "issuer is not present" 
+
+fi
+
+export a=`zcat /ericsson/mml/authority/LZY226356_R1DA02.Z | grep -i mml| grep 'jobPrioritizationSupport' | awk 'NR == 1'`
+
+if [ "$a" == "jobPrioritizationSupport   MML_CMD" ]; then 
+
+  echo "jobPrioritizationSupport is present" 
+
+else
+
+  echo "jobPrioritizationSupport is not present" 
+
+fi
+
+export a=`zcat /ericsson/mml/authority/LZY226356_R1DA02.Z | grep -i mml| grep 'jobStartStopSupport' | awk 'NR == 1'`
+
+if [ "$a" == "jobStartStopSupport   MML_CMD" ]; then 
+
+  echo "jobStartStopSupport is present" 
+
+else
+
+  echo "jobStartStopSupport is not present" 
+
+fi
+
+export a=`zcat /ericsson/mml/authority/LZY226356_R1DA02.Z | grep -i mml| grep 'keyUsage' | awk 'NR==2'`
+
+if [ "$a" == "keyUsage   MML_CMD" ]; then 
+
+  echo "keyUsage is present" 
+
+else
+
+  echo "keyUsage is not present" 
+
+fi
+
+export a=`zcat /ericsson/mml/authority/LZY226356_R1DA02.Z | grep -i mml| grep 'lastUpdate' | awk 'NR==1'`
+
+if [ "$a" == "lastUpdate   MML_CMD" ]; then 
+
+  echo "lastUpdate is present" 
+
+else
+
+  echo "lastUpdate is not present" 
+
+fi
+
+export a=`zcat /ericsson/mml/authority/LZY226356_R1DA02.Z | grep -i mml| grep 'lockMedia' | awk 'NR==1'`
+
+if [ "$a" == "lockMedia   MML_CMD" ]; then 
+
+  echo "lockMedia is present" 
+
+else
+
+  echo "lockMedia is not present" 
+
+fi
+
+export a=`zcat /ericsson/mml/authority/LZY226356_R1DA02.Z | grep -i mml| grep 'macAddress'`
+
+if [ "$a" == "macAddress   MML_CMD" ]; then 
+
+  echo "macAddress is present" 
+
+else
+
+  echo "macAddress is not present" 
+
+fi
+
+export a=`zcat /ericsson/mml/authority/LZY226356_R1DA02.Z | grep -i mml| grep 'maxNoOfJobs' | awk 'NR == 1'`
+
+if [ "$a" == "maxNoOfJobs   MML_CMD" ]; then 
+
+  echo "maxNoOfJobs is present" 
+
+else
+
+  echo "maxNoOfJobs is not present" 
+
+fi
+
+export a=`zcat /ericsson/mml/authority/LZY226356_R1DA02.Z | grep -i mml| grep 'maxNoOfMeasurements' | awk 'NR == 1'`
+
+if [ "$a" == "maxNoOfMeasurements   MML_CMD" ]; then 
+
+  echo "maxNoOfMeasurements is present" 
+
+else
+
+  echo "maxNoOfMeasurements is not present" 
+
+fi
+
+export a=`zcat /ericsson/mml/authority/LZY226356_R1DA02.Z | grep -i mml| grep 'maxNoOfPmFiles' | awk 'NR == 1'`
+
+if [ "$a" == "maxNoOfPmFiles   MML_CMD" ]; then 
+
+  echo "maxNoOfPmFiles is present" 
+
+else
+
+  echo "maxNoOfPmFiles is not present" 
+
+fi
+
+export a=`zcat /ericsson/mml/authority/LZY226356_R1DA02.Z | grep -i mml| grep 'measurementJobSupport' | awk 'NR == 1'`
+
+if [ "$a" == "measurementJobSupport   MML_CMD" ]; then 
+
+  echo "measurementJobSupport is present" 
+
+else
+
+  echo "measurementJobSupport is not present" 
+
+fi
+
+export a=`zcat /ericsson/mml/authority/LZY226356_R1DA02.Z | grep -i mml| grep 'number' | awk 'NR==1'`
+
+if [ "$a" == "number   MML_CMD" ]; then 
+
+  echo "number is present" 
+
+else
+
+  echo "number is not present" 
+
+fi
+
+export a=`zcat /ericsson/mml/authority/LZY226356_R1DA02.Z | grep -i mml| grep 'numberOfCounters'`
+
+if [ "$a" == "numberOfCounters   MML_CMD" ]; then 
+
+  echo "numberOfCounters is present" 
+
+else
+
+  echo "numberOfCounters is not present" 
+
+fi
+
+export a=`zcat /ericsson/mml/authority/LZY226356_R1DA02.Z | grep -i mml| grep 'pmId' | awk 'NR==1'`
+
+if [ "$a" == "pmId   MML_CMD" ]; then 
+
+  echo "pmId is present" 
+
+else
+
+  echo "pmId is not present" 
+
+fi
+
+export a=`zcat /ericsson/mml/authority/LZY226356_R1DA02.Z | grep -i mml| grep 'pmMeasurementCapabilitiesId' | awk 'NR==1'`
+
+if [ "$a" == "pmMeasurementCapabilitiesId   MML_CMD" ]; then 
+
+  echo "pmMeasurementCapabilitiesId is present" 
+
+else
+
+  echo "pmMeasurementCapabilitiesId is not present" 
+
+fi
+
+export a=`zcat /ericsson/mml/authority/LZY226356_R1DA02.Z | grep -i mml| grep 'productVendor'`
+
+if [ "$a" == "productVendor   MML_CMD" ]; then 
+
+  echo "productVendor is present" 
+
+else
+
+  echo "productVendor is not present" 
+
+fi
+
+export a=`zcat /ericsson/mml/authority/LZY226356_R1DA02.Z | grep -i mml| grep 'productionDate'`
+
+if [ "$a" == "productionDate   MML_CMD" ]; then 
+
+  echo "productionDate is present" 
+
+else
+
+  echo "productionDate is not present" 
+
+fi
+
+export a=`zcat /ericsson/mml/authority/LZY226356_R1DA02.Z | grep -i mml| grep 'progressInfo'`
+
+if [ "$a" == "progressInfo   MML_CMD" ]; then 
+
+  echo "progressInfo is present" 
+
+else
+
+  echo "progressInfo is not present" 
+
+fi
+
+export a=`zcat /ericsson/mml/authority/LZY226356_R1DA02.Z | grep -i mml| grep 'progressPercentage'`
+
+if [ "$a" == "progressPercentage   MML_CMD" ]; then 
+
+  echo "progressPercentage is present" 
+
+else
+
+  echo "progressPercentage is not present" 
+
+fi
+
+export a=`zcat /ericsson/mml/authority/LZY226356_R1DA02.Z | grep -i mml| grep 'progressReport'`
+
+if [ "$a" == "progressReport   MML_CMD" ]; then 
+
+  echo "progressReport is present" 
+
+else
+
+  echo "progressReport is not present" 
+
+fi
+
+export a=`zcat /ericsson/mml/authority/LZY226356_R1DA02.Z | grep -i mml| grep 'publicKey' | awk 'NR==3'`
+
+if [ "$a" == "publicKey   MML_CMD" ]; then 
+
+  echo "publicKey is present" 
+
+else
+
+  echo "publicKey is not present" 
+
+fi
+
+export a=`zcat /ericsson/mml/authority/LZY226356_R1DA02.Z | grep -i mml| grep 'publicKeyAlgorithm' | awk 'NR==2'`
+
+if [ "$a" == "publicKeyAlgorithm   MML_CMD" ]; then 
+
+  echo "publicKeyAlgorithm is present" 
+
+else
+
+  echo "publicKeyAlgorithm is not present" 
+
+fi
+ 
+export a=`zcat /ericsson/mml/authority/LZY226356_R1DA02.Z | grep -i mml| grep 'realTimeJobSupport' | awk 'NR==1'`
+
+if [ "$a" == "realTimeJobSupport   MML_CMD" ]; then 
+
+  echo "realTimeJobSupport is present" 
+
+else
+
+  echo "realTimeJobSupport is not present" 
+
+fi
+
+export a=`zcat /ericsson/mml/authority/LZY226356_R1DA02.Z | grep -i mml| grep 'respDestinationSetDn'`
+
+if [ "$a" == "respDestinationSetDn   MML_CMD" ]; then 
+
+  echo "respDestinationSetDn is present" 
+
+else
+
+  echo "respDestinationSetDn is not present" 
+
+fi
+
+export a=`zcat /ericsson/mml/authority/LZY226356_R1DA02.Z | grep -i mml| grep 'scrFileId'`
+
+if [ "$a" == "scrFileId   MML_CMD" ]; then 
+
+  echo "scrFileId is present" 
+
+else
+
+  echo "scrFileId is not present" 
+
+fi
+
+export a=`zcat /ericsson/mml/authority/LZY226356_R1DA02.Z | grep -i mml| grep 'signatureAlgorithm' | awk 'NR==2'`
+
+if [ "$a" == "signatureAlgorithm   MML_CMD" ]; then 
+
+  echo "signatureAlgorithm is present" 
+
+else
+
+  echo "signatureAlgorithm is not present" 
+
+fi
+
+export a=`zcat /ericsson/mml/authority/LZY226356_R1DA02.Z | grep -i mml| grep 'slogan'`
+
+if [ "$a" == "slogan   MML_CMD" ]; then 
+
+  echo "slogan is present" 
+
+else
+
+  echo "slogan is not present" 
+
+fi
+
+export a=`zcat /ericsson/mml/authority/LZY226356_R1DA02.Z | grep -i mml| grep 'snmpId'`
+
+if [ "$a" == "snmpId   MML_CMD" ]; then 
+
+  echo "snmpId is present" 
+
+else
+
+  echo "snmpId is not present" 
+
+fi
+
+export a=`zcat /ericsson/mml/authority/LZY226356_R1DA02.Z | grep -i mml| grep 'SrcFile' | awk 'NR==1'`
+
+if [ "$a" == "SrcFile   MML_CMD" ]; then 
+
+  echo "SrcFile is present" 
+
+else
+
+  echo "SrcFile is not present" 
+
+fi
+
+export a=`zcat /ericsson/mml/authority/LZY226356_R1DA02.Z | grep -i mml| grep 'subject' | awk 'NR==2'`
+
+if [ "$a" == "subject   MML_CMD" ]; then 
+
+  echo "subject is present" 
+
+else
+
+  echo "subject is not present" 
+
+fi
+
+export a=`zcat /ericsson/mml/authority/LZY226356_R1DA02.Z | grep -i mml| grep 'supported'`
+
+if [ "$a" == "supported   MML_CMD" ]; then 
+
+  echo "supported is present" 
+
+else
+
+  echo "supported is not present" 
+
+fi
+
+export a=`zcat /ericsson/mml/authority/LZY226356_R1DA02.Z | grep -i mml| grep 'thresholdJobSupport' | awk 'NR == 1'`
+
+if [ "$a" == "thresholdJobSupport   MML_CMD" ]; then 
+
+  echo "thresholdJobSupport is present" 
+
+else
+
+  echo "thresholdJobSupport is not present" 
+
+fi
+
+export a=`zcat /ericsson/mml/authority/LZY226356_R1DA02.Z | grep -i mml| grep 'timeActionCompleted'`
+
+if [ "$a" == "timeActionCompleted   MML_CMD" ]; then 
+
+  echo "timeActionCompleted is present" 
+
+else
+
+  echo "timeActionCompleted is not present" 
+
+fi
+
+export a=`zcat /ericsson/mml/authority/LZY226356_R1DA02.Z | grep -i mml| grep 'timeActionStarted'`
+
+if [ "$a" == "timeActionStarted   MML_CMD" ]; then 
+
+  echo "timeActionStarted is present" 
+
+else
+
+  echo "timeActionStarted is not present" 
+
+fi
+
+export a=`zcat /ericsson/mml/authority/LZY226356_R1DA02.Z | grep -i mml| grep 'timeOfLastStatusUpdate'`
+
+if [ "$a" == "timeOfLastStatusUpdate   MML_CMD" ]; then 
+
+  echo "timeOfLastStatusUpdate is present" 
+
+else
+
+  echo "timeOfLastStatusUpdate is not present" 
+
+fi
+
+export a=`zcat /ericsson/mml/authority/LZY226356_R1DA02.Z | grep -i mml| grep 'transferQueueDn'`
+
+if [ "$a" == "transferQueueDn   MML_CMD" ]; then 
+
+  echo "transferQueueDn is present" 
+
+else
+
+  echo "transferQueueDn is not present" 
+
+fi
+
+export a=`zcat /ericsson/mml/authority/LZY226356_R1DA02.Z | grep -i mml| grep 'unlockMedia' | awk 'NR == 1'`
+
+if [ "$a" == "unlockMedia   MML_CMD" ]; then 
+
+  echo "unlockMedia is present" 
+
+else
+
+  echo "unlockMedia is not present" 
+
+fi
+
+export a=`zcat /ericsson/mml/authority/LZY226356_R1DA02.Z | grep -i mml| grep 'validFrom' | awk 'NR==2'`
+
+if [ "$a" == "validFrom   MML_CMD" ]; then 
+
+  echo "validFrom is present" 
+
+else
+
+  echo "validFrom is not present" 
+
+fi
+
+export a=`zcat /ericsson/mml/authority/LZY226356_R1DA02.Z | grep -i mml| grep 'validTo' | awk 'NR==2'`
+
+if [ "$a" == "validTo   MML_CMD" ]; then 
+
+  echo "validTo is present" 
+
+else
+
+  echo "validTo is not present" 
+
+fi
+
+export a=`zcat /ericsson/mml/authority/LZY226356_R1DA02.Z | grep -i mml| grep 'ver' | awk 'NR==33'`
+
+if [ "$a" == "ver   MML_CMD" ]; then 
+
+  echo "ver is present" 
+
+else
+
+  echo "ver is not present" 
+
+fi
+
+#6.4    OSS-RC 14 WP00178 - WRAN: SON Automated scrambling code
+#selection
+
+
+#1. Verify the sentinel license mapping document is updated with the CXC
+#for Auto Scrambling Code Selection WCDMA feature.
+
+
+#2. Verify the Auto Scrambling Code Selection WCDMA feature license is
+#updated in FTP server. 
+$EXPECT << EOF1
+
+  spawn ftp 159.107.220.96 
+      set timeout 100
+      expect "Name (attemfs1.athtem.eei.ericsson.se:root):"
+      send "ossread\r"
+      expect "Password:"
+      send "ossread\r"
+      expect "ftp>"
+      send "bin\r"
+      expect "ftp>"
+      send "cd sentinel\r"
+      expect "ftp>"
+      send "cd O14\r"
+      expect "ftp>"
+      send "ls\r"
+      expect "ftp>"
+      send "get sentinel_license_full\r"
+      expect "ftp>"
+      send "get sentinel_license_wran\r"
+      expect "ftp>"
+      send "quit\r"
+
+EOF1
+
+export a=`cat sentinel_license_full|grep CXC4019027`
+echo "$a"
+export b=`cat sentinel_license_wran|grep CXC4019027`
+echo "$b"
+
+#3. Verify the Auto Scrambling Code Selection WCDMA feature license is
+#installed at initial install on the server. 
+
+export a=`/opt/Sentinel/bin/lsmon | grep CXC4019027`
+
+echo "$a"
+
+export a=`/opt/Sentinel/bin/lsmon |grep CXC4019027 | awk '{print $5}' | cut -c2-11`
+
+if [ "$a" == "CXC4019027" ]; then
+
+  echo "CXC4019027 found"
+
+else 
+
+  echo "CXC4019027 not found"
+
+fi
+
+#4.Verify the Auto Scrambling Code Selection WCDMA feature license can
+#be removed / installed back. 
+
+#export a=`/opt/Sentinel/bin/lsmon |grep -i CXC4019027`
+
+#echo "$a"
+
+#export a=`/opt/Sentinel/bin/lsmon > /tmp/lic.txt`
+
+#export a=`vi /tmp/lic.txt`
+
+#echo "$a"
+
+#export b=`/opt/Sentinel/bin/lslic -DL CXC4019027 O14 01D54BB3A2ACEED0`
+
+#echo "$b"
+
+#export b=`/opt/Sentinel/bin/lsmon |grep -i CXC4019027`
+
+#echo "$b"
+
+#if [ $b == " " ]; then
+
+#  echo "License removed"
+
+#else 
+
+#  echo "License not removed"
+
+#fi
+
+#$EXPECT << EOF1
+
+#  spawn ftp 159.107.220.96
+#      set timeout 100
+#      expect "Name (attemfs1.athtem.eei.ericsson.se:root):"
+#      send "ossread\r"
+#      expect "Password:"
+#      send "ossread\r"
+#      expect "ftp>"
+#      send "bin\r"
+#      expect "ftp>"
+#      send "cd sentinel\r"
+#      expect "ftp>"
+#      send "cd O14\r"
+#      expect "ftp>"
+#      send "ls\r"
+#      expect "ftp>"
+#      send "get sentinel_license_full /var/tmp/sentinel_license_full\r"
+#      expect "ftp>"
+#      send "quit\r"
+
+#EOF1
+
+#export a=`/opt/Sentinel/bin/lslic-F /var/tmp/sentinel_license_full`
+
+#echo "$a"
+
+#export a=`cd /var/tmp`
+
+#export a=`cd /var/tmp | /opt/Sentinel/bin/lsmon |grep -i CXC4019027`
+
+#echo "$a"
+
+#export a=`/opt/Sentinel/bin/lsmon |grep CXC4019027 | awk '{print $5}' | cut -c2-11`
+
+#echo "$a"
+
+#if [ "$a" == "CXC4019027" ]; then
+
+#  echo "CXC4019027 found"
+
+#else
+
+#  echo "CXC4019027 not found"
+
+#fi
+
+	return 0
+
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_POSTCON
+#
+# This callback function checks expected results.
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_postcon() {
+
+	# Coded to fail in case TC_AUTOMATED=1 before automation complete.
+	# Change return code as required
+
+	return 0
+
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_CLEANUP
+#
+# This callback function is only called if the harness execution mode is 'AT_INDEPENDENT'
+# 
+# This callback restores the target system to the state it was in before the TC 
+# was run. It rolls back changes made by callbacks tc_setup() and tc_test()
+# 
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_cleanup() {
+
+	# Coded to fail in case TC_AUTOMATED=1 before automation complete
+	# Change return code as required
+
+	return 0
+
+}

@@ -1,0 +1,15 @@
+#!/bin/bash
+
+# TEST SUITE SPEC FILE
+# This file is generated/updated using the test framework web interface.
+# Manual updates on test servers are lost when the test package is re-installed.
+#
+# Last modified: Thursday 23rd of May 2013 7:30:48
+#
+SPEC_TS_NAME=X86_CLUSTER_PRE_UG
+SPEC_TS_ID=62
+SPEC_TS_SLOGAN="X86 Cluster Pre upgrade steps"
+SPEC_TS_TIMEOUT=300
+SPEC_TS_AUTHOR="xramhar"
+SPEC_TS_INDEPENDENT=0
+SPEC_TS_TC_IDS=(843 845 852 853)

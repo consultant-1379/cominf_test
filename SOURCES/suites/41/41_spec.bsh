@@ -1,0 +1,15 @@
+#!/bin/bash
+
+# TEST SUITE SPEC FILE
+# This file is generated/updated using the test framework web interface.
+# Manual updates on test servers are lost when the test package is re-installed.
+#
+# Last modified: Saturday 1st of December 2012 18:04:31
+#
+SPEC_TS_NAME=JASS_SPARCOSS_HARDENING
+SPEC_TS_ID=41
+SPEC_TS_SLOGAN="JASS Regression test suite, Installs node hardening and executes default hardening and performs audit."
+SPEC_TS_TIMEOUT=300
+SPEC_TS_AUTHOR="eeidle"
+SPEC_TS_INDEPENDENT=1
+SPEC_TS_TC_IDS=(782 773 775)

@@ -1,0 +1,70 @@
+#!/bin/bash
+
+# TEST CASE SPEC FILE
+# This file is generated/updated using the test framework web interface.
+# Manual updates on test servers are lost when the test package is re-installed.
+#
+# Last modified: Monday 16th of December 2013 10:58:59
+#
+
+# These settings must be in BASH script format, they are sourced by other scripts.
+SPEC_FA_NAME="SOLARIS10SMRS"
+SPEC_UC_NAME="SOLARIS10SMRS_Deleting_Supported_NEs"
+SPEC_TC_ID=1451
+SPEC_TC_SLOGAN="Delete CORE CPG Nodes "
+SPEC_TC_TYPE="FT"
+SPEC_TC_POLARITY="positive"
+SPEC_TC_PRIORITY="high"
+SPEC_TC_AUTOMATED=0
+SPEC_TC_DEPENDENT_ONLY=0
+SPEC_TC_TIMEOUT=300
+SPEC_TC_TEST_PASSCODE=0
+SPEC_TC_AUTHOR="xsougha"
+SPEC_TC_AUTOMATOR="xsougha"
+# this parameter is not interpreted by harness
+SPEC_TC_DISABLED=0
+
+# Please do not remove the comment lines below.
+# They are used as section locators by the test harness.
+
+# BEGIN_PRE_CONDITIONS
+#None
+#
+#<Path under "Verification Specification for Cominf Feature Test for 14.0":
+#
+#Dismantling Bi-directional SMRS/Deleting Supported Network Elements 
+#>
+# END_PRE_CONDITIONS
+
+
+# BEGIN_MANUAL_STEPS
+#Delete CORE CPG nodes in ARNE. Verify that corresponding directories are deleted from SMRS Master and slave/s.
+#Configuration
+#
+#The deleteCheckIntervalSeconds can be reset in /etc/opt/ericsson/nms_bismrs_mc/bismrs.properties. This will require a coldrestart of the BI_SMRS_MC.
+#The default value is 3600 seconds.
+#
+# END_MANUAL_STEPS
+
+# BEGIN_POST_CONDITIONS
+#Verify that the CPG directories are deleted from Master and Slaves: 
+#OSS Master:
+#/var/opt/ericsson/smrsstore/CORE/<slavename>/<CPGName>/
+#/var/opt/ericsson/smrsstore/CORE/<slavename>/<CPGName>/NeTransientUp
+#/var/opt/ericsson/smrsstore/CORE/<slavename>/<CPGName>/NeTransientUp/PM
+#/var/opt/ericsson/smrsstore/CORE/<slavename>/<CPGName>/NePersistent
+#
+#SMRS Master:
+#/CORE/<slavename>/<CPGName>/
+#/CORE/<slavename>/<CPGName>/NeTransientUp
+#/CORE/<slavename>/<CPGName>/NeTransientUp/PM
+#/CORE/<slavename>/<CPGName>/NePersistent
+#
+#SMRS Slave:
+#/CORE/<slavename>/<CPGName>/
+#/CORE/<slavename>/<CPGName>/NeTransientUp
+#/CORE/<slavename>/<CPGName>/NeTransientUP/PM
+#/CORE/<slavename>/<CPGName>/NePersistent
+#
+#Directories containing data will not be deleted for 48 hours.
+# END_POST_CONDITIONS

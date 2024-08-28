@@ -1,0 +1,7 @@
+
+LDAP Directory Manager password: 
+COM privileges for user [u516], type [COM_APP], in domain [1.com]:
+target        | target1
+role          | role516a
+alias         | alias516
+              | role: role516a

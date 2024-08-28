@@ -1,0 +1,84 @@
+#!/bin/bash
+
+# TEST CASE SPEC FILE
+# This file is generated/updated using the test framework web interface.
+# Manual updates on test servers are lost when the test package is re-installed.
+#
+# Last modified: Monday 16th of December 2013 10:00:15
+#
+
+# These settings must be in BASH script format, they are sourced by other scripts.
+SPEC_FA_NAME="SOLARIS10INSTALL"
+SPEC_UC_NAME="SOLARIS10INSTALL_UAS_Installation"
+SPEC_TC_ID=1390
+SPEC_TC_SLOGAN="Verify the login and launch of applications "
+SPEC_TC_TYPE="FT"
+SPEC_TC_POLARITY="positive"
+SPEC_TC_PRIORITY="high"
+SPEC_TC_AUTOMATED=0
+SPEC_TC_DEPENDENT_ONLY=0
+SPEC_TC_TIMEOUT=300
+SPEC_TC_TEST_PASSCODE=0
+SPEC_TC_AUTHOR="xnavsur"
+SPEC_TC_AUTOMATOR="xnavsur"
+# this parameter is not interpreted by harness
+SPEC_TC_DISABLED=0
+
+# Please do not remove the comment lines below.
+# They are used as section locators by the test harness.
+
+# BEGIN_PRE_CONDITIONS
+#<path under "Verification Specification for Cominf Feature Test for 14.0 ":
+#Initial Installation/UAS Installation 
+#>  
+#Verify logging into UAS with new generated token 
+#Precondition 
+#OSS Master Infra and UAS should be configured with Netbeans client installed for Key generation 
+#
+#
+# END_PRE_CONDITIONS
+
+
+# BEGIN_MANUAL_STEPS
+#Action 1:
+#Import Java and go on to line 55 : and edit the name of the ldap user for 
+#eg :“String macData = "jakki23" + counterValue; “ then right click on HMacTest on the left and click on run.
+#
+#
+# END_MANUAL_STEPS
+
+# BEGIN_POST_CONDITIONS
+#Result 1:
+#You will find the new key generated at the bottom of the screen for
+#Eg: Final Token : 22719887-zBp9c5G7iyfC3IhuppBoMzzTSuzFA/6bTGYigCxgQVY=
+#Use this key to logon the UAS , Logging to UAS should be successful with the Key.
+#
+#Note : The above key is valid for only 1 minute. It dies after 1 minute.
+#
+#Result Example:
+#
+#Please find the login from infra server :
+#bash-3.2# ssh jakki99@10.45.194.116
+#Password:
+#Your password has been reset by administrator.
+#
+#Warning: Your password has expired, please change it now.
+#
+#New Password:
+#Re-enter new Password:
+#Password:
+#Your password has been reset by administrator.
+#
+#Warning: Your password has expired, please change it now.
+#
+#New Password:
+#Re-enter new Password:
+#sshd-kbdint: password successfully changed for jakki99
+#
+#Last login: Wed Mar 13 17:01:02 2013 from atclvm150.comin
+#
+#Oracle Corporation SunOS 5.10 Generic Patch January 2005
+#jakki99@atrcx991>
+#jakki99@atrcx991>
+#
+# END_POST_CONDITIONS

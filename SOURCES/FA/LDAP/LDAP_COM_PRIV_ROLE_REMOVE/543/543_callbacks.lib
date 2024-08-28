@@ -1,0 +1,264 @@
+#!/bin/bash
+#################################################################################
+#
+#
+#	   COPYRIGHT (C) ERICSSON RADIO SYSTEMS AB, Sweden
+#
+#	   The copyright to the document(s) herein is the property of
+#	   Ericsson Radio Systems AB, Sweden.
+#
+#	   The document(s) may be used and/or copied only with the written
+#	   permission from Ericsson Radio Systems AB or in accordance with
+#	   the terms and conditions stipulated in the agreement/contract
+#	   under which the document(s) have been supplied.
+#
+#################################################################################
+
+
+# ATCOMINF Test Callback Library
+
+# Revision History
+# 01/10/12	xamamcg		Initial test for remove target from COM_OSS user
+
+# Complete the callbacks in this library to automate the test case.
+#
+# Callbacks are stateless, it is not possible to set a global variable in one callback 
+# and access it it in another.
+#
+# Callbacks are called by the test harness in the following order:
+#
+# tc_setup() 		# Called only for independent TC execution mode to setup TC
+# tc_precon()		# Conditions that should exist before TC can run
+# tc_test()		# Runs the test for this TC
+# tc_postcon()		# Conditions that should/should not exist after successful TC 
+# tc_cleanup()		# Called only for independent TC execution mode to clenup after TC
+
+# All callbacks must PASS for a TC PASS result
+
+#################################################################################
+#
+# CALLBACK: TC_SETUP
+#
+# This callback function is only called if the harness execution mode is 'AT_INDEPENDENT'
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_setup() {
+
+
+
+
+	
+	# Replace PASSWD with the correct credentials or data
+	for ii in *.in; do
+		sed -e "s/^PASSWD$/$LDAP_SUPERUSER_PASSWD/" $ii > $ii.tmp || {
+			echo "Failed to replace LDAP superuser password holder etc in /usr/local/bin/expect input file $ii, rc $?"
+			return 2
+		}
+	done
+
+#-------------------------------------------------------------------------------
+# Create a test user  
+#-------------------------------------------------------------------------------
+
+	CMD='/ericsson/sdee/bin/add_user.sh -d 1.com -n u543 -i 1543 -C bhavana -y'
+	${AT_BIN}/con_ex.bsh -d 543adduser.in.tmp -o 543adduser.exp -c "$CMD" || {
+		echo "Failed to generate /usr/local/bin/expect script, $?"
+		return 3
+	}
+
+	/usr/local/bin/expect 543adduser.exp || {
+		echo "Failed to create user, error code $?"
+		return 4
+	}
+#-------------------------------------------------------------------------------
+# Create a test role
+#-------------------------------------------------------------------------------
+
+	CMD='/ericsson/sdee/bin/manage_COM.bsh -a role -d 1.com -R r543 -y'
+	${AT_BIN}/con_ex.bsh -d 543.in.tmp -o 543role.exp -c "$CMD" || {
+		echo "Failed to generate /usr/local/bin/expect script, $?"
+		return 5
+	}
+
+	/usr/local/bin/expect 543role.exp || {
+		echo "Failed to create role, error code $?"
+		return 6
+	}
+#-------------------------------------------------------------------------------
+# Add target to user
+#-------------------------------------------------------------------------------
+
+	CMD='/ericsson/sdee/bin/manage_COM_privs.bsh -a target -d 1.com -T target1 -u u543 -y'
+	${AT_BIN}/con_ex.bsh -d 543.in.tmp -o 543role.exp -c "$CMD" || {
+		echo "Failed to generate /usr/local/bin/expect script, $?"
+		return 7
+	}
+
+	/usr/local/bin/expect 543role.exp || {
+		echo "Failed to create target, error code $?"
+		return 8
+	}
+#-------------------------------------------------------------------------------
+# Add role to user
+#-------------------------------------------------------------------------------
+
+	CMD='/ericsson/sdee/bin/manage_COM_privs.bsh -a role -d 1.com -R r543 -u u543 -y'
+	${AT_BIN}/con_ex.bsh -d 543.in.tmp -o 543role.exp -c "$CMD" || {
+		echo "Failed to generate /usr/local/bin/expect script, $?"
+		return 9
+	}
+
+	/usr/local/bin/expect 543role.exp || {
+		echo "Failed to create target, error code $?"
+		return 10
+	}
+	return 0
+}
+#################################################################################
+
+#################################################################################
+#
+# CALLBACK: TC_PRECON
+#
+# This callback function checks the correct conditions exist to run the TC.
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+ 
+tc_precon() {
+
+#-------------------------------------------------------------------------------
+#  Check LDAP is running
+#-------------------------------------------------------------------------------
+
+	LDAP_SERVER_UP || {
+		echo "LDAP server not running"
+		return 1
+	}
+
+#-------------------------------------------------------------------------------
+#  Test user is present
+#-------------------------------------------------------------------------------
+
+	/usr/bin/ldapsearch -D 'cn=Directory Manager' -w $LDAP_SUPERUSER_PASSWD -b uid=u543,ou=people,dc=1,dc=com objectclass=* > u543.out || {
+		echo "Failed to do LDAP search"
+		return 1
+	}
+	grep 'ericssonUserAuthenticationScope: target1' u543.out || {
+		echo "Found no target for user u543"
+		return 2
+	}
+	grep 'ericssonUserAuthorizationScope: r543' u543.out || {
+		echo "Found no role for user u543"
+		return 3
+	}
+	# Check output shows  user is type com_oss
+
+	LDAP_USER_EXISTS 1.com u543 || {
+		echo "Test user u543 does not exist, $?"
+		return 4
+	}
+	/usr/local/bin/expect 543l.exp > 543l.out || {
+		echo "Failed to list user, error code $?"
+		return 5
+	}
+	grep "userType" 543l.out | grep COM_OSS || {
+		echo "User is wrong type"
+		return 6
+	}
+	return 0
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_TEST
+#
+# This callback function runs the test.
+# The harness compares the return code to the SPEC_TC_TEST_PASSCODE value set in the test spec.
+#
+# Return or exit codes:
+#	SPEC_TC_TEST_PASSCODE 	success
+# != SPEC_TC_TEST_PASSCODE 	failure
+ 
+tc_test() {
+
+	CMD='/ericsson/sdee/bin/manage_COM_privs.bsh -r role'
+	${AT_BIN}/con_ex.bsh -d 543rem.in.tmp -o 543remtarget.exp -c "$CMD" || {
+		echo "Failed to generate /usr/local/bin/expect script, $?"
+		return 1
+	}
+
+	/usr/local/bin/expect 543remtarget.exp || {
+		echo "Failed to remove target, error code $?"
+		return 2
+	}
+
+	
+
+	return 0
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_POSTCON
+#
+# This callback function checks expected results.
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_postcon() {
+
+	# Check user is in database 
+	/usr/bin/ldapsearch -D 'cn=Directory Manager' -w $LDAP_SUPERUSER_PASSWD -b uid=u543,ou=people,dc=1,dc=com objectclass=* | grep "uid: u543" || {
+		echo "u543 user does not exists ... This wasn't expected"
+		return 1
+	}
+	# Check user has one target
+	/usr/bin/ldapsearch -D 'cn=Directory Manager' -w $LDAP_SUPERUSER_PASSWD -b uid=u543,ou=people,dc=1,dc=com objectclass=* | grep "ericssonUserAuthenticationScope: target1" || {
+		echo "u543 user has no targets... This wasn't expected"
+		return 2
+	}
+	# Check user has no role
+	/usr/bin/ldapsearch -D 'cn=Directory Manager' -w $LDAP_SUPERUSER_PASSWD -b uid=u543,ou=people,dc=1,dc=com objectclass=* | grep "ericssonUserAuthorizationScope" && {
+		echo "u543 user has roles.  This wasn't expected"
+		return 3
+	}
+
+	
+	return 0
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_CLEANUP
+#
+# This callback function is only called if the harness execution mode is 'AT_INDEPENDENT'
+# 
+# This callback restores the target system to the state it was in before the TC 
+# was run. It rolls back changes made by callbacks tc_setup() and tc_test()
+# 
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_cleanup() {
+
+
+	
+	rm -f *.exp
+	rm -f *.out
+	rm -f *.in.tmp
+	return 0
+}

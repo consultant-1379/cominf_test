@@ -1,0 +1,24 @@
+Enter Deployment type: (basic standard)
+standard
+Enter IP address of the NTP Source:
+2.4.5.6
+Do you want to setup DHCP on this server? (y n)
+n
+Enter DNS Domain Name <e.g. dns.companyname.com>:
+x.com
+Enter the host name of the O&M Services Secondary:
+L1
+Enter the IP address of the O&M Services Secondary:
+1.1.1.1
+Enter IPv6 address of the O&M Services Secondary:
+2001:1b70:82a1:b:0:3008:36:1
+Enter the installation type (inst_type) of the O&M Services Secondary: (cominf security)
+
+Enter root password of the O&M Services Secondary:
+123456
+Confirm root password of the O&M Services Secondary:
+123456
+Enter LDAP Directory Manager DN: \\\[cn=Directory Manager\\\]
+cn=ab cd
+Enter LDAP Directory Manager DN password:
+\003

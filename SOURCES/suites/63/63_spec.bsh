@@ -1,0 +1,15 @@
+#!/bin/bash
+
+# TEST SUITE SPEC FILE
+# This file is generated/updated using the test framework web interface.
+# Manual updates on test servers are lost when the test package is re-installed.
+#
+# Last modified: Friday 27th of September 2013 9:56:20
+#
+SPEC_TS_NAME=X86_CLUSTER_UG_FROM_SLU
+SPEC_TS_ID=63
+SPEC_TS_SLOGAN="X86_CLUSTER_UG_FROM_SLU"
+SPEC_TS_TIMEOUT=300
+SPEC_TS_AUTHOR="xvenkkr"
+SPEC_TS_INDEPENDENT=0
+SPEC_TS_TC_IDS=(852 853 859 860 861)

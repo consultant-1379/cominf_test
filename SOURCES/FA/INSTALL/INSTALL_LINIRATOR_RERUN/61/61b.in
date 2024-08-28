@@ -1,0 +1,44 @@
+Enter Deployment type: (basic standard)
+standard
+Enter IP address of the NTP Source:
+1.1.1.1
+Do you want to setup DHCP on this server? (y n)
+n
+Enter DNS Domain Name <e.g. dns.companyname.com>:
+x.com
+Enter the host name of the O&M Services Secondary:
+fjdklaf
+Enter the IP address of the O&M Services Secondary:
+1.2.3.4
+Enter IPv6 address of the O&M Services Secondary:
+2001:1b70:82a1:b:0:3008:36:1
+Enter the installation type (inst_type) of the O&M Services Secondary: (cominf security)
+
+Enter root password of the O&M Services Secondary:
+hello
+Confirm root password of the O&M Services Secondary:
+hello
+Enter LDAP Directory Manager DN:
+cn=Directory Manager
+Enter LDAP Directory Manager DN password
+12345678
+Confirm LDAP Directory Manager DN password
+12345678
+Enter password for LDAP replication user repladm:
+12345678
+Confirm password for LDAP replication user repladm
+12345678
+Enter password for LDAP user ldapadm:
+123456789
+Confirm password for LDAP user ldapadm:
+123456789
+Enter number of LDAP domains to be configured (max=8):
+1
+Enter LDAP Domain Name #1:
+a.com
+Enter a unique name (lowercase) for the masterservice of the OSS RC system using a.com :
+l1
+Enter IP address for the masterservice of the OSS RC system using a.com:
+1.1.1.1
+Enter password for "cn=mssync,dc=a,dc=com":
+\003

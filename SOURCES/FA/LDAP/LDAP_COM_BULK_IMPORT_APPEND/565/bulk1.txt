@@ -1,0 +1,5 @@
+# Invalid Domain Name
+DOMAIN 1%.com
+ROLE role1
+ALIAS alias1 role1
+

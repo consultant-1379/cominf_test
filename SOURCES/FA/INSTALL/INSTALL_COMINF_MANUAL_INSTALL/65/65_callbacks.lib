@@ -1,0 +1,212 @@
+#!/bin/bash
+#################################################################################
+#
+#
+#       COPYRIGHT (C) ERICSSON RADIO SYSTEMS AB, Sweden
+#
+#       The copyright to the document(s) herein is the property of
+#       Ericsson Radio Systems AB, Sweden.
+#
+#       The document(s) may be used and/or copied only with the written
+#       permission from Ericsson Radio Systems AB or in accordance with
+#       the terms and conditions stipulated in the agreement/contract
+#       under which the document(s) have been supplied.
+#
+#################################################################################
+
+
+# ATCOMINF Test Callback Library
+
+# Revision History
+# 13/12/2012 xsimrea Initial version
+
+# Complete the callbacks in this library to automate the test case.
+#
+# Callbacks are stateless, it is not possible to set a global variable in one callback 
+# and access it it in another.
+#
+# Callbacks are called by the test harness in the following order:
+#
+# tc_setup() 		# Called only for independent TC execution mode to setup TC
+# tc_precon()		# Conditions that should exist before TC can run
+# tc_test()		# Runs the test for this TC
+# tc_postcon()		# Conditions that should/should not exist after successful TC 
+# tc_cleanup()		# Called only for independent TC execution mode to clenup after TC
+
+# All callbacks must PASS for a TC PASS result
+
+#################################################################################
+#
+# CALLBACK: TC_SETUP
+#
+# This callback function is only called if the harness execution mode is 'AT_INDEPENDENT'
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_setup() {
+
+	return 0
+
+}
+#################################################################################
+
+#################################################################################
+#
+# CALLBACK: TC_PRECON
+#
+# This callback function checks the correct conditions exist to run the TC.
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+ 
+tc_precon() {
+
+	# Make sure that slave server is known
+	getent hosts om_serv_slave || { echo om_serv_slave not in the hosts database; return 1; }
+	return 0
+
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_TEST
+#
+# This callback function runs the test.
+# The harness compares the return code to the SPEC_TC_TEST_PASSCODE value set in the test spec.
+#
+# Return or exit codes:
+#    SPEC_TC_TEST_PASSCODE 	success
+# != SPEC_TC_TEST_PASSCODE 	failure
+ 
+tc_test() {
+
+	# Test is that OM Secondary has been installed correctly - the work is already done, so tc_postcon() checks it.
+	return 0 
+
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_POSTCON
+#
+# This callback function checks expected results.
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_postcon() {
+
+	OM_SERV_SLAVE_IP=`getent hosts om_serv_slave|awk '{print $3}'`
+	SSH_TIMEOUT=5
+
+	echo ssh target: $OM_SERV_SLAVE_IP
+	if ( echo -n > /dev/tcp/$OM_SERV_SLAVE_IP/22 ); then
+		# Check 1: ldapadm user exists
+		ssh -l root $OM_SERV_SLAVE_IP id ldapadm &> id.tmp || {
+			echo "ldapadm user doesn not exist on remote host, rc=$?"
+			echo "Command output:"
+			cat id.tmp
+			return 1
+		}
+
+		# For config.ini checks, get a copy of the file from the slave
+		ssh -l root $OM_SERV_SLAVE_IP cat /opt/ericsson/config/config.ini > slave_config.tmp || {
+			echo "Could not get config.ini from Slave"
+			return 2
+		}
+
+		# Check 2: Check that standard install has been done
+		GET_CONFIG_SECTION slave_config.tmp service_common > servcomm.tmp || {
+			echo "Could not retrieve service_common section from slave config.ini file"
+			return 3
+		}
+		grep "^DEPLOYMENT_TYPE=standard$" servcomm.tmp || {
+			echo "Deployment type is not \"standard\""
+			return 4
+		}
+
+		# Check 3: Check configuration type is om_serv_slave
+		GET_CONFIG_SECTION slave_config.tmp host HOST_NAME $OM_SERV_SLAVE_IP > slavehost.tmp || {
+			echo "Could not retrieve host section for slave from slave config.ini file"
+			return 5
+		}
+		grep "^CONFIG=om_serv_slave$" slavehost.tmp || {
+			echo "Config type type is not \"om_serv_slave\""
+			return 6
+		}
+
+		# Check 4: NTP is configured and running
+		ssh -l root $OM_SERV_SLAVE_IP /usr/sbin/ntpq -p  &> ntp.tmp || {
+			echo "NTP not configured on slave, rc=$? - output was:"
+			cat ntp.tmp
+			return 7
+		}
+
+		# Check 5: DHCP config script has been called
+		ssh -l root $OM_SERV_SLAVE_IP ls /opt/ericsson/cominf_core/log/setup_isc_dhcp.bsh\*  &> dhcp.tmp || {
+			echo "DHCP log file not found on slave, rc=$? - output was:"
+			cat dhcp.tmp
+			return 8
+		}
+
+		# Check 6: DNS config script has been called, and zones set up
+		ssh -l root $OM_SERV_SLAVE_IP ls /opt/ericsson/cominf_core/log/setup_dns.bsh\*  &> dnslog.tmp || {
+			echo "DNS log file not found on slave, rc=$? - output was:"
+			cat dnslog.tmp
+			return 10
+		}
+		GET_CONFIG_SECTION slave_config.tmp service TYPE DNS > dnscfg.tmp || {
+			echo "Could not retrieve DNS service section for slave from slave config.ini file"
+			return 11
+		}
+		DNSDOM=$(awk -F= '$1 ~ /^DNS_DOMAIN_NAME$/{print $2}' dnscfg.tmp)
+		[ $? -eq 0 ] || {
+			echo "DNS Domain Name not set"
+			return 12
+		}
+		#ssh -l root $OM_SERV_SLAVE_IP ls /var/named/${DNSDOM}.ip4zone  &> dnszone.tmp || {
+		#	echo "DNS IPv4 forward Zone file not found on slave, rc=$? - output was:"
+		#	cat dnszone.tmp
+		#	return 13
+		#}
+
+		return 0
+	else 
+		echo "The port 22 is closed and SSH service on the om_serv_slave is not available"
+		return 14
+	fi
+
+	return 0 
+
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_CLEANUP
+#
+# This callback function is only called if the harness execution mode is 'AT_INDEPENDENT'
+# 
+# This callback restores the target system to the state it was in before the TC 
+# was run. It rolls back changes made by callbacks tc_setup() and tc_test()
+# 
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_cleanup() {
+
+    rm -f *.tmp
+
+return 0
+
+}

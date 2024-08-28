@@ -1,0 +1,248 @@
+#!/bin/bash
+# ********************************************************************
+# Ericsson Radio Systems AB                                     SCRIPT
+# ********************************************************************
+#
+#
+# (c) Ericsson Radio Systems AB 2008 - All rights reserved.
+#
+# The copyright to the computer program(s) herein is the property
+# of Ericsson Radio Systems AB, Sweden. The programs may be used
+# and/or copied only with the written permission from Ericsson Radio
+# Systems AB or in accordance with the terms and conditions stipulated
+# in the agreement/contract under which the program(s) have been
+# supplied.
+#
+#
+# ********************************************************************
+# Name    : COMinf_CI_live_upgrade
+# Date    : 01/06/2014
+# Purpose : live upgrade for OSS servers CI JOB
+# Author  : xnavsur
+#
+# ********************************************************************
+#
+#   Command Section
+#
+# ********************************************************************
+
+
+
+AWK=/usr/bin/awk
+BASENAME=/usr/bin/basename
+BOOTADM=/usr/sbin/bootadm
+CAT=/usr/bin/cat
+CHMOD=/usr/bin/chmod
+CHOWN=/usr/bin/chown
+CLEAR=/usr/bin/clear
+CMP=/usr/bin/cmp
+CP=/usr/bin/cp
+CPIO=/usr/bin/cpio
+DF=/usr/bin/df
+DIRNAME=/usr/bin/dirname
+DTCONFIG=/usr/dt/bin/dtconfig
+EGREP=/usr/bin/egrep
+EJECT=/usr/bin/eject
+ENV=/usr/bin/env
+EXPR=/usr/bin/expr
+FIND=/usr/bin/find
+FMTHARD=/usr/sbin/fmthard
+FORMAT=/usr/sbin/format
+FUSER=/usr/sbin/fuser
+GETENT=/usr/bin/getent
+GETTEXT=/usr/bin/gettext
+GREP=/usr/bin/grep
+GROUPADD=/usr/sbin/groupadd
+GTAR=/usr/sfw/bin/gtar
+GZCAT=/usr/bin/gzcat
+HASTATUS=/opt/VRTS/bin/hastatus
+HEAD=/usr/bin/head
+HOSTNAME=/usr/bin/hostname
+ID=/usr/bin/id
+INIT=/usr/sbin/init
+KILL=/bin/kill
+LS=/usr/bin/ls
+LN=/usr/bin/ln
+LUACTIVATE=/usr/sbin/luactivate
+LUCREATE=/usr/sbin/lucreate
+LUCURR=/usr/sbin/lucurr
+LUDELETE=/usr/sbin/ludelete
+LUDESC=/usr/sbin/ludesc
+LUMOUNT=/usr/sbin/lumount
+LUUMOUNT=/usr/sbin/luumount
+LUSTATUS=/usr/sbin/lustatus
+LUUPGRADE=/usr/sbin/luupgrade
+LUX86menu_PROPAGATE=/usr/lib/lu/lux86menu_propagate
+METACLEAR=/usr/sbin/metaclear
+METAINIT=/usr/sbin/metainit
+METASTAT=/usr/sbin/metastat
+MKDIR=/usr/bin/mkdir
+MORE=/usr/bin/more
+MOUNT=/usr/sbin/mount
+MV=/usr/bin/mv
+NAWK=/usr/bin/nawk
+PGREP=/usr/bin/pgrep
+PING=/usr/sbin/ping
+PKGADD=/usr/sbin/pkgadd
+PKGINFO=/usr/bin/pkginfo
+PRTCONF=/usr/sbin/prtconf
+PRTDIAG=/usr/sbin/prtdiag
+PRTVTOC=/usr/sbin/prtvtoc
+RM=/usr/bin/rm
+RMDIR=/usr/bin/rmdir
+RCP=/usr/bin/rcp
+RSH=/usr/bin/rsh
+SED=/usr/bin/sed
+SLEEP=/usr/bin/sleep
+SORT=/usr/bin/sort
+SU=/usr/bin/su
+SVCADM=/usr/sbin/svcadm
+SVCCFG=/usr/sbin/svccfg
+SVCS=/usr/bin/svcs
+SWAP=/usr/sbin/swap
+SYNC=/usr/sbin/sync
+TAIL=/usr/bin/tail
+TAR=/usr/bin/tar
+TEE=/usr/bin/tee
+TOUCH=/usr/bin/touch
+TPUT=/usr/bin/tput
+UADMIN=/usr/sbin/uadmin
+UNAME=/usr/bin/uname
+UMOUNT=/usr/sbin/umount
+UNZIP=/usr/bin/unzip
+USERADD=/usr/sbin/useradd
+VOLD=/usr/sbin/vold
+WC=/usr/bin/wc
+ZFS=/usr/sbin/zfs
+ZPOOL=/usr/sbin/zpool
+SHOWREV=/usr/bin/showrev
+
+CONFIG_TYPE=${1}
+
+echo ${CONFIG_TYPE}
+
+case "$CONFIG_TYPE" in
+
+'uas1') 
+         echo "Live upgrading $CONFIG_TYPE"
+         PORT=2206
+         ;;
+'omsrvm')
+         echo "Live upgrading $CONFIG_TYPE"
+         PORT=2204
+         ;;
+'omsrvs')
+         echo "Live upgrading $CONFIG_TYPE"
+         PORT=2207
+         ;;
+'omsas')
+         echo "Live upgrading $CONFIG_TYPE"
+         PORT=2203
+         ;;
+'nedss')
+         echo "Live upgrading $CONFIG_TYPE"
+         PORT=2208
+         ;;
+*) 
+         echo "Invalid option $CONFIG_TYPE"
+         exit 1
+          ;;
+esac
+
+
+log_script()
+{
+  #******************
+  # Timestamp message
+  #******************
+  if [[ -n "${1}" ]]
+  then
+      L_LOG_MESS=" `date '+%Y-%m-%d-%H-%M-%S'`:: ${1}"
+  else
+      L_LOG_MESS=" `date '+%Y-%m-%d-%H-%M-%S'`:: Error in Script ${0}"
+  fi
+
+  #********************************
+  # Ouput to log file and/or screen
+  #********************************
+  if [ "${LOGFILE}" ]
+  then
+      echo "${L_LOG_MESS}" | ${TEE} -a ${LOGFILE}
+  else
+      echo "${L_LOG_MESS}"
+  fi
+  ${ECHO}
+}
+
+G_SCRIPTDIR=$(cd $(/usr/bin/dirname $0); pwd)
+G_SSH_SETUPSCRIPT=$G_SCRIPTDIR/ssh_setup.sh
+G_ETCDIR=$( dirname $G_SCRIPTDIR )/etc
+G_SCRIPTNAME=$(/bin/basename $0)
+G_HARNESS_HOST_ROOTPW=shroot
+
+G_UPGRADE_SCRIPTS="$G_SCRIPTDIR/ci_job_small_upgrade.sh  $G_SCRIPTDIR/ci_upgrade.exp $G_SCRIPTDIR/ci_job_liveupgrade.bsh $G_ETCDIR/ci_liveupgrade.env $G_SCRIPTDIR/../data/19090-CXP9017500_EN_G_TAR_GZIPV1.tar $G_ETCDIR/oss_cloud_install_media_config.template /proj/cominf/cominf/.jenkins-cominf/workspace-cf1/ISO/media_info"
+G_LIVE_UPGRADE="/var/tmp/ci_job_liveupgrade.bsh" 
+G_SMALL_UPGRADE="/var/tmp/ci_job_small_upgrade.sh" 
+G_WAIT_COUNTER=7200 #two hours 
+G_WAIT_COUNTER_TMP=0 #two hours 
+G_ENV_FILE=/proj/cominf/cominf/.jenkins-cominf/servername_upgrade.txt
+G_CLOUD_VAPP=`grep vapp_host $G_ENV_FILE | awk -F= '{print $2}'`
+G_SYNCIP_SCRIPT=$G_SCRIPTDIR/ci_syncIP.bsh
+
+# MAIN 
+
+
+#Prepare the env file for Jumping.
+$G_SYNCIP_SCRIPT $G_ETCDIR/ci_liveupgrade.env U || {
+        echo " Failed to execute SYNCIP "
+	exit 3
+}
+. $G_ETCDIR/ci_liveupgrade.env
+
+chmod 755 $G_SCRIPTDIR/ci_job_liveupgrade.bsh 
+
+echo $CI_SERVER_IP
+
+$G_SSH_SETUPSCRIPT scp "-P ${PORT}  ${G_UPGRADE_SCRIPTS} root@${CI_SERVER_IP}:/var/tmp/" $G_HARNESS_HOST_ROOTPW 
+
+$G_SSH_SETUPSCRIPT ssh "-oPort=${PORT} -o ServerAliveInterval=60 root@${CI_SERVER_IP} chmod 755 ${G_LIVE_UPGRADE}  < /dev/null > /tmp/upgrade_${PORT}.log 2>&1" $G_HARNESS_HOST_ROOTPW
+$G_SSH_SETUPSCRIPT ssh "-oPort=${PORT} -o ServerAliveInterval=60 root@${CI_SERVER_IP} ${G_LIVE_UPGRADE}  < /dev/null > /tmp/upgrade_${PORT}.log 2>&1" $G_HARNESS_HOST_ROOTPW
+
+        G_HARNESS_RETCODE=$?
+        /bin/rm -f /tmp/harness.log > /dev/null 2>&1
+        $G_SSH_SETUPSCRIPT scp "-P ${PORT}  root@${CI_SERVER_IP}:/tmp/upgrade_${PORT}.log /tmp" $G_HARNESS_HOST_ROOTPW &&
+        cat /tmp/upgrade_${PORT}.log 
+	
+        if [ `cat /tmp/upgrade_${PORT}.log | grep -c "Live Upgrade successfull"` -eq 1 ]; then
+        echo "Live upgrade successful ... :-) :-)"
+	sleep 300	
+         while [  $G_WAIT_COUNTER_TMP -lt $G_WAIT_COUNTER ]; do
+         #  echo The counter is $G_WAIT_COUNTER_TMP
+           let G_WAIT_COUNTER_TMP=G_WAIT_COUNTER_TMP+1
+           sleep 1
+           ping -c 1 ${CI_SERVER_IP}  >> /dev/null 2>&1
+           if [ $? -eq 0 ]; then
+              G_WAIT_COUNTER_TMP=8000
+              if [[ ${CONFIG_TYPE} = "omsrvm" || ${CONFIG_TYPE} = "omsrvs" || ${CONFIG_TYPE} = "omsas" || ${CONFIG_TYPE} = "uas1" ]]; then
+                    echo "Starting Small upgrade on ${CONFIG_TYPE}" 
+#                  ci_job_small_upgrade.sh
+                   $G_SSH_SETUPSCRIPT ssh "-oPort=${PORT} -o ServerAliveInterval=60 root@${CI_SERVER_IP} chmod 755 ${G_SMALL_UPGRADE}  < /dev/null > /tmp/small_upgrade_${PORT} 2>&1" $G_HARNESS_HOST_ROOTPW
+                   $G_SSH_SETUPSCRIPT ssh "-oPort=${PORT} -o ServerAliveInterval=60 root@${CI_SERVER_IP} ${G_SMALL_UPGRADE}  < /dev/null > /tmp/small_upgrade_${PORT} 2>&1" $G_HARNESS_HOST_ROOTPW || {
+		   echo "ERROR: cominf small upgrade failed on ${CONFIG_TYPE}"    
+        	   $G_SSH_SETUPSCRIPT scp "-P ${PORT}  root@${CI_SERVER_IP}:/tmp/small_upgrade_${PORT} /tmp" $G_HARNESS_HOST_ROOTPW &&
+		   cat /tmp/small_upgrade_${PORT}
+			exit 1	
+	}
+        	   $G_SSH_SETUPSCRIPT scp "-P ${PORT}  root@${CI_SERVER_IP}:/tmp/small_upgrade_${PORT} /tmp" $G_HARNESS_HOST_ROOTPW &&
+		   cat /tmp/small_upgrade_${PORT}
+              else
+                    echo "Small upgrade is not requierd on ${CONFIG_TYPE} exiting..."
+              fi
+           fi
+         done
+       else
+
+          echo "******************** Live upgrade failed *****************"
+           exit 1
+        fi
+

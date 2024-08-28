@@ -1,0 +1,81 @@
+#!/bin/bash
+#################################################################################
+#
+#
+#       COPYRIGHT (C) ERICSSON RADIO SYSTEMS AB, Sweden
+#
+#       The copyright to the document(s) herein is the property of
+#       Ericsson Radio Systems AB, Sweden.
+#
+#       The document(s) may be used and/or copied only with the written
+#       permission from Ericsson Radio Systems AB or in accordance with
+#       the terms and conditions stipulated in the agreement/contract
+#       under which the document(s) have been supplied.
+#
+#################################################################################
+
+# DDC function library
+# NOTE: Please keep function names consistent and meaningful. i.e use 'get','set','is' 
+#       Please use a variable called RESULT to store the result of a Function, or preferably 
+#       echo the string so that the funtion name can be used as the return string as indicated in the example below.
+# E.G.  [[ $(getHostname) == "atrcxb2214" ]]
+
+# Revision History
+# 10/08/2012    eeidle         Initial script
+#   Provides a set of library functions related to SCK,USCK, STG and SOLARIS Teams
+
+###################
+# GLOBAL VARIABLES
+###################
+#Source Global Env file for DDC
+. /var/tmp/platform_taf/harness/etc/DDC.env
+
+###################
+# FUNCTIONS
+###################
+# Function: check_Dir_Exists
+# Purpose: Check to see does the directory provided exist
+# Usage: : check_Dir_Exists <path to directory>
+#
+# Arguments:
+# Path to directory
+#
+# Return Values:
+# 0     Completed OK
+# 1     Something went wrong
+#
+## Input globals accessed by this function
+# none
+#
+# Output globals set by this function
+#None
+function check_Dir_Exists() {
+
+        [ -d "$1" ] && $_ECHO "Directory: $1 exists." || $_ECHO "Error: Directory: $1 does not exit"
+
+
+}
+
+# Function: check_File_Exists
+# Purpose: Check to see does the File provided exist
+# Usage: : check_File_Exists <path to directory>
+#
+# Arguments:
+# Path to directory
+#
+# Return Values:
+# 0     Completed OK
+# 1     Something went wrong
+#
+## Input globals accessed by this function
+# none
+#
+# Output globals set by this function
+#None
+function check_File_Exists() {
+
+        [ -d "$1" ] && $_ECHO "File: $1 exists." || $_ECHO "Error: File: $1 does not exit"
+
+
+}
+

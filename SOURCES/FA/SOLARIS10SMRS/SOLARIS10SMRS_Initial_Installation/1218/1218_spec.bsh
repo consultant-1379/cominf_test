@@ -1,0 +1,57 @@
+#!/bin/bash
+
+# TEST CASE SPEC FILE
+# This file is generated/updated using the test framework web interface.
+# Manual updates on test servers are lost when the test package is re-installed.
+#
+# Last modified: Monday 16th of December 2013 7:26:26
+#
+
+# These settings must be in BASH script format, they are sourced by other scripts.
+SPEC_FA_NAME="SOLARIS10SMRS"
+SPEC_UC_NAME="SOLARIS10SMRS_Initial_Installation"
+SPEC_TC_ID=1218
+SPEC_TC_SLOGAN="Initial Installation of O&M Services Slave "
+SPEC_TC_TYPE="FT"
+SPEC_TC_POLARITY="positive"
+SPEC_TC_PRIORITY="high"
+SPEC_TC_AUTOMATED=0
+SPEC_TC_DEPENDENT_ONLY=0
+SPEC_TC_TIMEOUT=300
+SPEC_TC_TEST_PASSCODE=0
+SPEC_TC_AUTHOR="xnavema"
+SPEC_TC_AUTOMATOR="xnavema"
+# this parameter is not interpreted by harness
+SPEC_TC_DISABLED=0
+
+# Please do not remove the comment lines below.
+# They are used as section locators by the test harness.
+
+# BEGIN_PRE_CONDITIONS
+#<none>
+#<PATH Under "Verification Specification for Cominf Feature Test for 14.0":Bi-directional SMRS Initial Installation/Server Installation>
+# END_PRE_CONDITIONS
+
+
+# BEGIN_MANUAL_STEPS
+#105 65-0580/01282 1.2: ERICocs updates
+#The cominf_install.sh script shall be updated to remove all installation of SMRS package for server config type om_serv_slave
+#Reference
+#
+#ERICocs updates for om_serv_slave server type
+#Configuration
+#
+#Conditional Test
+#
+#Verify that after installation of the smrs master, the ERICsmrsbi-dir package is not installed.
+#No SMRS configuration should be applied on the smrs slave
+#Verify the contents of /ericsson/config/ericsson_use_config is om_serv_slave
+#
+# END_MANUAL_STEPS
+
+# BEGIN_POST_CONDITIONS
+#Acceptance Criteria
+#
+#The ERICsmrsbi-dir package is not installed on the smrs master. No smrs configuration exists on the smrs master.
+#Contents of /ericsson/config/ericsson_use_config is om_serv_slave.
+# END_POST_CONDITIONS

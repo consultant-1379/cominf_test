@@ -1,0 +1,41 @@
+#!/bin/bash
+
+# TEST CASE SPEC FILE
+# This file is generated/updated using the test framework web interface.
+# Manual updates on test servers are lost when the test package is re-installed.
+#
+# Last modified: Friday 31st of May 2013 9:54:37
+#
+
+# These settings must be in BASH script format, they are sourced by other scripts.
+SPEC_FA_NAME="LDAP"
+SPEC_UC_NAME="LDAP_COM_PRIV_TYPE_LIST"
+SPEC_TC_ID=509
+SPEC_TC_SLOGAN="using  manage_COM_privs.bsh to list a user being in globaldomain"
+SPEC_TC_TYPE="FT"
+SPEC_TC_POLARITY="negative"
+SPEC_TC_PRIORITY="high"
+SPEC_TC_AUTOMATED=1
+SPEC_TC_DEPENDENT_ONLY=0
+SPEC_TC_TIMEOUT=300
+SPEC_TC_TEST_PASSCODE=0
+SPEC_TC_AUTHOR="xbahzam"
+SPEC_TC_AUTOMATOR="xbahzam"
+# this parameter is not interpreted by harness
+SPEC_TC_DISABLED=0
+
+# Please do not remove the comment lines below.
+# They are used as section locators by the test harness.
+
+# BEGIN_PRE_CONDITIONS
+#a user of sample type such as com_app has been created
+# END_PRE_CONDITIONS
+
+
+# BEGIN_MANUAL_STEPS
+#run /opt/ericsson/cominf_ldap/bin/manage_COM_privs.bsh -l -t globaldomain
+# END_MANUAL_STEPS
+
+# BEGIN_POST_CONDITIONS
+#Console output should show that type cannot be found on globaldomain after migrating the relevant domain of the type
+# END_POST_CONDITIONS

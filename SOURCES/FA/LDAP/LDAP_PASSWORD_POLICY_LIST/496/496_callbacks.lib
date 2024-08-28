@@ -1,0 +1,240 @@
+#!/bin/bash
+#################################################################################
+#
+#
+#       COPYRIGHT (C) ERICSSON RADIO SYSTEMS AB, Sweden
+#
+#       The copyright to the document(s) herein is the property of
+#       Ericsson Radio Systems AB, Sweden.
+#
+#       The document(s) may be used and/or copied only with the written
+#       permission from Ericsson Radio Systems AB or in accordance with
+#       the terms and conditions stipulated in the agreement/contract
+#       under which the document(s) have been supplied.
+#
+#################################################################################
+
+
+# ATCOMINF Test Callback Library
+
+# Revision History
+# <date>	<signum>	<details>
+
+# Complete the callbacks in this library to automate the test case.
+#
+# Callbacks are stateless, it is not possible to set a global variable in one callback 
+# and access it it in another.
+#
+# Callbacks are called by the test harness in the following order:
+#
+# tc_setup() 		# Called only for independent TC execution mode to setup TC
+# tc_precon()		# Conditions that should exist before TC can run
+# tc_test()		# Runs the test for this TC
+# tc_postcon()		# Conditions that should/should not exist after successful TC 
+# tc_cleanup()		# Called only for independent TC execution mode to clenup after TC
+
+# All callbacks must PASS for a TC PASS result
+
+#################################################################################
+#
+# CALLBACK: TC_SETUP
+#
+# This callback function is only called if the harness execution mode is 'AT_INDEPENDENT'
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+# /usr/local/bin/expect template files
+EXPECT_TMPLT="496_manage_pwd_policy.in"
+EXPECT_WRKNG=${EXPECT_TMPLT}.wkg
+EXPECT_SCRIPT=${EXPECT_TMPLT%.*}.exp
+G_DOMAIN_NAME=1.com
+G_DOMAIN_DN=dc=1,dc=com
+G_DOMAIN2_NAME=2.com
+G_DOMAIN2_DN=dc=2,dc=com
+G_DOMAINGD_NAME=globaldomain
+G_DOMAINGD_DN="dc=globaldomain"
+G_SCRIPTUNDERTEST=manage_pwd_policy.bsh
+G_CONFIG_DIR=/opt/ericsson/config
+G_DOMAIN_POLICY_FILEN=${G_DOMAIN_NAME}_PWD_POLICY.cmd
+G_DOMAIN_POLICY_FILE=$G_CONFIG_DIR/${G_DOMAIN_NAME}_PWD_POLICY.cmd
+G_FROM_PASSWD_LENGTH=8
+G_TO_PASSWD_LENGTH=10
+COMINF_LDAP_PKGDIR=/ericsson/sdee
+
+tc_setup() {
+
+	# Replace PASSWD , NAME with the correct strings in the /usr/local/bin/expect files
+	sed -e "s/^PASSWD$/$LDAP_SUPERUSER_PASSWD/" \
+		${EXPECT_TMPLT} > ${EXPECT_WRKNG}  || {
+		echo "Failed to replace PASSWD and ACTION holder in /usr/local/bin/expect input files"
+		return 1
+	}
+
+	return 0
+
+}
+#################################################################################
+
+#################################################################################
+#
+# CALLBACK: TC_PRECON
+#
+# This callback function checks the correct conditions exist to run the TC.
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+ 
+tc_precon() {
+
+	LDAP_SERVER_UP || return 1
+	LDAP_DOMAIN_EXISTS $G_DOMAIN_DN || {
+		echo "Error - domain $G_DOMAIN_DN does not exist"
+		return 1
+	}
+	LDAP_DOMAIN_EXISTS $G_DOMAIN2_DN || {
+		echo "Error - domain $G_DOMAIN2_DN does not exist"
+		return 1
+	}
+	LDAP_DOMAIN_EXISTS $G_DOMAINGD_DN || {
+		echo "Error - domain $G_DOMAINGD_DN does not exist"
+		return 1
+	}
+
+	# check password policies are enabled
+	local l_domains="$G_DOMAIN_DN $G_DOMAIN2_GN $G_DOMAINGD_DN"
+	for domain_dn in $l_domains; do
+		echo "Verifying password policy has been enabled for $domain_dn"
+		ldapsearch -LLLx -M -p 389 -h $( hostname ) -D "${LDAP_SUPERUSER_DN}" -w ${LDAP_SUPERUSER_PASSWD} -b "cn=PWD Policy for Users,$domain_dn" "objectclass=collectiveAttributeSubEntry"
+		ret=$?
+		if [ $ret -ne 0 ]; then
+			echo "Error - password policy for $domain_dn is not enabled"
+			return 1
+		fi
+	done
+
+
+	return 0
+
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_TEST
+#
+# This callback function runs the test.
+# The harness compares the return code to the SPEC_TC_TEST_PASSCODE value set in the test spec.
+#
+# Return or exit codes:
+#    SPEC_TC_TEST_PASSCODE 	success
+# != SPEC_TC_TEST_PASSCODE 	failure
+ 
+tc_test() {
+	echo "Listing domain password policy status"
+	${AT_BIN}/con_ex.bsh -d ${EXPECT_WRKNG} -o ${EXPECT_SCRIPT} -c "${COMINF_LDAP_PKGDIR}/bin/${G_SCRIPTUNDERTEST} -l status -d $G_DOMAIN_NAME" 
+	/usr/local/bin/expect ${EXPECT_SCRIPT}
+	if [[ $? -ne $SPEC_TC_TEST_PASSCODE ]]
+	then
+		echo "Error - failed to list domain password policy status"
+		return 1
+	fi
+	CONSOLE_OUTPUT_CONTAINS "Password Policy for [$G_DOMAIN_NAME] is ENABLED" &&
+	CONSOLE_OUTPUT_CONTAINS "Password Policy for [$G_DOMAIN2_NAME] is ENABLED" &&
+	CONSOLE_OUTPUT_CONTAINS "Password Policy for [$G_DOMAINGD_NAME] is ENABLED" || {
+		echo "Error - script output does not contain expected messages"
+		return 1
+	}
+
+	echo "Listing default password policy"
+	${AT_BIN}/con_ex.bsh -d ${EXPECT_WRKNG} -o ${EXPECT_SCRIPT} -c "${COMINF_LDAP_PKGDIR}/bin/${G_SCRIPTUNDERTEST} -l default" 
+	/usr/local/bin/expect ${EXPECT_SCRIPT}
+	if [[ $? -ne $SPEC_TC_TEST_PASSCODE ]]
+	then
+		echo "Error - failed to list default password policy"
+		return 1
+	fi
+	CONSOLE_OUTPUT_CONTAINS "Default Password Policy" || {
+		echo "Error - script output does not contain expected messages"
+		return 1
+	}
+
+	echo "Disabling password policy for $G_DOMAIN_NAME and checking status reflected in list"
+	${AT_BIN}/con_ex.bsh -d ${EXPECT_WRKNG} -o ${EXPECT_SCRIPT} -c "${COMINF_LDAP_PKGDIR}/bin/${G_SCRIPTUNDERTEST} -m disable -d $G_DOMAIN_NAME -y" 
+	/usr/local/bin/expect ${EXPECT_SCRIPT}
+	if [[ $? -ne $SPEC_TC_TEST_PASSCODE ]]
+	then
+		echo "Error - failed to disable password policy for $G_DOMAIN_NAME"
+		return 1
+	fi
+	echo "Listing password policy for $G_DOMAIN_NAME and verifying DISABLED"
+	${AT_BIN}/con_ex.bsh -d ${EXPECT_WRKNG} -o ${EXPECT_SCRIPT} -c "${COMINF_LDAP_PKGDIR}/bin/${G_SCRIPTUNDERTEST} -l domain -d $G_DOMAIN_NAME" 
+	/usr/local/bin/expect ${EXPECT_SCRIPT}
+	if [[ $? -ne $SPEC_TC_TEST_PASSCODE ]]
+	then
+		echo "Error - failed to list policy for domain $G_DOMAIN_NAME"
+		return 1
+	fi
+	CONSOLE_OUTPUT_CONTAINS "Password Policy for [$G_DOMAIN_NAME] - DISABLED" || {
+		echo "Error - script output does not contain expected messages"
+		return 1
+	}
+	
+
+	return $SPEC_TC_TEST_PASSCODE
+
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_POSTCON
+#
+# This callback function checks expected results.
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_postcon() {
+
+
+	return 0
+
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_CLEANUP
+#
+# This callback function is only called if the harness execution mode is 'AT_INDEPENDENT'
+# 
+# This callback restores the target system to the state it was in before the TC 
+# was run. It rolls back changes made by callbacks tc_setup() and tc_test()
+# 
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_cleanup() {
+	echo "Re-enabling password policy for domain ${G_DOMAIN_DN}"
+	ldapmodify -h $( hostname ) -D "${LDAP_SUPERUSER_DN}" -w ${LDAP_SUPERUSER_PASSWD} >/dev/null 2>&1 << EOF
+dn: cn=PWD Policy for Users,${G_DOMAIN_DN}
+changetype: add
+objectclass: collectiveAttributeSubEntry
+objectclass: extensibleObject
+objectclass: subentry
+objectclass: top
+ds-pwp-password-policy-dn;collective: cn=${G_DOMAIN_NAME} Password Policy,cn=Password Policies,cn=config
+subtreeSpecification: { base "ou=people", specificationFilter "(objectclass=person)"}
+EOF
+
+	return 0
+
+}

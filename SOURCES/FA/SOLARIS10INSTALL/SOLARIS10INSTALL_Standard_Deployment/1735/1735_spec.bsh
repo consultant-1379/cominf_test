@@ -1,0 +1,95 @@
+#!/bin/bash
+
+# TEST CASE SPEC FILE
+# This file is generated/updated using the test framework web interface.
+# Manual updates on test servers are lost when the test package is re-installed.
+#
+# Last modified: Tuesday 17th of December 2013 7:27:26
+#
+
+# These settings must be in BASH script format, they are sourced by other scripts.
+SPEC_FA_NAME="SOLARIS10INSTALL"
+SPEC_UC_NAME="SOLARIS10INSTALL_Standard_Deployment"
+SPEC_TC_ID=1735
+SPEC_TC_SLOGAN="Verify ISC DHCP installation loghandling "
+SPEC_TC_TYPE="FT"
+SPEC_TC_POLARITY="positive"
+SPEC_TC_PRIORITY="high"
+SPEC_TC_AUTOMATED=1
+SPEC_TC_DEPENDENT_ONLY=0
+SPEC_TC_TIMEOUT=300
+SPEC_TC_TEST_PASSCODE=0
+SPEC_TC_AUTHOR="xgansre"
+SPEC_TC_AUTOMATOR="xgansre"
+# this parameter is not interpreted by harness
+SPEC_TC_DISABLED=0
+
+# Please do not remove the comment lines below.
+# They are used as section locators by the test harness.
+
+# BEGIN_PRE_CONDITIONS
+#Verify a logfile relating to the installation of ISC DHCP is generated during the installation of COMInf.
+#Verify the logfile contains the correct information relating to the installation of ISC DHCP.
+#The logfile relates to the execution of the script,'/ericsson/ocs/bin/setup_isc_dhcp.sh'
+#
+#Precondition: 
+#Master server,'om_serv_master' successfully configured with COMInf media.
+#
+# 
+#Mars path <Initial Installation/OM Services Server Test Cases
+#(Blade Standard Deployment)/Test Cases for Installation / 
+#Configuration of COMInf in IPv6>.
+#
+# END_PRE_CONDITIONS
+
+
+# BEGIN_MANUAL_STEPS
+#Action 1:
+#Verify that the ISC DHCP package is successfully installed on the server. This can be verified by executing the command
+#pkginfo -l EXTRdhcp
+#
+#Verify the package contains the correct APR/CXC number. 
+#
+#Action 2: 
+#Verify a logfile is created in the directory, /ericsson/ocs/log/, relating to the installation and setup of ISC DHCP.
+#The logfile is titled as follows, 'setup_isc_dhcp_<timestamp>.log'.
+#
+#Action 3: 
+#Verify the '/ericsson/ocs/log/setup_isc_dhcp_<timestamp>.log' logfile contains the relevant information relating to the installation of ISC DHCP. All information relating to DHCP configuration, file transfer,errors etc. are logged to the file.
+#The logfile relates to the execution of the script,'/ericsson/ocs/bin/setup_isc_dhcp.sh'
+#
+#
+# END_MANUAL_STEPS
+
+# BEGIN_POST_CONDITIONS
+#Result 1:
+#The ISC DHCP package is installed on the server.
+#A printout similiar to below is received.
+#The APR/CXC number is correct.
+#
+#bash-3.00# pkginfo -l EXTRdhcp
+#PKGINST: EXTRdhcp
+#NAME: ISC DHCP
+#CATEGORY: application,ericsson,3pp
+#ARCH: X86
+#VERSION: R1A14
+#BASEDIR: /
+#DESC: 19089-CXC 173 3224 ,ISC DHCP
+#PSTAMP: SVF/HI20111006231908
+#INSTDATE: Oct 12 2011 13:06
+#VSTOCK: APR9010468
+#STATUS: completely installed
+#FILES: 48 installed pathnames
+#4 shared pathnames
+#16 directories
+#4 executables
+#39861 blocks used (approx)
+#
+#Result 2:
+#A logfile is successfully generated in the directory, /ericsson/ocs/log/.
+#The logfile is titled, 'setup_isc_dhcp_<timestamp>.log'. 
+#
+#Result 3:
+#The '/ericsson/ocs/log/setup_isc_dhcp_<timestamp>.log' logfile contains all the relevant information relating to the installation and setup of ISC DHCP on the server. All errors are recorded in the logfile.
+# 
+# END_POST_CONDITIONS

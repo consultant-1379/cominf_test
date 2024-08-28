@@ -1,0 +1,79 @@
+#!/bin/bash
+
+# TEST CASE SPEC FILE
+# This file is generated/updated using the test framework web interface.
+# Manual updates on test servers are lost when the test package is re-installed.
+#
+# Last modified: Sunday 31st of March 2013 20:37:23
+#
+
+# These settings must be in BASH script format, they are sourced by other scripts.
+SPEC_FA_NAME="INSTALL"
+SPEC_UC_NAME="INSTALL_LINIRATOR_RERUN"
+SPEC_TC_ID=38
+SPEC_TC_SLOGAN="Re-run linirator on OA&M primary with invalid values for secondary server"
+SPEC_TC_TYPE="FT"
+SPEC_TC_POLARITY="negative"
+SPEC_TC_PRIORITY="high"
+SPEC_TC_AUTOMATED=0
+SPEC_TC_DEPENDENT_ONLY=0
+SPEC_TC_TIMEOUT=300
+SPEC_TC_TEST_PASSCODE=0
+SPEC_TC_AUTHOR="xamamcg"
+SPEC_TC_AUTOMATOR="xamamcg"
+# this parameter is not interpreted by harness
+SPEC_TC_DISABLED=0
+
+# Please do not remove the comment lines below.
+# They are used as section locators by the test harness.
+
+# BEGIN_PRE_CONDITIONS
+#1/ RHEL_INSTALLED
+#2/ config.ini exists
+#3/ POSIX_USER_EXISTS ldapadm
+#4/ CHECK_CONFIG_INI om_serv_master standard
+# END_PRE_CONDITIONS
+
+
+# BEGIN_MANUAL_STEPS
+#1/ cp config.ini config.orig
+#2/ iptables -L > iptables.orig
+#3. Run linirator script and answer questions as follows
+#a. Return for deployment type  
+#b. Return for whether want NTP
+#c. Return for NTP IP Address
+#d. Return for DHCP and its IP address and subnet
+#e. Return for DNS domain name
+#f. -ABC for Secondary server
+#g. ABC- for Secondary  server
+#h. ABC_DEF for Secondary  server
+#i. ABC:DEF for Secondary  server
+#j. ABC.COM for Secondary  server
+#k. 1ABC for Secondary  server
+#k return for Secondary server when re-asked
+#l. 1.1.1.1.1 for Secondary server IP
+#m. 1.1.1 for Secondary server IP
+#n. 1.1.256.1 for Secondary server IP
+#o. 1.1.0100.1 for Secondary server IP
+#p. 1.1.1.0d for Secondary server IP
+#q. 1001:1001:: for Secondary server IP
+#r. return for Secondary server when re-asked
+#s. return for all other questions
+#t. Y when asked to confirm values:
+# END_MANUAL_STEPS
+
+# BEGIN_POST_CONDITIONS
+#1. diff config.ini config.orig
+#2. iptables -L | diff - iptables.orig
+#3. CONSOLE_OUTPUT_CONTAINS "Not a valid Host name [-ABC]"
+#4. CONSOLE_OUTPUT_CONTAINS "Not a valid Host name [ABC-]"
+#5. CONSOLE_OUTPUT_CONTAINS "Not a valid Host name [ABC_DEF]"
+#6. CONSOLE_OUTPUT_CONTAINS "Not a valid Host name [ABC:DEF]"
+#7. CONSOLE_OUTPUT_CONTAINS "Not a valid Host name [ABC.COM]"
+#8. CONSOLE_OUTPUT_CONTAINS "ERROR: Invalid IP address [1.1.1.1.1]"
+#9. CONSOLE_OUTPUT_CONTAINS "ERROR: Invalid IP address [1.1.1]"
+#10. CONSOLE_OUTPUT_CONTAINS "ERROR: Invalid IP address [1.1.256.1]"
+#11. CONSOLE_OUTPUT_CONTAINS "ERROR: Invalid IP address [1.1.0100.1]"
+#12. CONSOLE_OUTPUT_CONTAINS "ERROR: Invalid IP address [1.1.1.0d]"
+#13. CONSOLE_OUTPUT_CONTAINS "ERROR: Invalid IP address [1001:1001::]"
+# END_POST_CONDITIONS

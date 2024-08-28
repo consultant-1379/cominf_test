@@ -1,0 +1,61 @@
+#!/bin/bash
+
+# TEST CASE SPEC FILE
+# This file is generated/updated using the test framework web interface.
+# Manual updates on test servers are lost when the test package is re-installed.
+#
+# Last modified: Sunday 31st of March 2013 20:37:24
+#
+
+# These settings must be in BASH script format, they are sourced by other scripts.
+SPEC_FA_NAME="SCK"
+SPEC_UC_NAME="SCK_VCS_REBOOT"
+SPEC_TC_ID=826
+SPEC_TC_SLOGAN="STAMPING - Stop of Admin2"
+SPEC_TC_TYPE="FT"
+SPEC_TC_POLARITY="positive"
+SPEC_TC_PRIORITY="high"
+SPEC_TC_AUTOMATED=1
+SPEC_TC_DEPENDENT_ONLY=0
+SPEC_TC_TIMEOUT=3600
+SPEC_TC_TEST_PASSCODE=0
+SPEC_TC_AUTHOR="eeigoco"
+SPEC_TC_AUTOMATOR="eeigoco"
+# this parameter is not interpreted by harness
+SPEC_TC_DISABLED=0
+
+# Please do not remove the comment lines below.
+# They are used as section locators by the test harness.
+
+# BEGIN_PRE_CONDITIONS
+#http://jira-oss.lmera.ericsson.se/browse/NFDCI-211
+#
+#"STAMPING - Stop of Admin2
+#
+#When OSS is deployed on x86 hardware, a two node cluster will be the default configuration. These servers will be called Admin1 and Admin2.
+#
+#Verify that all non-parallel service groups are transferred to Admin1 when Admin2 is halted.
+#
+#Step Name Description Expected Result
+#Requirement
+#Environment Two HP Full Height Blades and one Half Height Blade. -
+#Precondition The OSS has being deployed as a two node cluster Admin1 and Admin2 and is connected to a UAS.
+# END_PRE_CONDITIONS
+
+
+# BEGIN_MANUAL_STEPS
+#The cluster must be in standard constellation, i.e. all service groups run on their respective default server. -
+#Description power down Admin2 from ilo to initiate an emergency shutdown of applications and the OS
+#
+#Verify that it is possible to connect to the Admin1 server via the UAS.
+#Admin2 halts.
+#
+# END_MANUAL_STEPS
+
+# BEGIN_POST_CONDITIONS
+#Admin1 starts the services Oss and Ossfs previously managed by Admin2.
+#
+#This is verified with hastatus -sum
+#
+#It was possible to connect via the UAS.
+# END_POST_CONDITIONS

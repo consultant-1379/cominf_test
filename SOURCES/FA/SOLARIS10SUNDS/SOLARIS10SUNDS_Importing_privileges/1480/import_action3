@@ -1,0 +1,4 @@
+DOMAIN vts.com
+ACTION add
+OBJECT target
+t148002 comtarget1,comtarget2

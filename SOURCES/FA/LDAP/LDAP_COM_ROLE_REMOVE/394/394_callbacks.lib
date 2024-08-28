@@ -1,0 +1,206 @@
+#!/bin/bash
+#################################################################################
+#
+#
+#       COPYRIGHT (C) ERICSSON RADIO SYSTEMS AB, Sweden
+#
+#       The copyright to the document(s) herein is the property of
+#       Ericsson Radio Systems AB, Sweden.
+#
+#       The document(s) may be used and/or copied only with the written
+#       permission from Ericsson Radio Systems AB or in accordance with
+#       the terms and conditions stipulated in the agreement/contract
+#       under which the document(s) have been supplied.
+#
+#################################################################################
+
+
+# ATCOMINF Test Callback Library
+
+# Revision History
+# 2012-06-06	xsimrea	Initial version
+
+# Complete the callbacks in this library to automate the test case.
+#
+# Callbacks are stateless, it is not possible to set a global variable in one callback 
+# and access it it in another.
+#
+# Callbacks are called by the test harness in the following order:
+#
+# tc_setup() 		# Called only for independent TC execution mode to setup TC
+# tc_precon()		# Conditions that should exist before TC can run
+# tc_test()		# Runs the test for this TC
+# tc_postcon()		# Conditions that should/should not exist after successful TC 
+# tc_cleanup()		# Called only for independent TC execution mode to clenup after TC
+
+# All callbacks must PASS for a TC PASS result
+
+LDAP_BIN="/ericsson/sdee/bin"
+
+CONFIG="/ericsson/sdee/ldap_domain_settings/"
+
+TEST_DOMAIN="1.com"
+TEST_ALIAS="tstalias"
+TEST_ROLE="$1%N"
+OUTFILE="tmpout.tmp"
+
+#################################################################################
+#
+# CALLBACK: TC_SETUP
+#
+# This callback function is only called if the harness execution mode is 'AT_INDEPENDENT'
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_setup() {
+
+    
+    
+    
+
+   
+
+    # Ensure the enviornment does not exceed 8 domains in order to avoid timeout by the harness framework
+    [[ `ls /ericsson/sdee/ldap_domain_settings/ | wc -l ` -ge 9 ]] && {
+        echo "${CONFIG} contains more than 8 domains - harness will timeout"
+        return 4
+    }
+
+    
+
+    return 0
+
+}
+#################################################################################
+
+#################################################################################
+#
+# CALLBACK: TC_PRECON
+#
+# This callback function checks the correct conditions exist to run the TC.
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+ 
+tc_precon() {
+
+    LDAP_SERVER_UP || {
+        echo "LDAP is not running. LDAP_SERVER_UP returned $?" 
+        return 1
+    }
+
+    return 0
+
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_TEST
+#
+# This callback function runs the test.
+# The harness compares the return code to the SPEC_TC_TEST_PASSCODE value set in the test spec.
+#
+# Return or exit codes:
+#    SPEC_TC_TEST_PASSCODE 	success
+# != SPEC_TC_TEST_PASSCODE 	failure
+ 
+tc_test() {
+
+	> $OUTFILE
+
+	# Set up invalid domain list
+	cat > invdoms.tmp <<\EOF
+$
+abc
+longnameeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee.com
+EOF
+
+	# Note that an empty domain name is treated as though you had not specified one.
+
+	OIFS=$IFS
+	IFS=""
+	i=1
+
+	while read TEST_DOMAIN; do
+
+		IFS=$OIFS
+
+		# remove a role from invalid domain
+		echo "Test $i: Remove role from [${TEST_DOMAIN}] domain "
+		$LDAP_BIN/manage_COM.bsh -r role -d "${TEST_DOMAIN}" -R ${TEST_ROLE} -y < /dev/null 2>&1 | tr '\n' ' ' > remdom.tmp
+		grep "ERROR : " remdom.tmp || {
+			echo "Test $i: Removal of role in invalid domain name [{TEST_DOMAIN}] did not return error - output was:" >> $OUTFILE
+			cat remdom.tmp >> $OUTFILE
+			echo "End of output" >> $OUTFILE
+			: return 2
+		}
+
+		IFS=""
+		((i=i+1))
+
+	done < invdoms.tmp
+
+    return 0
+
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_POSTCON
+#
+# This callback function checks expected results.
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_postcon() {
+
+    rc=0
+
+    # report on any erroneously succedfule removal attempts
+    [[ -s $OUTFILE ]] && {
+        echo "Some remove role attempts worked when they should not have done:"
+        cat $OUTFILE
+        return 1
+    }
+
+    return $rc
+
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_CLEANUP
+#
+# This callback function is only called if the harness execution mode is 'AT_INDEPENDENT'
+# 
+# This callback restores the target system to the state it was in before the TC 
+# was run. It rolls back changes made by callbacks tc_setup() and tc_test()
+# 
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_cleanup() {
+
+    rc=0
+
+    # remove the generated working files
+    rm -f *.tmp *.exp || {
+        echo "Failed to remove the generated working files"
+        return 1
+    }
+
+    return $rc
+
+}

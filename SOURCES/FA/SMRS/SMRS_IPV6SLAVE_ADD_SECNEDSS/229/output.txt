@@ -1,0 +1,13 @@
+SubNetwork=ONRM_ROOT_MO,FtpServer=SMRSSLAVE-LRAN-V6SlaveN2,FtpService=l-sws-V6SlaveN2
+SubNetwork=ONRM_ROOT_MO,FtpServer=SMRSSLAVE-LRAN-V6SlaveN2,FtpService=l-key-V6SlaveN2
+SubNetwork=ONRM_ROOT_MO,FtpServer=SMRSSLAVE-LRAN-V6SlaveN2,FtpService=l-back-V6SlaveN2
+SubNetwork=ONRM_ROOT_MO,FtpServer=SMRSSLAVE-V6SlaveN2,FtpService=swstore-V6SlaveN2
+SubNetwork=ONRM_ROOT_MO,FtpServer=SMRSSLAVE-V6SlaveN2,FtpService=pmup-V6SlaveN2
+SubNetwork=ONRM_ROOT_MO,FtpServer=SMRSSLAVE-V6SlaveN2,FtpService=cmup-V6SlaveN2
+SubNetwork=ONRM_ROOT_MO,FtpServer=SMRSSLAVE-V6SlaveN2,FtpService=cmdown-V6SlaveN2
+SubNetwork=ONRM_ROOT_MO,FtpServer=SMRSSLAVE-V6SlaveN2,FtpService=backup-V6SlaveN2
+SubNetwork=ONRM_ROOT_MO,FtpServer=SMRSSLAVE-V6SlaveN2,FtpService=keystore-V6SlaveN2
+SubNetwork=ONRM_ROOT_MO,FtpServer=SMRSSLAVE-CORE-V6SlaveN2,FtpService=corepmu-V6SlaveN2
+SubNetwork=ONRM_ROOT_MO,FtpServer=SMRSSLAVE-WRAN-V6SlaveN2,FtpService=w-sws-V6SlaveN2
+SubNetwork=ONRM_ROOT_MO,FtpServer=SMRSSLAVE-WRAN-V6SlaveN2,FtpService=w-key-V6SlaveN2
+SubNetwork=ONRM_ROOT_MO,FtpServer=SMRSSLAVE-WRAN-V6SlaveN2,FtpService=w-back-V6SlaveN2

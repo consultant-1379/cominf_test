@@ -1,0 +1,111 @@
+set force_conservative 1
+set timeout 5400
+expect_after timeout exit
+set core [lindex $argv 4]
+set gran [lindex $argv 5]
+set wran [lindex $argv 6]
+set option [lindex $argv 7]
+set cifip [lindex $argv 8]
+spawn /net/ranosdns2.athtem.eei.ericsson.se/jumpstart/scripts/console/conn.sh -s [lindex $argv 0] -i [lindex $argv 3]
+expect "Connected to" 
+send "\r\r"
+expect_after
+expect -timeout 10 "login" {send "root\r"; exp_continue}
+expect -timeout 10 "Password" {send "shroot\r"; exp_continue}
+expect -timeout 10 "#" {send "sync;sync;halt\r"; exp_continue}
+expect_after timeout exit
+expect "ok"
+exec sleep 5
+if { $option == "YES" } { 
+	send "boot net:dhcp - install inst_type=ossrc config=system ossrc_sw_locate=[lindex $argv 1] om_sw_locate=[lindex $argv 1] rmirr label_disks\r"
+} else {
+	send "boot net:dhcp - install inst_type=ossrc config=system ossrc_sw_locate=[lindex $argv 1] om_sw_locate=[lindex $argv 1] label_disks\r"
+}
+expect "Do you want to use Host-Based Mirroring"
+send "YES\r"
+expect "Enter disks for first Plex of ossdg"
+send "\r"
+expect "Enter disks for second Plex of ossdg"
+send "\r"
+expect "Total number of GSM Cells"
+send "100\r"
+expect "Total number of UTRAN Cells"
+send "100\r"
+expect "Total number of LTE Cells"
+send "0\r"
+expect "Total number of Core Nodes"
+send "2\r"
+expect "Total number of  TDRAN Cells"
+send "0\r"
+expect "Allocate space for SGW"
+send "YES\r"
+expect "Allocate space for PMS"
+send "YES\r"
+expect "Allocate space for EBSW"
+send "YES\r"
+expect "Allocate space for RPMO"
+send "YES\r"
+expect "Allocate space for EBS"
+send "YES\r"
+expect "Allocate space for RTT" 
+send "YES\r"
+expect "Setup RNO Database Export Interface"
+send "YES\r"
+expect "Allocate space for EBS-S" 
+send "YES\r"
+expect "Please enter the number of sites that the OSS-RC installation will support"
+send "0\r"
+expect "Please enter the number of MGW nodes that the OSS-RC installation will support"
+send "0\r"
+expect "Please enter the number of SGSN nodes that the OSS-RC installation will support"
+send "0\r"
+expect "Please enter the number of APG43 nodes that the OSS-RC installation will support"
+send "0\r"
+expect "Please enter the number of Redback SmartEdge nodes that the OSS-RC installation will support"
+send "0\r"
+expect "Please enter the number of SASN based nodes with SARA functionality that the OSS-RC installation will support"
+send "0\r"
+expect " \[ii\]"
+send "ii\r"
+expect "The hostname of the OSS server"
+send "\r"
+expect "Enter the Netgroup name"
+send "\r"
+expect "The default password for the OSS-RC sybase users"
+send "sybase11\r"
+expect "The timezone for your geographical region"
+send "GB-Eire\r"
+expect "defaultrouter IP address"
+send "\r"
+expect "NAMESERVERS"
+send "159.107.173.3\r"
+expect "DNSDOMAIN"
+send "athtem.eei.ericsson.se\r"
+expect "LDAPDOMAIN"
+send "athtem.eei.ericsson.se\r"
+expect "SLS_SERVER"
+send "\r"
+expect "SENTINEL_LICENSE_FILE_PATH"
+send "\r"
+expect "SEC_TYPE"
+send "\r"
+expect "VXVMLIC"
+send "[lindex $argv 2]\r"
+expect "NETWORK_TYPE"
+send "\r"
+expect "IM_ROOT"
+send "ONRM_ROOT_MO\r"
+expect "X29_SUFF"
+send "\r"
+expect "NT_SERVER_IPADDRESS"
+send "\r"
+expect "WAS_IP_1"
+send "\r"
+expect "Are these values ok"
+send "y\r"
+# Die after waiting 9 hours, ought to be enough
+set timeout 32400
+expect "Successfully executed core"
+exec sleep 600
+send "exit\r"
+  

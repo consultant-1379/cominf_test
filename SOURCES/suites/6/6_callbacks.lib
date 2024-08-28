@@ -1,0 +1,159 @@
+#!/bin/bash
+#################################################################################
+#
+#
+#       COPYRIGHT (C) ERICSSON RADIO SYSTEMS AB, Sweden
+#
+#       The copyright to the document(s) herein is the property of
+#       Ericsson Radio Systems AB, Sweden.
+#
+#       The document(s) may be used and/or copied only with the written
+#       permission from Ericsson Radio Systems AB or in accordance with
+#       the terms and conditions stipulated in the agreement/contract
+#       under which the document(s) have been supplied.
+#
+#################################################################################
+
+
+# ATCOMINF Test Suite Callback Library
+
+# Revision History
+# 20/07/2012    xamamcg    SMRS test suite
+
+# Complete the callbacks in this library if required to setup/cleanup before/after 
+# running suite test cases.
+#
+# Callbacks are stateless, it is not possible to set a global variable in one callback
+# and access it it in another.
+#
+# Callbacks are called by the test harness in the following order:
+#
+# ts_setup()
+# ts_cleanup()
+
+# Source the SMRS lib
+echo "Going to source ${AT_LIB}/tst_cominf.lib"
+. ${AT_LIB}/tst_cominf.lib
+echo "Going to source ${AT_LIB}/tst_SMRS.lib"
+. ${AT_LIB}/tst_SMRS.lib
+
+#################################################################################
+#
+# CALLBACK: TS_SETUP
+# 
+# Called before the first test case in the suite is run
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+ts_setup() {
+	# Check that there is a file primIP.<hostname> file for this OSS master
+	primfile="primIP.$(hostname)"
+	[ -r ${primfile} ] || { echo "No $primfile found"; return 1; }
+
+	# Replace PASSWD with the correct credentials
+	for ii in *.in; do
+		sed "s/^PASSWD$/$SMRS_MASTER_ROOTPW/" $ii > $ii.tmp
+	done
+
+	# Now copy the ifcfg-eth1 file across directly to the NEDSS machine
+	NEDSS_ip=$(cat "nedssIP.$(hostname)")
+	echo "Copying ifcfg-eth1.$(hostname) to $NEDSS_ip"
+	${AT_BIN}/con_ex.bsh -d ssh.in.tmp -o expect.exp -c "scp ifcfg-eth1.$(hostname) root@$NEDSS_ip://etc/sysconfig/network-scripts/ifcfg-eth1"
+	/usr/local/bin/expect expect.exp || {
+		echo "Failed to copy ifcfg-eth1 to $NEDSS_ip"
+		return 2
+	}
+	# Restart network service
+	${AT_BIN}/con_ex.bsh -d ssh.in.tmp -o expect.exp -c "ssh root@$NEDSS_ip \"service network restart\""
+	/usr/local/bin/expect expect.exp || {
+		echo "Failed to restart network service on $NEDSS_ip"
+		return 3
+	}
+
+	PREPARE_SMRS
+	return $?
+
+}
+#################################################################################
+
+#################################################################################
+#
+# CALLBACK: TS_CLEANUP
+#
+# Called after the last test case in the suite has run
+# 
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+ts_cleanup() {
+
+	# Cleanup the system so nolonger a SMRS master
+	name=`hostname`
+	primfile="primIP."${name}
+	[ -r ${primfile} ] || { echo "No $primfile found"; return 2; }
+	PRIMIP=$(cat $primfile)
+	nedssfile="nedssIP."${name}
+	[ -r ${nedssfile} ] || { echo "No $nedssfile found"; return 3; }
+	NEDSS=$(cat $nedssfile)
+	nedss2file="nedss2IP."${name}
+	[ -r ${nedss2file} ] || { echo "No $nedss2file found"; return 4; }
+	NEDSS2=$(cat $nedss2file)
+
+	echo "Removing aif users on smrs_master"
+	DELETE_AIF aif307 4SlaveM1
+	DELETE_AIF aif320 4SlaveM1
+	DELETE_AIF aif327 4SlaveM1
+	DELETE_AIF saraif 4SlaveM1
+	echo "Removing aif users on smrs_master and primary NEDSS"
+	DELETE_AIF aif336 4SlaveN1 $NEDSS
+	DELETE_AIF aif317 6SlaveN1 $NEDSS
+	DELETE_AIF aif400 4SlaveN1 $NEDSS
+	DELETE_AIF aif401 4SlaveN1 $NEDSS
+	DELETE_AIF aif402 4SlaveN1 $NEDSS
+	DELETE_AIF aif403 4SlaveN1 $NEDSS
+
+	for slave_service_name in 4SlaveM1 V6SlaveM1 4SlaveN1 4SlaveN2 6SlaveN1 V6SlaveN2; do
+		echo "Running CLEANUP_SMRS_SLAVE $PRIMIP $NEDSS $slave_service_name"
+		CLEANUP_SMRS_SLAVE $PRIMIP $NEDSS $slave_service_name
+	done
+	retval=$?
+	echo "Running CLEANUP_NEDSS"
+	CLEANUP_NEDSS $PRIMIP $NEDSS $NEDSS2
+	echo "Running CLEANUP_SMRS"
+	CLEANUP_SMRS $PRIMIP oss1 y y y y
+
+	SMRSDIR=/opt/ericsson/cominf_test/FA/SMRS
+	# Test numbers in spec file
+	tests=$(awk -F= '$1~/SPEC_TS_TC_IDS/{print $2}' 6_spec.bsh|tr -d '()')
+
+	# Remove files from individual tests
+	for test_num in ${tests}; do
+		cd $SMRSDIR/*/$test_num
+		# For xfeldan tests
+		rm -f smrs_slave_config nedss_config
+		rm -f *.exp *.tmp
+
+		# For Bahram's tests
+		rm -f *.data *.fstab *.mntab users.* xml.*
+		rm -f smrs_slave_config.*.$name
+		rm -f smrs.hosts.ip
+		rm -f smrs_slave_config.valid2
+		rm -f *.out
+		rm -f 40*.txt
+		
+	done
+
+	# From tests like 221 222 229
+	rm -f /var/tmp/output.tmp
+	rm -f /var/tmp/output2.tmp
+	
+	# From setup
+	rm -f *.exp *.tmp
+	
+	return $retval
+
+
+}

@@ -1,0 +1,305 @@
+#!/bin/bash
+#################################################################################
+#
+#
+#       COPYRIGHT (C) ERICSSON RADIO SYSTEMS AB, Sweden
+#
+#       The copyright to the document(s) herein is the property of
+#       Ericsson Radio Systems AB, Sweden.
+#
+#       The document(s) may be used and/or copied only with the written
+#       permission from Ericsson Radio Systems AB or in accordance with
+#       the terms and conditions stipulated in the agreement/contract
+#       under which the document(s) have been supplied.
+#
+#################################################################################
+
+
+# ATCOMINF Test Callback Library
+
+# Revision History
+# 2012-10-08	xsimrea	Initial version
+
+# Complete the callbacks in this library to automate the test case.
+#
+# Callbacks are stateless, it is not possible to set a global variable in one callback 
+# and access it it in another.
+#
+# Callbacks are called by the test harness in the following order:
+#
+# tc_setup() 		# Called only for independent TC execution mode to setup TC
+# tc_precon()		# Conditions that should exist before TC can run
+# tc_test()		# Runs the test for this TC
+# tc_postcon()		# Conditions that should/should not exist after successful TC 
+# tc_cleanup()		# Called only for independent TC execution mode to clenup after TC
+
+# All callbacks must PASS for a TC PASS result
+
+LDAP_BIN="/ericsson/sdee/bin"
+
+CONFIG="/ericsson/sdee/ldap_domain_settings/"
+
+OUTFILE="tmpout.tmp"
+
+#################################################################################
+#
+# CALLBACK: TC_SETUP
+#
+# This callback function is only called if the harness execution mode is 'AT_INDEPENDENT'
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_setup() {
+
+    
+    
+    
+
+   
+
+    # Ensure the enviornment does not exceed 8 domains in order to avoid timeout by the harness framework
+    [[ `ls /ericsson/sdee/ldap_domain_settings/ | wc -l ` -ge 9 ]] && {
+        echo "${CONFIG} contains more than 8 domains - harness will timeout"
+        return 4
+    }
+
+    
+
+    # Replace PASSWD and other fields in input file(s) with the correct credentials or data
+    for ii in *.in; do
+        sed -e "s/^PASSWD$/$LDAP_SUPERUSER_PASSWD/" $ii > $ii.tmp || {
+            echo "Failed to replace LDAP superuser password holder etc in /usr/local/bin/expect input file $ii, rc $?"
+            return 6
+        }
+    done
+
+	
+
+	# Add desired role to specified domain
+    ${AT_BIN}/con_ex.bsh -d justpasswd.in.tmp -o add_role.exp -c "$LDAP_BIN/manage_COM.bsh -a role -d 2.com -R ldaprole1 -y " -r
+    /usr/local/bin/expect add_role.exp || {
+        # Failed to add role
+        echo "Add role ldaprole to 2.com domain failed - rc $?"
+		return 8
+    }
+
+    return 0
+
+}
+#################################################################################
+
+#################################################################################
+#
+# CALLBACK: TC_PRECON
+#
+# This callback function checks the correct conditions exist to run the TC.
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+ 
+tc_precon() {
+
+	# Check that the desired role is in specified domain, and take a log of all of them
+    ${AT_BIN}/con_ex.bsh -d justpasswd.in.tmp -o list_role.exp -c "$LDAP_BIN/manage_COM.bsh -l role -d 2.com" -r
+    /usr/local/bin/expect list_role.exp > role_lst.tmp || {
+        # Failed to list roles
+        echo "List role in 2.com domain failed - rc $?"
+		return 9
+    }
+	tr -d '\015' < role_lst.tmp > role_prelst.tmp
+
+	# To tidy up manage_COM output, pipe it through something like:
+	# tr -d '\015' < alias.tmp | sed -e '1,/^Aliases for domain/d' -e '/^$/d'
+
+	grep -i "ldaprole1" role_prelst.tmp || {
+		echo "Could not find the role ldaprole1 we have just added, rc $?"
+		echo "Pre-test list is:"
+		cat role_prelst.tmp
+		echo "End of list"
+		return 10
+	}
+
+    return 0
+
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_TEST
+#
+# This callback function runs the test.
+# The harness compares the return code to the SPEC_TC_TEST_PASSCODE value set in the test spec.
+#
+# Return or exit codes:
+#    SPEC_TC_TEST_PASSCODE 	success
+# != SPEC_TC_TEST_PASSCODE 	failure
+ 
+tc_test() {
+
+    >$OUTFILE
+
+    # Check that file is rejected if an alias refers to a non-existent role
+    echo "Test 1: Alias line contains non-existent role - should fail"
+	cat > test1.tmp <<EOF
+DOMAIN 2.com
+ALIAS filealias1 norole1
+EOF
+    ${AT_BIN}/con_ex.bsh -d justpasswd.in.tmp -o import_alias.exp -c "$LDAP_BIN/manage_COM.bsh -a import -d 2.com -f test1.tmp" -r
+    /usr/local/bin/expect import_alias.exp && {
+        # Alias import erroneously succeeded
+        echo "Test 1: Import succeeded even though role did not exist" >> $OUTFILE
+    }
+
+    # Check that file is rejected if an alias refers to an LDAP role and a non-existent role
+    echo "Test 2: Alias line contains LDAP role and non-existent role - should fail"
+	cat > test2.tmp <<EOF
+DOMAIN 2.com
+ALIAS filealias2 ldaprole1,norole1
+EOF
+    ${AT_BIN}/con_ex.bsh -d justpasswd.in.tmp -o import_alias.exp -c "$LDAP_BIN/manage_COM.bsh -a import -d 2.com -f test2.tmp" -r
+    /usr/local/bin/expect import_alias.exp && {
+        # Alias import erroneously succeeded
+        echo "Test 2: Import succeeded even though role did not exist" >> $OUTFILE
+    }
+
+    # Check that file is rejected if an alias refers to an imported role and a non-existent role
+    echo "Test 3: Alias line contains imported role and non-existent role - should fail"
+	cat > test3.tmp <<EOF
+DOMAIN 2.com
+ROLE filerole1
+ALIAS filealias3 filerole1,norole1
+EOF
+    ${AT_BIN}/con_ex.bsh -d justpasswd.in.tmp -o import_alias.exp -c "$LDAP_BIN/manage_COM.bsh -a import -d 2.com -f test3.tmp" -r
+    /usr/local/bin/expect import_alias.exp && {
+        # Alias import erroneously succeeded
+        echo "Test 3: Import succeeded even though role did not exist" >> $OUTFILE
+    }
+
+    # Check that file is rejected if an alias refers to an imported role, an LDAP role and a non-existent role
+    echo "Test 4: Alias line contains LDAP role, imported role and non-existent role - should fail"
+	cat > test4.tmp <<EOF
+DOMAIN 2.com
+ROLE FILEROLE1
+ALIAS filealias4 filerole1,norole1,LDAPROLE1
+EOF
+    ${AT_BIN}/con_ex.bsh -d justpasswd.in.tmp -o import_alias.exp -c "$LDAP_BIN/manage_COM.bsh -a import -d 2.com -f test4.tmp" -r
+    /usr/local/bin/expect import_alias.exp && {
+        # Alias import erroneously succeeded
+        echo "Test 4: Import succeeded even though role did not exist" >> $OUTFILE
+    }
+
+    # Check that file is accepted if an alias refers to an imported role and an LDAP role
+    echo "Test 5: Alias line contains LDAP role and imported role - should succeed"
+	cat > test5.tmp <<EOF
+DOMAIN 2.com
+ROLE FILEROLE1
+ALIAS filealias5 filerole1,LDAPROLE1
+EOF
+    ${AT_BIN}/con_ex.bsh -d justpasswd.in.tmp -o import_alias.exp -c "$LDAP_BIN/manage_COM.bsh -a import -d 2.com -f test5.tmp -y" -r
+    /usr/local/bin/expect import_alias.exp || {
+        # Alias import improperly failed
+        echo "Test 5: Import failed even though roles existed - rc $?" >> $OUTFILE
+    }
+
+    # return 0 and let tc_postcon identify errors
+    return 0
+
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_POSTCON
+#
+# This callback function checks expected results.
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_postcon() {
+
+    rc=0
+
+    
+
+	# Check that the new aliassses have not been added to specified domain
+    ${AT_BIN}/con_ex.bsh -d justpasswd.in.tmp -o list_alias.exp -c "$LDAP_BIN/manage_COM.bsh -l alias -d 2.com" -r
+    if /usr/local/bin/expect list_alias.exp > alias_lst.tmp ; then
+		# Lose the ^Ms, and the line which says there are no aliases.  The latter was not
+		# done on the prelst, because we want to know if that one *does* contain the string!
+		tr -d '\015' < alias_lst.tmp | sed '/No aliases found for domain/d' > alias_postlst.tmp
+
+		# Got alias list - now check whether entries have been added
+		grep "filealias1" alias_postlst.tmp && {
+			echo "Alias filealias1 has been added to the database" 
+			return 2
+		}
+		grep "filealias2" alias_postlst.tmp && {
+			echo "Alias filealias2 has been added to the database" 
+			return 3
+		}
+		grep "filealias3" alias_postlst.tmp && {
+			echo "Alias filealias3 has been added to the database" 
+			return 4
+		}
+		grep "filealias4" alias_postlst.tmp && {
+			echo "Alias filealias4 has been added to the database" 
+			return 5
+		}
+		grep "filealias5" alias_postlst.tmp || {
+			echo "Alias filealias5 was not added to the database" 
+			return 6
+		}
+	else
+        # Failed to list aliasses
+        echo "Failed to list aliasses in ${TEST_DOMAIN} domain - rc $?"
+		return 7
+	fi
+
+    return 0
+
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_CLEANUP
+#
+# This callback function is only called if the harness execution mode is 'AT_INDEPENDENT'
+# 
+# This callback restores the target system to the state it was in before the TC 
+# was run. It rolls back changes made by callbacks tc_setup() and tc_test()
+# 
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_cleanup() {
+
+    rc=0
+
+	# Delete desired role to specified domain
+    ${AT_BIN}/con_ex.bsh -d justpasswd.in.tmp -o add_role.exp -c "$LDAP_BIN/manage_COM.bsh -r role -d 2.com -R ldaprole1 -y " -r
+    /usr/local/bin/expect add_role.exp || {
+        # Failed to Delete role
+        echo "Delete role ldaprole from 2.com domain failed - rc $?"
+		return 8
+    }
+
+    # remove the generated working files
+    rm -f *.tmp *.exp || {
+        echo "Failed to remove the generated working files"
+		return $?
+    }
+
+    return 0
+
+}

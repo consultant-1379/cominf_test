@@ -1,0 +1,211 @@
+#!/bin/bash
+#################################################################################
+#
+#
+#       COPYRIGHT (C) ERICSSON RADIO SYSTEMS AB, Sweden
+#
+#       The copyright to the document(s) herein is the property of
+#       Ericsson Radio Systems AB, Sweden.
+#
+#       The document(s) may be used and/or copied only with the written
+#       permission from Ericsson Radio Systems AB or in accordance with
+#       the terms and conditions stipulated in the agreement/contract
+#       under which the document(s) have been supplied.
+#
+#################################################################################
+
+
+# ATCOMINF Test Callback Library
+
+# Revision History
+# <date>	<signum>	<details>
+
+# Complete the callbacks in this library to automate the test case.
+#
+# Callbacks are stateless, it is not possible to set a global variable in one callback 
+# and access it it in another.
+#
+# Callbacks are called by the test harness in the following order:
+#
+# tc_setup() 		# Called only for independent TC execution mode to setup TC
+# tc_precon()		# Conditions that should exist before TC can run
+# tc_test()		# Runs the test for this TC
+# tc_postcon()		# Conditions that should/should not exist after successful TC 
+# tc_cleanup()		# Called only for independent TC execution mode to cleanup after TC
+
+# All callbacks must PASS for a TC PASS result
+#Sourcing env file
+. /var/tmp/platform_taf/harness/etc/DDC.env
+
+#################################################################################
+#
+# CALLBACK: TC_SETUP
+#
+# This callback function is only called if the harness execution mode is 'AT_INDEPENDENT'
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_setup() {
+
+	# Coded to fail in case TC_AUTOMATED=1 before automation completed
+	# Change return code as required
+
+	return $PASS
+
+}
+#################################################################################
+
+#################################################################################
+#
+# CALLBACK: TC_PRECON
+#
+# This callback function checks the correct conditions exist to run the TC.
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+ 
+tc_precon() {
+
+	# Coded to fail in case TC_AUTOMATED=1 before automation completed
+	# Change return code as required
+
+        # Define constants
+        PASS=0
+        FAIL=1
+
+        # BEGIN_PRE_CONDITIONS
+        # DDC Service is running on the SC in question
+        [[ $($_SSH $SC1HOST  "$_PS -ef|$_EGREP -i /etc/init.d/ddc|$_GREP -v grep |$_WC -l") != 1 ]] && return $FAIL
+
+        # Get Test parameters
+        MYDATE=$(/bin/date +%d%m%y)
+        XML1DIR="/var/ericsson/ddc_data/".$SC1HOST."_TOR/$MYDATE/instr"
+        XML2DIR="/var/ericsson/ddc_data/".$SC2HOST."_TOR/$MYDATE/instr"
+        # END_PRE_CONDITIONS
+
+	return $PASS
+
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_TEST
+#
+# This callback function runs the test.
+# The harness compares the return code to the SPEC_TC_TEST_PASSCODE value set in the test spec.
+#
+# Return or exit codes:
+#    SPEC_TC_TEST_PASSCODE 	success
+# != SPEC_TC_TEST_PASSCODE 	failure
+ 
+tc_test() {
+
+	# Coded to fail in case TC_AUTOMATED=1 before automation complete
+	# Change return code as required
+
+
+# BEGIN_MANUAL_STEPS
+
+# Log on to the SC server
+if [[ $($_SSH $SC1HOST  "$_PS -ef|$_EGREP -i /etc/init.d/ddc|$_GREP -v grep|$_WC -l") != 1 ]] ; then
+        # Check if the PMServ JBOSS instance is running - if not exit test
+        if [[ $($_SSH $SC1HOST  "/usr/java/latest/bin/jps -v | $_GREP -i PMServ" | $_WC -l) == 1 ]] ; then
+                # Stop the DDC service
+                $_ECHO "[SC-1] Stopping DDC Service"
+                [[ $($_SSH $SC1HOST  "/sbin/service ddc stop") != 0 ]] && return $FAIL
+
+                # If PMServ XML file exists in /var/ericsson/ddc_data/<SC Server>/<date>/instr/ directory then delete it
+                $_ECHO "[SC-1] Checking PMServ XML file exists"
+                if [[ $($_SSH $SC1HOST  "$_LS -l $XML1DIR/app_PMServ_0.xml | $_WC -l") == 1 ]] ; then
+                        $_SSH $SC1HOST  "$_RM -f $XML1DIR/app_PMServ_0.xml"
+                fi
+
+                # Start the DDC service
+                $_ECHO "[SC-1] Starting DDC Service"
+                [[ $($_SSH $SC1HOST  "/sbin/service ddc start") != 0 ]] && return $FAIL
+
+                # If app_PMServ_0.xml is created then return PASS status
+                $_ECHO "[SC-1] Checking PMServ XML file created"
+                [[ $($_SSH $SC1HOST "$_LS -l $XML1DIR/app_PMServ_0.xml | $_WC -l") == 0 ]] && return $FAIL
+
+        else
+                # Check if the PMServ JBOSS instance is running - if not exit test
+                if [[ $($_SSH $SC2HOST "/usr/java/latest/bin/jps -v | $_GREP -i PMServ" | $_WC -l) == 1 ]] ; then
+                        # Stop the DDC service
+                        $_ECHO "[SC-2] Stopping DDC Service"
+                        [[ $($_SSH $SC2HOST "/sbin/service ddc stop") != 0 ]] && return $FAIL
+
+                        # If PMServ XML file exists in /var/ericsson/ddc_data/<SC Server>/<date>/instr/ directory then delete it
+                        $_ECHO "[SC-2] Checking PMServ XML file exists"
+                        if [[ $($_SSH $SC2HOST "$_LS -l $XML2DIR/app_PMServ_1.xml | $_WC -l") == 1 ]] ; then
+                                $_SSH $SC2HOST "$_RM -f $XML2DIR/app_PMServ_1.xml"
+                        fi
+
+                        # Start the DDC service
+                        $_ECHO "[SC-2] Starting DDC Service"
+                        [[ $($_SSH $SC2HOST "/sbin/service ddc start") != 0 ]] && return $FAIL
+
+                        # If app_PMServ_1.xml is created then return PASS status
+                        $_ECHO "[SC-2] Checking PMServ XML file created"
+                        [[ $($_SSH $SC2HOST "$_LS -l $XML2DIR/app_PMServ_1.xml | $_WC -l") == 0 ]] && return $FAIL
+                else
+                        $_ECHO "FAIL"
+                        return $FAIL
+                fi
+        fi
+fi
+# END_MANUAL_STEPS
+
+	return $PASS
+
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_POSTCON
+#
+# This callback function checks expected results.
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_postcon() {
+
+	# Coded to fail in case TC_AUTOMATED=1 before automation complete.
+	# Change return code as required
+
+	return $PASS
+
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_CLEANUP
+#
+# This callback function is only called if the harness execution mode is 'AT_INDEPENDENT'
+# 
+# This callback restores the target system to the state it was in before the TC 
+# was run. It rolls back changes made by callbacks tc_setup() and tc_test()
+# 
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_cleanup() {
+
+	# Coded to fail in case TC_AUTOMATED=1 before automation complete
+	# Change return code as required
+
+	return $PASS
+
+}

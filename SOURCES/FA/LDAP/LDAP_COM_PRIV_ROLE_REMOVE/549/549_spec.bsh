@@ -1,0 +1,59 @@
+#!/bin/bash
+
+# TEST CASE SPEC FILE
+# This file is generated/updated using the test framework web interface.
+# Manual updates on test servers are lost when the test package is re-installed.
+#
+# Last modified: Friday 31st of May 2013 9:51:38
+#
+
+# These settings must be in BASH script format, they are sourced by other scripts.
+SPEC_FA_NAME="LDAP"
+SPEC_UC_NAME="LDAP_COM_PRIV_ROLE_REMOVE"
+SPEC_TC_ID=549
+SPEC_TC_SLOGAN="Delete role from user with invalid interactive options"
+SPEC_TC_TYPE="FT"
+SPEC_TC_POLARITY="negative"
+SPEC_TC_PRIORITY="low"
+SPEC_TC_AUTOMATED=1
+SPEC_TC_DEPENDENT_ONLY=0
+SPEC_TC_TIMEOUT=300
+SPEC_TC_TEST_PASSCODE=0
+SPEC_TC_AUTHOR="xamamcg"
+SPEC_TC_AUTOMATOR="xamamcg"
+# this parameter is not interpreted by harness
+SPEC_TC_DISABLED=0
+
+# Please do not remove the comment lines below.
+# They are used as section locators by the test harness.
+
+# BEGIN_PRE_CONDITIONS
+#1. user u549a and u549b exists
+#2. role r549a and r549b exists
+#3. user u549a has target1
+#4. user u549a has r549a
+#5. user u549a has target2:r549b
+# END_PRE_CONDITIONS
+
+
+# BEGIN_MANUAL_STEPS
+#1. Enter u549NotExist for username
+#2. Enter u549a,u549b as username when asked to reenter
+#3. Enter u549%a when asked to reenter
+#4. Enter u549a when asked to reenter
+#5. Enter r549b:target2:r549b when asked for rolename
+#6. Enter r549a, target2:r549b when asked to re-enter
+#7. Enter r549a,target2:r549b,r549a when asked to re-enter
+#8. Enter r549%a when asked to re-enter
+#9. Enter r549a,target2:r549b when asked to re-enter
+#10. Enter A to Continue
+#11. Enter No when asked to re-enter
+# END_MANUAL_STEPS
+
+# BEGIN_POST_CONDITIONS
+#1. user u549a and u549b exists
+#2. role r549a and r549b exists
+#3. user u549a has target1
+#4. user u549a has r549a
+#5. user u549a has target2:r549b
+# END_POST_CONDITIONS

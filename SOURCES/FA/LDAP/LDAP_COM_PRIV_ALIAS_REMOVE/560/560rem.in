@@ -1,0 +1,28 @@
+LDAP Directory Manager password
+PASSWD
+Enter user name:
+u560NotExist
+Enter user name:
+u560a,u560b
+Enter user name:
+u560a%
+Enter user name:
+u560a
+Enter COM alias names to remove as a comma separated list:
+a560b:target2:a560b
+Enter COM alias names to remove as a comma separated list:
+a560a, target2:a560b
+Enter COM alias names to remove as a comma separated list:
+a560a,target2:a560b,a560a
+Enter COM alias names to remove as a comma separated list:
+a560%a
+Enter COM alias names to remove as a comma separated list:
+r560a
+Enter COM alias names to remove as a comma separated list:
+a560a,target2:a560b
+Please confirm that you want to proceed with requested actions - Yes or No*
+A
+Please confirm that you want to proceed with requested actions*
+No
+
+

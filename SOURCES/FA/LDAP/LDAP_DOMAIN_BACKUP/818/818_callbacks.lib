@@ -1,0 +1,283 @@
+#!/bin/bash
+#################################################################################
+#
+#
+#	   COPYRIGHT (C) ERICSSON RADIO SYSTEMS AB, Sweden
+#
+#	   The copyright to the document(s) herein is the property of
+#	   Ericsson Radio Systems AB, Sweden.
+#
+#	   The document(s) may be used and/or copied only with the written
+#	   permission from Ericsson Radio Systems AB or in accordance with
+#	   the terms and conditions stipulated in the agreement/contract
+#	   under which the document(s) have been supplied.
+#
+#################################################################################
+
+
+# ATCOMINF Test Callback Library
+
+# Revision History
+# <date>	<signum>	<details>
+# 17/12/12	xbahzam		Initial version
+
+# Complete the callbacks in this library to automate the test case.
+#
+# Callbacks are stateless, it is not possible to set a global variable in one callback 
+# and access it it in another.
+#
+# Callbacks are called by the test harness in the following order:
+#
+# tc_setup() 		# Called only for independent TC execution mode to setup TC
+# tc_precon()		# Conditions that should exist before TC can run
+# tc_test()		# Runs the test for this TC
+# tc_postcon()		# Conditions that should/should not exist after successful TC 
+# tc_cleanup()		# Called only for independent TC execution mode to clenup after TC
+
+# All callbacks must PASS for a TC PASS result
+
+LDAP_BIN="/ericsson/sdee/bin"
+
+CONFIG="/ericsson/sdee/ldap_domain_settings/"
+
+TEST_USER="User818"
+TEST_DOMAIN="vts.com"
+TEST_GROUP="Group818"
+
+
+#################################################################################
+#
+# CALLBACK: TC_SETUP
+#
+# This callback function is only called if the harness execution mode is 'AT_INDEPENDENT'
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_setup() {
+
+
+
+	
+	
+	
+
+	
+
+	# Ensure the enviornment does not exceed 8 domains in order to avoid timeout by the harness framework
+	[[ ` ls /ericsson/sdee/ldap_domain_settings/ | wc -l ` -ge 9 ]] && {
+		echo "${CONFIG} contains more than 8 domains - harness will timeout"
+		return 1
+	}
+
+	
+
+	# Replace PASSWD with the correct credentials
+	for ii in *.in; do
+		sed -e "s/^PASSWD$/$LDAP_SUPERUSER_PASSWD/" \
+			-e "s/TESTUSER/$TEST_USER/" \
+			-e "s/TESTDOM/$TEST_DOMAIN/" $ii > $ii.tmp || {
+			echo "Failed to replace LDAP superuser password holder in /usr/local/bin/expect input file $ii"
+			return 1
+		}
+	done
+
+	
+
+	echo "Creating test group in test domain"
+	${AT_BIN}/con_ex.bsh -d 818_add_group.in.tmp -o 818_expect.exp -c "$LDAP_BIN/add_group.sh -d ${TEST_DOMAIN} -s 30107 -e 40000 -n ${TEST_GROUP} -y"
+	/usr/local/bin/expect 818_expect.exp || {
+		echo "Test group was not created, error code $?"
+		return 1
+	}
+
+	echo "Creating test user in test domain"
+	${AT_BIN}/con_ex.bsh -d 818_add_user.in.tmp -o 818_expect.exp -c "$LDAP_BIN/add_user.sh -d ${TEST_DOMAIN} -s 40107 -e 50000 -n ${TEST_USER} -y"
+	/usr/local/bin/expect 818_expect.exp  || {
+		echo "Test user was not added to test domain, error code $?"
+		return 1
+	}
+
+	# Add user to group
+	echo "Adding user to group"
+	/usr/bin/ldapmodify -h $HOSTNAME -p $LDAP_PORT -D "cn=directory manager" -w $LDAP_SUPERUSER_PASSWD <<EOF
+dn: cn=${TEST_GROUP},ou=group,dc=1,dc=com
+changetype: modify
+add: memberUid
+memberUid: ${TEST_USER}
+EOF
+
+
+
+	return 0
+
+}
+#################################################################################
+
+#################################################################################
+#
+# CALLBACK: TC_PRECON
+#
+# This callback function checks the correct conditions exist to run the TC.
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+ 
+tc_precon() {
+
+
+
+	LDAP_SERVER_UP || {
+		echo "LDAP is not running. LDAP_SERVER_UP returned $?" 
+		return 1
+	}
+
+	rc=0
+	dmn=$(LDAP_GET_DOMAIN_DN_FORMAT $TEST_DOMAIN)
+	echo "Check that user User818 was created..."
+	/usr/bin/ldapsearch -D "cn=directory manager" -s base -w $LDAP_SUPERUSER_PASSWD -b "uid=${TEST_USER},ou=people,$dmn" "objectclass=*" || {
+		echo "Test user ${TEST_USER} was not created"
+		return 1
+	}
+
+	echo "Check that group Group818 was created..."
+	/usr/bin/ldapsearch -D "cn=directory manager" -s base -w $LDAP_SUPERUSER_PASSWD -b "cn=${TEST_GROUP},ou=group,$dmn" "objectclass=*" || {
+		echo "Test group ${TEST_GROUP} was not created" 
+		rc=2
+	}
+
+	echo -e "\n\nMigrate domain ${TEST_DOMAIN} to default domain..."
+	${AT_BIN}/con_ex.bsh -d 818_migrate2GD.in.tmp -o 818_expect.exp -c "$LDAP_BIN/migrate_domain.bsh -d ${TEST_DOMAIN} -y -T 1" -r
+	/usr/local/bin/expect 818_expect.exp || {
+		echo "Test domain could not be migrated (using -y option), error code $?"
+		return 1
+	}
+	
+	echo "checking referrals in ${TEST_DOMAIN}"
+	/usr/bin/ldapsearch -D 'cn=Directory Manager' -w $LDAP_SUPERUSER_PASSWD  -b ou=people,$dmn '(objectclass=posixAccount)' | grep -i referral || {
+		echo "no referrals found ... nmsadm might be present in local domain"
+		rc=3
+	}
+
+
+	return $rc
+
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_TEST
+#
+# This callback function runs the test.
+# The harness compares the return code to the SPEC_TC_TEST_PASSCODE value set in the test spec.
+#
+# Return or exit codes:
+#	SPEC_TC_TEST_PASSCODE 	success
+# != SPEC_TC_TEST_PASSCODE 	failure
+ 
+tc_test() {
+
+
+
+	rc=0
+	echo -e "\nRemoving any *.ldif file in /vat/tmp/"
+	rm -f /var/tmp/*.ldif
+	echo -e "\nTest 1: Check backup in online mode"
+	${AT_BIN}/con_ex.bsh -d 818_migrate.in.tmp -o 818_expect.exp -c "$LDAP_BIN/ldap_mig.bsh -d ${TEST_DOMAIN} -b /var/tmp -T 1 -y" -r
+	/usr/local/bin/expect 818_expect.exp && {
+		echo " Backup in online mode failed rc $? - FAIL" 
+		return 1
+	}
+	
+	echo -e "\nRenaming backed up file to online.ldif"
+	mv /var/tmp/*.ldif online.ldif || {
+		echo " Renaming LDAP online backup file failed rc $? - FAIL" 
+		rc=2
+	}
+
+
+	return $rc
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_POSTCON
+#
+# This callback function checks expected results.
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_postcon() {
+
+
+
+	rc=0
+
+	echo -e "\nChecking online.ldif file for user ${TEST_USER} information"
+	grep "uid: ${TEST_USER}" online.ldif || {
+		echo "Test user inforamtion for ${TEST_USER} was not found in online.ldif "
+		return 1
+	}
+
+	echo -e "\nChecking online.ldif file for group ${TEST_GROUP} information"
+	grep "cn: ${TEST_GROUP}" online.ldif || {
+		echo "Test group inforamtion for ${TEST_GROUP} was not found in online.ldif "
+		rc=2
+	}
+
+
+	echo -e "\nChecking referral information"
+	grep "referral" online.ldif || {
+		echo "referral  inforamtion not found in online.ldif"
+		rc=3
+	}
+
+	return $rc
+
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_CLEANUP
+#
+# This callback function is only called if the harness execution mode is 'AT_INDEPENDENT'
+# 
+# This callback restores the target system to the state it was in before the TC 
+# was run. It rolls back changes made by callbacks tc_setup() and tc_test()
+# 
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_cleanup() {
+
+	rc=0
+
+	echo "Deleting test group in test domain"
+	${AT_BIN}/con_ex.bsh -d 818.in.tmp -o 818_expect.exp -c "$LDAP_BIN/del_group.sh -d ${TEST_DOMAIN} -n ${TEST_GROUP} -y"
+	/usr/local/bin/expect 818_expect.exp || {
+		echo "Test group was not deleted, error code $?"
+		return 1
+	}
+	
+
+
+	# remove the generated working files
+	rm -f *tmp *exp TODO.ldif || {
+		echo "Failed to remove the generated working files"
+		return 1
+	}
+
+	return $rc
+
+}

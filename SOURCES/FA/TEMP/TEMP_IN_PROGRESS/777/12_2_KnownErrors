@@ -1,0 +1,16 @@
+check-home-permissions                 [FAIL] Home directory permissions for user hyperic are greater than mode 0750.
+check-home-permissions                 [FAIL] Home directory permissions for user eric are greater than mode 0750.
+check-home-permissions                 [FAIL] Home directory permissions for user sybase are greater than mode 0750.
+check-home-permissions                 [FAIL] Home directory permissions for user web are greater than mode 0750.
+check-home-permissions                 [FAIL] Home directory permissions for user nmsadm are greater than mode 0750.
+check-home-permissions                 [FAIL] Home directory permissions for user ossftp are greater than mode 0750.
+check-home-permissions                 [FAIL] Home directory permissions for user comnfadm are greater than mode 0750.
+check-home-permissions                 [FAIL] Home directory permissions for user bgw are greater than mode 0750.
+check-home-permissions                 [FAIL] Home directory permissions for user bnsiman are greater than mode 0750.
+check-home-permissions                 [FAIL] Home directory permissions for user eniqssh are greater than mode 0750.
+check-password-file-permission         [FAIL] File /etc/group does not have group sys.
+eric-check-account-ids                 [FAIL] UID/GID for unknown is incorrect (UID < 100 or GID < 10), please correct
+check-world-writable-files             [FAIL] File /var/adm/spellhist has worldwritable permissions.
+check-world-writable-files             [FAIL] File /var/dt/dtpower/_current_scheme has world-writable permissions.
+check-world-writable-files             [FAIL] File /opt/ericsson/glassfish/updatecenter/config/config.xml has world-writable permissions.
+check-world-writable-files             [FAIL] Directory /opt/3pp/i386/borland has non-sticky, world-writable permissions.

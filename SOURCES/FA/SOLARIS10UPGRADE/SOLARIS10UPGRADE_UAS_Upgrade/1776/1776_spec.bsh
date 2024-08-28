@@ -1,0 +1,100 @@
+#!/bin/bash
+
+# TEST CASE SPEC FILE
+# This file is generated/updated using the test framework web interface.
+# Manual updates on test servers are lost when the test package is re-installed.
+#
+# Last modified: Tuesday 17th of December 2013 9:59:40
+#
+
+# These settings must be in BASH script format, they are sourced by other scripts.
+SPEC_FA_NAME="SOLARIS10UPGRADE"
+SPEC_UC_NAME="SOLARIS10UPGRADE_UAS_Upgrade"
+SPEC_TC_ID=1776
+SPEC_TC_SLOGAN="Verify the login and launch of applications "
+SPEC_TC_TYPE="FT"
+SPEC_TC_POLARITY="positive"
+SPEC_TC_PRIORITY="high"
+SPEC_TC_AUTOMATED=1
+SPEC_TC_DEPENDENT_ONLY=0
+SPEC_TC_TIMEOUT=300
+SPEC_TC_TEST_PASSCODE=0
+SPEC_TC_AUTHOR="xlaxain"
+SPEC_TC_AUTOMATOR="xlaxain"
+# this parameter is not interpreted by harness
+SPEC_TC_DISABLED=0
+
+# Please do not remove the comment lines below.
+# They are used as section locators by the test harness.
+
+# BEGIN_PRE_CONDITIONS
+#Path in Mars:- Upgrade/Migration/UAS Upgrade  
+#
+#Precondition 
+#OSS Master Infra and UAS should be configured freja client should be available 
+#
+# END_PRE_CONDITIONS
+
+
+# BEGIN_MANUAL_STEPS
+#Action1:
+#Should be able to login to UAS with Freja client , (Freja Clienrt should be installed on your systesm) .
+#NetBeans 7.2.1 and jdk1.6.0_30 shoule be installed on your local machine . Where you run net beans
+#
+#Action2 :
+#Try running Java project to generate key for the user
+#
+#Action 3:
+#Import Java and go on to line 55 : and edit the name of the ldap user for 
+#eg :“String macData = "jakki23" + counterValue; “ then right click on HMacTest on the left and click on run.
+#
+#
+# END_MANUAL_STEPS
+
+# BEGIN_POST_CONDITIONS
+#Result1: 
+#Successfully logon to UAS with freja client and able to launch the applications
+#
+#Result2:
+#Username + Counter : Jakki22670614
+#Username + Counter byte[] : Jakki22670614
+#Main String HEX : 856da7a94a4bd8547f0f47c4d71f72e35817a0e803dd123100a2d3595b24cc08
+#Main HEX value : [B@2ef36617
+#Main Base64 : hW2nqUpL2FR/D0fE1x9y41gXoOgD3RIxAKLTWVskzAg=
+#Final Token : 22670614-hW2nqUpL2FR/D0fE1x9y41gXoOgD3RIxAKLTWVskzAg=
+#
+#Result3:
+#Result 2:
+#You will find the new key generated at the bottom of the screen for
+#Eg: Final Token : 22719887-zBp9c5G7iyfC3IhuppBoMzzTSuzFA/6bTGYigCxgQVY=
+#Use this key to logon the UAS , Logging to UAS should be successful with the Key.
+#
+#Note : The above key is valid for only 1 minute. It dies after 1 minute.
+#
+#Result Example:
+#
+#Please find the login from infra server :
+#bash-3.2# ssh jakki99@10.45.194.116
+#Password:
+#Your password has been reset by administrator.
+#
+#Warning: Your password has expired, please change it now.
+#
+#New Password:
+#Re-enter new Password:
+#Password:
+#Your password has been reset by administrator.
+#
+#Warning: Your password has expired, please change it now.
+#
+#New Password:
+#Re-enter new Password:
+#sshd-kbdint: password successfully changed for jakki99
+#
+#Last login: Wed Mar 13 17:01:02 2013 from atclvm150.comin
+#
+#Oracle Corporation SunOS 5.10 Generic Patch January 2005
+#jakki99@atrcx991>
+#jakki99@atrcx991>
+# 
+# END_POST_CONDITIONS

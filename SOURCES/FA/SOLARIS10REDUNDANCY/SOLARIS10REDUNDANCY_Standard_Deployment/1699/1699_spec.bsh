@@ -1,0 +1,90 @@
+#!/bin/bash
+
+# TEST CASE SPEC FILE
+# This file is generated/updated using the test framework web interface.
+# Manual updates on test servers are lost when the test package is re-installed.
+#
+# Last modified: Tuesday 17th of December 2013 6:56:18
+#
+
+# These settings must be in BASH script format, they are sourced by other scripts.
+SPEC_FA_NAME="SOLARIS10REDUNDANCY"
+SPEC_UC_NAME="SOLARIS10REDUNDANCY_Standard_Deployment"
+SPEC_TC_ID=1699
+SPEC_TC_SLOGAN="Verify new LDAP entries are replicated between Infra servers "
+SPEC_TC_TYPE="FT"
+SPEC_TC_POLARITY="positive"
+SPEC_TC_PRIORITY="high"
+SPEC_TC_AUTOMATED=0
+SPEC_TC_DEPENDENT_ONLY=0
+SPEC_TC_TIMEOUT=300
+SPEC_TC_TEST_PASSCODE=0
+SPEC_TC_AUTHOR="xsripin"
+SPEC_TC_AUTOMATOR="xsripin"
+# this parameter is not interpreted by harness
+SPEC_TC_DISABLED=0
+
+# Please do not remove the comment lines below.
+# They are used as section locators by the test harness.
+
+# BEGIN_PRE_CONDITIONS
+#<path under "Verification Specification for Cominf Feature Test for 14.0 ":
+#Redundancy/Redundancy of Infra Servers in Standard Deployment 
+#>  
+#
+#Description: 
+#
+#The purpose of this TC is to verify that new LDAP entries are replicated between Infra Servers
+#Precondition: 
+#
+#Replication is set-up between two Infra servers and OSS Master is configured as an LDAP client.
+#
+#
+# END_PRE_CONDITIONS
+
+
+# BEGIN_MANUAL_STEPS
+#Action 1: 
+#
+#Add a new user (ldaprep) using the /ericsson/sdee/bin/add_user.sh script on the Infra Primary.
+#
+#Action 2: 
+#
+#Query LDAP database for the user on the Infra Primary
+##ldapsearch -D "cn=directory manager" -w <password> -b / "uid=<userid>,ou=people,dc=<ldap domain>" "objectclass=*"
+#E.g.
+#ldapsearch -D "cn=directory manager" -w shroot11 -b / "uid=ldaprep,ou=people,dc=atrcus764,dc=athtem,dc=eei,dc=ericsson,dc=se" / "objectclass=*"
+#
+#Action 3: 
+#
+#Repeat Action 2 on the Infra Secondary.
+#
+#Action 4: 
+#
+#Add a new user (ldaprep1) using the /ericsson/sdee/bin/add_user.sh script on the Infra secondary.
+#
+#Action 5: 
+#
+#Repeat actions 2 and 3 for user ldaprep1 to verify the user appears in the ldap search on both Infra Primary and Secondary.
+#
+# END_MANUAL_STEPS
+
+# BEGIN_POST_CONDITIONS
+#Result 1: 
+#
+#New user (ldaprep) is added successfully.
+#Result 2: 
+#
+#The ldap entry for the user ldaprep is displayed correctly on the Infra Primary.
+#Result 3: 
+#
+#The ldap entry for the user ldaprep is displayed correctly on the Infra Secondary.
+#
+#Result 4: 
+#
+#The new user (ldaprep1) is added on the Infra Secondary and the uid for the user is next available uid to that of user ldaprep.
+#
+#Result 5: 
+#
+#User ldaprep1 appears in the ldapsearch on both Infra Primary and Secondary. 
+# END_POST_CONDITIONS

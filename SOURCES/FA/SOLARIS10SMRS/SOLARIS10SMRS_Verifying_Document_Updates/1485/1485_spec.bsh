@@ -1,0 +1,47 @@
+#!/bin/bash
+
+# TEST CASE SPEC FILE
+# This file is generated/updated using the test framework web interface.
+# Manual updates on test servers are lost when the test package is re-installed.
+#
+# Last modified: Monday 16th of December 2013 11:14:27
+#
+
+# These settings must be in BASH script format, they are sourced by other scripts.
+SPEC_FA_NAME="SOLARIS10SMRS"
+SPEC_UC_NAME="SOLARIS10SMRS_Verifying_Document_Updates"
+SPEC_TC_ID=1485
+SPEC_TC_SLOGAN="NEDSS VLAN deployment "
+SPEC_TC_TYPE="FT"
+SPEC_TC_POLARITY="positive"
+SPEC_TC_PRIORITY="high"
+SPEC_TC_AUTOMATED=1
+SPEC_TC_DEPENDENT_ONLY=0
+SPEC_TC_TIMEOUT=300
+SPEC_TC_TEST_PASSCODE=0
+SPEC_TC_AUTHOR="xnavema"
+SPEC_TC_AUTOMATOR="xnavema"
+# this parameter is not interpreted by harness
+SPEC_TC_DISABLED=0
+
+# Please do not remove the comment lines below.
+# They are used as section locators by the test harness.
+
+# BEGIN_PRE_CONDITIONS
+#<PATH Under "Verification Specification for Cominf Feature Test for 14.0":Bi-directional SMRS Initial Installation/Verifying Document Updates>
+# END_PRE_CONDITIONS
+
+
+# BEGIN_MANUAL_STEPS
+#105 65-0580/01389 1.18: COMInf Common Docs updates
+#The NEDSS server shall be deployed on the O&M Infrastructure Services VLAN
+#Verify that the COMInf Network Integration guide has been updated with the following changes:
+#- Remove the SMRS slave security domain and merge the open ports into the RAN -> Infrastructure services tables. 
+#- List the NEDSS server as being connected to the storage VLAN and being deployed on the Infrastructure Services VLAN
+# END_MANUAL_STEPS
+
+# BEGIN_POST_CONDITIONS
+#Acceptance Criteria
+#
+#COMInf Network Integration guide document has been updated accordingly 
+# END_POST_CONDITIONS

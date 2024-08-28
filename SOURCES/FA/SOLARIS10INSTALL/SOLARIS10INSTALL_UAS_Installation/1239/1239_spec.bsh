@@ -1,0 +1,56 @@
+#!/bin/bash
+
+# TEST CASE SPEC FILE
+# This file is generated/updated using the test framework web interface.
+# Manual updates on test servers are lost when the test package is re-installed.
+#
+# Last modified: Monday 16th of December 2013 7:41:19
+#
+
+# These settings must be in BASH script format, they are sourced by other scripts.
+SPEC_FA_NAME="SOLARIS10INSTALL"
+SPEC_UC_NAME="SOLARIS10INSTALL_UAS_Installation"
+SPEC_TC_ID=1239
+SPEC_TC_SLOGAN="Launching Firefox 10 and Firefox 3.x.x on a UAS in Initial Install "
+SPEC_TC_TYPE="FT"
+SPEC_TC_POLARITY="positive"
+SPEC_TC_PRIORITY="high"
+SPEC_TC_AUTOMATED=0
+SPEC_TC_DEPENDENT_ONLY=0
+SPEC_TC_TIMEOUT=300
+SPEC_TC_TEST_PASSCODE=0
+SPEC_TC_AUTHOR="xnavsur"
+SPEC_TC_AUTOMATOR="xnavsur"
+# this parameter is not interpreted by harness
+SPEC_TC_DISABLED=0
+
+# Please do not remove the comment lines below.
+# They are used as section locators by the test harness.
+
+# BEGIN_PRE_CONDITIONS
+#<path under "Verification Specification for Cominf Feature Test for 14.0 ":
+#Initial Installation/UAS Installation
+#>  
+#
+# END_PRE_CONDITIONS
+
+
+# BEGIN_MANUAL_STEPS
+#Initial Installtion is completed without any user interaction 
+# END_MANUAL_STEPS
+
+# BEGIN_POST_CONDITIONS
+#Check logs for Initial Install, there should not be errors.
+#
+#Verify following directories must exist after the Initial Install.
+#
+#1) /opt/firefox
+#
+#usr/bin/firefox
+#
+#
+#2) Any user in ldap can launch both versions of firefox simultaneously 
+#
+#Exclusion Reason :
+#There is an exception for COM_ONLY users. COM_ONLY users should not have permissions to launch any version of Firefox. 
+# END_POST_CONDITIONS

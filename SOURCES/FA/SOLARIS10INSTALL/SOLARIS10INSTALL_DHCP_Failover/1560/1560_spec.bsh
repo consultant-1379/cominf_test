@@ -1,0 +1,58 @@
+#!/bin/bash
+
+# TEST CASE SPEC FILE
+# This file is generated/updated using the test framework web interface.
+# Manual updates on test servers are lost when the test package is re-installed.
+#
+# Last modified: Tuesday 17th of December 2013 4:34:45
+#
+
+# These settings must be in BASH script format, they are sourced by other scripts.
+SPEC_FA_NAME="SOLARIS10INSTALL"
+SPEC_UC_NAME="SOLARIS10INSTALL_DHCP_Failover"
+SPEC_TC_ID=1560
+SPEC_TC_SLOGAN="initial installation "
+SPEC_TC_TYPE="FT"
+SPEC_TC_POLARITY="positive"
+SPEC_TC_PRIORITY="high"
+SPEC_TC_AUTOMATED=0
+SPEC_TC_DEPENDENT_ONLY=0
+SPEC_TC_TIMEOUT=300
+SPEC_TC_TEST_PASSCODE=0
+SPEC_TC_AUTHOR="xsripin"
+SPEC_TC_AUTOMATOR="xsripin"
+# this parameter is not interpreted by harness
+SPEC_TC_DISABLED=0
+
+# Please do not remove the comment lines below.
+# They are used as section locators by the test harness.
+
+# BEGIN_PRE_CONDITIONS
+#<path under "Verification Specification for Cominf Feature Test for 14.0 ":
+#Initial Installation/DHCP Failover/WP00133/DHCP v4.2.4-P1 
+#> 
+#
+#
+# END_PRE_CONDITIONS
+
+
+# BEGIN_MANUAL_STEPS
+#Action1: 
+#Check whether the <EXTRdhcp> package is installed successfully or not during installation 
+#
+#Action2: 
+#Check the ISC DHCP version after installaltion.
+#Execute the script ./usr/local/sbin/dhcpd on the infra master server/ infra slave server.
+#
+#
+# END_MANUAL_STEPS
+
+# BEGIN_POST_CONDITIONS
+#Result1:
+#<EXTRdhcp> package should be installed succesfully.
+#
+#
+#
+#Result2:
+#DHCP Server should be updated with the new version ISC DHCPV4.2.4-P1 in the infra master server/infra slave server 
+# END_POST_CONDITIONS

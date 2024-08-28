@@ -1,0 +1,30 @@
+DNS Domain Name
+\r
+Enter a unique name for the masterservice of the OSS RC system using this LDAP domain
+ossmaster
+Enter IP address for the masterservice of the OSS RC system using this LDAP Domain
+192.168.0.5
+New LDAP domain name
+1689_abcde_abcde_abcde_abcde_abcde_abcde_abcde_abcde_abcde_abcde_abcde_abcde_abcde_abcde_abcde
+LDAP Directory Manager password:
+ldappass
+Enter the password for
+ldappass
+LDAP name service data migration password:
+ldappass
+Re-enter password:
+ldappass
+Enter the password for 
+ldappass
+LDAP name service data maintenence password:
+ldappass
+Re-enter password:
+ldappass
+Enter the password for
+ldappass
+LDAP name service proxyagent password:
+ldappass
+Re-enter password:
+ldappass
+Are the values ok?
+y

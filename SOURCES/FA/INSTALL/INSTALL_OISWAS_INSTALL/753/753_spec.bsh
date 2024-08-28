@@ -1,0 +1,43 @@
+#!/bin/bash
+
+# TEST CASE SPEC FILE
+# This file is generated/updated using the test framework web interface.
+# Manual updates on test servers are lost when the test package is re-installed.
+#
+# Last modified: Sunday 31st of March 2013 20:37:24
+#
+
+# These settings must be in BASH script format, they are sourced by other scripts.
+SPEC_FA_NAME="INSTALL"
+SPEC_UC_NAME="INSTALL_OISWAS_INSTALL"
+SPEC_TC_ID=753
+SPEC_TC_SLOGAN="Install the OIS/WAS on a Windows Server 2008 non-Blade machine"
+SPEC_TC_TYPE="FT"
+SPEC_TC_POLARITY="positive"
+SPEC_TC_PRIORITY="high"
+SPEC_TC_AUTOMATED=0
+SPEC_TC_DEPENDENT_ONLY=0
+SPEC_TC_TIMEOUT=300
+SPEC_TC_TEST_PASSCODE=0
+SPEC_TC_AUTHOR="xsimrea"
+SPEC_TC_AUTOMATOR="xsimrea"
+# this parameter is not interpreted by harness
+SPEC_TC_DISABLED=0
+
+# Please do not remove the comment lines below.
+# They are used as section locators by the test harness.
+
+# BEGIN_PRE_CONDITIONS
+#Bare machine available (e.g. VM with Windows template)
+# END_PRE_CONDITIONS
+
+
+# BEGIN_MANUAL_STEPS
+#Follow Procedure 3 (Table 10) of document 1_1531-APR9010468.pdf (OCS Windows Server install guide from October 2012)
+# END_MANUAL_STEPS
+
+# BEGIN_POST_CONDITIONS
+#OIS/WAS is installed.
+#A sample application has been published.
+#A Terminal Server client has accessed that application.
+# END_POST_CONDITIONS

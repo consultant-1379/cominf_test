@@ -1,0 +1,78 @@
+#!/bin/bash
+
+# TEST CASE SPEC FILE
+# This file is generated/updated using the test framework web interface.
+# Manual updates on test servers are lost when the test package is re-installed.
+#
+# Last modified: Monday 16th of December 2013 12:02:09
+#
+
+# These settings must be in BASH script format, they are sourced by other scripts.
+SPEC_FA_NAME="SOLARIS10SUNDS"
+SPEC_UC_NAME="SOLARIS10SUNDS_COM_Schema"
+SPEC_TC_ID=1551
+SPEC_TC_SLOGAN="Enabling COM on ldap servers. "
+SPEC_TC_TYPE="FT"
+SPEC_TC_POLARITY="positive"
+SPEC_TC_PRIORITY="high"
+SPEC_TC_AUTOMATED=1
+SPEC_TC_DEPENDENT_ONLY=0
+SPEC_TC_TIMEOUT=300
+SPEC_TC_TEST_PASSCODE=0
+SPEC_TC_AUTHOR="xvinkat"
+SPEC_TC_AUTOMATOR="xvinkat"
+# this parameter is not interpreted by harness
+SPEC_TC_DISABLED=0
+
+# Please do not remove the comment lines below.
+# They are used as section locators by the test harness.
+
+# BEGIN_PRE_CONDITIONS
+#<path to the testcase>
+#
+#SUN-DS/COM LDAP - User Management for 
+#COM-Enabled Nodes/COM schema in the OSS LDAP database
+#
+#Following servers are required :
+#1.O&M primary
+#2.O&M Secondary
+#3.OSS
+#4.UAS 
+# END_PRE_CONDITIONS
+
+
+# BEGIN_MANUAL_STEPS
+#After the II of the cominf servers, verify that schema is extended on the ldap servers or not.
+#1.Verify that COM exists in all local domains.
+#2.No group with name “com” or gidNumber 609 exists in the globaldomain
+#3.Group “com” exists in /ericsson/sdee/etc/reserved_groups
+#4.Schema is extended with COM extensions
+#5.COM is extended on newly created local domain
+# END_MANUAL_STEPS
+
+# BEGIN_POST_CONDITIONS
+#COM is enabled on all the local domains on ldap servers during initial install of the infra server.These commands are to be executed on O&M primary server.
+#
+#
+#1.The following ldap search command is executed successfully to verify that COM exists in all local domains:
+#/usr/bin/ldapsearch -T -D "cn=directory manager" -w <ldappwd> -b "dc=<ldap domain>" "objectclass=posixgroup" | grep -i 609
+#
+#2.The following ldap search command is executed successfully to verify that COM group does not exist in global domain
+#/usr/bin/ldapsearch -T -D "cn=directory manager" -w <ldappwd> -b "dc=globaldomain" "objectclass=posixgroup"| grep -i 609
+#
+#3.The following command is executed successfully to verify that COM is included in reserved group file
+#cat /ericsson/sdee/etc/reserved_groups | grep -i com
+#4. The following ldap search command is executed successfully to verify that schema is extended with COM extentions. 
+#ldapsearch -b "cn=schema" -s base "objectclass=*" objectclasses | grep -i ericssonUserAuth
+#
+#The output of this command should be same as the content of the file cat /var/ds/config/schema/98-cba-com.ldif
+#
+#objectclasses: ( 1.3.6.1.4.1.193.207.374 NAME 'ericssonUserAuthentication' SUP
+#top AUXILIARY MAY ericssonUserAuthenticationScope X-ORIGIN 'user defined' )
+#CTURAL MAY ( role $ ericssonUserAuthorizationScope ) X-ORIGIN 'user defined'
+#objectclasses: ( 1.3.6.1.4.1.193.207.376 NAME 'ericssonUserAuthorization' SUP
+#top AUXILIARY MAY ericssonUserAuthorizationScope X-ORIGIN 'user defined' )
+#
+#5. COM is enabled on newly added domain using prepSUNDS.sh
+#/usr/bin/ldapsearch -T -D "cn=directory manager" -w <ldappwd> -b "dc=<ldap domain>" "objectclass=posixgroup" | grep -i 609 
+# END_POST_CONDITIONS

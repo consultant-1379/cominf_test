@@ -1,0 +1,46 @@
+#!/bin/bash
+
+# TEST CASE SPEC FILE
+# This file is generated/updated using the test framework web interface.
+# Manual updates on test servers are lost when the test package is re-installed.
+#
+# Last modified: Monday 16th of December 2013 8:09:28
+#
+
+# These settings must be in BASH script format, they are sourced by other scripts.
+SPEC_FA_NAME="SOLARIS10SMRS"
+SPEC_UC_NAME="SOLARIS10SMRS_Auto_Integration_Features"
+SPEC_TC_ID=1256
+SPEC_TC_SLOGAN="Verify that WRAN AIF login "
+SPEC_TC_TYPE="FT"
+SPEC_TC_POLARITY="positive"
+SPEC_TC_PRIORITY="high"
+SPEC_TC_AUTOMATED=1
+SPEC_TC_DEPENDENT_ONLY=0
+SPEC_TC_TIMEOUT=300
+SPEC_TC_TEST_PASSCODE=0
+SPEC_TC_AUTHOR="xsougha"
+SPEC_TC_AUTOMATOR="xsougha"
+# this parameter is not interpreted by harness
+SPEC_TC_DISABLED=0
+
+# Please do not remove the comment lines below.
+# They are used as section locators by the test harness.
+
+# BEGIN_PRE_CONDITIONS
+#<Path under "Verification Specification for Cominf Feature Test for 14.0":
+#
+#Bi-directional SMRS High Availability/Auto Integration Features           
+#>
+# END_PRE_CONDITIONS
+
+
+# BEGIN_MANUAL_STEPS
+#Verify that it is possible to login as a WRAN AIF user from the Offline SMRS Master Server to Offline SMRS Slave Server using SFTP protocol
+# END_MANUAL_STEPS
+
+# BEGIN_POST_CONDITIONS
+#From the Offline SMRS Master, login to SMRS slave as AIF user by executing the command below:
+## sftp < aif_user>@< slave>
+#AIF user successfully logged into SMRS slave 
+# END_POST_CONDITIONS

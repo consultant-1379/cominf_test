@@ -1,0 +1,61 @@
+#!/bin/bash
+
+# TEST CASE SPEC FILE
+# This file is generated/updated using the test framework web interface.
+# Manual updates on test servers are lost when the test package is re-installed.
+#
+# Last modified: Sunday 31st of March 2013 20:37:23
+#
+
+# These settings must be in BASH script format, they are sourced by other scripts.
+SPEC_FA_NAME="SMRS"
+SPEC_UC_NAME="SMRS_MASTER_AIF_ADD"
+SPEC_TC_ID=318
+SPEC_TC_SLOGAN="Add AIF with invalid answers"
+SPEC_TC_TYPE="FT"
+SPEC_TC_POLARITY="negative"
+SPEC_TC_PRIORITY="low"
+SPEC_TC_AUTOMATED=1
+SPEC_TC_DEPENDENT_ONLY=0
+SPEC_TC_TIMEOUT=300
+SPEC_TC_TEST_PASSCODE=0
+SPEC_TC_AUTHOR="xkalbha"
+SPEC_TC_AUTOMATOR="xkalbha"
+# this parameter is not interpreted by harness
+SPEC_TC_DISABLED=0
+
+# Please do not remove the comment lines below.
+# They are used as section locators by the test harness.
+
+# BEGIN_PRE_CONDITIONS
+#1. smrs_master exists in /etc/inet/hosts
+#2. slave exists on smrs_master (check for user account)
+#
+# END_PRE_CONDITIONS
+
+
+# BEGIN_MANUAL_STEPS
+#1. As root: Run configure_smrs add aif and enter invalid answers as follows:
+#a. username with @ in (expect to be rejected)
+#b. valid username
+#e. valid password
+#f. confirm password does not match password(expect to be rejected)
+#g. password and confirm passwords that are valid and match
+#h. NOx for autointegration(expect to be rejected)
+#i. YES x for autointegration(expect to be rejected)
+#j. y for autointegration(expect to be rejected)
+#k. yes for autointegration
+#l. -1 for option
+#m. choose number that is not in list
+#n. choose valid option
+#o. NO for restart BISMRS (expect to be rejected)
+#p. YES for restart BISMRS(expect to be rejected)
+#q. y for restart BISMRS(expect to be rejected)
+#r. Ctrl C to end
+#
+# END_MANUAL_STEPS
+
+# BEGIN_POST_CONDITIONS
+#1. CONSOLE_OUTPUT_CONTAINS "Not a valid answer"
+#2. CONSOLE_OUTPUT_CONTAINS "passwords do not match"
+# END_POST_CONDITIONS

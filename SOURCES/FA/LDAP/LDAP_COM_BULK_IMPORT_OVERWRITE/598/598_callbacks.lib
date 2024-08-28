@@ -1,0 +1,482 @@
+#!/bin/bash
+#################################################################################
+#
+#
+#	   COPYRIGHT (C) ERICSSON RADIO SYSTEMS AB, Sweden
+#
+#	   The copyright to the document(s) herein is the property of
+#	   Ericsson Radio Systems AB, Sweden.
+#
+#	   The document(s) may be used and/or copied only with the written
+#	   permission from Ericsson Radio Systems AB or in accordance with
+#	   the terms and conditions stipulated in the agreement/contract
+#	   under which the document(s) have been supplied.
+#
+#################################################################################
+
+
+# ATCOMINF Test Callback Library
+
+# Revision History
+# 05/10/12	xamamcg		Initial test for invalid bulk filenames
+
+# Complete the callbacks in this library to automate the test case.
+#
+# Callbacks are stateless, it is not possible to set a global variable in one callback 
+# and access it it in another.
+#
+# Callbacks are called by the test harness in the following order:
+#
+# tc_setup() 		# Called only for independent TC execution mode to setup TC
+# tc_precon()		# Conditions that should exist before TC can run
+# tc_test()		# Runs the test for this TC
+# tc_postcon()		# Conditions that should/should not exist after successful TC 
+# tc_cleanup()		# Called only for independent TC execution mode to clenup after TC
+
+# All callbacks must PASS for a TC PASS result
+LDAP_BIN="/ericsson/sdee/bin/"
+#################################################################################
+#
+# CALLBACK: TC_SETUP
+#
+# This callback function is only called if the harness execution mode is 'AT_INDEPENDENT'
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_setup() {
+
+
+
+	
+	# Replace PASSWD with the correct credentials or data
+	for ii in *.in; do
+		sed -e "s/^PASSWD$/$LDAP_SUPERUSER_PASSWD/" $ii > $ii.tmp || {
+			echo "Failed to replace LDAP superuser password holder etc in /usr/local/bin/expect input file $ii, rc $?"
+			return 2
+		}
+	done
+
+#-------------------------------------------------------------------------------
+# Create a test role
+#-------------------------------------------------------------------------------
+
+	CMD='/ericsson/sdee/bin/manage_COM.bsh -a role -d 1.com -R r598 -y'
+	${AT_BIN}/con_ex.bsh -d 598.in.tmp -o 598role.exp -c "$CMD" || {
+		echo "Failed to generate /usr/local/bin/expect script, $?"
+		return 3
+	}
+
+	/usr/local/bin/expect 598role.exp || {
+		echo "Failed to create role, error code $?"
+		return 4
+	}
+#-------------------------------------------------------------------------------
+# Create a test alias
+#-------------------------------------------------------------------------------
+
+	CMD='/ericsson/sdee/bin/manage_COM.bsh -a alias -d 1.com -A a598 -R r598 -y'
+	${AT_BIN}/con_ex.bsh -d 598.in.tmp -o 598role.exp -c "$CMD" || {
+		echo "Failed to generate /usr/local/bin/expect script, $?"
+		return 5
+	}
+
+	/usr/local/bin/expect 598role.exp || {
+		echo "Failed to create alias, error code $?"
+		return 6
+	}
+	return 0
+}
+#################################################################################
+
+#################################################################################
+#
+# CALLBACK: TC_PRECON
+#
+# This callback function checks the correct conditions exist to run the TC.
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+ 
+tc_precon() {
+
+#-------------------------------------------------------------------------------
+#  Check LDAP is running
+#-------------------------------------------------------------------------------
+
+	LDAP_SERVER_UP || {
+		echo "LDAP server not running"
+		return 1
+	}
+
+#-------------------------------------------------------------------------------
+#  Test role is present
+#-------------------------------------------------------------------------------
+
+	/usr/bin/ldapsearch -LLLx -D 'cn=Directory Manager' -w $LDAP_SUPERUSER_PASSWD -b cn=r598,ou=role,ou=com,dc=1,dc=com objectclass=* || {
+		echo "No role r598"
+		return 1
+	}
+#-------------------------------------------------------------------------------
+#  Test alias is present
+#-------------------------------------------------------------------------------
+	/usr/bin/ldapsearch -LLLx -D 'cn=Directory Manager' -w $LDAP_SUPERUSER_PASSWD -b role=a598,ou=rolealias,ou=com,dc=1,dc=com objectclass=* | grep 'ericssonUserAuthorizationScope: r598' || {
+		echo "No alias a598 with role r598"
+		return 3
+	}
+	return 0
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_TEST
+#
+# This callback function runs the test.
+# The harness compares the return code to the SPEC_TC_TEST_PASSCODE value set in the test spec.
+#
+# Return or exit codes:
+#	SPEC_TC_TEST_PASSCODE 	success
+# != SPEC_TC_TEST_PASSCODE 	failure
+ 
+tc_test() {
+
+
+
+	echo " Test1: Wrong error when no domain in file or command line"
+	CMD='/ericsson/sdee/bin/manage_COM.bsh -a import -f 598a.import -o -y'
+	${AT_BIN}/con_ex.bsh -d 598.in.tmp -o 598bulkload.exp -c "$CMD" || {
+		echo "Failed to generate /usr/local/bin/expect script, $?"
+		return 3
+	}
+
+	/usr/local/bin/expect 598bulkload.exp
+	retval=$?
+	[ $retval -eq 1 ] || {
+		echo " Test1: Wrong error when no domain in file or command line, error code $retval"
+		return 4
+	}
+	echo "Test2: Wrong error when domains do not match"
+	CMD='/ericsson/sdee/bin/manage_COM.bsh -a import -f 598b.import -o -d 2.com -y'
+	${AT_BIN}/con_ex.bsh -d 598.in.tmp -o 598bulkload.exp -c "$CMD" || {
+		echo "Failed to generate /usr/local/bin/expect script, $?"
+		return 5
+	}
+
+	/usr/local/bin/expect 598bulkload.exp
+	retval=$?
+	[ $retval -eq 1 ] || {
+		echo "Test2: Wrong error when domains do not match, error code $retval"
+		return 6
+	}
+
+	CMD='/ericsson/sdee/bin/manage_COM.bsh -a import -f 598c.import -o -d 1.com -y'
+	${AT_BIN}/con_ex.bsh -d 598.in.tmp -o 598bulkload.exp -c "$CMD" || {
+		echo "Failed to generate /usr/local/bin/expect script, $?"
+		return 7
+	}
+	echo "Test 3: Wrong error when use role that does not exist"
+	/usr/local/bin/expect 598bulkload.exp
+	retval=$?
+	[ $retval -eq 1 ] || {
+		echo "Test 3: Wrong error when use role that does not exist, error code $retval"
+		return 8
+	}
+
+	echo "Test4 : Wrong error when multiple identical domain lines"
+	CMD='/ericsson/sdee/bin/manage_COM.bsh -a import -f 598d.import -o -d 1.com -y'
+	${AT_BIN}/con_ex.bsh -d 598.in.tmp -o 598bulkload.exp -c "$CMD" || {
+		echo "Failed to generate /usr/local/bin/expect script, $?"
+		return 9
+	}
+
+	/usr/local/bin/expect 598bulkload.exp
+	retval=$?
+	[ $retval -eq 1 ] || {
+		echo "Test4 : Wrong error when multiple identical domain lines, error code $retval"
+		return 10
+	}
+
+	echo "Test5 : Wrong error when multiple different domain lines"
+	CMD='/ericsson/sdee/bin/manage_COM.bsh -a import -f 598e.import -o -d 1.com -y'
+	${AT_BIN}/con_ex.bsh -d 598.in.tmp -o 598bulkload.exp -c "$CMD" || {
+		echo "Failed to generate /usr/local/bin/expect script, $?"
+		return 11
+	}
+
+	/usr/local/bin/expect 598bulkload.exp
+	retval=$?
+	[ $retval -eq 1 ] || {
+		echo "Test5 : Wrong error when multiple different domain lines, error code $retval"
+		return 12
+	}
+
+	echo "Test6:Wrong error when extra spaces alias line"
+	CMD='/ericsson/sdee/bin/manage_COM.bsh -a import -f 598f.import -o -d 1.com -y'
+	${AT_BIN}/con_ex.bsh -d 598.in.tmp -o 598bulkload.exp -c "$CMD" || {
+		echo "Failed to generate /usr/local/bin/expect script, $?"
+		return 13
+	}
+
+	/usr/local/bin/expect 598bulkload.exp
+	retval=$?
+	[ $retval -eq 1 ] || {
+		echo "Test6:Wrong error when extra spaces alias line, error code $retval"
+		return 14
+	}
+
+	echo "Test7: Wrong error when extra spaces role line"
+	CMD='/ericsson/sdee/bin/manage_COM.bsh -a import -f 598g.import -o -d 1.com -y'
+	${AT_BIN}/con_ex.bsh -d 598.in.tmp -o 598bulkload.exp -c "$CMD" || {
+		echo "Failed to generate /usr/local/bin/expect script, $?"
+		return 15
+	}
+
+	/usr/local/bin/expect 598bulkload.exp
+	retval=$?
+	[ $retval -eq 1 ] || {
+		echo "Test7: Wrong error when extra spaces role line, error code $retval"
+		return 16
+	}
+	echo "Test8: Wrong error when invalid rolename"
+	CMD='/ericsson/sdee/bin/manage_COM.bsh -a import -f 598h.import -o -d 1.com -y'
+	${AT_BIN}/con_ex.bsh -d 598.in.tmp -o 598bulkload.exp -c "$CMD" || {
+		echo "Failed to generate /usr/local/bin/expect script, $?"
+		return 17
+	}
+
+	/usr/local/bin/expect 598bulkload.exp
+	retval=$?
+	[ $retval -eq 1 ] || {
+		echo "Test8: Wrong error when invalid rolename, error code $retval"
+		return 18
+	}
+
+	echo "Test9: Wrong error when duplicate rolename"
+	CMD='/ericsson/sdee/bin/manage_COM.bsh -a import -f 598i.import -o -d 1.com -y'
+	${AT_BIN}/con_ex.bsh -d 598.in.tmp -o 598bulkload.exp -c "$CMD" || {
+		echo "Failed to generate /usr/local/bin/expect script, $?"
+		return 19
+	}
+
+	/usr/local/bin/expect 598bulkload.exp || {
+		# Still a valid file but with no data so get back success
+		echo "Test9: Wrong error when duplicate rolename, error code $retval"
+		return 20
+	}
+
+	echo "Test10: Wrong error when multiple role lines"
+	CMD='/ericsson/sdee/bin/manage_COM.bsh -a import -f 598j.import -o -d 1.com -y'
+	${AT_BIN}/con_ex.bsh -d 598.in.tmp -o 598bulkload.exp -c "$CMD" || {
+		echo "Failed to generate /usr/local/bin/expect script, $?"
+		return 21
+	}
+
+	/usr/local/bin/expect 598bulkload.exp
+	retval=$?
+	[ $retval -eq 1 ] || {
+		echo "Test10: Wrong error when multiple role lines, error code $retval"
+		return 22
+	}
+
+	echo "Test11: Wrong error when ROLES line"
+	CMD='/ericsson/sdee/bin/manage_COM.bsh -a import -f 598k.import -o -d 1.com -y'
+	${AT_BIN}/con_ex.bsh -d 598.in.tmp -o 598bulkload.exp -c "$CMD" || {
+		echo "Failed to generate /usr/local/bin/expect script, $?"
+		return 23
+	}
+
+	/usr/local/bin/expect 598bulkload.exp
+	retval=$?
+	[ $retval -eq 1 ] || {
+		echo "Test11: Wrong error when ROLES line, error code $retval"
+		return 24
+	}
+
+	echo "Test12: Wrong error when comma separated domain line"
+	CMD='/ericsson/sdee/bin/manage_COM.bsh -a import -f 598l.import -o -d 1.com -y'
+	${AT_BIN}/con_ex.bsh -d 598.in.tmp -o 598bulkload.exp -c "$CMD" || {
+		echo "Failed to generate /usr/local/bin/expect script, $?"
+		return 25
+	}
+
+	/usr/local/bin/expect 598bulkload.exp
+	retval=$?
+	[ $retval -eq 1 ] || {
+		echo "Test12: Wrong error when comma separated domain line, error code $retval"
+		return 26
+	}
+
+	
+	echo "Test13: Wrong error when comma separated command line"
+	CMD='/ericsson/sdee/bin/manage_COM.bsh -a import -f 598l.import -o -d 1.com,2.com -y'
+	${AT_BIN}/con_ex.bsh -d 598.in.tmp -o 598bulkload.exp -c "$CMD" || {
+		echo "Failed to generate /usr/local/bin/expect script, $?"
+		return 27
+	}
+
+	/usr/local/bin/expect 598bulkload.exp
+	retval=$?
+	[ $retval -eq 1 ] || {
+		echo "Test13: Wrong error when comma separated command line, error code $retval"
+		return 28
+	}
+
+	echo "Test14: Wrong error when wrong.com file 1.com command"
+	CMD='/ericsson/sdee/bin/manage_COM.bsh -a import -f 598m.import -o -d 1.com -y'
+	${AT_BIN}/con_ex.bsh -d 598.in.tmp -o 598bulkload.exp -c "$CMD" || {
+		echo "Failed to generate /usr/local/bin/expect script, $?"
+		return 29
+	}
+
+	/usr/local/bin/expect 598bulkload.exp
+	retval=$?
+	[ $retval -eq 1 ] || {
+		echo "Test14: Wrong error when wrong.com file 1.com command, error code $retval"
+		return 30
+	}
+
+	echo "Test15: Wrong error when wrong.com file and command"
+	CMD='/ericsson/sdee/bin/manage_COM.bsh -a import -f 598m.import -o -d wrong.com -y'
+	${AT_BIN}/con_ex.bsh -d 598.in.tmp -o 598bulkload.exp -c "$CMD" || {
+		echo "Failed to generate /usr/local/bin/expect script, $?"
+		return 31
+	}
+
+	/usr/local/bin/expect 598bulkload.exp
+	retval=$?
+	[ $retval -eq 1 ] || {
+		echo "Test15: Wrong error when wrong.com file and command, error code $retval"
+		return 32
+	}
+
+	echo "Test16: Wrong error when no role with alias"
+	CMD='/ericsson/sdee/bin/manage_COM.bsh -a import -f 598n.import -o -d 1.com -y'
+	${AT_BIN}/con_ex.bsh -d 598.in.tmp -o 598bulkload.exp -c "$CMD" || {
+		echo "Failed to generate /usr/local/bin/expect script, $?"
+		return 33
+	}
+
+	/usr/local/bin/expect 598bulkload.exp
+	retval=$?
+	[ $retval -eq 1 ] || {
+		echo "Test16: Wrong error when no role with alias, error code $retval"
+		return 34
+	}
+
+	
+	
+
+	return 0
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_POSTCON
+#
+# This callback function checks expected results.
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_postcon() {
+
+#-------------------------------------------------------------------------------
+#  Test role is present
+#-------------------------------------------------------------------------------
+
+	/usr/bin/ldapsearch -LLLx -D 'cn=Directory Manager' -w $LDAP_SUPERUSER_PASSWD -b cn=r598,ou=role,ou=com,dc=1,dc=com objectclass=* || {
+		echo "No role r598"
+		return 1
+	}
+	/usr/bin/ldapsearch -LLLx -D 'cn=Directory Manager' -w $LDAP_SUPERUSER_PASSWD -b cn=r598b,ou=role,ou=com,dc=1,dc=com objectclass=* && {
+		echo "Found unexpected role r598b"
+		return 2
+	}
+	/usr/bin/ldapsearch -LLLx -D 'cn=Directory Manager' -w $LDAP_SUPERUSER_PASSWD -b cn=r598c,ou=role,ou=com,dc=1,dc=com objectclass=* && {
+		echo "Found unexpected role r598c"
+		return 3
+	}
+#-------------------------------------------------------------------------------
+#  Test alias is present
+#-------------------------------------------------------------------------------
+	/usr/bin/ldapsearch -LLLx -D 'cn=Directory Manager' -w $LDAP_SUPERUSER_PASSWD -b role=a598,ou=rolealias,ou=com,dc=1,dc=com objectclass=* | grep 'ericssonUserAuthorizationScope: r598' || {
+		echo "alias a598 did not have role r598"
+		return 4
+	}
+	/usr/bin/ldapsearch -LLLx -D 'cn=Directory Manager' -w $LDAP_SUPERUSER_PASSWD -b role=a598,ou=rolealias,ou=com,dc=1,dc=com objectclass=* | grep 'ericssonUserAuthorizationScope: r598' || {
+		echo " alias a598 has unexpected role"
+		return 5
+	}
+	/usr/bin/ldapsearch -LLLx -D 'cn=Directory Manager' -w $LDAP_SUPERUSER_PASSWD -b role=a598b,ou=rolealias,ou=com,dc=1,dc=com objectclass=* && {
+		echo "alias a598b found unexpectedly"
+		return 6
+	}
+	/usr/bin/ldapsearch -LLLx -D 'cn=Directory Manager' -w $LDAP_SUPERUSER_PASSWD -b role=a598c,ou=rolealias,ou=com,dc=1,dc=com objectclass=* && {
+		echo "alias a598c found unexpectedly"
+		return 6
+	}
+# Check console messages
+	CONSOLE_OUTPUT_COUNT "ERROR : LDAP domain must be specified using option -d <domain>."  && { echo "Test1: No domain line"; return 7; }
+	CONSOLE_OUTPUT_CONTAINS "ERROR : Domain [1.com] in import file does not match domain [2.com] on command line" || { echo "Test2: No wrong domains"; return 8; }
+	CONSOLE_OUTPUT_CONTAINS "ERROR : Invalid ALIAS line [ALIAS a598b r598b]; Alias role [r598b] does not exist on ROLE line or in LDAP" || { echo "Test3: No missing role msg"; return 9; }
+	CONSOLE_OUTPUT_CONTAINS	"ERROR : Found [2] DOMAIN lines. Only one DOMAIN line allowed in import file" || { echo "Test4: No Wrong error when multiple identical domain lines" ; return 10;}
+	CONSOLE_OUTPUT_CONTAINS	"ERROR : Found [2] DOMAIN lines. Only one DOMAIN line allowed in import file" || { echo "Test5: No Wrong error when multiple different domain lines" ; return 11;}
+	CONSOLE_OUTPUT_CONTAINS "ERROR : Invalid ALIAS lines; correct format is: ALIAS <alias_name> <role1>,<role2>,...<roleN>" || { echo "Test6: No invalid alias msg"; return 12; }
+	CONSOLE_OUTPUT_CONTAINS "ERROR : Invalid ROLE line: correct format is: ROLE <role1>,<role2>,...<roleN>" || { echo "Test7: No invalid role line msg"; return 13; }
+	CONSOLE_OUTPUT_CONTAINS "ERROR ERROR : Invalid ROLE line: '%' character not allowed in role name" || { echo "Test8: No invalid role msg"; return 14; }
+	CONSOLE_OUTPUT_CONTAINS "INFO : No new data in import file. No LDAP import required." || { echo "Test9: No duplicate role msg"; return 15; }
+	CONSOLE_OUTPUT_CONTAINS "ERROR : Found [2] ROLE lines. Only one ROLE line allowed in import file" || { echo "Test10: No double role line msg"; return 16; }
+	CONSOLE_OUTPUT_CONTAINS "ERROR : Import file lines must begin with '#', 'DOMAIN', 'ROLE', 'ALIAS' or are empty" || { echo "Test11: No ROLES line msg"; return 17; }
+	CONSOLE_OUTPUT_CONTAINS "ERROR : Domain [1.com,2.com] in import file does not match domain [1.com] on command line" || { echo "Test12: No 1.com,2.com line msg"; return 18; }
+	CONSOLE_OUTPUT_CONTAINS "ERROR : checkOptionUsage: Domain [1.com,2.com] does not exist in LDAP." || { echo "Test13: No commas in domain on command line msg"; return 19; }
+	CONSOLE_OUTPUT_CONTAINS "ERROR : Domain [wrong.com] in import file does not match domain [1.com] on command line" || { echo "Test14: No wrong.com in file msg"; return 20; }
+	CONSOLE_OUTPUT_CONTAINS "ERROR : checkOptionUsage: Domain [wrong.com] does not exist in LDAP." || { echo "Test15: No wrong.com not exist msg"; return 21; }
+    CONSOLE_OUTPUT_CONTAINS "ERROR : Invalid ALIAS lines; correct format is: ALIAS <alias_name> <role1>,<role2>,...<roleN>" || { echo "Test16: No Wrong error when no role with alias"; return 22;}
+
+	CONSOLE_OUTPUT_COUNT "Import file failed validation" 12 || { echo "Wrong number of import file validation"; return 30; }
+	return 0
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_CLEANUP
+#
+# This callback function is only called if the harness execution mode is 'AT_INDEPENDENT'
+# 
+# This callback restores the target system to the state it was in before the TC 
+# was run. It rolls back changes made by callbacks tc_setup() and tc_test()
+# 
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_cleanup() {
+
+# delete role created in tc_test
+        ${AT_BIN}/con_ex.bsh -d 598_remove_role.in.tmp -o 598_expect.exp -c "$LDAP_BIN/manage_COM.bsh -r role -d 1.com  " -r
+        /usr/local/bin/expect 598_expect.exp  || {
+                echo "Could not delete role added to 1.com domain - FAIL"
+                return 1
+        }
+
+        # remove the generated /usr/local/bin/expect files
+        rm -f *tmp *exp ${EXPECT_WRKNG} $OUTFILE || {
+                echo "Failed to remove the generated working files"
+                return 1
+        }
+
+	
+	rm -f *.exp
+	rm -f *.out
+	rm -f *.in.tmp
+	return 0
+}

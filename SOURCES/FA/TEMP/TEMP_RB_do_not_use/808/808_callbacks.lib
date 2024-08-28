@@ -1,0 +1,159 @@
+#!/bin/bash
+
+tc_setup() {
+
+	# Coded to fail in case TC_AUTOMATED=1 before automation completed
+	# Change return code as required
+/usr/bin/expect<<EOF3
+
+        spawn ssh -ostricthostkeychecking=no root@atrcxb2279.athtem.eei.ericsson.se
+        set timeout 90
+        while 1 {
+                expect {
+                        "Are you sure you want to continue connecting" {
+                                send "yes\r"}
+                        "Password:" {
+                                send "shroot\r"}
+                        "#" {
+                                break}
+                        }
+                }
+
+        send "/ericsson/dmr/bin/dmtool s m\r"
+        expect "#"
+        send "bob=`df / |awk -F/ '{print $6}' |awk '{print $1}'`\r"
+        expect "#"
+	send "metastat -c $bob\n\r"
+	expect "GB"
+EOF3
+
+	return 0
+
+}
+#################################################################################
+
+#################################################################################
+#
+# CALLBACK: TC_PRECON
+#
+# This callback function checks the correct conditions exist to run the TC.
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+ 
+tc_precon() {
+
+	# Coded to fail in case TC_AUTOMATED=1 before automation completed
+	# Change return code as required
+
+	return 0
+
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_TEST
+#
+# This callback function runs the test.
+# The harness compares the return code to the SPEC_TC_TEST_PASSCODE value set in the test spec.
+#
+# Return or exit codes:
+#    SPEC_TC_TEST_PASSCODE 	success
+# != SPEC_TC_TEST_PASSCODE 	failure
+ 
+tc_test() {
+
+	# Coded to fail in case TC_AUTOMATED=1 before automation complete
+	# Change return code as required
+
+echo -e "starting TC from `hostname`
+Build number: $G_BUILD_NUMBER
+CI Server: $CI_MACHINE
+Passwd: $CI_SERVER_ROOTPW
+"
+
+/usr/bin/expect<<EOF3
+
+        spawn ssh -ostricthostkeychecking=no root@atrcxb2279.athtem.eei.ericsson.se
+        set timeout 90
+        while 1 {
+                expect {
+                        "Are you sure you want to continue connecting" {
+                                send "yes\r"}
+                        "Password:" {
+                                send "shroot\r"}
+                        "#" {
+				break}
+                        }
+                }
+	
+	send "/ericsson/dmr/bin/dmtool s m\r"
+	expect "#"
+	set _var $expect_out(buffer)
+	puts "_var is: $_var, Expect buffer: $expect_out(buffer)"
+	send "metastat -c\r"
+	
+EOF3
+echo "return code: $?
+command output: $_output
+"
+
+ssh -oControlMaster=yes -ostricthostkeychecking=no root@atrcxb2279.athtem.eei.ericsson.se bash -s << EOF
+echo "RB"
+_rb=`hostname`
+echo "hostname = $_rb"
+EOF
+
+echo "REMOTE hostname = $_rb"
+	return 0
+
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_POSTCON
+#
+# This callback function checks expected results.
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_postcon() {
+
+	# Coded to fail in case TC_AUTOMATED=1 before automation complete.
+	# Change return code as required
+
+	return 0
+
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_CLEANUP
+#
+# This callback function is only called if the harness execution mode is 'AT_INDEPENDENT'
+# 
+# This callback restores the target system to the state it was in before the TC 
+# was run. It rolls back changes made by callbacks tc_setup() and tc_test()
+# 
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_cleanup() {
+
+	# Coded to fail in case TC_AUTOMATED=1 before automation complete
+	# Change return code as required
+
+	return 0
+
+}
+tc_setup

@@ -1,0 +1,4 @@
+DOMAIN vts.com 
+ACTION remove
+OBJECT target
+t148002 u2target1,u2target2,comtarget1,comtarget2

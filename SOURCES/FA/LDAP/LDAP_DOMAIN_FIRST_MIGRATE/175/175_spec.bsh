@@ -1,0 +1,66 @@
+#!/bin/bash
+
+# TEST CASE SPEC FILE
+# This file is generated/updated using the test framework web interface.
+# Manual updates on test servers are lost when the test package is re-installed.
+#
+# Last modified: Friday 31st of May 2013 10:03:34
+#
+
+# These settings must be in BASH script format, they are sourced by other scripts.
+SPEC_FA_NAME="LDAP"
+SPEC_UC_NAME="LDAP_DOMAIN_FIRST_MIGRATE"
+SPEC_TC_ID=175
+SPEC_TC_SLOGAN="migrate first isolated domain with excluded users and groups to global domain"
+SPEC_TC_TYPE="FT"
+SPEC_TC_POLARITY="positive"
+SPEC_TC_PRIORITY="high"
+SPEC_TC_AUTOMATED=1
+SPEC_TC_DEPENDENT_ONLY=0
+SPEC_TC_TIMEOUT=600
+SPEC_TC_TEST_PASSCODE=0
+SPEC_TC_AUTHOR="edavmax"
+SPEC_TC_AUTOMATOR="xfeldan"
+# this parameter is not interpreted by harness
+SPEC_TC_DISABLED=0
+
+# Please do not remove the comment lines below.
+# They are used as section locators by the test harness.
+
+# BEGIN_PRE_CONDITIONS
+#- om services primary and secondary are up
+#- ldap service is configured with at least 1 isolated domain. 
+#- ldap replication is enabled for the isolated domain
+#- OSS master is client of isolated domain and "configure_ldap.sh  -i" has been run
+#-  users and groups have been added to the local domain.
+# END_PRE_CONDITIONS
+
+
+# BEGIN_MANUAL_STEPS
+#- login to OM Services secondary as root
+#
+#Run the command:
+#
+#- add some users to the user exclusion file:
+#
+#/opt/ericsson/cominf_ldap/GDmig/1.com/migrate/exclude_users
+#
+#- add some groups to the group exclusion file
+#
+#/opt/ericsson/cominf_ldap/GDmig/1.com/migrate/exclude_groups
+#
+#- /ericsson/sdee/bin/migrate_domain.bsh –d <domain name>
+#
+#- on all LDAP clients refresh client profile using command:
+#
+#pkill –HUP ldap_cachemgr
+#
+# END_MANUAL_STEPS
+
+# BEGIN_POST_CONDITIONS
+#- verify isolated domain has been converted to referral domain i.e. that referrals exist from local domain to GD
+#- verify OSS reserved users (e.g. nmsadm ) have been migrated to GD and removed from local domain
+#- verify local users and groups have been migrated to the global domain and removed from local domain apart from the ones mentioned in the exclusion files.
+#- verify that the DEFAULT_LDAP_DOMAIN in the file /opt/ericsson/config/instance.settings is set to "dc=globaldomain"
+#- verify that the global domain is accessible by the ldap client e.g. check "ldaplist passwd <user1>" works on the OSS master
+# END_POST_CONDITIONS

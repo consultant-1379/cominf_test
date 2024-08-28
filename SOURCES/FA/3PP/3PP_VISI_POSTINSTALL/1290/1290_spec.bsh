@@ -1,0 +1,41 @@
+#!/bin/bash
+
+# TEST CASE SPEC FILE
+# This file is generated/updated using the test framework web interface.
+# Manual updates on test servers are lost when the test package is re-installed.
+#
+# Last modified: Tuesday 28th of January 2014 22:33:53
+#
+
+# These settings must be in BASH script format, they are sourced by other scripts.
+SPEC_FA_NAME="3PP"
+SPEC_UC_NAME="3PP_VISI_POSTINSTALL"
+SPEC_TC_ID=1290
+SPEC_TC_SLOGAN="Test  if ERICbrlnd and EXTRbrlnd is installed ok"
+SPEC_TC_TYPE="FT"
+SPEC_TC_POLARITY="positive"
+SPEC_TC_PRIORITY="high"
+SPEC_TC_AUTOMATED=1
+SPEC_TC_DEPENDENT_ONLY=0
+SPEC_TC_TIMEOUT=300
+SPEC_TC_TEST_PASSCODE=0
+SPEC_TC_AUTHOR="epatnat"
+SPEC_TC_AUTOMATOR="epatnat"
+# this parameter is not interpreted by harness
+SPEC_TC_DISABLED=0
+
+# Please do not remove the comment lines below.
+# They are used as section locators by the test harness.
+
+# BEGIN_PRE_CONDITIONS
+#n/a
+# END_PRE_CONDITIONS
+
+
+# BEGIN_MANUAL_STEPS
+#n/a
+# END_MANUAL_STEPS
+
+# BEGIN_POST_CONDITIONS
+#n/a
+# END_POST_CONDITIONS

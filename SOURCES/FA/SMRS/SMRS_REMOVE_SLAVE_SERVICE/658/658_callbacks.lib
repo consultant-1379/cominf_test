@@ -1,0 +1,234 @@
+#!/bin/bash
+#################################################################################
+#
+#
+#       COPYRIGHT (C) ERICSSON RADIO SYSTEMS AB, Sweden
+#
+#       The copyright to the document(s) herein is the property of
+#       Ericsson Radio Systems AB, Sweden.
+#
+#       The document(s) may be used and/or copied only with the written
+#       permission from Ericsson Radio Systems AB or in accordance with
+#       the terms and conditions stipulated in the agreement/contract
+#       under which the document(s) have been supplied.
+#
+#################################################################################
+
+
+# ATCOMINF Test Callback Library
+
+# Revision History
+# <date>	<signum>	<details>
+
+# Complete the callbacks in this library to automate the test case.
+#
+# Callbacks are stateless, it is not possible to set a global variable in one callback 
+# and access it it in another.
+#
+# Callbacks are called by the test harness in the following order:
+#
+# tc_setup() 		# Called only for independent TC execution mode to setup TC
+# tc_precon()		# Conditions that should exist before TC can run
+# tc_test()		# Runs the test for this TC
+# tc_postcon()		# Conditions that should/should not exist after successful TC 
+# tc_cleanup()		# Called only for independent TC execution mode to clenup after TC
+
+# All callbacks must PASS for a TC PASS result
+
+source /etc/opt/ericsson/nms_bismrs_mc/smrs_config
+
+#################################################################################
+#
+# CALLBACK: TC_SETUP
+#
+# This callback function is only called if the harness execution mode is 'AT_INDEPENDENT'
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_setup() {
+
+	return 0
+
+}
+#################################################################################
+
+#################################################################################
+#
+# CALLBACK: TC_PRECON
+#
+# This callback function checks the correct conditions exist to run the TC.
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+ 
+tc_precon() {
+
+	source /etc/opt/ericsson/nms_bismrs_mc/smrs_config
+	
+	echo ${NEDSS_TRAFFIC_IP[@]} > nedss_primary_ips
+	cp /etc/opt/ericsson/nms_bismrs_mc/smrs_config smrs_config_shane
+
+	return 0
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_TEST
+#
+# This callback function runs the test.
+# The harness compares the return code to the SPEC_TC_TEST_PASSCODE value set in the test spec.
+#
+# Return or exit codes:
+#    SPEC_TC_TEST_PASSCODE 	success
+# != SPEC_TC_TEST_PASSCODE 	failure
+ 
+tc_test() {
+	
+	# get the index of the primary nedss
+	index=$(/usr/local/bin/expect del_nedss_capture.exp | grep '(Primary)' | awk '{print $1}' | sed -e 's#(##g' -e 's#)##g')
+	
+	# use the index to find out what nedss we are deleting
+	nedss=$(/usr/local/bin/expect del_nedss_capture.exp | grep "($index) " | awk '{print $2}')
+	echo $nedss > deleted_nedss
+	
+	[ ! -z $index ] && {
+		echo "attempting to delete $nedss"
+		sed s/__INDEX__/$index/g delete_nedss_template > delete_nedss.exp
+		/usr/local/bin/expect delete_nedss.exp || {
+			[ $? -eq 99 ] && {
+				sed s/__INDEX__/$index/g get_slave_template > get_slave.exp
+				slave=$(/usr/local/bin/expect get_slave.exp | grep ERROR | awk '{print $7}')
+				
+				echo need to delete slave service: $slave
+				
+				i=1
+				slave_index=''
+				for s in ${SMRS_SLAVE_SERVICE_NAME[@]}
+				do
+					[ $s == $slave ] && slave_index=$i
+					i=$(($i+1))
+				done
+
+				[ -z $slave_index ] && {
+					echo unable to calculate slave_index
+					return 1
+				}
+				
+				#return 99
+
+				sed s/__INDEX__/$slave_index/g delete_slave_template > delete_slave.exp
+				/usr/local/bin/expect delete_slave.exp && {
+					echo $slave deleted, attempting to delete $nedss again...
+					/usr/local/bin/expect delete_nedss.exp && {
+						return 0
+					}
+					echo "failed to delete nedss"
+					return 1
+				}
+				echo "failed to delete slave service"
+				return 1
+			}
+			echo "error with delete_nedss expect script"
+			return 1
+		}
+		echo sucessfully deleted nedss
+		return 0
+	}
+	echo "unable to find secondary nedss"
+	return 0
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_POSTCON
+#
+# This callback function checks expected results.
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_postcon() {
+
+	nedss=$(cat deleted_nedss)
+	grep $nedss /etc/opt/ericsson/nms_bismrs_mc/smrs_config && {
+		echo $nedss still exists in /etc/opt/ericsson/nms_bismrs_mc/smrs_config
+		return 1
+	}
+
+	for ip in $(cat nedss_primary_ips)
+	do
+		ssh -o "BatchMode=yes" smrs_master "ssh -o 'BatchMode=yes' $ip ls" && {
+			echo ERROR: smrs master is still able to ssh to $ip
+			return 1
+		}
+	done
+
+	scp -o "BatchMode=yes" get_pass.sh smrs_master:/tmp/ || {
+		echo unable to copy password script to smrs master
+		return 1
+	}
+
+	for ip in $(cat nedss_primary_ips)
+	do
+		#ssh smrs_master "export DISPLAY=:0;export SSH_ASKPASS=/tmp/get_pass.sh;ssh $ip grep 'disable.*yes' /etc/xinetd.d/tftp" || {
+		#	echo error with tftp on $ip
+		#	return 1
+		#}
+		ssh smrs_master "export DISPLAY=:0;export SSH_ASKPASS=/tmp/get_pass.sh;ssh $ip grep tftp /etc/sysconfig/iptables-config" && {
+			echo error with iptables tftp entry on $ip
+			return 1
+		}
+		ssh smrs_master "export DISPLAY=:0;export SSH_ASKPASS=/tmp/get_pass.sh;ssh $ip grep prefer /etc/ntp.conf" && {
+			echo error with ntp on $ip
+			return 1
+		}
+		ssh smrs_master "export DISPLAY=:0;export SSH_ASKPASS=/tmp/get_pass.sh;ssh $ip grep local7.info /etc/rsyslog.conf" && {
+			echo error with syslog on $ip
+			return 2
+		}
+		ssh smrs_master "export DISPLAY=:0;export SSH_ASKPASS=/tmp/get_pass.sh;ssh $ip cat /etc/rsyslog.conf | grep -v '#' | grep 'ModLoad imudp.so'" && {
+			echo error with syslog on $ip
+			return 3
+		}
+		ssh smrs_master "export DISPLAY=:0;export SSH_ASKPASS=/tmp/get_pass.sh;ssh $ip grep '/export/GRAN/syslog/atclvm517_local7.info {' /etc/logrotate.d/syslog" && {
+			echo error with syslog on $ip
+			return 4
+		}
+		ssh smrs_master 'export DISPLAY=:0;export SSH_ASKPASS=/tmp/get_pass.sh;ssh $ip mount | egrep -w "CORE|GRAN|LRAN|WRAN"' && {
+			echo error with filesystems on $ip
+			return 5
+		}
+	done
+
+	return 0
+
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_CLEANUP
+#
+# This callback function is only called if the harness execution mode is 'AT_INDEPENDENT'
+# 
+# This callback restores the target system to the state it was in before the TC 
+# was run. It rolls back changes made by callbacks tc_setup() and tc_test()
+# 
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_cleanup() {
+
+	return 0
+
+}

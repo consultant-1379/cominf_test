@@ -1,0 +1,70 @@
+#!/bin/bash
+
+# TEST CASE SPEC FILE
+# This file is generated/updated using the test framework web interface.
+# Manual updates on test servers are lost when the test package is re-installed.
+#
+# Last modified: Tuesday 17th of December 2013 5:05:36
+#
+
+# These settings must be in BASH script format, they are sourced by other scripts.
+SPEC_FA_NAME="SOLARIS10SMRS"
+SPEC_UC_NAME="SOLARIS10SMRS_Add_Supported_NEs"
+SPEC_TC_ID=1602
+SPEC_TC_SLOGAN="Add LRAN eRBS Nodes "
+SPEC_TC_TYPE="FT"
+SPEC_TC_POLARITY="positive"
+SPEC_TC_PRIORITY="high"
+SPEC_TC_AUTOMATED=0
+SPEC_TC_DEPENDENT_ONLY=0
+SPEC_TC_TIMEOUT=300
+SPEC_TC_TEST_PASSCODE=0
+SPEC_TC_AUTHOR="xnavema"
+SPEC_TC_AUTOMATOR="xnavema"
+# this parameter is not interpreted by harness
+SPEC_TC_DISABLED=0
+
+# Please do not remove the comment lines below.
+# They are used as section locators by the test harness.
+
+# BEGIN_PRE_CONDITIONS
+#FTP Service backup association is required for the creation of LRAN_RBSnode directories under LRAN
+#
+# END_PRE_CONDITIONS
+
+
+# BEGIN_MANUAL_STEPS
+#Add LRAN_EBS nodes in ARNE. Check the directories are created for each LRAN_EBS node
+#added on SMRS master and slave/s
+#AIF user should be updated in the templet
+#105 65-0580/01350- Creation of datastrips on
+#/opt/ericsson/arne/bin/import.sh -import -i_nau -f < LRAN RBS File Name>
+#
+# END_MANUAL_STEPS
+
+# BEGIN_POST_CONDITIONS
+#Acceptance Criteria
+#
+#OSS Master
+#/var/opt/ericsson/smrsstore/LRAN/< slavename>/Lran EBS node
+#/var/opt/ericsson/smrsstore/LRAN/< slavename>/Lran EBS node/NePersistent
+#/var/opt/ericsson/smrsstore/LRAN/< slavename>//Lran EBS node/NePersistentup
+#/var/opt/ericsson/smrsstore/LRAN/< slavename>//Lran EBS node/NePersistentdown
+#/var/opt/ericsson/smrsstore/LRAN/< slavename>//Lran EBS node/NePersistent/PM
+#SMRS Master
+#/export/LRAN< slavename>/< Lran EBS node File>
+#/export/LRAN< slavename>/< Lran EBS node File>/NePersistent
+#/export/LRAN< slavename>/< Lran EBS node File>/NePersistentup
+#/export/LRAN< slavename>/< Lran EBS node File>/NePersistentdown
+#/export/LRAN< slavename>/< Lran EBS node File>/NePersistentup/PM
+#SMRS slave
+#/export/LRAN< slavename>/< Lran EBS node Fil File>
+#/export/LRAN< slavename>/< Lran EBS node Fil>/NePersistent
+#/export/LRAN< slavename>/< Lran EBS node Fil>/NePersistentup
+#/export/LRAN< slavename>/< Lran EBS node Fil>/NePersistentdown
+#/export/LRAN< slavename>/< Lran EBS node Fil>/NePersistentup/PM
+#master
+#uid=nmsadm, gid=nms
+#SMRS servers:
+#uid=smrsuser, gid=nms?? 
+# END_POST_CONDITIONS

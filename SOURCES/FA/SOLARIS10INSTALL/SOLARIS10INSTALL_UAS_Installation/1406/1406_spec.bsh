@@ -1,0 +1,49 @@
+#!/bin/bash
+
+# TEST CASE SPEC FILE
+# This file is generated/updated using the test framework web interface.
+# Manual updates on test servers are lost when the test package is re-installed.
+#
+# Last modified: Thursday 2nd of January 2014 6:10:41
+#
+
+# These settings must be in BASH script format, they are sourced by other scripts.
+SPEC_FA_NAME="SOLARIS10INSTALL"
+SPEC_UC_NAME="SOLARIS10INSTALL_UAS_Installation"
+SPEC_TC_ID=1406
+SPEC_TC_SLOGAN="Verify shared memory ID\'s "
+SPEC_TC_TYPE="FT"
+SPEC_TC_POLARITY="positive"
+SPEC_TC_PRIORITY="high"
+SPEC_TC_AUTOMATED=1
+SPEC_TC_DEPENDENT_ONLY=0
+SPEC_TC_TIMEOUT=300
+SPEC_TC_TEST_PASSCODE=0
+SPEC_TC_AUTHOR="xlaxain"
+SPEC_TC_AUTOMATOR="xlaxain"
+# this parameter is not interpreted by harness
+SPEC_TC_DISABLED=0
+
+# Please do not remove the comment lines below.
+# They are used as section locators by the test harness.
+
+# BEGIN_PRE_CONDITIONS
+#<path under "Verification Specification for Cominf Feature Test for 14.0 ":
+#Initial Installation/UAS Installation
+#>
+# END_PRE_CONDITIONS
+
+
+# BEGIN_MANUAL_STEPS
+#Action: List shared memory ids on UAS
+#prctl -n project.max-shm-ids -i project default
+#
+#Result: Shared memory Id's are displayed.
+#Actions: Check whether /ericsson/ocs/bin/clear_unused_shmids.sh is added or not in UAS
+#
+# END_MANUAL_STEPS
+
+# BEGIN_POST_CONDITIONS
+#Result: /ericsson/ocs/bin/clear_unused_shmids.sh should be added in crontab
+# END_POST_CONDITIONS
+

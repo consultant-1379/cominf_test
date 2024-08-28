@@ -1,0 +1,189 @@
+#!/bin/bash
+#################################################################################
+#
+#
+#       COPYRIGHT (C) ERICSSON RADIO SYSTEMS AB, Sweden
+#
+#       The copyright to the document(s) herein is the property of
+#       Ericsson Radio Systems AB, Sweden.
+#
+#       The document(s) may be used and/or copied only with the written
+#       permission from Ericsson Radio Systems AB or in accordance with
+#       the terms and conditions stipulated in the agreement/contract
+#       under which the document(s) have been supplied.
+#
+#################################################################################
+
+
+# ATCOMINF Test Callback Library
+
+# Revision History
+# <date>	<signum>	<details>
+
+# Complete the callbacks in this library to automate the test case.
+#
+# Callbacks are stateless, it is not possible to set a global variable in one callback 
+# and access it it in another.
+#
+# Callbacks are called by the test harness in the following order:
+#
+# tc_setup() 		# Called only for independent TC execution mode to setup TC
+# tc_precon()		# Conditions that should exist before TC can run
+# tc_test()		# Runs the test for this TC
+# tc_postcon()		# Conditions that should/should not exist after successful TC 
+# tc_cleanup()		# Called only for independent TC execution mode to cleanup after TC
+
+# All callbacks must PASS for a TC PASS result
+
+#################################################################################
+#
+# CALLBACK: TC_SETUP
+#
+# This callback function is only called if the harness execution mode is 'AT_INDEPENDENT'
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_setup() {
+
+	# Coded to fail in case TC_AUTOMATED=1 before automation completed
+	# Change return code as required
+
+	return 1
+
+}
+#################################################################################
+
+#################################################################################
+#
+# CALLBACK: TC_PRECON
+#
+# This callback function checks the correct conditions exist to run the TC.
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+ 
+tc_precon() {
+	LDAP_SERVER_UP || { echo "LDAP server not running"; return 1; }
+	return 0
+
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_TEST
+#
+# This callback function runs the test.
+# The harness compares the return code to the SPEC_TC_TEST_PASSCODE value set in the test spec.
+#
+# Return or exit codes:
+#    SPEC_TC_TEST_PASSCODE 	success
+# != SPEC_TC_TEST_PASSCODE 	failure
+ 
+tc_test() {
+
+	# Create Array with test data - test script with arguments, 
+	# and the expected output
+
+	declare -a testData
+	while read
+	do
+		testData[${#testData[@]}]="$REPLY"
+	done <<TESTDATA
+/ericsson/sdee/bin/resolve_conflicts.bsh
+Usage
+/ericsson/sdee/bin/resolve_conflicts.bsh -X -d 2.com
+ERROR : Failed to locate accepted proposals job file
+/ericsson/sdee/bin/resolve_conflicts.bsh -O -d 2.com
+ERROR : Failed to locate accepted proposals job file
+/ericsson/sdee/bin/resolve_conflicts.bsh -r
+ERROR : Please specify option -d <domain>.
+/ericsson/sdee/bin/resolve_conflicts.bsh -r -d 2.com
+ERROR : Please specify one of options -u, -g
+/ericsson/sdee/bin/resolve_conflicts.bsh -r -u -g -d 2.com
+ERROR : Options -u, -g are mutually exclusive.
+/ericsson/sdee/bin/resolve_conflicts.bsh -r -u -d 2.com -a auto_id
+ERROR : Auto-accept options can only be used in propose mode (-p).
+/ericsson/sdee/bin/resolve_conflicts.bsh -r -u -d 2.com -i
+ERROR : Option -i can only be used in resolve mode (-w)
+/ericsson/sdee/bin/resolve_conflicts.bsh -r -u -d 2.com -n invalid
+ERROR : Option -n can only be used in resolve mode (-w)
+TESTDATA
+
+	export BIND_TOKEN=${LDAP_SUPERUSER_PASSWD}
+	export g_PASSWORD=${LDAP_SUPERUSER_PASSWD}
+	/ericsson/sdee/
+	failures=false
+	
+	for (( i=0; i < ${#testData[@]}; i+=2 ))
+	do
+		command=${testData[$i]}
+		errorMsg=${testData[$(($i +1))]}
+
+		echo testing $command
+
+		output=$($command)
+		cmdStatus=$?
+
+		grep -i  "$errorMsg" <<< "$output"
+		grepStatus=$?
+
+		[ $cmdStatus -eq 0 ]  && {
+			echo "ERROR: Test Failed.  Command exited with 0, should be non-zero"
+			failures=true
+		}
+
+		[ $grepStatus -eq 0 ] || {
+			echo "ERROR: Test Failed.  Command did not report failure reason [$errorMsg]"
+			failures=true
+		}
+	done
+	[ $failures = true ] && { echo "ERROR: Some tests failed." ; return 1; }
+
+	return 0
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_POSTCON
+#
+# This callback function checks expected results.
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_postcon() {
+	return 0
+
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_CLEANUP
+#
+# This callback function is only called if the harness execution mode is 'AT_INDEPENDENT'
+# 
+# This callback restores the target system to the state it was in before the TC 
+# was run. It rolls back changes made by callbacks tc_setup() and tc_test()
+# 
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_cleanup() {
+
+	# Coded to fail in case TC_AUTOMATED=1 before automation complete
+	# Change return code as required
+	return 0
+}
+
+

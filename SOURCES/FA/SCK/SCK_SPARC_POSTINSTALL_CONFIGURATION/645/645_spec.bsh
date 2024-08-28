@@ -1,0 +1,52 @@
+#!/bin/bash
+
+# TEST CASE SPEC FILE
+# This file is generated/updated using the test framework web interface.
+# Manual updates on test servers are lost when the test package is re-installed.
+#
+# Last modified: Sunday 31st of March 2013 20:37:24
+#
+
+# These settings must be in BASH script format, they are sourced by other scripts.
+SPEC_FA_NAME="SCK"
+SPEC_UC_NAME="SCK_SPARC_POSTINSTALL_CONFIGURATION"
+SPEC_TC_ID=645
+SPEC_TC_SLOGAN="Configure Password Change for User nmsadm"
+SPEC_TC_TYPE="UNIT"
+SPEC_TC_POLARITY="positive"
+SPEC_TC_PRIORITY="high"
+SPEC_TC_AUTOMATED=1
+SPEC_TC_DEPENDENT_ONLY=0
+SPEC_TC_TIMEOUT=300
+SPEC_TC_TEST_PASSCODE=0
+SPEC_TC_AUTHOR="eeidle"
+SPEC_TC_AUTOMATOR="xjithbv"
+# this parameter is not interpreted by harness
+SPEC_TC_DISABLED=0
+
+# Please do not remove the comment lines below.
+# They are used as section locators by the test harness.
+
+# BEGIN_PRE_CONDITIONS
+#None
+# END_PRE_CONDITIONS
+
+
+# BEGIN_MANUAL_STEPS
+#As root user, set the password for user nmsadm.
+#Note: If the Master Server is configured as an LDAP client use the -r option
+#when running the command below:
+## /opt/ericsson/sck/bin/update_nmsadm.ksh New
+#password:
+#This step sets the password for nmsadm in the operating system and also
+#defines the user and password in TSS.
+#Note: This script is specifically for the nmsadm user. This should be done
+#before the Master Server is configured to use the LDAP name service.
+#This is to ensure that the password for nmsadm is also set correctly in
+#LDAP when the initial migration from the Master Server local /etc files
+#is done in LDAP client configuration, see Section 16.6.13 on page 129.
+# END_MANUAL_STEPS
+
+# BEGIN_POST_CONDITIONS
+#None
+# END_POST_CONDITIONS

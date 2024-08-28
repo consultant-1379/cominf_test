@@ -1,0 +1,4 @@
+DOMAIN vts.com
+ACTION add
+OBJECT alias
+t152201 target1522:alias15222

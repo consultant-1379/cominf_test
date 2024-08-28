@@ -1,0 +1,226 @@
+#!/bin/bash
+#################################################################################
+#
+#
+#       COPYRIGHT (C) ERICSSON RADIO SYSTEMS AB, Sweden
+#
+#       The copyright to the document(s) herein is the property of
+#       Ericsson Radio Systems AB, Sweden.
+#
+#       The document(s) may be used and/or copied only with the written
+#       permission from Ericsson Radio Systems AB or in accordance with
+#       the terms and conditions stipulated in the agreement/contract
+#       under which the document(s) have been supplied.
+#
+#################################################################################
+
+
+# ATCOMINF Test Callback Library
+
+# Revision History
+# <date>	<signum>	<details>
+
+# Complete the callbacks in this library to automate the test case.
+#
+# Callbacks are stateless, it is not possible to set a global variable in one callback 
+# and access it it in another.
+#
+# Callbacks are called by the test harness in the following order:
+#
+# tc_setup() 		# Called only for independent TC execution mode to setup TC
+# tc_precon()		# Conditions that should exist before TC can run
+# tc_test()		# Runs the test for this TC
+# tc_postcon()		# Conditions that should/should not exist after successful TC 
+# tc_cleanup()		# Called only for independent TC execution mode to cleanup after TC
+
+# All callbacks must PASS for a TC PASS result
+
+#################################################################################
+#
+# CALLBACK: TC_SETUP
+#
+# This callback function is only called if the harness execution mode is 'AT_INDEPENDENT'
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_setup() {
+        /ericsson/ocs/bin/ai_manager.sh -init > /dev/null
+        [[ -f /usr/local/etc/dhcpd.conf ]] || {
+                echo "Error in configuring DHCP server"
+                return 1
+        }
+        return 0
+}
+#################################################################################
+
+#################################################################################
+#
+# CALLBACK: TC_PRECON
+#
+# This callback function checks the correct conditions exist to run the TC.
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+ 
+tc_precon() {
+        /ericsson/ocs/bin/ai_manager.sh -list nets |grep 12.12.12.0 && {
+                /ericsson/ocs/bin/ai_manager.sh -delete net -a 12.12.12.0 -q
+        }
+
+	/ericsson/ocs/bin/ai_manager.sh -list hosts|grep lteclient1 && {
+		/ericsson/ocs/bin/ai_manager.sh -delete client -i lteclient1 -q
+	}
+
+        /ericsson/ocs/bin/ai_manager.sh -list nets |grep 10.47.204.0 && {
+                /ericsson/ocs/bin/ai_manager.sh -delete net -a 10.47.204.0 -q
+        }
+
+	/ericsson/ocs/bin/ai_manager.sh -list hosts|grep test1 && {
+		/ericsson/ocs/bin/ai_manager.sh -delete client -i test1 -q
+	}
+	
+	/ericsson/ocs/bin/ai_manager.sh -list hosts|grep client1 && {
+		/ericsson/ocs/bin/ai_manager.sh -delete client -i client1 -q
+	} 	
+
+	return 0 
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_TEST
+#
+# This callback function runs the test.
+# The harness compares the return code to the SPEC_TC_TEST_PASSCODE value set in the test spec.
+#
+# Return or exit codes:
+#    SPEC_TC_TEST_PASSCODE 	success
+# != SPEC_TC_TEST_PASSCODE 	failure
+ 
+tc_test() {
+	
+	#Action1: 	
+	echo "Verifying the Addition of lte_clients with Multiple NTP Servers"
+        /ericsson/ocs/bin/ai_manager.sh -add lte_client -a 10.47.205.10 -h atclvm1 -i lteclient1 -s  10.47.205.4 -p /var/tmp/ -t "158.107.173.12 159.108.174.13 160.174.108.13 161.175.109.14 "  -u -32452454 -q &>/dev/null && {
+                echo "Error:Adding clients with Multiple time servers"
+                return 1
+        }
+	echo "ERROR: Too many timeservers, specify one or two timeservers IP Address"
+
+	#Action2:
+	echo "Verifying the Addition of lte_clients with garbage values"
+	/ericsson/ocs/bin/ai_manager.sh -add lte_client -a 12.12.12.12 -h atclv@# -i lc1 -s  10.46.203.4-p /var/tmp/ -t "158.107.173.12.159" -u -32452454 -q &>/dev/null && {  
+		echo"Error:Adding client with Invalid IP address"
+		return 1
+	}
+	echo "Error:Invalid IP address [158.107.173.12.159]"
+	
+	echo "Verifying the updation of dhcpd.conf_static file and aif_hosts file"
+	cat 
+	
+	#Action3:
+	echo "Verification of Adding a client without any network added for that client"
+	/ericsson/ocs/bin/ai_manager.sh -add lte_client -a 12.12.12.0 -h atclvm3 -i lteclient2 -s  12.12.12.5 -p /var/tmp/ -t "158.107.173.12 159.108.174.13"  -u -32452454 -q && {
+		echo "Error:Adding clients without any network added for that client"  
+		return 1
+	}
+
+	#Action4:
+	echo "Verification of deleting a non-existing client"
+        /ericsson/ocs/bin/ai_manager.sh -delete client -i lteclient1 -q && {
+                echo "Error in deleting the lte_client1"
+                return 1
+        }
+	
+	#Action5: 	
+	echo "Verification of Adding a client with invalid smrs IP" 
+        /ericsson/ocs/bin/ai_manager.sh -add lte_client -a 19.19.19.9 -h test1 -i client5 -s ii.ko.ki.kj -p /var/tmp/ -t "10.45.192.15" -u -32452454 -q && {
+		echo "Error:Adding clients with invalid smrs IP" 
+		return 1 
+	}	
+
+	#Action6:	
+        #Adding a network
+        echo "Adding a network 10.47.204.0"
+        /ericsson/ocs/bin/ai_manager.sh -add net -a 10.47.204.0 -m 255.255.255.0 -r 10.47.204.1 -d dns.com -n "159.107.163.3,10.42.33.198" -q || {
+		echo "Error in adding network 10.46.203.0"
+		return 1
+	}
+        echo "Network 10.47.204.0 added successfully"
+
+        echo "Adding  lte_client"
+        /ericsson/ocs/bin/ai_manager.sh -add lte_client -a 10.47.204.10 -h atclvm1 -i test1 -s  10.47.204.3 -p /var/tmp/ -t "158.107.173.12 159.108.174.13"  -u -32452454 -q || {
+                echo "Error in adding lte_client 10.47.204.10 to the network"
+		return 1
+	} 
+	echo "lte_client test1 added successfully"
+
+	echo "Verification of Adding an already existing network"
+        /ericsson/ocs/bin/ai_manager.sh -add net -a 10.47.204.0 -m 255.255.255.0 -r 10.47.204.1 -d dns.com -n "159.107.163.3,10.42.33.198" -q && {
+		echo "Error:Adding an already existing network" 
+		return 1
+	}
+
+        echo "Verification of Adding an already existing client"
+        /ericsson/ocs/bin/ai_manager.sh -add lte_client -a 10.47.204.10 -h atclvm1 -i test1 -s  10.47.204.3 -p /var/tmp/ -t "158.107.173.12 159.108.174.13"  -u -32452454 -q && {
+		echo "Error:Adding an already existing client"
+		return 1
+	}
+     
+	return 0
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_POSTCON
+#
+# This callback function checks expected results.
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_postcon() {
+	return 0 
+
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_CLEANUP
+#
+# This callback function is only called if the harness execution mode is 'AT_INDEPENDENT'
+# 
+# This callback restores the target system to the state it was in before the TC 
+# was run. It rolls back changes made by callbacks tc_setup() and tc_test()
+# 
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_cleanup() {
+	
+	echo  "Deleting the added network"
+        /ericsson/ocs/bin/ai_manager.sh -delete net -a 10.47.204.0 -q || {
+                echo " Error in delting the network "
+                return 1
+        }
+
+        echo "Deleting the added lte_clients"
+        /ericsson/ocs/bin/ai_manager.sh -delete client -i test1 -q || {
+                echo "Error in deleting the lte_client1"
+                return 1
+        }
+
+	return 0 
+
+}

@@ -1,0 +1,391 @@
+dn: dc=globaldomain
+objectClass: domain
+objectClass: nisDomainObject
+objectClass: top
+nisDomain: globaldomain
+dc: globaldomain
+ds-sync-state: 0000013a4be1db4c0aff00000017
+aci: (target="ldap:///dc=globaldomain") (targetattr = "*")(version 3.0; acl "ldapadm Access";allow (all)(userdn = "ldap:///cn=ldapadm,dc=globaldomain");)
+aci: (target="ldap:///dc=globaldomain")(targetattr!="aci") (targetscope="base")(version 3.0; acl "anonymous baseDN read access";allow (read, search, compare)userdn = "ldap:///anyone";)
+createTimestamp: 20121010142216Z
+ds-sync-generation-id: 66475
+entryUUID: a4682e49-67be-4b54-8352-59536a2f8585
+creatorsName: cn=Directory Manager,cn=Root DNs,cn=config
+modifyTimestamp: 20121010142216Z
+modifiersName: cn=Directory Manager,cn=Root DNs,cn=config
+
+dn: ou=people,dc=globaldomain
+objectClass: organizationalUnit
+objectClass: top
+ou: people
+ds-sync-hist: aci:0000013a4be1db4c0aff00000016:add:(targetattr!="aci")(targetscope="subtree")(version 3.0; acl "Allow read access for domain dc=1,dc=com";allow (read, search, compare)userdn = "ldap:///cn=proxyagent,ou=profile,dc=1,dc=com";)
+ds-sync-hist: modifytimestamp:0000013a4be1db4c0aff00000016:repl:20121010181343Z
+ds-sync-hist: modifiersname:0000013a4be1db4c0aff00000016:repl:cn=Directory Manager,cn=Root DNs,cn=config
+entryUUID: ad4ff4f4-4bec-41d4-ab1c-628c8f6218ea
+aci: (targetattr!="aci")(targetscope="subtree")(version 3.0; acl "Allow read access for domain dc=1,dc=com";allow (read, search, compare)userdn = "ldap:///cn=proxyagent,ou=profile,dc=1,dc=com";)
+creatorsName: cn=Directory Manager,cn=Root DNs,cn=config
+createTimestamp: 20121010142216Z
+modifyTimestamp: 20121010181343Z
+modifiersName: cn=Directory Manager,cn=Root DNs,cn=config
+
+dn: ou=group,dc=globaldomain
+objectClass: organizationalUnit
+objectClass: top
+ou: group
+ds-sync-hist: aci:0000013a4be1db4c0aff00000017:add:(targetattr!="aci")(targetscope="subtree")(version 3.0; acl "Allow read access for domain dc=1,dc=com";allow (read, search, compare)userdn = "ldap:///cn=proxyagent,ou=profile,dc=1,dc=com";)
+ds-sync-hist: modifytimestamp:0000013a4be1db4c0aff00000017:repl:20121010181343Z
+ds-sync-hist: modifiersname:0000013a4be1db4c0aff00000017:repl:cn=Directory Manager,cn=Root DNs,cn=config
+entryUUID: e216082d-cd0d-4ae5-a4f6-bd654c0bf1f8
+aci: (targetattr!="aci")(targetscope="subtree")(version 3.0; acl "Allow read access for domain dc=1,dc=com";allow (read, search, compare)userdn = "ldap:///cn=proxyagent,ou=profile,dc=1,dc=com";)
+creatorsName: cn=Directory Manager,cn=Root DNs,cn=config
+createTimestamp: 20121010142216Z
+modifyTimestamp: 20121010181343Z
+modifiersName: cn=Directory Manager,cn=Root DNs,cn=config
+
+dn: cn=ldapadm,dc=globaldomain
+objectClass: person
+objectClass: top
+cn: LDAP
+cn: ldapadm
+sn: Administrator
+userPassword: {SSHA}OP8245hJH/PCtUGsAci5kNkVOCu+Fe2E6Uaefg==
+ds-privilege-name: subentry-write
+ds-privilege-name: ldif-import
+ds-privilege-name: password-reset
+entryUUID: b901a4da-d19c-44c2-8dfa-b3a496df749a
+createTimestamp: 20121010142216Z
+creatorsName: cn=Directory Manager,cn=Root DNs,cn=config
+pwdChangedTime: 20121010142216.255Z
+
+dn: cn=PWD Policy for Users,dc=globaldomain
+objectClass: extensibleObject
+objectClass: collectiveAttributeSubEntry
+objectClass: subentry
+objectClass: top
+cn: PWD Policy for Users
+ds-pwp-password-policy-dn;collective: cn=globaldomain Password Policy,cn=Password Policies,cn=config
+subtreeSpecification: { base "ou=people", specificationFilter "(objectclass=person)"}
+entryUUID: c876aeca-7d32-46b0-93c8-2d2b9f557db2
+createTimestamp: 20121010142242Z
+creatorsName: cn=Directory Manager,cn=Root DNs,cn=config
+
+dn: uid=nmsadm,ou=people,dc=globaldomain
+objectClass: SolarisUserAttr
+objectClass: shadowAccount
+objectClass: posixAccount
+objectClass: account
+objectClass: top
+uid: nmsadm
+cn: nmsadm
+loginShell: /bin/sh
+userPassword: {SSHA}NkvYOxT2xmw4Pr+DT9aDKs8whthbv18MAjvPfg==
+homeDirectory: /home/nmsadm
+uidNumber: 308
+gidNumber: 205
+ds-pwp-account-disabled: true
+ds-sync-hist: ds-pwp-account-disabled:0000013a4be1ca190aff00000009:repl:true
+ds-sync-hist: modifytimestamp:0000013a4be1ca190aff00000009:repl:20121010181339Z
+ds-sync-hist: modifiersname:0000013a4be1ca190aff00000009:repl:cn=Directory Manager,cn=Root DNs,cn=config
+ds-sync-hist: dn:0000013a4be1b5c60aff00000001:add
+entryUUID: 277f8e73-b815-42a1-8c0a-a3ab383318b9
+pwdChangedTime: 20121010181334.278Z
+creatorsName: cn=Directory Manager,cn=Root DNs,cn=config
+createTimestamp: 20121010181334Z
+modifyTimestamp: 20121010181339Z
+modifiersName: cn=Directory Manager,cn=Root DNs,cn=config
+
+dn: uid=ruby,ou=people,dc=globaldomain
+objectClass: person
+objectClass: organizationalPerson
+objectClass: inetOrgPerson
+objectClass: shadowAccount
+objectClass: posixAccount
+objectClass: top
+uid: ruby
+description: OSS-RC user
+cn: ruby
+sn:: PHNuPg==
+loginShell: /usr/bin/tcsh
+userPassword: {SSHA}J0K781umk6zmCelAAvu3/259SOC28ucWKPO1CQ==
+homeDirectory: /home/ruby
+uidNumber: 5555
+gidNumber: 205
+pwdReset: TRUE
+ds-sync-hist: dn:0000013a4be1b5c60aff00000002:add
+entryUUID: 1f510d39-ab4f-481a-947a-17de4b6689aa
+createTimestamp: 20121010181334Z
+creatorsName: cn=Directory Manager,cn=Root DNs,cn=config
+pwdChangedTime: 20121010181334.278Z
+
+dn: uid=des,ou=people,dc=globaldomain
+objectClass: person
+objectClass: organizationalPerson
+objectClass: inetOrgPerson
+objectClass: shadowAccount
+objectClass: posixAccount
+objectClass: top
+uid: des
+description: OSS-RC user
+cn: des
+sn:: PHNuPg==
+loginShell: /usr/bin/tcsh
+userPassword: {SSHA}T5PNs/GKgbg3dkl8V0zWlv09mz89F5kkupit8w==
+homeDirectory: /home/des
+uidNumber: 1111
+gidNumber: 205
+pwdReset: TRUE
+ds-sync-hist: dn:0000013a4be1b68e0aff00000003:add
+entryUUID: 3b70ea9f-c554-477f-b8fa-1188c4d549f0
+createTimestamp: 20121010181334Z
+creatorsName: cn=Directory Manager,cn=Root DNs,cn=config
+pwdChangedTime: 20121010181334.478Z
+
+dn: uid=gerry,ou=people,dc=globaldomain
+objectClass: person
+objectClass: organizationalPerson
+objectClass: inetOrgPerson
+objectClass: shadowAccount
+objectClass: posixAccount
+objectClass: top
+uid: gerry
+description: OSS-RC user
+cn: gerry
+sn:: PHNuPg==
+loginShell: /usr/bin/tcsh
+userPassword: {SSHA}fntY82GBfJcW/j2Ohk5CcOB1+BXkJNvlBM3OyA==
+homeDirectory: /home/gerry
+uidNumber: 6666
+gidNumber: 205
+pwdReset: TRUE
+ds-sync-hist: dn:0000013a4be1b68e0aff00000004:add
+entryUUID: e15bc89f-e511-4fe9-8963-89aa927c812d
+createTimestamp: 20121010181334Z
+creatorsName: cn=Directory Manager,cn=Root DNs,cn=config
+pwdChangedTime: 20121010181334.478Z
+
+dn: uid=jack,ou=people,dc=globaldomain
+objectClass: person
+objectClass: organizationalPerson
+objectClass: inetOrgPerson
+objectClass: shadowAccount
+objectClass: posixAccount
+objectClass: top
+uid: jack
+description: OSS-RC user
+cn: jack
+sn:: PHNuPg==
+loginShell: /usr/bin/tcsh
+userPassword: {SSHA}yTkNC4AfS263q4ZSZ0mcllFXcHYakPawDdhslw==
+homeDirectory: /home/jack
+uidNumber: 13000
+gidNumber: 205
+pwdReset: TRUE
+ds-sync-hist: dn:0000013a4be1b68e0aff00000005:add
+entryUUID: d496382b-7c22-4ea6-bcdc-02c5c232ad12
+createTimestamp: 20121010181334Z
+creatorsName: cn=Directory Manager,cn=Root DNs,cn=config
+pwdChangedTime: 20121010181334.478Z
+
+dn: uid=ben,ou=people,dc=globaldomain
+objectClass: person
+objectClass: organizationalPerson
+objectClass: inetOrgPerson
+objectClass: shadowAccount
+objectClass: posixAccount
+objectClass: top
+uid: ben
+description: OSS-RC user
+cn: ben
+sn:: PHNuPg==
+loginShell: /usr/bin/tcsh
+userPassword: {SSHA}ANliot2BvbWbbX1dzms49qTmWHAm/btn3Jv6wg==
+homeDirectory: /home/ben
+uidNumber: 23000
+gidNumber: 205
+pwdReset: TRUE
+ds-sync-hist: dn:0000013a4be1b68e0aff00000006:add
+entryUUID: dceb4cef-8a77-43c8-846f-be1443facd59
+createTimestamp: 20121010181334Z
+creatorsName: cn=Directory Manager,cn=Root DNs,cn=config
+pwdChangedTime: 20121010181334.478Z
+
+dn: uid=charlie,ou=people,dc=globaldomain
+objectClass: person
+objectClass: organizationalPerson
+objectClass: inetOrgPerson
+objectClass: shadowAccount
+objectClass: posixAccount
+objectClass: top
+uid: charlie
+description: OSS-RC user
+cn: charlie
+sn:: PHNuPg==
+loginShell: /usr/bin/tcsh
+userPassword: {SSHA}YnMZMFYdMPo2Y473PzOKRAxBm2KDi2vOH3M0GQ==
+homeDirectory: /home/charlie
+uidNumber: 16000
+gidNumber: 205
+pwdReset: TRUE
+ds-sync-hist: dn:0000013a4be1b68e0aff00000007:add
+entryUUID: db41d32c-ea0e-40d3-bccb-4e374ebf09bd
+createTimestamp: 20121010181334Z
+creatorsName: cn=Directory Manager,cn=Root DNs,cn=config
+pwdChangedTime: 20121010181334.478Z
+
+dn: uid=harry,ou=people,dc=globaldomain
+objectClass: person
+objectClass: organizationalPerson
+objectClass: inetOrgPerson
+objectClass: shadowAccount
+objectClass: posixAccount
+objectClass: top
+uid: harry
+description: OSS-RC user
+cn: harry
+sn:: PHNuPg==
+loginShell: /usr/bin/tcsh
+userPassword: {SSHA}Y5a8iIdAOGr3XXC4BQ23yyY8JVXDOSyTbQzv/Q==
+homeDirectory: /home/harry
+uidNumber: 14000
+gidNumber: 205
+pwdReset: TRUE
+ds-sync-hist: dn:0000013a4be1b68e0aff00000008:add
+entryUUID: 135556a9-8884-499e-b368-c95f3bdfd487
+createTimestamp: 20121010181334Z
+creatorsName: cn=Directory Manager,cn=Root DNs,cn=config
+pwdChangedTime: 20121010181334.478Z
+
+dn: cn=nms,ou=group,dc=globaldomain
+objectClass: groupOfUniqueNames
+objectClass: posixGroup
+objectClass: top
+cn: nms
+gidNumber: 205
+memberUid: cindy
+memberUid: grace
+ds-sync-hist: dn:0000013a4be1cf920aff0000000a:add
+entryUUID: 83342a2f-76c0-4ee5-a7b5-de8b3ae276ce
+createTimestamp: 20121010181340Z
+creatorsName: cn=Directory Manager,cn=Root DNs,cn=config
+
+dn: cn=gruby,ou=group,dc=globaldomain
+objectClass: groupOfUniqueNames
+objectClass: posixGroup
+objectClass: top
+cn: gruby
+gidNumber: 5555
+ds-sync-hist: dn:0000013a4be1cf920aff0000000b:add
+entryUUID: b3d969d6-496d-4f83-82e8-3697e2efb5fa
+createTimestamp: 20121010181340Z
+creatorsName: cn=Directory Manager,cn=Root DNs,cn=config
+
+dn: cn=gdes,ou=group,dc=globaldomain
+objectClass: groupOfUniqueNames
+objectClass: posixGroup
+objectClass: top
+cn: gdes
+gidNumber: 1111
+ds-sync-hist: dn:0000013a4be1cf920aff0000000c:add
+entryUUID: 47ac9143-9168-4bbc-9283-e81f5c2330de
+createTimestamp: 20121010181340Z
+creatorsName: cn=Directory Manager,cn=Root DNs,cn=config
+
+dn: cn=gpaddy,ou=group,dc=globaldomain
+objectClass: groupOfUniqueNames
+objectClass: posixGroup
+objectClass: top
+cn: gpaddy
+gidNumber: 9999
+ds-sync-hist: dn:0000013a4be1cf920aff0000000d:add
+entryUUID: d9c910d5-5f22-4b75-b36c-870b1eb80ff1
+createTimestamp: 20121010181340Z
+creatorsName: cn=Directory Manager,cn=Root DNs,cn=config
+
+dn: cn=ggerry,ou=group,dc=globaldomain
+objectClass: groupOfUniqueNames
+objectClass: posixGroup
+objectClass: top
+cn: ggerry
+gidNumber: 6666
+ds-sync-hist: dn:0000013a4be1cf920aff0000000e:add
+entryUUID: 0b9166f5-984e-4d3a-a994-2b4bf07a8423
+createTimestamp: 20121010181340Z
+creatorsName: cn=Directory Manager,cn=Root DNs,cn=config
+
+dn: cn=gjack,ou=group,dc=globaldomain
+objectClass: groupOfUniqueNames
+objectClass: posixGroup
+objectClass: top
+cn: gjack
+gidNumber: 13000
+ds-sync-hist: dn:0000013a4be1cf920aff0000000f:add
+entryUUID: 395b81e6-bd88-44de-b2c4-7dcc5052c1b0
+createTimestamp: 20121010181340Z
+creatorsName: cn=Directory Manager,cn=Root DNs,cn=config
+
+dn: cn=gben,ou=group,dc=globaldomain
+objectClass: groupOfUniqueNames
+objectClass: posixGroup
+objectClass: top
+cn: gben
+gidNumber: 23000
+ds-sync-hist: dn:0000013a4be1cf920aff00000010:add
+entryUUID: 5826f6a2-d622-4b8c-ab5c-0d5179ab7242
+createTimestamp: 20121010181340Z
+creatorsName: cn=Directory Manager,cn=Root DNs,cn=config
+
+dn: cn=gtom,ou=group,dc=globaldomain
+objectClass: groupOfUniqueNames
+objectClass: posixGroup
+objectClass: top
+cn: gtom
+gidNumber: 15000
+ds-sync-hist: dn:0000013a4be1cf920aff00000011:add
+entryUUID: ef9a62e0-7acb-4123-8d71-9c92b6624668
+createTimestamp: 20121010181340Z
+creatorsName: cn=Directory Manager,cn=Root DNs,cn=config
+
+dn: cn=gcharlie,ou=group,dc=globaldomain
+objectClass: groupOfUniqueNames
+objectClass: posixGroup
+objectClass: top
+cn: gcharlie
+gidNumber: 16000
+ds-sync-hist: dn:0000013a4be1cf920aff00000012:add
+entryUUID: 27a78206-7800-4aa6-a0ea-07ed68ea1dc1
+createTimestamp: 20121010181340Z
+creatorsName: cn=Directory Manager,cn=Root DNs,cn=config
+
+dn: cn=gharry,ou=group,dc=globaldomain
+objectClass: groupOfUniqueNames
+objectClass: posixGroup
+objectClass: top
+cn: gharry
+gidNumber: 14000
+ds-sync-hist: dn:0000013a4be1cf920aff00000013:add
+entryUUID: 4a584333-1f11-4b14-9ecc-b6a1b7d24d75
+createTimestamp: 20121010181340Z
+creatorsName: cn=Directory Manager,cn=Root DNs,cn=config
+
+dn: cn=gcindy,ou=group,dc=globaldomain
+objectClass: groupOfUniqueNames
+objectClass: posixGroup
+objectClass: top
+cn: gcindy
+gidNumber: 28000
+ds-sync-hist: dn:0000013a4be1cf920aff00000014:add
+entryUUID: b480bdb3-1f3e-439b-99b2-53627e23c226
+createTimestamp: 20121010181340Z
+creatorsName: cn=Directory Manager,cn=Root DNs,cn=config
+
+dn: cn=ggrace,ou=group,dc=globaldomain
+objectClass: groupOfUniqueNames
+objectClass: posixGroup
+objectClass: top
+cn: ggrace
+gidNumber: 20000
+ds-sync-hist: dn:0000013a4be1cf920aff00000015:add
+entryUUID: bb285d81-86f0-4efd-b43d-ef142be269e6
+createTimestamp: 20121010181340Z
+creatorsName: cn=Directory Manager,cn=Root DNs,cn=config
+

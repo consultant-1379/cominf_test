@@ -1,0 +1,497 @@
+#!/bin/bash
+#################################################################################
+#
+#
+#       COPYRIGHT (C) ERICSSON RADIO SYSTEMS AB, Sweden
+#
+#       The copyright to the document(s) herein is the property of
+#       Ericsson Radio Systems AB, Sweden.
+#
+#       The document(s) may be used and/or copied only with the written
+#       permission from Ericsson Radio Systems AB or in accordance with
+#       the terms and conditions stipulated in the agreement/contract
+#       under which the document(s) have been supplied.
+#
+#################################################################################
+
+
+# ATCOMINF Test Callback Library
+
+# Revision History
+# <date>	xsougha		First Version		
+
+# Complete the callbacks in this library to automate the test case.
+#
+# Callbacks are stateless, it is not possible to set a global variable in one callback 
+# and access it it in another.
+#
+# Callbacks are called by the test harness in the following order:
+#
+# tc_setup() 		# Called only for independent TC execution mode to setup TC
+# tc_precon()		# Conditions that should exist before TC can run
+# tc_test()		# Runs the test for this TC
+# tc_postcon()		# Conditions that should/should not exist after successful TC 
+# tc_cleanup()		# Called only for independent TC execution mode to cleanup after TC
+
+# All callbacks must PASS for a TC PASS result
+
+#################################################################################
+#
+# CALLBACK: TC_SETUP
+#
+# This callback function is only called if the harness execution mode is 'AT_INDEPENDENT'
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+pkginfo ERICodj 2> /dev/null 
+ret=$?
+if [[ $ret -eq 0 ]]; then
+	PATH_ADDUSER=/ericsson/opendj/bin/add_user.sh
+	PATH_DELUSER=/ericsson/opendj/bin/del_user.sh
+      	PATH_PRIVS=/ericsson/opendj/bin/manage_COM_privs.bsh
+	PATH_RESET_USR_PSWD=/ericsson/opendj/bin/reset_user_password.sh
+else
+
+	PATH_ADDUSER=/ericsson/sdee/bin/add_user.sh
+	PATH_DELUSER=/ericsson/sdee/bin/del_user.sh
+      	PATH_PRIVS=/ericsson/sdee/bin/manage_COM_privs.bsh
+	PATH_RESET_USR_PSWD=/ericsson/sdee/bin/reset_user_password.sh
+
+fi
+
+
+tc_setup() {
+	return 0
+}
+#################################################################################
+
+#################################################################################
+#
+# CALLBACK: TC_PRECON
+#
+# This callback function checks the correct conditions exist to run the TC.
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+ 
+tc_precon() {
+	return 0
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_TEST
+#
+# This callback function runs the test.
+# The harness compares the return code to the SPEC_TC_TEST_PASSCODE value set in the test spec.
+#
+# Return or exit codes:
+#    SPEC_TC_TEST_PASSCODE 	success
+# != SPEC_TC_TEST_PASSCODE 	failure
+ 
+tc_test() {
+        # Verifying help of the script reset_user_password.sh
+	# 1. Verifying error message upon entering invalid domain name
+        ${PATH_RESET_USR_PSWD} -d ldap27%@#.com
+        CONSOLE_OUTPUT_CONTAINS "ERROR: Invalid domain" || {
+                echo "Failed to verify help of reset_user_password.sh script upon entering invalid password"
+                return 1
+        }
+
+	# 2. Verifying error message upon entering invalid filename
+        ${AT_BIN}/con_ex.bsh -d 1785_verify_help_invalid_filename.in -o 1785_verify_help_invalid_filename.exp -c "${PATH_RESET_USR_PSWD} -f /var/tmp/dummy_file"
+        /usr/local/bin/expect 1785_verify_help_invalid_filename.exp
+        CONSOLE_OUTPUT_CONTAINS "ERROR: File [/var/tmp/dummy_file] doesn't exist." || {
+                echo "Failed to verify help of reset_user_password.sh script upon entering invalid filename"
+                return 1
+        }
+
+	# 3. Verifying error message upon entering invalid users in file
+	# Step 1: Creating invalid user entries in file
+	echo "prim1
+prim2
+prim3
+prim4" > /var/tmp/invalid_user_entries
+
+	# Step 2: Trying to reset passwords of invalid user entries
+        ${AT_BIN}/con_ex.bsh -d 1785_verify_help_invalid_user_entries.in -o 1785_verify_help_invalid_user_entries.exp -c "${PATH_RESET_USR_PSWD} -f /var/tmp/invalid_user_entries"
+        /usr/local/bin/expect 1785_verify_help_invalid_user_entries.exp 
+        CONSOLE_OUTPUT_CONTAINS "ERROR: Selected file /var/tmp/invalid_user_entries does not contain valid user name(s) from selected LDAP domain vts.com" || {
+                echo "Failed to verify help of reset_user_password.sh script upon entering invalid usernames in file"
+                return 1
+        }
+
+
+        # Adding a OSS_ONLY user
+        ${AT_BIN}/con_ex.bsh -d 1785_add_user_u1785.in -o 1785_add_user_u1785.exp -c "${PATH_ADDUSER}"
+        /usr/local/bin/expect 1785_add_user_u1785.exp
+        CONSOLE_OUTPUT_CONTAINS "OK: Account created" || {
+                echo "Failed to add user u1785"
+                return 1
+        }
+
+	# Adding a COM_APP user
+        ${AT_BIN}/con_ex.bsh -d 1785_add_user_uCOM_APP.in -o 1785_add_user_uCOM_APP.exp -c "${PATH_ADDUSER} -t COM_APP"
+        /usr/local/bin/expect 1785_add_user_uCOM_APP.exp
+        CONSOLE_OUTPUT_CONTAINS "OK: Account created" || {
+                echo "Failed to add user uCOM_APP"
+                return 1
+        }
+
+	# Adding a COM_OSS user
+	# Step 1: Adding a OSS user 
+        ${AT_BIN}/con_ex.bsh -d 1785_add_user_uCOM_OSS.in -o 1785_add_user_uCOM_OSS.exp -c "${PATH_ADDUSER}"
+        /usr/local/bin/expect 1785_add_user_uCOM_OSS.exp
+        CONSOLE_OUTPUT_CONTAINS "OK: Account created" || {
+                echo "Failed to add user uCOM_OSS"
+                return 1
+        }
+
+	# Step 2: Converting the OSS user to COM_OSS user 
+        ${AT_BIN}/con_ex.bsh -d 1785_add_target_to_user_uCOM_OSS.in -o 1785_add_target_to_user_uCOM_OSS.exp -c "${PATH_PRIVS} -a target -T target1 -u uCM_OSS"
+        /usr/local/bin/expect 1785_add_target_to_user_uCOM_OSS.exp
+        CONSOLE_OUTPUT_CONTAINS "INFO : Successfully added target" || {
+                echo "Failed to convert user uCOM_OSS to COM_OSS user"
+                return 1
+        }
+
+	# Adding a COM_ONLY user
+        ${AT_BIN}/con_ex.bsh -d 1785_add_user_uCOM_ONLY.in -o 1785_add_user_uCOM_ONLY.exp -c "${PATH_ADDUSER} -t COM_ONLY"
+        /usr/local/bin/expect 1785_add_user_uCOM_ONLY.exp
+        CONSOLE_OUTPUT_CONTAINS "OK: Account created" || {
+                echo "Failed to add user uCOM_ONLY"
+                return 1
+        }
+
+	# Trying to reset bulk user passwords using "-f" option of a list of both valid as well as invalid users 
+	# Step 1: Creating file containing usernames
+	echo "prim1
+uCM_APP
+prim2
+prim3
+uCM_OSS
+prim4" > /var/tmp/users_file || {
+		echo "Failed to add users to file"
+		return 1
+	}  
+
+	# Step 2: Resetting all user passwords contained in file
+        ${AT_BIN}/con_ex.bsh -d 1785_reset_all_user_passwords_from_file.in -o 1785_reset_all_user_passwords_from_file.exp -c "${PATH_RESET_USR_PSWD} -f /var/tmp/users_file"
+        /usr/local/bin/expect 1785_reset_all_user_passwords_from_file.exp 
+	CONSOLE_OUTPUT_CONTAINS "WARNING: Following user name(s) does not exist/invalid, password reset will not be applied" || {
+                echo "Failed to reset all user passwords from file"
+                return 1
+        }
+
+	CONSOLE_OUTPUT_CONTAINS "INFO: Password Reset Applied for Local User [uCM_APP] of Type [COM_APP] in domain [vts.com]" || {
+		echo "Failed to reset password for user uCM_APP"
+		return 1
+	}
+
+	CONSOLE_OUTPUT_CONTAINS "INFO: Password Reset Applied for Local User [uCM_OSS] of Type [COM_OSS] in domain [vts.com]" || {
+                echo "Failed to reset password for user uCM_OSS"
+                return 1
+        }
+
+	# Trying to reset user passwords from an empty file
+	# Step 1: Creating an empty users file
+	touch /var/tmp/empty_users_file
+
+	# Step 2: Trying to reset user passwords from the empty users file created
+        ${AT_BIN}/con_ex.bsh -d 1785_reset_all_user_passwords_from_empty_file.in -o 1785_reset_all_user_passwords_from_empty_file.exp -c "${PATH_RESET_USR_PSWD} -f /var/tmp/empty_users_file"
+        /usr/local/bin/expect 1785_reset_all_user_passwords_from_empty_file.exp
+        CONSOLE_OUTPUT_CONTAINS "ERROR: File [/var/tmp/empty_users_file] is empty" || {
+                echo "Failed to verify resetting of user passwords from empty file"
+                return 1
+        }
+
+	# Verifying -h with all other options 
+	${PATH_RESET_USR_PSWD} -h -d ldap274.com
+	CONSOLE_OUTPUT_CONTAINS "Usage:  reset_user_password.sh [-G] [-d <domain>] [-u <user name>] [-f <file path>] [-t <User type>] [-a] [-h]" || {
+		echo "Failed to verify -h with other script options"
+		return 1
+	}
+
+        ${PATH_RESET_USR_PSWD} -h -a
+        CONSOLE_OUTPUT_CONTAINS "Usage:  reset_user_password.sh [-G] [-d <domain>] [-u <user name>] [-f <file path>] [-t <User type>] [-a] [-h]" || {
+                echo "Failed to verify -h with other script options"
+                return 1
+        }
+
+	${PATH_RESET_USR_PSWD} -u primary1
+	CONSOLE_OUTPUT_CONTAINS "Usage:  reset_user_password.sh [-G] [-d <domain>] [-u <user name>] [-f <file path>] [-t <User type>] [-a] [-h]" || {
+		echo "Failed to verify -h with other script options"
+		return 1
+	}
+
+	${PATH_RESET_USR_PSWD} -f /var/tmp/file1
+        CONSOLE_OUTPUT_CONTAINS "Usage:  reset_user_password.sh [-G] [-d <domain>] [-u <user name>] [-f <file path>] [-t <User type>] [-a] [-h]" || {
+                echo "Failed to verify -h with other script options"
+                return 1
+        }
+
+	${PATH_RESET_USR_PSWD} -h -t COM_APP
+        CONSOLE_OUTPUT_CONTAINS "Usage:  reset_user_password.sh [-G] [-d <domain>] [-u <user name>] [-f <file path>] [-t <User type>] [-a] [-h]" || {
+                echo "Failed to verify -h with other script options"
+                return 1
+        }
+
+	${PATH_RESET_USR_PSWD} -h -t COM_OSS
+        CONSOLE_OUTPUT_CONTAINS "Usage:  reset_user_password.sh [-G] [-d <domain>] [-u <user name>] [-f <file path>] [-t <User type>] [-a] [-h]" || {
+                echo "Failed to verify -h with other script options"
+                return 1
+        }
+
+	${PATH_RESET_USR_PSWD} -h -t COM_ONLY
+        CONSOLE_OUTPUT_CONTAINS "Usage:  reset_user_password.sh [-G] [-d <domain>] [-u <user name>] [-f <file path>] [-t <User type>] [-a] [-h]" || {
+                echo "Failed to verify -h with other script options"
+                return 1
+        }
+
+	${PATH_RESET_USR_PSWD} -h -t OSS_ONLY
+        CONSOLE_OUTPUT_CONTAINS "Usage:  reset_user_password.sh [-G] [-d <domain>] [-u <user name>] [-f <file path>] [-t <User type>] [-a] [-h]" || {
+                echo "Failed to verify -h with other script options"
+                return 1
+        }
+
+	# Trying to reset nmsadm password
+        ${AT_BIN}/con_ex.bsh -d 1785_reset_nmsadm_user_passwords_from_file.in -o 1785_reset_nmsadm_user_passwords_from_file.exp -c "${PATH_RESET_USR_PSWD} -u nmsadm"
+        /usr/local/bin/expect 1785_reset_nmsadm_user_passwords_from_file.exp
+        CONSOLE_OUTPUT_CONTAINS "ERROR: User name nmsadm is not supported" || {
+                echo "Failed to verify resetting of password for nmsadm"
+                return 1
+        }
+
+	# Trying to reset user with invalid user type
+	${PATH_RESET_USR_PSWD} -t abcd -d vts.com
+        CONSOLE_OUTPUT_CONTAINS "ERROR: User type abcd  is not valid" || {
+                echo "Failed to verify resetting of password for invalid user type"
+                return 1
+        }
+
+	# Trying to reset user passwords with invalid combinations
+	# 1. Invalid combination -a -u primary1
+	${PATH_RESET_USR_PSWD} -a -u primary1
+        CONSOLE_OUTPUT_CONTAINS "Usage:  reset_user_password.sh [-G] [-d <domain>] [-u <user name>] [-f <file path>] [-t <User type>] [-a] [-h]" || {
+                echo "Failed to verify -h with other script options"
+                return 1
+        }
+
+	# 2. Invalid combination -a -f /var/tmp/file1
+        ${PATH_RESET_USR_PSWD} -a -f /var/tmp/file1
+        CONSOLE_OUTPUT_CONTAINS "Usage:  reset_user_password.sh [-G] [-d <domain>] [-u <user name>] [-f <file path>] [-t <User type>] [-a] [-h]" || {
+                echo "Failed to verify -h with other script options"
+                return 1
+        }
+
+	# 3. Invalid combination -f /var/tmp/file1 -t COM_APP
+        ${PATH_RESET_USR_PSWD} -f /var/tmp/file1 -t COM_APP
+        CONSOLE_OUTPUT_CONTAINS "Usage:  reset_user_password.sh [-G] [-d <domain>] [-u <user name>] [-f <file path>] [-t <User type>] [-a] [-h]" || {
+                echo "Failed to verify -h with other script options"
+                return 1
+        }
+
+	# 4. Invalid combination -a -t COM_APP
+        ${PATH_RESET_USR_PSWD} -a -t COM_APP
+        CONSOLE_OUTPUT_CONTAINS "Usage:  reset_user_password.sh [-G] [-d <domain>] [-u <user name>] [-f <file path>] [-t <User type>] [-a] [-h]" || {
+                echo "Failed to verify -h with other script options"
+                return 1
+        }
+
+	# 5. Invalid combination -t COM_APP -f file1
+	${PATH_RESET_USR_PSWD} -t COM_APP -f file1
+        CONSOLE_OUTPUT_CONTAINS "Usage:  reset_user_password.sh [-G] [-d <domain>] [-u <user name>] [-f <file path>] [-t <User type>] [-a] [-h]" || {
+                echo "Failed to verify -h with other script options"
+                return 1
+        }
+
+	# 6. Invalid combination -d -G ldap.com
+	${PATH_RESET_USR_PSWD} -d -G vts.com
+        CONSOLE_OUTPUT_CONTAINS "Usage:  reset_user_password.sh [-G] [-d <domain>] [-u <user name>] [-f <file path>] [-t <User type>] [-a] [-h]" || {
+                echo "Failed to verify -h with other script options"
+                return 1
+        }
+
+	# 7. Invalid combination -f file1 -u user1
+	${PATH_RESET_USR_PSWD} -f file1 -u user1
+        CONSOLE_OUTPUT_CONTAINS "Usage:  reset_user_password.sh [-G] [-d <domain>] [-u <user name>] [-f <file path>] [-t <User type>] [-a] [-h]" || {
+                echo "Failed to verify -h with other script options"
+                return 1
+        }
+
+	# 8. Invalid combination -u user1 -t COM_APP
+        ${PATH_RESET_USR_PSWD} -u user1 -t COM_APP
+        CONSOLE_OUTPUT_CONTAINS "Usage:  reset_user_password.sh [-G] [-d <domain>] [-u <user name>] [-f <file path>] [-t <User type>] [-a] [-h]" || {
+                echo "Failed to verify -h with other script options"
+                return 1
+        }
+
+	# 9. Invalid combination -u user1 -f file1
+        ${PATH_RESET_USR_PSWD} -u user1 -f file1
+        CONSOLE_OUTPUT_CONTAINS "Usage:  reset_user_password.sh [-G] [-d <domain>] [-u <user name>] [-f <file path>] [-t <User type>] [-a] [-h]" || {
+                echo "Failed to verify -h with other script options"
+                return 1
+        }
+
+	# Trying to reset user passwords with file containing digits as usernames 
+	# Step 1: Creating a file with username containing digits
+	echo "12345" > /var/tmp/file8
+
+	# Step 2: Trying to reset user password from file containing username as digits
+	${AT_BIN}/con_ex.bsh -d 1785_reset_user_passwords_from_file_usernames_with_digits.in -o 1785_reset_user_passwords_from_file_usernames_with_digits.exp -c "${PATH_RESET_USR_PSWD} -f /var/tmp/file8"
+	/usr/local/bin/expect 1785_reset_user_passwords_from_file_usernames_with_digits.exp	
+        CONSOLE_OUTPUT_CONTAINS "ERROR: Selected file /var/tmp/file8 does not contain valid user name(s) from selected LDAP domain vts.com" || {
+		echo "Failed to verify resetting user password from file containing username as digits"
+                return 1
+        }
+
+	# Trying to reset user passwords with file containing username length more than 8
+	# Step 1: Creating a file with username of length more than 8
+	echo "uSampleUser" > /var/tmp/sample_user_file
+	
+	# Step 2: Trying to reset user password from file containing username of length more than 8
+	${AT_BIN}/con_ex.bsh -d 1785_reset_user_passwords_from_file_usernames_length_more_than_8.in -o 1785_reset_user_passwords_from_file_usernames_length_more_than_8.exp -c "${PATH_RESET_USR_PSWD} -f /var/tmp/sample_user_file"
+	/usr/local/bin/expect 1785_reset_user_passwords_from_file_usernames_length_more_than_8.exp
+        CONSOLE_OUTPUT_CONTAINS "ERROR: Selected file /var/tmp/sample_user_file does not contain valid user name(s) from selected LDAP domain vts.com" || {
+                echo "Failed to verify resetting user password from file containing username with lengths more than 8"
+                return 1
+        }
+
+	# Trying to reset user passwords of users entered multiple times in a file
+	# Step 1: Creating a file containing same username multiple times
+	echo "u1785
+u1785
+u1785
+u1785
+u1785" > /var/tmp/file_containing_same_usernames
+
+	# Step 2:
+        ${AT_BIN}/con_ex.bsh -d 1785_reset_user_passwords_from_file_same_usernames.in -o 1785_reset_user_passwords_from_file_same_usernames.exp -c "${PATH_RESET_USR_PSWD} -f /var/tmp/file_containing_same_usernames"
+        /usr/local/bin/expect 1785_reset_user_passwords_from_file_same_usernames.exp
+        CONSOLE_OUTPUT_CONTAINS "INFO: Password Reset Applied for Local User [u1785] of Type [OSS_ONLY] in domain [vts.com]" || {
+                echo "Failed to verify resetting user password from file containing same username"
+                return 1
+        }
+
+	# Trying to reset user passwords of alternative user entries made alternatively in a file
+	# Step 1: Creating a file with alternative usernames
+	cat "u1785
+uCM_APP
+u1785
+u1785
+uCM_APP" > /var/tmp/file_containing_alternative_usernames
+
+	# Step 2:
+        ${AT_BIN}/con_ex.bsh -d 1785_reset_user_passwords_from_file_alternative_usernames.in -o 1785_reset_user_passwords_from_file_alternative_usernames.exp -c "${PATH_RESET_USR_PSWD} -f /var/tmp/file_containing_alternative_usernames"
+        /usr/local/bin/expect 1785_reset_user_passwords_from_file_alternative_usernames.exp
+        CONSOLE_OUTPUT_CONTAINS "INFO: Password Reset Applied for Local User [u1785] of Type [OSS_ONLY] in domain [vts.com]" || {
+                echo "Failed to verify resetting u1785 user password from file containing alternative usernames"
+                return 1
+        }
+
+        CONSOLE_OUTPUT_CONTAINS "INFO: Password Reset Applied for Local User [uCM_APP] of Type [COM_APP] in domain [vts.com]" || {
+                echo "Failed to verify resetting uCM_APP user password from file containing alternative usernames"
+                return 1
+        }
+ 
+	return 0
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_POSTCON
+#
+# This callback function checks expected results.
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_postcon() {
+	return 0
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_CLEANUP
+#
+# This callback function is only called if the harness execution mode is 'AT_INDEPENDENT'
+# 
+# This callback restores the target system to the state it was in before the TC 
+# was run. It rolls back changes made by callbacks tc_setup() and tc_test()
+# 
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_cleanup() {
+        # Deleting user u1785
+        ${AT_BIN}/con_ex.bsh -d 1785_del_user_u1785.in -o 1785_del_user_u1785.exp -c "${PATH_DELUSER}"
+        /usr/local/bin/expect 1785_del_user_u1785.exp
+        CONSOLE_OUTPUT_CONTAINS "OK: Account deleted" || {
+                echo "Failed to delete user u1785"
+                return 1
+        }
+
+        # Verifying whether user u1785 got successfully deleted
+        ldapsearch -D "cn=directory manager" -w ldappass -b "uid=u1785,ou=people,dc=vts,dc=com" "objectclass=*" && {
+                echo "User u1785 still exists. Failed to delete the same"
+                return 1
+        }
+
+        # Deleting user uCOM_APP
+        ${AT_BIN}/con_ex.bsh -d 1785_del_user_uCOM_APP.in -o 1785_del_user_uCOM_APP.exp -c "${PATH_DELUSER}"
+        /usr/local/bin/expect 1785_del_user_uCOM_APP.exp
+        CONSOLE_OUTPUT_CONTAINS "OK: Account deleted" || {
+                echo "Failed to delete user uCOM_APP"
+                return 1
+        }
+
+        # Verifying whether user uCOM_APP got successfully deleted
+        ldapsearch -D "cn=directory manager" -w ldappass -b "uid=uCM_APP,ou=people,dc=vts,dc=com" "objectclass=*" && {
+                echo "User uCOM_APP still exists. Failed to delete the same"
+                return 1
+        }
+
+        # Deleting user uCOM_OSS
+        ${AT_BIN}/con_ex.bsh -d 1785_del_user_uCOM_OSS.in -o 1785_del_user_uCOM_OSS.exp -c "${PATH_DELUSER}"
+        /usr/local/bin/expect 1785_del_user_uCOM_OSS.exp
+        CONSOLE_OUTPUT_CONTAINS "OK: Account deleted" || {
+                echo "Failed to delete user uCOM_OSS"
+                return 1
+        }
+
+        # Verifying whether user uCOM_APP got successfully deleted
+        ldapsearch -D "cn=directory manager" -w ldappass -b "uid=uCM_OSS,ou=people,dc=vts,dc=com" "objectclass=*" && {
+                echo "User uCOM_OSS still exists. Failed to delete the same"
+                return 1
+        }
+
+        # Deleting user uCM_ONLY
+        ${AT_BIN}/con_ex.bsh -d 1785_del_user_uCOM_ONLY.in -o 1785_del_user_uCOM_ONLY.exp -c "${PATH_DELUSER}"
+        /usr/local/bin/expect 1785_del_user_uCOM_ONLY.exp
+        CONSOLE_OUTPUT_CONTAINS "OK: Account deleted" || {
+                echo "Failed to delete user uCOM_ONLY"
+                return 1
+        }
+
+        # Verifying whether user uCOM_ONLY got successfully deleted
+        ldapsearch -D "cn=directory manager" -w ldappass -b "uid=uCM_ONLY,ou=people,dc=vts,dc=com" "objectclass=*" && {
+                echo "User uCOM_ONLY still exists. Failed to delete the same"
+                return 1
+        }
+
+	# Removing any temporary files used
+	rm -rf *.exp /var/tmp/users_file
+
+	return 0
+}

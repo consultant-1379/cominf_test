@@ -1,0 +1,15 @@
+#!/bin/bash
+
+# TEST SUITE SPEC FILE
+# This file is generated/updated using the test framework web interface.
+# Manual updates on test servers are lost when the test package is re-installed.
+#
+# Last modified: Tuesday 20th of November 2012 10:43:18
+#
+SPEC_TS_NAME=JASS_X86OSS_HARDENING
+SPEC_TS_ID=28
+SPEC_TS_SLOGAN="Apply JASS Node Hardening on the OSS x86 2 node cluster"
+SPEC_TS_TIMEOUT=3600
+SPEC_TS_AUTHOR="eeidle"
+SPEC_TS_INDEPENDENT=1
+SPEC_TS_TC_IDS=(782)

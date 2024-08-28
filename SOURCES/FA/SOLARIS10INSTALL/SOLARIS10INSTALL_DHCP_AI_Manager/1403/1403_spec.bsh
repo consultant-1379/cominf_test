@@ -1,0 +1,68 @@
+#!/bin/bash
+
+# TEST CASE SPEC FILE
+# This file is generated/updated using the test framework web interface.
+# Manual updates on test servers are lost when the test package is re-installed.
+#
+# Last modified: Monday 16th of December 2013 10:17:19
+#
+
+# These settings must be in BASH script format, they are sourced by other scripts.
+SPEC_FA_NAME="SOLARIS10INSTALL"
+SPEC_UC_NAME="SOLARIS10INSTALL_DHCP_AI_Manager"
+SPEC_TC_ID=1403
+SPEC_TC_SLOGAN="usage "
+SPEC_TC_TYPE="FT"
+SPEC_TC_POLARITY="positive"
+SPEC_TC_PRIORITY="high"
+SPEC_TC_AUTOMATED=0
+SPEC_TC_DEPENDENT_ONLY=0
+SPEC_TC_TIMEOUT=300
+SPEC_TC_TEST_PASSCODE=0
+SPEC_TC_AUTHOR="xgansre"
+SPEC_TC_AUTOMATOR="xgansre"
+# this parameter is not interpreted by harness
+SPEC_TC_DISABLED=0
+
+# Please do not remove the comment lines below.
+# They are used as section locators by the test harness.
+
+# BEGIN_PRE_CONDITIONS
+#
+#
+#Mars Path <Initial Installation/DHCP/AI Manager/ai_manager/DNS/initial installation  >
+# END_PRE_CONDITIONS
+
+
+# BEGIN_MANUAL_STEPS
+#Action 1:
+#
+#Add DNS server to a network using /ericsson/ocs/bin/ai_manager script in infra/o&m server on which DHCP service is 
+#
+#active by using "-add range" with only -d "<DNS name servers>"
+#
+#Action 2:
+#
+#Add DNS server to a network using /ericsson/ocs/bin/ai_manager script in infra/o&m server on which DHCP service 
+#
+#is active by using "-add range" witout giving any one of the arguments n <subnet mask> -r <router> -b <range 
+#
+#beginning ip> -e <range ending ip> -s <SMRS server address> -t "<Primary NTP time server> <Secondary NTP server>" 
+#
+#-w "<Primary web server> <Secondary web server>" 
+#
+# END_MANUAL_STEPS
+
+# BEGIN_POST_CONDITIONS
+#Result 1:
+#
+#/ericsson/ocs/bin/ai_manager script should not allow to add dns server to the network and should show error 
+#
+#message and usage of how to add DNS server using ai_manager script
+#
+#Result 2:
+#
+#/ericsson/ocs/bin/ai_manager script should not allow to add DNS server to the network and should show error 
+#
+#message and usage of how to add DNS server using ai_manager script 
+# END_POST_CONDITIONS

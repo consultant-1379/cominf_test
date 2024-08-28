@@ -1,0 +1,4 @@
+DOMAIN vts.com 
+ACTION add
+OBJECT target
+tu1401 tar1,tar2,tar3,tar4,tar5,tar6,tar7,tar8,tar9,tar10,tar11,tar12,tar13,tar14,tar15,tar16,tar17,tar18,tar19,tar20,tar21 

@@ -1,0 +1,15 @@
+#!/bin/bash
+
+# TEST SUITE SPEC FILE
+# This file is generated/updated using the test framework web interface.
+# Manual updates on test servers are lost when the test package is re-installed.
+#
+# Last modified: Friday 24th of May 2013 15:43:08
+#
+SPEC_TS_NAME=RB_test3
+SPEC_TS_ID=34
+SPEC_TS_SLOGAN="sparc patch test stamping"
+SPEC_TS_TIMEOUT=300
+SPEC_TS_AUTHOR="ebatric"
+SPEC_TS_INDEPENDENT=1
+SPEC_TS_TC_IDS=(192 720 742 803 938)

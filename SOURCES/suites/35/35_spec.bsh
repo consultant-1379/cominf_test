@@ -1,0 +1,15 @@
+#!/bin/bash
+
+# TEST SUITE SPEC FILE
+# This file is generated/updated using the test framework web interface.
+# Manual updates on test servers are lost when the test package is re-installed.
+#
+# Last modified: Friday 24th of May 2013 15:30:02
+#
+SPEC_TS_NAME=RB_test2
+SPEC_TS_ID=35
+SPEC_TS_SLOGAN="x86 patch test stamping "
+SPEC_TS_TIMEOUT=600
+SPEC_TS_AUTHOR="ebatric"
+SPEC_TS_INDEPENDENT=1
+SPEC_TS_TC_IDS=(785 783 794 784 416 938)

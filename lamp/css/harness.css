@@ -1,0 +1,735 @@
+body, p, div, span, td, blockquote {
+    font-family: Verdana, Arial, Helvetica, sans-serif;
+    font-size: 12pt;        
+    font-style: normal;     
+}
+
+h1, h2, h3, h4, h5, h6 {
+font-family: trebuchet ms, arial, verdana, lucida grande, sans-serif;
+line-height: normal;
+font-weight: bold;
+background-color: transparent;
+color: #003366;
+text-align: center;
+width: 300px;
+border-top: 2px solid #bd2025;
+border-bottom: 1px dotted #bd2025;
+padding-top: 0;
+margin-top: 0;
+}
+
+.solid {border-style: solid; border-width: 1px; } 
+.double {border-style: double; border-width: 1px; } 
+.groove {border-style: groove; border-width: 1px; } 
+.dotted {border-style: dotted; border-width: 1px; } 
+.dashed {border-style: dashed; border-width: 1px; } 
+.inset {border-style: inset; border-width: 1px; } 
+.outset {border-style: outset; border-width: 1px; } 
+.ridge {border-style: ridge; border-width: 1px; } 
+.hidden {border-style: hidden; border-width: 1px; }
+
+body {
+    background-color: #ffffff;
+}
+
+
+
+table.form {    
+  border: 0
+  cell-spacing: 2px;
+  border-spacing:2px;
+}
+
+
+
+td.formlabel, td.formfield, td.control {        
+  background-color: #EEF1FA;      
+  font-size: 10pt;        
+  font-style: normal;     
+  color: #000066; vertical-align: middle; 
+  padding: 7px;
+}
+
+.helptext {
+  font-size: 8pt;
+  font-weight: normal;
+}
+
+tr.grey {
+  background-color: #D3D3D3;      
+  font-size: 10pt;        
+  font-style: normal;     
+  font-weight: normal;     
+  color: #000000; 
+  vertical-align: middle; 
+}
+
+tr.admin {
+  background-color: #D3D3D3;
+  font-size: 10pt;
+  font-style: normal;
+  font-weight: normal;
+  color: #000000;
+  vertical-align: middle;
+ 
+}
+
+
+tr.normal {
+  background-color: #FFFFFF;
+  font-size: 10pt;
+  font-style: normal;
+  font-weight: normal;
+  color: #000000;
+  vertical-align: middle;
+}
+
+
+.formlabel { font-weight: bold;    text-align: left;}
+.formfield {    text-align: left;}
+
+.fieldnote {        
+  font-size: 8pt; font-style: normal;     
+}
+.fielderror {       
+  font-size: 8pt; font-style: normal;     
+  color: red;
+}
+
+input, select, textarea {
+  border: 1px solid #666666;
+
+}
+
+/*
+img {
+  display:block;
+  border: 0;
+}
+*/
+
+
+.warningcol {
+  font-size: 10pt; 
+  font-style: normal;     
+  color: orange ;
+}
+
+.newcol {
+  font-size: 10pt;
+  font-style: normal;
+  color: yellow ;
+}
+
+.activecol {
+  font-size: 10pt;
+  font-style: normal;
+  color: green ;
+}
+
+.body_blue_bold {
+        font-size: 12pt;
+        font-weight: bold;
+        color: #003399;
+        padding-top: 0px;
+}
+
+
+.body_bold {
+        font-size: 12pt;
+        font-weight: bold;
+        color: #000000;
+}
+
+.body_grey {
+        font-size: 10px;
+        font-weight: normal;
+        color: #808080;
+}
+
+.body_grey2 {
+        font-size: 12pt;
+        font-weight: normal;
+        color: #808080;
+}
+
+/* mouseovers for the side bar menu */
+td.mouseOut_sm_top {
+    background-image: url('/new/sm_top_out.gif');
+        text-align: left;
+}
+
+td.mouseOver_sm_top {
+    background-image: url('/new/sm_top_over.gif');
+        background-position: left;
+        text-align: left;
+        /*cursor: pointer; */
+}
+
+td.mouseOut_sm_mid {
+    background-image: url('/new/sm_mid_out.gif');
+        text-align: left;
+}
+
+td.mouseOver_sm_mid {
+    background-image: url('/new/sm_mid_over.gif');
+        background-position: left;
+        text-align: left;
+    /*cursor: pointer; */
+}
+
+td.mouseOut_sm_bot {
+    background-image: url('/new/sm_bot_out.gif');
+        text-align: left;
+/*      padding-bottom: 10px;*/
+}
+
+td.mouseOver_sm_bot {
+    background-image: url('/new/sm_bot_over.gif');
+        background-position: left;
+        text-align: left;
+    /*cursor: pointer; */
+/*      padding-bottom: 10px;*/
+}
+
+td.mouseOut {
+        background-image: url('/images/head_blu_up.gif');
+        text-align: center;
+        background-position: center;
+        cursor: pointer;
+}
+
+td.mouseOver {
+        background-image: url('/images/head_blu_dn.gif');
+        text-align: center;
+        background-position: center;
+        cursor: pointer;
+}
+
+td.em_mouseOut {
+        background-image: url('/images/head_pink_up.gif');
+        text-align: center;
+        background-position: center;
+        cursor: pointer;
+}
+
+td.em_mouseOver {
+        background-image: url('/images/head_pink_dn.gif');
+        text-align: center;
+        background-position: center;
+        cursor: pointer;
+}
+
+td.mem_mouseOut {
+        background-image: url('/images/head_mem_up.gif');
+        text-align: center;
+        background-position: center;
+}
+
+td.mem_mouseOver {
+        background-image: url('/images/head_mem_up.gif');
+        text-align: center;
+        background-position: center;
+}
+
+td.search_mouseOut {
+        background-image: url('/images/search_hd_adv_up.gif');
+        text-align: center;
+        background-position: center;
+        cursor: pointer;
+}
+
+td.search_mouseOver {
+        background-image: url('/images/search_hd_adv_up-over.gif');
+        text-align: center;
+        background-position: center;
+        cursor: pointer;
+}
+
+
+
+
+td.mouseOut_lg {
+        background-image: url('/new/but_up_lg.gif');
+        text-align: center;
+        background-position: center;
+}
+
+td.mouseOver_lg {
+        background-image: url('/new/but_over_lg.gif');
+        text-align: center;
+        background-position: center;
+        cursor: pointer;
+}
+
+
+a.sub_menu:link {
+        color: #003399;
+        text-decoration: none;
+        font-size: 12pt;
+        font-weight: normal;
+}
+
+a.sub_menu:visited {
+        color: #003399;
+        text-decoration: none;
+        font-size: 12pt;
+        font-weight: normal;
+}
+
+a.sub_menu:hover {
+        color: #003399;
+        text-decoration: none;
+        font-size: 12pt;
+        font-weight: normal;
+}
+
+a.sub_menu:active {
+        color: #003399;
+        text-decoration: none;
+        font-size: 12pt;
+        font-weight: normal;
+}
+
+a.footer:link {
+        color: #7a95ca;
+        font-size: 12pt;
+        font-weight: normal;
+        text-decoration: none;
+        vertical-align: middle;
+}
+
+a.footer:visited {
+        color: #7a95ca;
+        font-size: 12pt;
+        font-weight: normal;
+        text-decoration: none;
+        vertical-align: middle;
+}
+
+a.footer:hover {
+        color: #bccaeb;
+        font-size: 12pt;
+        font-weight: normal;
+        text-decoration: none;
+        vertical-align: middle;
+}
+
+a.footer:active {
+        color: #7a95ca;
+        font-size: 12pt;
+        font-weight: normal;
+        text-decoration: none;
+        vertical-align: middle;
+}
+
+a.hdr_link:link {
+        color: #003399;
+        text-decoration: none;
+        font-size: 12pt;
+        font-weight: bold;
+}
+
+a.hdr_link:visited {
+        color: #003399;
+        text-decoration: none;
+        font-size: 12pt;
+        font-weight: bold;
+}
+
+a.hdr_link:hover {
+        color: #003366;
+        text-decoration: none;
+        font-size: 12pt;
+        font-weight: bold;
+}
+
+a.hdr_link:active {
+        color: #003399;
+        text-decoration: none;
+        font-size: 12pt;
+        font-weight: bold;
+}
+
+a.hdr_link_red:link {
+        color: #bd2025;
+        text-decoration: none;
+        font-size: 12pt;
+        font-weight: bold;
+}
+
+a.hdr_link_red:visited {
+        color: #bd2025;
+        text-decoration: none;
+        font-size: 12pt;
+        font-weight: bold;
+}
+
+a.hdr_link_red:hover {
+        color: #bd2025;
+        text-decoration: none;
+        font-size: 12pt;
+        font-weight: bold;
+}
+
+a.hdr_link_red:active {
+        color: #bd2025;
+        text-decoration: none;
+        font-size: 12pt;
+        font-weight: bold;
+}
+
+
+a:link {
+    color: #003399;
+    text-decoration: none;
+        font-size: 12pt;
+}
+
+a:visited {
+    color: #003399;
+    text-decoration: none;
+        font-size: 12pt;
+}
+
+a:hover {
+    color: #003399;
+    text-decoration: none;
+        font-size: 12pt;
+}
+
+a:active {
+    color: #003399;
+    text-decoration: none;
+        font-size: 12pt;
+}
+
+
+dt {
+        font-weight: bold;
+
+
+
+}
+
+
+.hdr_blue {
+    padding-left: 20px;
+    color: #003399;
+    font-size: 12pt;
+    font-weight: bold;
+    font-family:  arial;
+}
+
+.hdr_red {
+    padding-left: 20px;
+    color: #bd2025;
+    font-size: 12pt;
+    font-weight: bold;
+    font-family:  arial;
+}
+
+.hr_blue {
+    background-color: #003399;
+    color: #003399;
+}
+
+.hr_skyblue {
+    background-color: #003399;
+    color: #D0DAEC;
+}
+
+
+.blue_10b {
+    color: #003399;
+    font-size: 10px;
+    font-weight: bold;
+}
+
+.blue_12b {
+    color: #003399;
+    font-size: 12pt;
+    font-weight: bold;
+}
+
+
+.poll {
+    padding-left: 20px;
+}
+
+.grey_9 {
+        color: #666666;
+        font-size: 9px;
+        font-weight: normal;
+}
+
+.grey_10 {
+        color: #666666;
+        font-size: 10px;
+        font-weight: normal;
+}
+
+.grey_11 {
+        color: #666666;
+        font-size: 12pt;
+        font-weight: normal;
+}
+
+.homegrtstr {
+  position: relative; 
+  left: 10px; 
+  top: 40px; 
+  color: #000000; 
+  font-weight: bold
+}
+
+.homegrtstr2 {
+  position: relative; 
+  left: 100px; 
+  bottom: 50px; 
+  color: #000000; 
+  font-weight: bold
+}
+
+.headerbar {
+   color: #FFF;
+   font-size: 12pt;
+   font-weight: bold;
+   position: relative;
+   left: 20px;
+
+}
+
+#menu {
+ 
+
+}
+
+#menu ul {
+  color: #FFF;
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+#menu ul li {
+  padding: 0;
+  margin: 0;
+}
+
+#menu ul a  {
+        color: #003399;
+        height: 25px;
+        width: 130px;
+        line-height: 25px;
+        background: url(http://www.irishhealthjobs.ie/images/button-back.gif) #fff bottom left repeat-x;
+        display: block;
+        border: 0.1em solid #dcdce9;
+        font-size: 8pt;
+        font-family:  Arial, Helvetica, sans-serif;
+        font-weight: bold;
+        text-decoration: none;
+        text-align: left;
+        padding-left: 10px;
+       
+        
+}
+
+#menu a:hover {
+     color: #007CC1;
+}
+
+#menu a:active {
+    color: #FF0000;
+    
+}
+
+#navigation {
+	float: left;
+	width: 150 px;
+}
+
+#content {
+	margin-left: 160px;
+}
+
+#navigation2 {
+	float: left;
+	width: 135 px;
+}
+
+#content2 {
+	margin-left: 145px;
+}
+
+
+
+#application table {
+  border: 1px dashed #90A7D2;
+} 
+
+#search123 img {
+  border: 0;
+  
+}
+
+#search123 input, select {
+  width: 180px;
+}
+
+#search123  table table {
+  padding-left: 30px;
+}
+
+#loginpanel {
+  #padding-left: 7px;
+  margin-top: 0;
+  padding-top: 0;
+}
+
+#loginpanel ul {
+  padding-top: 5px;
+  padding-left: 5px;
+  margin: 0;
+  list-style: none;
+
+}
+
+#loginpanel ul li {
+  padding:  5px 0 5px 0;
+}
+
+#loginpanel input {
+  font-size: 7pt;
+  width: 120px;
+}
+
+#loginpanel span input {
+  padding: 0px;
+  width: 15px;
+  height: 15px;
+}
+
+#loginpanel div {
+  padding-left: 7px;
+}
+
+/*
+#adlist table {
+  padding: 0px;
+  border: 1px dashed #90A7D2;
+} 
+
+*/
+
+#adlist table table {
+  width: 550px;
+  padding: 5px;
+  border: 1px solid #ccc;
+} 
+
+
+
+
+.tdback1 {
+  height: 20px;
+  padding: 0;
+  background: url(http://www.irishhealthjobs.ie/images/blue_bar.gif) #fff bottom left repeat-x;
+
+}
+
+
+div a.link_button1  {
+        color: #003399;
+        height: 38px;
+        width: 153px;
+        line-height: 25px;
+        background: url(http://www.irishhealthjobs.ie/images/blank_red.gif) #fff top left no-repeat;
+        display: block;
+        padding-top: 5px;
+        font-size: 8pt;
+        font-family:  Verdana, Arial, Helvetica, sans-serif;
+        font-weight: bold;
+        text-decoration: none;
+        text-align: center;
+        /*margin:auto;*/
+       
+        
+}
+
+div a.link_button2  {
+        color: #003399;
+        height: 38px;
+        width: 153px;
+        line-height: 25px;
+        background: url(http://www.irishhealthjobs.ie/images/blank_blue.gif) #fff top left no-repeat;
+        display: block;
+        padding-top: 5px;
+        font-size: 8pt;
+        font-family:  Verdana, Arial, Helvetica, sans-serif;
+        font-weight: bold;
+        text-decoration: none;
+        text-align: center;
+        /*margin:auto;*/
+       
+        
+}
+/* link buttons */
+div.btns{
+	zoom:1;
+	white-space:nowrap;
+}
+
+div.btns:after
+{
+	display:block;
+	clear:both;
+	content:'';
+}
+
+div.btns a.btn{
+	float:left;
+	background:buttonface url(http://www.irishhealthjobs.ie/images/border-2.gif) no-repeat;cursor:pointer;font-size:0;text-align:center;
+	text-align:center;
+	display:block;
+	_width:140px;
+	min-width:140px;
+	text-decoration:none;
+	margin:3px 2px;
+}
+
+div.btns a.btn:hover span{
+	
+	opacity:0.6;
+	filter:alpha(opacity:80);
+}
+
+div.btns a.btn span
+{
+	padding:3px 8px 4px 8px;
+	
+	text-align:center;
+	position:relative;
+	left:1px;top:1px;
+	display:block;
+	text-decoration:none;
+	background:url(http://www.irishhealthjobs.ie/images/border.gif) right bottom no-repeat;
+	font:small/1 Verdana;
+	color:#222;
+	
+}
+
+#popup p.footer {
+  width: 595px;
+  height: 53px;
+  background: url(http://www.irishhealthjobs.ie/images/blue_grad.gif) #fff bottom left repeat-x;
+}
+
+#adminnavigation {
+	float: left;
+	width: 170 px;
+}
+
+#admincontent {
+	margin-left: 180px;
+}

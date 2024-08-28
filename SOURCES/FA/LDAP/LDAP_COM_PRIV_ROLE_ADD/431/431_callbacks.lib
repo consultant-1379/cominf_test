@@ -1,0 +1,373 @@
+#!/bin/bash
+#################################################################################
+#
+#
+#	   COPYRIGHT (C) ERICSSON RADIO SYSTEMS AB, Sweden
+#
+#	   The copyright to the document(s) herein is the property of
+#	   Ericsson Radio Systems AB, Sweden.
+#
+#	   The document(s) may be used and/or copied only with the written
+#	   permission from Ericsson Radio Systems AB or in accordance with
+#	   the terms and conditions stipulated in the agreement/contract
+#	   under which the document(s) have been supplied.
+#
+#################################################################################
+
+
+# ATCOMINF Test Callback Library
+
+# Revision History
+# 20/09/13	xkalbha		Initial test for adding duplicate and multiple roles
+
+# Complete the callbacks in this library to automate the test case.
+#
+# Callbacks are stateless, it is not possible to set a global variable in one callback 
+# and access it it in another.
+#
+# Callbacks are called by the test harness in the following order:
+#
+# tc_setup() 		# Called only for independent TC execution mode to setup TC
+# tc_precon()		# Conditions that should exist before TC can run
+# tc_test()		# Runs the test for this TC
+# tc_postcon()		# Conditions that should/should not exist after successful TC 
+# tc_cleanup()		# Called only for independent TC execution mode to clenup after TC
+
+# All callbacks must PASS for a TC PASS result
+
+#################################################################################
+#
+# CALLBACK: TC_SETUP
+#
+# This callback function is only called if the harness execution mode is 'AT_INDEPENDENT'
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_setup() {
+
+# Replace PASSWD and other fields in input file(s) with the correct credentials or data
+    for ii in *.in; do
+        sed -e "s/^PASSWD$/$LDAP_SUPERUSER_PASSWD/" \
+            -e "s/TESTROLE1/$TEST_ROLE1/" \
+            -e "s/TESTROLE2/$TEST_ROLE2/" \
+            -e "s/UPASSWD/12345678/" $ii > $ii.tmp || {
+            echo "Failed to replace LDAP superuser password holder etc in /usr/local/bin/expect input file $ii, rc $?"
+            return 6
+        }
+    done
+
+
+
+	
+#-------------------------------------------------------------------------------
+# Create a test user  
+#-------------------------------------------------------------------------------
+
+	CMD='/ericsson/sdee/bin/add_user.sh -t COM_ONLY -d 1.com -n u431 -i 1431 -C bhavana -y'
+	${AT_BIN}/con_ex.bsh -d 431adduser.in.tmp -o 431adduser.exp -c "$CMD" || {
+		echo "Failed to generate /usr/local/bin/expect script, $?"
+		return 1
+	}
+
+	/usr/local/bin/expect 431adduser.exp || {
+		echo "Failed to create user, error code $?"
+		return 2
+	}
+	
+#-------------------------------------------------------------------------------
+# Create a test role
+#-------------------------------------------------------------------------------
+
+	CMD='/ericsson/sdee/bin/manage_COM.bsh -a role -d 1.com -R role431a -y'
+	${AT_BIN}/con_ex.bsh -d 431.in.tmp -o 431addrole.exp -c "$CMD" || {
+		echo "Failed to generate /usr/local/bin/expect script, $?"
+		return 3
+	}
+
+	/usr/local/bin/expect 431addrole.exp || {
+		echo "Failed to create role, error code $?"
+		return 4
+	}
+#-------------------------------------------------------------------------------
+# Create a 2nd test role
+#-------------------------------------------------------------------------------
+
+	CMD='/ericsson/sdee/bin/manage_COM.bsh -a role -d 1.com -R role431b -y'
+	${AT_BIN}/con_ex.bsh -d 431.in.tmp -o 431addrole.exp -c "$CMD" || {
+		echo "Failed to generate /usr/local/bin/expect script, $?"
+		return 5
+	}
+
+	/usr/local/bin/expect 431addrole.exp || {
+		echo "Failed to create role, error code $?"
+		return 6
+	}
+#-------------------------------------------------------------------------------
+# Create a 3rd test role
+#-------------------------------------------------------------------------------
+
+	CMD='/ericsson/sdee/bin/manage_COM.bsh -a role -d 1.com -R role431c -y'
+	${AT_BIN}/con_ex.bsh -d 431.in.tmp -o 431addrole.exp -c "$CMD" || {
+		echo "Failed to generate /usr/local/bin/expect script, $?"
+		return 7
+	}
+
+	/usr/local/bin/expect 431addrole.exp || {
+		echo "Failed to create role, error code $?"
+		return 8
+	}
+
+#-------------------------------------------------------------------------------
+# Create a 4th test role
+#-------------------------------------------------------------------------------
+
+	CMD='/ericsson/sdee/bin/manage_COM.bsh -a role -d 1.com -R role431d -y'
+	${AT_BIN}/con_ex.bsh -d 431.in.tmp -o 431addrole.exp -c "$CMD" || {
+		echo "Failed to generate /usr/local/bin/expect script, $?"
+		return 9
+	}
+
+	/usr/local/bin/expect 431addrole.exp || {
+		echo "Failed to create role, error code $?"
+		return 10
+	}
+
+#-------------------------------------------------------------------------------
+# Create a test target
+#-------------------------------------------------------------------------------
+
+	CMD='/ericsson/sdee/bin/manage_COM_privs.bsh -a target -d 1.com -u u431 -T target1 -y'
+	${AT_BIN}/con_ex.bsh -d 431.in.tmp -o 431addtarget.exp -c "$CMD" || {
+		echo "Failed to generate /usr/local/bin/expect script, $?"
+		return 11
+	}
+
+	/usr/local/bin/expect 431addtarget.exp || {
+		echo "Failed to create target, error code $?"
+		return 12
+	}
+	
+	return 0
+}
+
+#################################################################################
+#
+# CALLBACK: TC_PRECON
+#
+# This callback function checks the correct conditions exist to run the TC.
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+ 
+tc_precon() {
+
+#-------------------------------------------------------------------------------
+#  Check LDAP is running
+#-------------------------------------------------------------------------------
+
+	LDAP_SERVER_UP || {
+		echo "LDAP server not running"
+		return 1
+	}
+
+#-------------------------------------------------------------------------------
+#  Test user is present
+#-------------------------------------------------------------------------------
+
+	/usr/bin/ldapsearch -D 'cn=Directory Manager' -w $LDAP_SUPERUSER_PASSWD -b uid=u431,ou=people,dc=1,dc=com objectclass=* > u431.out || {
+		echo "Failed to do LDAP search"
+		return 1
+	}
+	grep 'ericssonUserAuthenticationScope: target1' u431.out || {
+		echo "Failed to find target1 for user u431"
+		return 2
+	}
+	/usr/bin/ldapsearch  -D 'cn=Directory Manager' -w $LDAP_SUPERUSER_PASSWD -b cn=role431a,ou=role,ou=com,dc=1,dc=com objectclass=* | grep 'cn: role431a' || {
+		echo "Failed to find 431a"
+		return 3
+	}
+
+	/usr/bin/ldapsearch  -D 'cn=Directory Manager' -w $LDAP_SUPERUSER_PASSWD -b cn=role431b,ou=role,ou=com,dc=1,dc=com objectclass=* | grep 'cn: role431b' || {
+		echo "Failed to find 431b"
+		return 4
+	}
+
+	/usr/bin/ldapsearch  -D 'cn=Directory Manager' -w $LDAP_SUPERUSER_PASSWD -b cn=role431c,ou=role,ou=com,dc=1,dc=com objectclass=* | grep 'cn: role431c' || {
+		echo "Failed to find 431c"
+		return 5
+	}
+
+	/usr/bin/ldapsearch   -D 'cn=Directory Manager' -w $LDAP_SUPERUSER_PASSWD -b cn=role431d,ou=role,ou=com,dc=1,dc=com objectclass=* | grep 'cn: role431d' || {
+		echo "Failed to find 431d"
+		return 6
+	}
+	return 0
+
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_TEST
+#
+# This callback function runs the test.
+# The harness compares the return code to the SPEC_TC_TEST_PASSCODE value set in the test spec.
+#
+# Return or exit codes:
+#	SPEC_TC_TEST_PASSCODE 	success
+# != SPEC_TC_TEST_PASSCODE 	failure
+ 
+tc_test() {
+	echo " Test1 add valid roles"
+	CMD='/ericsson/sdee/bin/manage_COM_privs.bsh -a role -d 1.com -u u431 -R role431a,role431b,role431c -y'
+	${AT_BIN}/con_ex.bsh -d 431.in.tmp -o 431.exp -c "$CMD" || {
+		echo "Failed to generate /usr/local/bin/expect script, $?"
+		return 1
+	}
+
+	/usr/local/bin/expect 431.exp || {
+		echo "Failed to add role to user, error code $?"
+		return 2
+	}
+	echo "Test2 add exisitng role"
+	CMD='/ericsson/sdee/bin/manage_COM_privs.bsh -a role -d 1.com -u u431 -R role431b -y'
+	${AT_BIN}/con_ex.bsh -d 431.in.tmp -o 431.exp -c "$CMD" || {
+		echo "Failed to generate /usr/local/bin/expect script, $?"
+		return 3
+	}
+
+	/usr/local/bin/expect 431.exp
+	retval=$?
+	[ $retval -eq 1 ] && { #Warning instead of error
+		echo "Wrong return on add duplicate role to user, error code $?"
+		return 4
+	}
+	echo "Test3 add exisitng and new role"
+	CMD='/ericsson/sdee/bin/manage_COM_privs.bsh -a role -d 1.com -u u431 -R role431c,role431d,role431NEW -y'
+	${AT_BIN}/con_ex.bsh -d 431.in.tmp -o 431.exp -c "$CMD" || {
+		echo "Failed to generate /usr/local/bin/expect script, $?"
+		return 5
+	}
+
+	/usr/local/bin/expect 431.exp || {
+		echo "Failed to add duplicate and new role to user, error code $?"
+		return 6
+	}
+	echo "Test4 add exisitng and new role"
+	CMD='/ericsson/sdee/bin/manage_COM_privs.bsh -a role -d 1.com -u u431 -R role431d,role431NEW2 -y'
+	${AT_BIN}/con_ex.bsh -d 431.in.tmp -o 431.exp -c "$CMD" || {
+		echo "Failed to generate /usr/local/bin/expect script, $?"
+		return 7
+	}
+
+	/usr/local/bin/expect 431.exp
+	retval=$?
+	[ $retval -eq 1 ] && {
+		echo "Wrong error when add duplicate and role not in domain, error code $?"
+		return 8
+	}
+	return 0
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_POSTCON
+#
+# This callback function checks expected results.
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_postcon() {
+
+	
+
+	/usr/bin/ldapsearch   -D 'cn=Directory Manager' -w $LDAP_SUPERUSER_PASSWD -b uid=u431,ou=people,dc=1,dc=com objectclass=* > ldap431.out || {
+		echo "Ldap search for user failed $?"
+		return 9
+	}
+
+	grep "ericssonUserAuthorizationScope: role431a" ldap431.out || {
+		echo "u431 user does not have role 431a ... This wasn't expected"
+		return 10
+	}
+
+	grep "ericssonUserAuthorizationScope: role431b" ldap431.out || {
+		echo "u431 user does not have role 431b ... This wasn't expected"
+		return 11
+	}
+
+	grep "ericssonUserAuthorizationScope: role431c" ldap431.out || {
+		echo "u431 user does not have role 431c ... This wasn't expected"
+		return 12
+	}
+
+	grep "ericssonUserAuthorizationScope: role431d" ldap431.out || {
+		echo "u431 user does not have role 431d ... This wasn't expected"
+		return 13
+	}
+
+	grep "role431NEW" ldap431.out && {
+		echo "Found role431NEW ... This wasn't expected"
+		return 14
+	}
+
+	CONSOLE_OUTPUT_CONTAINS "WARNING : role [role431b] already exists in u431's role list - ignored." || { echo "Test1: No duplicate error msg"; return 20; }
+	CONSOLE_OUTPUT_CONTAINS "WARNING : [role431NEW] does not exist in 1.com's role list - ignored." || { echo "Test2: No invalid role msg"; return 21; }
+	CONSOLE_OUTPUT_CONTAINS "WARNING : role [role431c] already exists in u431's role list - ignored." || { echo "Test2: No duplicate error msg"; return 22; }
+	CONSOLE_OUTPUT_CONTAINS "WARNING : [role431NEW2] does not exist in 1.com's role list - ignored." || { echo "Test3: No role does not exist msg"; return 23; }
+	CONSOLE_OUTPUT_CONTAINS "WARNING : role [role431d] already exists in u431's role list - ignored." || { echo "Test4: No role does not exist msg"; return 24; }
+
+	return 0
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_CLEANUP
+#
+# This callback function is only called if the harness execution mode is 'AT_INDEPENDENT'
+# 
+# This callback restores the target system to the state it was in before the TC 
+# was run. It rolls back changes made by callbacks tc_setup() and tc_test()
+# 
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_cleanup() {
+
+# Delete test user 1
+	echo "Deleting test user 1"
+        ${AT_BIN}/con_ex.bsh -d 431.in.tmp -o 431remuser.exp -c "/ericsson/sdee/bin/del_user.sh -d 1.com -n u431 -y" || {
+                echo "Failed to generate /usr/local/bin/expect script, $?"
+                return 1
+        }
+
+        /usr/local/bin/expect 431remuser.exp >/dev/null || {
+                echo "Failed to delete user, error code $?"
+                return 2
+        }
+     # Remove roles
+	echo "Deleting test user roles"
+        ${AT_BIN}/con_ex.bsh -d 431.in.tmp -o 431_expect.exp -c "/ericsson/sdee/bin/manage_COM.bsh -r role -d 1.com -R role431a,role431b,role431c,role431d -y " -r
+        /usr/local/bin/expect 431_expect.exp >/dev/null || {
+                echo "Could not delete role added to 1.com domain - FAIL"
+                return 9
+        }
+
+	
+	# Remove temporary files
+	rm -f *.exp
+	rm -f *.out
+	
+	return 0
+}

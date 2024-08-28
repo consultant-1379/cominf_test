@@ -1,0 +1,67 @@
+#!/bin/bash
+
+# TEST CASE SPEC FILE
+# This file is generated/updated using the test framework web interface.
+# Manual updates on test servers are lost when the test package is re-installed.
+#
+# Last modified: Monday 7th of October 2013 6:50:23
+#
+
+# These settings must be in BASH script format, they are sourced by other scripts.
+SPEC_FA_NAME="MULTIOSS"
+SPEC_UC_NAME="MULTIOSS_LDAP"
+SPEC_TC_ID=992
+SPEC_TC_SLOGAN="Verify that the “add_user.sh” script picks up the next available lowest free UID# specified as part of the search range at command line."
+SPEC_TC_TYPE="FT"
+SPEC_TC_POLARITY="positive"
+SPEC_TC_PRIORITY="high"
+SPEC_TC_AUTOMATED=1
+SPEC_TC_DEPENDENT_ONLY=0
+SPEC_TC_TIMEOUT=300
+SPEC_TC_TEST_PASSCODE=0
+SPEC_TC_AUTHOR="xsougha"
+SPEC_TC_AUTOMATOR="xsougha"
+# this parameter is not interpreted by harness
+SPEC_TC_DISABLED=0
+
+# Please do not remove the comment lines below.
+# They are used as section locators by the test harness.
+
+# BEGIN_PRE_CONDITIONS
+#Presence of a local domain which could be migrated to GD
+# END_PRE_CONDITIONS
+
+
+# BEGIN_MANUAL_STEPS
+#(1) Execute the below on 1.com and 3.com respectively
+#
+#Configuration  Create a local domain; it could be migrated already to GD (ex. below):  
+#   Conditional Test  ./add_user.sh -c sys_adm -d 1.com -s12220 -e12240 -C -y
+#Answer all prompts  
+#   Acceptance Criteria  bash-3.00# ./add_user.sh -c sys_adm -d ireland1.com -s12220 -e12240 -C -y
+#Using LDAP domain settings file [/ericsson/sdee/ldap_domain_settings/ireland1.com.default_domain]
+#LDAP domain: [ireland1.com]
+#LDAP Directory Manager DN: [cn=directory manager]
+#LDAP Directory Manager password:
+#OSS-RC masterservice: [atrcxb989]
+#The selected domain [ireland1.com] is an isolated domain not using the GD.
+#New local user name: akramg54
+#Start of uidNumber search range: [12220]
+#End of uidNumber search range: [12240]
+#New local user uidNumber [12220]:
+#New local user gidNumber: [205]
+#New local user home directory: [/home/akramg54]
+#New local user login shell: [/usr/bin/tcsh]
+#New local user password:
+#Re-enter password:
+#New local user category: [sys_adm]
+#New local user description: [OSS-RC user]
+#
+#Continue to create local user [akramg54] with uidNumber [12220] and user category [sys_adm] (y/n)? [y]
+#Creating LDAP entry for local user [akramg54] in local domain [ireland1.com] ... OK
+#
+# END_MANUAL_STEPS
+
+# BEGIN_POST_CONDITIONS
+#None
+# END_POST_CONDITIONS

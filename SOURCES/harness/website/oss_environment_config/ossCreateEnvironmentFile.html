@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="utf-8" />
+		<?php 
+			include_once "../inc/globals.inc";
+			#include_once "../inc/utils.inc";
+			include 'header.php'; 
+		?>	
+		<title>Test Harness Configuration</title>
+		<link rel="stylesheet" type="text/css" href="../css/styles.css" />
+		<script type="text/javascript" src="js/atnfdlib.js" defer></script>
+	</head>
+	<body>
+	<?php 
+		if ( ! isset($_GET['env_file_path']) ) {
+			//exit("Error: env_file_path variable not set.  should be eg. view, new, edit or delete.<br>"); 
+			$file_path= $WEBSITE['REPO_PATH'] . "/SOURCES/build_scripts/nfd/etc/";
+		} else {
+			$file_path=$_GET['env_file_path'];
+		}
+		echo "<p><a href=http://" . $WEBSITE['HOMEURL'] . ">Home</a>&gt;"; 
+		echo "<a href='../harness.php'>Harness&gt;";
+		echo "<a href='../oss_environment_config/ossenvfiles.php'>OSS Environment Files&gt;</a>Create Environment File\n";
+				
+	?>
+	<form name="Test_Harness_Configuration" action="ossCreateEnvironmentFile.php" method="post">
+	<fieldset>
+		<legend>Environment File</legend>
+		<p><label>Specify path to environment file : <input type="text" name="ENV_FILE_PATH" id="ENV_FILE_PATH" value="<?php echo $file_path ?>" size="100" required></label></p> 
+		<!--<p><label>Specify path to environment file : <input type="text" name="ENV_FILE_PATH" id="ENV_FILE_PATH" value="/var/lib/jenkins/cominf_build/workspace/cominf_test/SOURCES/build_scripts/nfd/etc/" size="100" required></label></p> -->
+		<p><label>Specify environment file name: <input type="text" name="ENV_FILE_NAME" id="ENV_FILE_NAME" placeholder="<file name>.env" 
+		required></label></p>
+	</fieldset>
+	<fieldset>
+		<legend>Harness Host Configuration</legend>
+		<p><b>Run test harness on:</b><br> 
+			<input type="radio" name="harnesshost" value="targetserver" checked required >Target Server
+			<input type="radio" name="harnesshost" value="localhost" required>Test Control Server<br>
+		</p>
+
+		<b>Choose test case grouping:</b><br>
+		<input type="radio" name="harnessparam" value="testcases"  >Individual Test Cases
+		<input type="radio" name="harnessparam" value="testsuites" checked required>Test Suites  
+		<input type="radio" name="harnessparam" value="usecases">Use Cases <br>
+
+		<b>Space separated list of Testcase IDs, Test Suite Names or Usecase names</b> <br>
+		<input type="text" name="testselection" size=200 required><br>
+	</fieldset>
+	<fieldset>
+		<legend>Architecture</legend>
+		<b>Vendor&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;:</b>
+		<label for="hp">hp</label> 
+		<input type="radio" name="CI_ENVIRONMENT" id="hp" value="hp"  checked required>
+		<label for="sun">sun</label> 
+		<input type="radio" name="CI_ENVIRONMENT" id="sun" value="sun" ><br>
+		<b>Architecture&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;:</b>
+		<label for="i386">i386</label> 
+		<input type="radio" name="CI_PLATFORM" id="i386" value="i386"  onClick="displayX86()" required>
+		<label for="SPARC">SPARC</label> 
+		<input type="radio" name="CI_PLATFORM" id="SPARC" value="SPARC" onClick="displaySPARC()" ><br>
+		
+		<p id="message">Please check one of the architecture boxes above.</p>
+	</fieldset>
+	<fieldset>
+		<legend>Product Information</legend>
+		<b>Target Release, e.g. 'O13_2'&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;:</b>
+		<input type="text" name="CI_RELEASE" required size=30><br>
+		<b>Target Shipment, e.g. '13.2.7'&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;:</b>
+		<input type="text" name="CI_SHIPMENT" required size=30><br>
+
+		<b>Type of build&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;:</b>
+		<label for="II">II</label> 
+		<input type="radio" name="CI_TYPE" id="II" value="II"  checked required >
+		<label for="UG">UG</label> 
+		<input type="radio" name="CI_TYPE" id="UG" value="UG" ><br>
+
+		<b>typeii&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;:</b>
+		<label for="CI_BUILD_TYPE_II">II</label> 
+		<input type="radio" name="CI_BUILD_TYPE" id="CI_BUILD_TYPE_II" value="II" >
+		<label for="CI_BUILD_TYPE_CU">CU</label> 
+		<input type="radio" name="CI_BUILD_TYPE" id="CI_BUILD_TYPE_CU" value="CU"  checked required><br>
+		<b>OSS Product Number&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;:</b>
+		<input type="text" name="CI_OSS_PROD_NUM" size=30><br>
+		<b>OSS Product Revision&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;:</b>
+		<input type="text" name="CI_OSS_PROD_REV" size=30><br>
+
+	</fieldset>
+		<input type="submit" value="Submit Data">
+		<input type="reset" value="Clear Data">
+	</form>
+	</body>
+
+</html>
+
+

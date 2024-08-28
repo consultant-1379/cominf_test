@@ -1,0 +1,13 @@
+SubNetwork=ONRM_ROOT_MO,FtpServer=SMRSSLAVE-LRAN-nedssv6,FtpService=l-sws-nedssv6
+SubNetwork=ONRM_ROOT_MO,FtpServer=SMRSSLAVE-LRAN-nedssv6,FtpService=l-key-nedssv6
+SubNetwork=ONRM_ROOT_MO,FtpServer=SMRSSLAVE-LRAN-nedssv6,FtpService=l-back-nedssv6
+SubNetwork=ONRM_ROOT_MO,FtpServer=SMRSSLAVE-nedssv6,FtpService=swstore-nedssv6
+SubNetwork=ONRM_ROOT_MO,FtpServer=SMRSSLAVE-nedssv6,FtpService=pmup-nedssv6
+SubNetwork=ONRM_ROOT_MO,FtpServer=SMRSSLAVE-nedssv6,FtpService=cmup-nedssv6
+SubNetwork=ONRM_ROOT_MO,FtpServer=SMRSSLAVE-nedssv6,FtpService=cmdown-nedssv6
+SubNetwork=ONRM_ROOT_MO,FtpServer=SMRSSLAVE-nedssv6,FtpService=backup-nedssv6
+SubNetwork=ONRM_ROOT_MO,FtpServer=SMRSSLAVE-nedssv6,FtpService=keystore-nedssv6
+SubNetwork=ONRM_ROOT_MO,FtpServer=SMRSSLAVE-CORE-nedssv6,FtpService=corepmu-nedssv6
+SubNetwork=ONRM_ROOT_MO,FtpServer=SMRSSLAVE-WRAN-nedssv6,FtpService=w-sws-nedssv6
+SubNetwork=ONRM_ROOT_MO,FtpServer=SMRSSLAVE-WRAN-nedssv6,FtpService=w-key-nedssv6
+SubNetwork=ONRM_ROOT_MO,FtpServer=SMRSSLAVE-WRAN-nedssv6,FtpService=w-back-nedssv6

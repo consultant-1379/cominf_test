@@ -1,0 +1,15 @@
+dn: cn=link,ou=people,dc=malakai,dc=com
+cn: link
+objectClass: extensibleObject
+objectClass: referral
+objectClass: top
+ref: ldaps://atclvm425.ericsson.com:636/ou=people,dc=globaldomain
+ref: ldaps://atclvm426.ericsson.com:636/ou=people,dc=globaldomain
+
+dn: cn=link,ou=group,dc=malakai,dc=com
+cn: link
+objectClass: extensibleObject
+objectClass: referral
+objectClass: top
+ref: ldaps://atclvm425.ericsson.com:636/ou=group,dc=globaldomain
+ref: ldaps://atclvm426.ericsson.com:636/ou=group,dc=globaldomain

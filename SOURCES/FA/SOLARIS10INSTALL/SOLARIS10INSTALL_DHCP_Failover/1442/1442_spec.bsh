@@ -1,0 +1,111 @@
+#!/bin/bash
+
+# TEST CASE SPEC FILE
+# This file is generated/updated using the test framework web interface.
+# Manual updates on test servers are lost when the test package is re-installed.
+#
+# Last modified: Monday 16th of December 2013 10:53:56
+#
+
+# These settings must be in BASH script format, they are sourced by other scripts.
+SPEC_FA_NAME="SOLARIS10INSTALL"
+SPEC_UC_NAME="SOLARIS10INSTALL_DHCP_Failover"
+SPEC_TC_ID=1442
+SPEC_TC_SLOGAN="Verify that a cronjob is automatically created on both the Master and Slave servers following the initial installation of the servers. "
+SPEC_TC_TYPE="FT"
+SPEC_TC_POLARITY="positive"
+SPEC_TC_PRIORITY="high"
+SPEC_TC_AUTOMATED=1
+SPEC_TC_DEPENDENT_ONLY=0
+SPEC_TC_TIMEOUT=300
+SPEC_TC_TEST_PASSCODE=0
+SPEC_TC_AUTHOR="xgansre"
+SPEC_TC_AUTOMATOR="xgansre"
+# this parameter is not interpreted by harness
+SPEC_TC_DISABLED=0
+
+# Please do not remove the comment lines below.
+# They are used as section locators by the test harness.
+
+# BEGIN_PRE_CONDITIONS
+#Mars Path <Initial Installation/DHCP Failover/ISC DHCP IPv6 Failover >
+#
+#Verify that a cronjob is automatically created on both the Master and Slave servers following the initial installation of the servers.
+#
+#Precondition: 
+#MWS , 
+#OSS MS,
+#om_serv_master , om_serv_slave
+#MWS, profile for om_serv_master configured for IPv4 and IPv6(Dualstack).
+#MWS, profile for om_serv_slave configured for IPv4 and IPv6(Dualstack).
+#MWS configured with latest Solaris, Solaris O&M media, COMInf media
+#‘om_serv_master’, ‘om_serv_slave’ successfully jumpstarted with COMInf media using MWS.
+#IPv4 and IPv6 daemons running on Master server
+# END_PRE_CONDITIONS
+
+
+# BEGIN_MANUAL_STEPS
+#Action 1: 
+#On the Master server verify a cronjob exists for the ‘/ericsson/ocs/bin/dhcp_check.sh’ script. The default times for the cronjob is ’01,31’.
+#Verify the definition of the cronjob using the command.
+#crontab -l
+#
+#Action 2: 
+#On the Slave server verify a cronjob exists for the ‘/ericsson/ocs/bin/dhcp_check.sh’ script. The default times for the cronjob is ’01,31’.
+#Verify the definition of the cronjob using the command.
+#crontab -l
+#
+#
+# END_MANUAL_STEPS
+
+# BEGIN_POST_CONDITIONS
+#Result 1:
+#A cronjob exists on the Master server for the script ‘/ericsson/ocs/bin/dhcp_check.sh’.
+#The default time for the cronjob is ’01,31’.
+#
+#A printout similar to below is printed.
+#
+#bash-3.00# crontab -l
+##ident "@(#)root 1.21 04/03/23 SMI"
+##
+## The root crontab should be used to perform accounting data collection.
+##
+##
+#10 3 * * * /usr/sbin/logadm
+#15 3 * * 0 /usr/lib/fs/nfs/nfsfind
+#30 3 * * * [ -x /usr/lib/gss/gsscred_clean ] && /usr/lib/gss/gsscred_clean
+##
+## The rtc command is run to adjust the real time clock if and when
+## daylight savings time changes.
+##
+#1 2 * * * [ -x /usr/sbin/rtc ] && /usr/sbin/rtc -c > /dev/null 2>&1
+##10 3 * * * /usr/lib/krb5/kprop_script ___slave_kdcs___
+#01,31 * * * * /ericsson/ocs/bin/dhcp_check.sh
+#
+#
+#
+#Result 2:
+#A cronjob exists on the Slave server for the script ‘/ericsson/ocs/bin/dhcp_check.sh’.
+#The default time for the cronjob is ’01,31’.
+#
+#A printout similar to below is printed.
+#
+#bash-3.00# crontab -l
+##ident "@(#)root 1.21 04/03/23 SMI"
+##
+## The root crontab should be used to perform accounting data collection.
+##
+##
+#10 3 * * * /usr/sbin/logadm
+#15 3 * * 0 /usr/lib/fs/nfs/nfsfind
+#30 3 * * * [ -x /usr/lib/gss/gsscred_clean ] && /usr/lib/gss/gsscred_clean
+##
+## The rtc command is run to adjust the real time clock if and when
+## daylight savings time changes.
+##
+#1 2 * * * [ -x /usr/sbin/rtc ] && /usr/sbin/rtc -c > /dev/null 2>&1
+##10 3 * * * /usr/lib/krb5/kprop_script ___slave_kdcs___
+#01,31 * * * * /ericsson/ocs/bin/dhcp_check.sh
+#bash-3.00#
+#
+# END_POST_CONDITIONS

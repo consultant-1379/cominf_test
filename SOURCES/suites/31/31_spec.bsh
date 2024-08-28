@@ -1,0 +1,15 @@
+#!/bin/bash
+
+# TEST SUITE SPEC FILE
+# This file is generated/updated using the test framework web interface.
+# Manual updates on test servers are lost when the test package is re-installed.
+#
+# Last modified: Wednesday 28th of August 2013 7:36:54
+#
+SPEC_TS_NAME=SMRS_WRAN_LRAN_BASIC
+SPEC_TS_ID=31
+SPEC_TS_SLOGAN="SMRS_WRAN_LRAN_BASIC"
+SPEC_TS_TIMEOUT=300
+SPEC_TS_AUTHOR="eshadem"
+SPEC_TS_INDEPENDENT=0
+SPEC_TS_TC_IDS=(307 320 327 806 809 407 603 214 68 609)

@@ -1,0 +1,331 @@
+#!/bin/bash
+#################################################################################
+#
+#
+#       COPYRIGHT (C) ERICSSON RADIO SYSTEMS AB, Sweden
+#
+#       The copyright to the document(s) herein is the property of
+#       Ericsson Radio Systems AB, Sweden.
+#
+#       The document(s) may be used and/or copied only with the written
+#       permission from Ericsson Radio Systems AB or in accordance with
+#       the terms and conditions stipulated in the agreement/contract
+#       under which the document(s) have been supplied.
+#
+#################################################################################
+
+
+# ATCOMINF Test Callback Library
+
+# Revision History
+# 2012-06-06	xsimrea	Initial version
+
+# Complete the callbacks in this library to automate the test case.
+#
+# Callbacks are stateless, it is not possible to set a global variable in one callback 
+# and access it it in another.
+#
+# Callbacks are called by the test harness in the following order:
+#
+# tc_setup() 		# Called only for independent TC execution mode to setup TC
+# tc_precon()		# Conditions that should exist before TC can run
+# tc_test()		# Runs the test for this TC
+# tc_postcon()		# Conditions that should/should not exist after successful TC 
+# tc_cleanup()		# Called only for independent TC execution mode to clenup after TC
+
+# All callbacks must PASS for a TC PASS result
+
+LDAP_BIN="/ericsson/sdee/bin"
+CONFIG="/ericsson/sdee/ldap_domain_settings/"
+TEST_DOMAIN=$(cat /ericsson/config/config.ini | grep "LDAP_DOMAIN_NAME" | awk -F= '{print $2}')
+TEST_ALIAS1="a498a"
+TEST_ALIAS2="a498b"
+TEST_ROLE1="r498a"
+TEST_ROLE2="r498b"
+OUTFILE="tmpout.tmp"
+
+#################################################################################
+#
+# CALLBACK: TC_SETUP
+#
+# This callback function is only called if the harness execution mode is 'AT_INDEPENDENT'
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_setup() {
+
+   
+
+    # Replace PASSWD and other fields in input file(s) with the correct credentials or data
+    for ii in *.in; do
+        sed -e "s/^PASSWD$/$LDAP_SUPERUSER_PASSWD/" \
+            -e "s/TESTUSER/$OSS_USER/" \
+            -e "s/TESTALIAS/$TEST_ALIAS/" \
+            -e "s/TESTROLE/$TEST_ROLE/" \
+            -e "s/TESTDOM/$TEST_DOMAIN/" $ii > $ii.tmp || {
+            echo "Failed to replace LDAP superuser password holder etc in /usr/local/bin/expect input file $ii, rc $?"
+            return 6
+        }
+    done
+
+	# Add two desired roles to specified domain
+    ${AT_BIN}/con_ex.bsh -d justpasswd.in.tmp -o add_role1.exp -c "$LDAP_BIN/manage_COM.bsh -a role -d ${TEST_DOMAIN} -R ${TEST_ROLE1} -y " -r
+    /usr/local/bin/expect add_role1.exp || {
+        # Failed to add role 1
+        echo "Add role ${TEST_ROLE1} to ${TEST_DOMAIN} domain failed - rc $?"
+		return 8
+    }
+    ${AT_BIN}/con_ex.bsh -d justpasswd.in.tmp -o add_role2.exp -c "$LDAP_BIN/manage_COM.bsh -a role -d ${TEST_DOMAIN} -R ${TEST_ROLE2} -y " -r
+    /usr/local/bin/expect add_role2.exp || {
+        # Failed to add role 2
+        echo "Add role ${TEST_ROLE2} to ${TEST_DOMAIN} domain failed - rc $?"
+		return 9
+    }
+
+	# Add desired aliasses, pointing to desired roles, to specified domain
+    ${AT_BIN}/con_ex.bsh -d justpasswd.in.tmp -o add_alias1.exp -c "$LDAP_BIN/manage_COM.bsh -a alias -d ${TEST_DOMAIN} -A ${TEST_ALIAS1} -R ${TEST_ROLE1} -y " -r
+    /usr/local/bin/expect add_alias1.exp || {
+        # Failed to add alias 1
+        echo "Add alias ${TEST_ALIAS1} for role ${TEST_ROLE1} to ${TEST_DOMAIN} domain failed - rc $?"
+		return 10
+    }
+    ${AT_BIN}/con_ex.bsh -d justpasswd.in.tmp -o add_alias2.exp -c "$LDAP_BIN/manage_COM.bsh -a alias -d ${TEST_DOMAIN} -A ${TEST_ALIAS2} -R ${TEST_ROLE1},${TEST_ROLE2} -y " -r
+    /usr/local/bin/expect add_alias2.exp || {
+        # Failed to add alias 2
+        echo "Add alias ${TEST_ALIAS2} for roles ${TEST_ROLE1} and ${TEST_ROLE2} to ${TEST_DOMAIN} domain failed - rc $?"
+		return 11
+    }
+
+    return 0
+
+}
+#################################################################################
+
+#################################################################################
+#
+# CALLBACK: TC_PRECON
+#
+# This callback function checks the correct conditions exist to run the TC.
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+ 
+tc_precon() {
+
+    LDAP_SERVER_UP || {
+        echo "LDAP server is not running. LDAP_SERVER_UP returned $?" 
+        return 1
+    }
+
+	# Check that the desired roles are in specified domain, and take a log of all of them
+    ${AT_BIN}/con_ex.bsh -d justpasswd.in.tmp -o list_role.exp -c "$LDAP_BIN/manage_COM.bsh -l role -d ${TEST_DOMAIN}" -r
+    /usr/local/bin/expect list_role.exp > role_lst.tmp || {
+        # Failed to list roles
+        echo "List role in ${TEST_DOMAIN} domain failed - rc $?"
+		return 9
+    }
+	tr -d '\015' < role_lst.tmp > role_prelst.tmp
+	grep "${TEST_ROLE1}" role_prelst.tmp && grep "${TEST_ROLE2}" role_prelst.tmp >/dev/null || {
+		echo "Could not find the role ${TEST_ROLE1} or ${TEST_ROLE2} we have just added, rc $?"
+		echo "Pre-test list is:"
+		cat role_prelst.tmp
+		echo "End of list"
+		return 10
+	}
+
+	# Check that the desired aliasses are in specified domain, and take a log of all of them
+    ${AT_BIN}/con_ex.bsh -d justpasswd.in.tmp -o list_alias.exp -c "$LDAP_BIN/manage_COM.bsh -l alias -d ${TEST_DOMAIN}" -r
+    /usr/local/bin/expect list_alias.exp > alias_lst.tmp || {
+        # Failed to list aliasses
+        echo "List alias in ${TEST_DOMAIN} domain failed - rc $?"
+		return 11
+    }
+	tr -d '\015' < alias_lst.tmp > alias_prelst.tmp
+	grep "${TEST_ALIAS1}" alias_prelst.tmp || grep "${TEST_ALIAS2}" alias_prelst.tmp >/dev/null || {
+		echo "Could not find the alias ${TEST_ALIAS1} or ${TEST_ALIAS2} we have just added, rc $?"
+		echo "Pre-test list is:"
+		cat alias_prelst.tmp
+		echo "End of list"
+		return 12
+	}
+
+    return 0
+
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_TEST
+#
+# This callback function runs the test.
+# The harness compares the return code to the SPEC_TC_TEST_PASSCODE value set in the test spec.
+#
+# Return or exit codes:
+#    SPEC_TC_TEST_PASSCODE 	success
+# != SPEC_TC_TEST_PASSCODE 	failure
+ 
+tc_test() {
+
+    >$OUTFILE
+
+    # remove the first role from specified domain
+    echo "Test 1: Remove role ${TEST_ROLE1} from ${TEST_DOMAIN} domain - supply domain and role"
+    ${AT_BIN}/con_ex.bsh -d justpasswd.in.tmp -o remove_role1.exp -c "$LDAP_BIN/manage_COM.bsh -r role -R ${TEST_ROLE1} -d ${TEST_DOMAIN} -y " -r
+    /usr/local/bin/expect remove_role1.exp || {
+        # Failed to remove role 1
+        echo "Remove role ${TEST_ROLE1} from ${TEST_DOMAIN} domain name failed - rc $?" >> $OUTFILE
+    }
+
+	# Get lists of roles and aliasses
+    /usr/local/bin/expect list_role.exp > role_lst.tmp || {
+        # Failed to list roles
+        echo "List role in ${TEST_DOMAIN} domain failed - rc $?" >> $OUTFILE
+    }
+	tr -d '\015' < role_lst.tmp > role_midlst.tmp
+    /usr/local/bin/expect list_alias.exp > alias_lst.tmp || {
+        # Failed to list aliasses
+        echo "List alias in ${TEST_DOMAIN} domain failed - rc $?" >> $OUTFILE
+    }
+	tr -d '\015' < alias_lst.tmp > alias_midlst.tmp
+
+    # now remove the second role from specified domain
+    echo "Test 2: Remove role ${TEST_ROLE2} from ${TEST_DOMAIN} domain - supply domain and role"
+    ${AT_BIN}/con_ex.bsh -d justpasswd.in.tmp -o remove_role2.exp -c "$LDAP_BIN/manage_COM.bsh -r role -R ${TEST_ROLE2} -d ${TEST_DOMAIN} -y " -r
+    /usr/local/bin/expect remove_role2.exp || {
+        # Failed to remove role 2
+        echo "Remove role ${TEST_ROLE2} from ${TEST_DOMAIN} domain name failed - rc $?" >> $OUTFILE
+    }
+
+    # return 0 and let tc_postcon identify errors
+    return 0
+
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_POSTCON
+#
+# This callback function checks expected results.
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_postcon() {
+
+    rc=0
+
+    # report on any failed removal attempts
+    [[ -s $OUTFILE ]] && {
+        echo "Some remove alias attempts failed:"
+        cat $OUTFILE
+        return 1
+    }
+
+	# Check that the desired roles have been removed from specified domain
+    ${AT_BIN}/con_ex.bsh -d justpasswd.in.tmp -o list_role.exp -c "$LDAP_BIN/manage_COM.bsh -l role -d ${TEST_DOMAIN}" -r
+    if /usr/local/bin/expect list_role.exp > role_lst.tmp ; then
+		# Lose the ^Ms, and the line which says there are no roles.  The latter was not
+		# done on the prelst, because we want to know if that one *does* contain the string!
+		tr -d '\015' < role_lst.tmp | sed '/No roles found for domain/d' > role_postlst.tmp
+
+		# Got role list - now check whether entry has been removed
+		grep -v "${TEST_ROLE1}" role_prelst.tmp | diff - role_midlst.tmp || {
+			echo "Pre-test list minus first removed role \"${TEST_ROLE1}\" is not same as mid-test list" 
+			echo "Pre-test list is:"
+			cat role_prelst.tmp
+			echo "Mid-test list is:"
+			cat role_midlst.tmp
+			echo "End of list"
+			return $?
+		}
+
+		# and check that both ecntries have been removed at the end
+		grep -v "${TEST_ROLE1}" role_prelst.tmp | grep -v "${TEST_ROLE2}" | diff - role_postlst.tmp || {
+			echo "Pre-test list minus removed roles \"${TEST_ROLE1}\" and \"${TEST_ROLE2}\" is not same as post list" 
+			echo "Pre-test list is:"
+			cat role_prelst.tmp
+			echo "Post-test list is:"
+			cat role_postlst.tmp
+			echo "End of list"
+			return $?
+		}
+	else
+        # Failed to list roles
+        echo "Failed to list roles in ${TEST_DOMAIN} domain - rc $?"
+		return $?
+	fi
+
+	# Check that the desired aliasses have been removed from specified domain
+    ${AT_BIN}/con_ex.bsh -d justpasswd.in.tmp -o list_alias.exp -c "$LDAP_BIN/manage_COM.bsh -l alias -d ${TEST_DOMAIN}" -r
+    if /usr/local/bin/expect list_alias.exp > alias_lst.tmp ; then
+		# Lose the ^Ms, and the line which says there are no aliases.  The latter was not
+		# done on the prelst, because we want to know if that one *does* contain the string!
+		tr -d '\015' < alias_lst.tmp | sed '/No aliases found for domain/d' > alias_postlst.tmp
+
+		# Got alias list - now check whether first entry was removed after first role deleteion
+		grep -v "${TEST_ALIAS1}" alias_prelst.tmp | diff - alias_midlst.tmp || {
+			echo "Pre-test list minus removed alias \"${TEST_ALIAS}\" is not same as mid-test list" 
+			echo "Pre-test list is:"
+			cat alias_prelst.tmp
+			echo "Mid-test list is:"
+			cat alias_midlst.tmp
+			echo "End of list"
+			return $?
+		}
+
+		# and check that both aliasses have been removed at the end
+		grep -v "${TEST_ALIAS1}" alias_prelst.tmp | grep -v "${TEST_ALIAS2}" | diff - alias_postlst.tmp || {
+			echo "Pre-test list minus removed aliasses \"${TEST_ALIAS1}\" and \"${TEST_ALIAS2}\" is not same as post-test list" 
+			echo "Pre-test list is:"
+			cat alias_prelst.tmp
+			echo "Post-test list is:"
+			cat alias_postlst.tmp
+			echo "End of list"
+			return $?
+		}
+	else
+        # Failed to list aliasses
+        echo "Failed to list aliasses in ${TEST_DOMAIN} domain - rc $?"
+		return $?
+	fi
+
+    return $rc
+
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_CLEANUP
+#
+# This callback function is only called if the harness execution mode is 'AT_INDEPENDENT'
+# 
+# This callback restores the target system to the state it was in before the TC 
+# was run. It rolls back changes made by callbacks tc_setup() and tc_test()
+# 
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_cleanup() {
+
+    rc=0
+
+    # remove the generated working files
+    rm -f *.tmp *.exp || {
+        echo "Failed to remove the generated working files"
+		return 1
+    }
+
+    return $rc
+
+}

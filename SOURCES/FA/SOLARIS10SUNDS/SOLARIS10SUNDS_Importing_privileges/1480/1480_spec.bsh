@@ -1,0 +1,123 @@
+#!/bin/bash
+
+# TEST CASE SPEC FILE
+# This file is generated/updated using the test framework web interface.
+# Manual updates on test servers are lost when the test package is re-installed.
+#
+# Last modified: Monday 16th of December 2013 11:12:59
+#
+
+# These settings must be in BASH script format, they are sourced by other scripts.
+SPEC_FA_NAME="SOLARIS10SUNDS"
+SPEC_UC_NAME="SOLARIS10SUNDS_Importing_privileges"
+SPEC_TC_ID=1480
+SPEC_TC_SLOGAN="Adding targets "
+SPEC_TC_TYPE="FT"
+SPEC_TC_POLARITY="positive"
+SPEC_TC_PRIORITY="high"
+SPEC_TC_AUTOMATED=1
+SPEC_TC_DEPENDENT_ONLY=0
+SPEC_TC_TIMEOUT=300
+SPEC_TC_TEST_PASSCODE=0
+SPEC_TC_AUTHOR="xvinkat"
+SPEC_TC_AUTOMATOR="xvinkat"
+# this parameter is not interpreted by harness
+SPEC_TC_DISABLED=0
+
+# Please do not remove the comment lines below.
+# They are used as section locators by the test harness.
+
+# BEGIN_PRE_CONDITIONS
+#<path to the testcase>
+#
+#
+#SUN-DS/COM LDAP - User Management for 
+#COM-Enabled Nodes/Managing COM targets 
+#,role, role alias attributes for COM user entries/
+#Importing privileges (role/aliases/targets)        
+#
+#
+# END_PRE_CONDITIONS
+
+
+# BEGIN_MANUAL_STEPS
+#1. Prepare COM export file as below to import the targets to user entries.
+#
+#DOMAIN <LDAP domain>
+#ACTION add
+#OBJECT target
+#<user1> ,,...
+#<user2> ,,...
+#.
+#.
+#
+#2.Mention targets with coma seperation in the export file for the user of type OSS_ONLY and add them to the user entry as below
+#
+#Ex:
+#
+#bash-3.2# cat /var/tmp/import1
+#DOMAIN atrcus879.com
+#ACTION add
+#OBJECT target
+#
+#ossonly1 target1,target2
+#
+#
+#
+#
+#3. Mention targets with coma seperation in the export file for two users of type COM_APP and COM_ONLY and add them to the user entry
+#
+#Ex:
+#
+#bash-3.2# cat /var/tmp/import1
+#DOMAIN atrcus879.com
+#ACTION add
+#OBJECT target
+#
+#comonly target1,target2
+#
+#
+#
+# END_MANUAL_STEPS
+
+# BEGIN_POST_CONDITIONS
+#1.Export file is prepared.
+#
+#2. All targets should be added to the user entry and user type should be changed from OSS_ONLY to COM_OSS.
+#
+#bash-3.2# ./manage_COM_privs.bsh -a target -f /var/tmp/import1 -d atrcus879.com
+#
+#LDAP Directory Manager password:
+#
+#INFO : LDAP Domain [atrcus879.com]
+#INFO : ACTION: [add]
+#INFO : OBJECT: [target]
+#
+#Continue to add COM user target(s) from file [/var/tmp/import1] - Yes or No [No] Yes
+#
+#INFO : User [ossonly1] has type OSS_ONLY.
+#INFO : Auto accept active.
+#INFO : User [ossonly1] has been updated to type COM_OSS.
+#INFO : Successfully added COM target [target1] to user [ossonly1].
+#INFO : Successfully added COM target [target2] to user [ossonly1].
+#
+#
+#
+#3.All targets should be added to the user entry.
+#
+#bash-3.2# ./manage_COM_privs.bsh -a target -f /var/tmp/import1 -d atrcus879.com
+#
+#LDAP Directory Manager password:
+#
+#INFO : LDAP Domain [atrcus879.com]
+#INFO : ACTION: [add]
+#INFO : OBJECT: [target]
+#
+#Continue to add COM user target(s) from file [/var/tmp/import1] - Yes or No [No] Yes
+#
+#INFO : User [comonly] has type COM_ONLY.
+#INFO : Auto accept active.
+#INFO : Successfully added COM target [target1] to user [comonly].
+#INFO : Successfully added COM target [target2] to user [comonly]
+#
+# END_POST_CONDITIONS

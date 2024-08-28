@@ -1,0 +1,357 @@
+#!/bin/bash
+#################################################################################
+#
+#
+#	   COPYRIGHT (C) ERICSSON RADIO SYSTEMS AB, Sweden
+#
+#	   The copyright to the document(s) herein is the property of
+#	   Ericsson Radio Systems AB, Sweden.
+#
+#	   The document(s) may be used and/or copied only with the written
+#	   permission from Ericsson Radio Systems AB or in accordance with
+#	   the terms and conditions stipulated in the agreement/contract
+#	   under which the document(s) have been supplied.
+#
+#################################################################################
+
+
+# ATCOMINF Test Callback Library
+
+# Revision History
+# 20/09/13	xkalbha		Initial test for add target to OSS user
+
+# Complete the callbacks in this library to automate the test case.
+#
+# Callbacks are stateless, it is not possible to set a global variable in one callback 
+# and access it it in another.
+#
+# Callbacks are called by the test harness in the following order:
+#
+# tc_setup() 		# Called only for independent TC execution mode to setup TC
+# tc_precon()		# Conditions that should exist before TC can run
+# tc_test()		# Runs the test for this TC
+# tc_postcon()		# Conditions that should/should not exist after successful TC 
+# tc_cleanup()		# Called only for independent TC execution mode to clenup after TC
+
+# All callbacks must PASS for a TC PASS result
+
+#################################################################################
+#
+# CALLBACK: TC_SETUP
+#
+# This callback function is only called if the harness execution mode is 'AT_INDEPENDENT'
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_setup() {
+
+
+
+
+
+	
+	# Replace PASSWD with the correct credentials or data
+	for ii in *.in; do
+		sed -e "s/^PASSWD$/$LDAP_SUPERUSER_PASSWD/" $ii > $ii.tmp || {
+			echo "Failed to replace LDAP superuser password holder etc in /usr/local/bin/expect input file $ii, rc $?"
+			return 2
+		}
+	done
+
+
+#-------------------------------------------------------------------------------
+# Create a test user  
+#-------------------------------------------------------------------------------
+
+	CMD='/ericsson/sdee/bin/add_user.sh -d 1.com -n u513 -i 1513 -C bhavana -y'
+	${AT_BIN}/con_ex.bsh -d 513adduser.in.tmp -o 513adduser.exp -c "$CMD" || {
+		echo "Failed to generate /usr/local/bin/expect script, $?"
+		return 1
+	}
+
+	/usr/local/bin/expect 513adduser.exp ||{
+		echo "Failed to create user, error code $?"
+		return 2
+	}
+#-------------------------------------------------------------------------------
+# Create same test user   in 2.com
+#-------------------------------------------------------------------------------
+
+	CMD='/ericsson/sdee/bin/add_user.sh -d 2.com -n u513 -i 1513 -C bhavana -y'
+	${AT_BIN}/con_ex.bsh -d 513adduser.in.tmp -o 513adduser.exp -c "$CMD" || {
+		echo "Failed to generate /usr/local/bin/expect script, $?"
+		return 3
+	}
+
+	/usr/local/bin/expect 513adduser.exp ||{
+		echo "Failed to create user, error code $?"
+		return 4
+	}
+#-------------------------------------------------------------------------------
+# Create new test user   in 2.com
+#-------------------------------------------------------------------------------
+
+	CMD='/ericsson/sdee/bin/add_user.sh -d 2.com -n u513b -i 2513 -C bhavana -y'
+	${AT_BIN}/con_ex.bsh -d 513adduser.in.tmp -o 513adduser.exp -c "$CMD" || {
+		echo "Failed to generate /usr/local/bin/expect script, $?"
+		return 5
+	}
+
+	/usr/local/bin/expect 513adduser.exp ||{
+		echo "Failed to create user, error code $?"
+		return 6
+	}
+	
+	return 0	
+
+}
+#################################################################################
+
+#################################################################################
+#
+# CALLBACK: TC_PRECON
+#
+# This callback function checks the correct conditions exist to run the TC.
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+ 
+tc_precon() {
+
+#-------------------------------------------------------------------------------
+#  Check LDAP is running
+#-------------------------------------------------------------------------------
+
+	LDAP_SERVER_UP || {
+		echo "LDAP server not running"
+		return 1
+	}
+
+#-------------------------------------------------------------------------------
+#  Test user is present
+#-------------------------------------------------------------------------------
+
+	/usr/bin/ldapsearch -D 'cn=Directory Manager' -w $LDAP_SUPERUSER_PASSWD -b uid=u513,ou=people,dc=1,dc=com objectclass=* > u513.out || {
+		echo "Failed to do LDAP search"
+		return 1
+	}
+	grep 'ericssonUserAuthenticationScope: ' u513.out && {
+		echo "Authentication found for user u513"
+		return 2
+	}
+	# Test they are of correct type
+	LDAP_USER_EXISTS 1.com u513 || {
+		echo "Test user u546 does not exist, $?"
+		return 3
+	}
+
+	/usr/local/bin/expect 513.exp > 513.out || {
+		echo "Failed to list user"
+		return 4
+	}
+
+	grep "userType" 513.out | grep OSS_ONLY || {
+		echo "User is of incorrect type"
+		cat 513.out
+		return 5
+	}
+
+#-------------------------------------------------------------------------------
+#  Test same user is present in 2.com
+#-------------------------------------------------------------------------------
+
+	/usr/bin/ldapsearch -D 'cn=Directory Manager' -w $LDAP_SUPERUSER_PASSWD -b uid=u513,ou=people,dc=2,dc=com objectclass=* > u513.out || {
+		echo "Failed to do LDAP search"
+		return 6
+	}
+	grep 'ericssonUserAuthenticationScope: ' u513.out && {
+		echo "Authentication found for user u513"
+		return 7
+	}
+	# Test they are of correct type
+	LDAP_USER_EXISTS 1.com u513 || {
+		echo "Test user u513 does not exist, $?"
+		return 8
+	}
+
+	/usr/local/bin/expect 513.exp > 513.out || {
+		echo "Failed to list user"
+		return 9
+	}
+
+	grep "userType" 513.out | grep OSS_ONLY || {
+		echo "User is of incorrect type"
+		cat 513.out
+		return 10
+	}
+#-------------------------------------------------------------------------------
+#  Test new user is present in 2.com
+#-------------------------------------------------------------------------------
+
+	/usr/bin/ldapsearch -D 'cn=Directory Manager' -w $LDAP_SUPERUSER_PASSWD -b uid=u513b,ou=people,dc=2,dc=com objectclass=* > u513.out || {
+		echo "Failed to do LDAP search"
+		return 11
+	}
+	grep 'ericssonUserAuthenticationScope: ' u513.out && {
+		echo "Authentication found for user u513"
+		return 12
+	}
+	# Test they are of correct type
+	LDAP_USER_EXISTS 1.com u513b || {
+		echo "Test user u513b does not exist, $?"
+		return 13
+	}
+
+	/usr/local/bin/expect 513.exp > 513.out || {
+		echo "Failed to list user"
+		return 14
+	}
+	grep "userType" 513.out | grep OSS_ONLY || {
+		echo "User is of incorrect type"
+		cat 513.out
+		return 15
+	}
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_TEST
+#
+# This callback function runs the test.
+# The harness compares the return code to the SPEC_TC_TEST_PASSCODE value set in the test spec.
+#
+# Return or exit codes:
+#	SPEC_TC_TEST_PASSCODE 	success
+# != SPEC_TC_TEST_PASSCODE 	failure
+ 
+tc_test() {
+#-------------------------------------------------------------------------------
+# Add target to user in 1.com
+#-------------------------------------------------------------------------------
+	CMD='/ericsson/sdee/bin/manage_COM_privs.bsh -a target -d 1.com -u u513 -T ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvw -y'
+	${AT_BIN}/con_ex.bsh -d 513.in.tmp -o 513.exp -c "$CMD" || {
+		echo "Failed to generate /usr/local/bin/expect script, $?"
+		return 1
+	}
+
+	/usr/local/bin/expect 513.exp || {
+		echo "Failed to add target to user, error code $?"
+		return 2
+	}
+
+#-------------------------------------------------------------------------------
+# Add target to user in 2.com
+#-------------------------------------------------------------------------------
+	CMD='/ericsson/sdee/bin/manage_COM_privs.bsh -a target -d 2.com -u u513b -T target1 -y'
+	${AT_BIN}/con_ex.bsh -d 513.in.tmp -o 513.exp -c "$CMD" || {
+		echo "Failed to generate /usr/local/bin/expect script, $?"
+		return 3
+	}
+
+	/usr/local/bin/expect 513.exp || {
+		echo "Failed to add target to user, error code $?"
+		return 4
+	}
+
+	return 0
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_POSTCON
+#
+# This callback function checks expected results.
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_postcon() {
+
+	# Check user u513 in 1.com has target, NB it is split over two lines
+	/usr/bin/ldapsearch -D 'cn=Directory Manager' -w $LDAP_SUPERUSER_PASSWD -b uid=u513,ou=people,dc=1,dc=com objectclass=* | sed -e ':a' -e '$!N;s/\r\?\n //;ta' -e 'P;D' | grep "ericssonUserAuthenticationScope: ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvw" || {
+		echo "u513 user does not have target ... This wasn't expected"
+		return 1
+	}
+
+	# Check output shows  user is type com_oss
+	/usr/bin/ldapsearch -D 'cn=Directory Manager' -w $LDAP_SUPERUSER_PASSWD -b uid=u513,ou=people,dc=1,dc=com objectclass=* |  grep "gidNumber: 609" || {
+		echo "User is wrong type"
+		return 8
+	}
+
+	# Check user u513 in 2.com has no targets
+	/usr/bin/ldapsearch -D 'cn=Directory Manager' -w $LDAP_SUPERUSER_PASSWD -b uid=u513,ou=people,dc=2,dc=com objectclass=* | grep "ericssonUserAuthenticationScope" && {
+		echo "u513 user has target ... This wasn't expected"
+		return 6
+	}
+
+	# Confirm that user is OSS as they have not had target added in 2.com
+	LDAP_USER_EXISTS 1.com u513 || {
+		echo "Test user u513 does not exist, $?"
+		return 7
+	}
+
+	/usr/local/bin/expect 513.exp > 513.out || {
+		echo "Failed to list user"
+		return 8
+	}
+
+	grep "userType" 513.out | grep OSS_ONLY || {
+		echo "User is not OSS_ONLY"
+		return 9
+	}
+	# Check user has no targets in 2.com	
+	grep "target" 513.out && {
+		echo "Target added to user"
+		return 10
+	}
+
+
+	# Check user u513b in 2.com has target,
+	/usr/bin/ldapsearch -D 'cn=Directory Manager' -w $LDAP_SUPERUSER_PASSWD -b uid=u513b,ou=people,dc=2,dc=com objectclass=* | grep "ericssonUserAuthenticationScope: target1" || {
+		echo "u513b user does not have target ... This wasn't expected"
+		return 11
+	}
+
+	# Check output shows  user is type com_oss
+	/usr/bin/ldapsearch -D 'cn=Directory Manager' -w $LDAP_SUPERUSER_PASSWD -b uid=u513b,ou=people,dc=1,dc=com objectclass=* |  grep "gidNumber: 609" || {
+		echo "User is wrong type"
+		return 8
+	}
+
+	return 0
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_CLEANUP
+#
+# This callback function is only called if the harness execution mode is 'AT_INDEPENDENT'
+# 
+# This callback restores the target system to the state it was in before the TC 
+# was run. It rolls back changes made by callbacks tc_setup() and tc_test()
+# 
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_cleanup() {
+
+
+	
+	# Remove temporary files
+	rm -f *.exp
+	rm -f *.out
+	rm -f *.in.tmp
+	return 0
+}

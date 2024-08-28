@@ -1,0 +1,62 @@
+#!/bin/bash
+
+# TEST CASE SPEC FILE
+# This file is generated/updated using the test framework web interface.
+# Manual updates on test servers are lost when the test package is re-installed.
+#
+# Last modified: Tuesday 14th of May 2013 8:08:06
+#
+
+# These settings must be in BASH script format, they are sourced by other scripts.
+SPEC_FA_NAME="DHCP"
+SPEC_UC_NAME="DHCP_NETWORK_RANGE_DELETE"
+SPEC_TC_ID=831
+SPEC_TC_SLOGAN="Verify can delete IP range from DHCP network with \"-q\" option"
+SPEC_TC_TYPE="FT"
+SPEC_TC_POLARITY="positive"
+SPEC_TC_PRIORITY="high"
+SPEC_TC_AUTOMATED=1
+SPEC_TC_DEPENDENT_ONLY=0
+SPEC_TC_TIMEOUT=300
+SPEC_TC_TEST_PASSCODE=0
+SPEC_TC_AUTHOR="eshmuna"
+SPEC_TC_AUTOMATOR="eshmuna"
+# this parameter is not interpreted by harness
+SPEC_TC_DISABLED=0
+
+# Please do not remove the comment lines below.
+# They are used as section locators by the test harness.
+
+# BEGIN_PRE_CONDITIONS
+#-DHCP server is UP
+#-DHCP network is created
+#-DHCP range has been added to network
+#
+#It can be seen by
+##/ericsson/ocs/bin/ai_manager.sh -list nets
+#OR
+#It can verified in the following file 
+#  /etc/dhcp/dhcpd.conf_subnet 
+#
+# END_PRE_CONDITIONS
+
+
+# BEGIN_MANUAL_STEPS
+#On OM Services:
+#
+## /ericsson/ocs/bin/ai_manager.sh -delete range -n <subnet
+#mask address> -b <range beginning ip> -q
+# END_MANUAL_STEPS
+
+# BEGIN_POST_CONDITIONS
+#- /etc/dhcp/dhcpd.conf_subnet updated to remove the range
+#- can restart DHCP server without errors
+#
+#Changes can be seen by 
+#
+##/ericsson/ocs/bin/ai_manager.sh -list nets
+#OR
+#It can verified in the following file 
+#  /etc/dhcp/dhcpd.conf_subnet 
+#
+# END_POST_CONDITIONS

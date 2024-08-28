@@ -1,0 +1,208 @@
+#!/bin/bash
+#################################################################################
+#
+#
+#       COPYRIGHT (C) ERICSSON RADIO SYSTEMS AB, Sweden
+#
+#       The copyright to the document(s) herein is the property of
+#       Ericsson Radio Systems AB, Sweden.
+#
+#       The document(s) may be used and/or copied only with the written
+#       permission from Ericsson Radio Systems AB or in accordance with
+#       the terms and conditions stipulated in the agreement/contract
+#       under which the document(s) have been supplied.
+#
+#################################################################################
+
+
+# ATCOMINF Test Callback Library
+
+# Revision History
+# <date>	<signum>	<details>
+
+# Complete the callbacks in this library to automate the test case.
+#
+# Callbacks are stateless, it is not possible to set a global variable in one callback 
+# and access it it in another.
+#
+# Callbacks are called by the test harness in the following order:
+#
+# tc_setup() 		# Called only for independent TC execution mode to setup TC
+# tc_precon()		# Conditions that should exist before TC can run
+# tc_test()		# Runs the test for this TC
+# tc_postcon()		# Conditions that should/should not exist after successful TC 
+# tc_cleanup()		# Called only for independent TC execution mode to cleanup after TC
+
+# All callbacks must PASS for a TC PASS result
+
+#################################################################################
+#
+# CALLBACK: TC_SETUP
+#
+# This callback function is only called if the harness execution mode is 'AT_INDEPENDENT'
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_setup() {
+
+	# Coded to fail in case TC_AUTOMATED=1 before automation completed
+	# Change return code as required
+
+	banner "SETUP"
+	return 0
+
+}
+#################################################################################
+
+#################################################################################
+#
+# CALLBACK: TC_PRECON
+#
+# This callback function checks the correct conditions exist to run the TC.
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+ 
+tc_precon() {
+
+	banner "PRECONE"
+	return 0
+
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_TEST
+#
+# This callback function runs the test.
+# The harness compares the return code to the SPEC_TC_TEST_PASSCODE value set in the test spec.
+#
+# Return or exit codes:
+#    SPEC_TC_TEST_PASSCODE 	success
+# != SPEC_TC_TEST_PASSCODE 	failure
+ 
+tc_test() {
+
+	# Coded to fail in case TC_AUTOMATED=1 before automation complete
+	# Change return code as required
+	ossAdmin=""
+	sybaseAdmin=""
+	ossAdmin=`/opt/VRTS/bin/hastatus -sum  | grep -v Ossfs | grep -i oss | grep -i ONLINE | awk '{print $3}'`
+	sybaseAdmin=`/opt/VRTS/bin/hastatus -sum  | grep -i Sybase | grep -i ONLINE | awk '{print $3}'`
+	if [ -n "$ossAdmin" ]; then 	
+		echo "Going to ssh to $ossAdmin"; 
+                cmd=`echo ssh $ossAdmin`
+
+                ${AT_BIN}/con_ex.bsh -d sshOss.in -o expect.exp -c "$cmd"
+                if [ $? -ne 0 ];then
+                        echo "Error: con_ex.bsh problem"
+                         return 1
+                fi
+
+                rm -rf /tmp/output.tmp
+                /usr/local/bin/expect expect.exp >/tmp/output.tmp
+
+                if [ $? -ne 0 ];then
+                        echo "Error: in Extracting ossdg group details"
+                        return 1
+                fi
+
+                echo "Now checking whether ossdg is enabled on Admin2 : $ossAdmin"
+
+                if [[ `cat /tmp/output.tmp | grep '^ossdg' ` =~ "enabled" ]]
+                then
+                        echo "Ossdg is enabled on Admin : $ossAdmin"
+			#cat  /tmp/output1.tmp
+                	echo "Now checking whether sybasedg is enabled on Admin : $sybaseAdmin"
+
+		        echo "Going to ssh to $sybaseAdmin";
+       			if [ -n "$sybaseAdmin" ];
+			then
+                		cmd=`echo ssh $sybaseAdmin`
+                		${AT_BIN}/con_ex.bsh -d sshSybase.in -o expect.exp -c "$cmd"
+               	 		if [ $? -ne 0 ];then
+                       	 		echo "Error: con_ex.bsh problem"
+                       			return 1
+                		fi
+                		rm -rf /tmp/output.tmp
+                		/usr/local/bin/expect expect.exp >/tmp/output.tmp
+
+	                	if [ $? -ne 0 ];then
+        	                	echo "Error: in Extracting sybasedg group details"
+                	       		 return 1
+               			fi
+
+         	       		if [[ `cat /tmp/output.tmp | grep '^sybasedg' ` =~ "enabled" ]]
+               			then
+                        		echo "Sybasedg is enabled on Admin : $sybaseAdmin"
+                        		return 0
+               			else
+                       	 		echo "Sybasedg is not enabled on Admin : $sybaseAdmin"
+                        		return 1
+                		fi
+	
+                	else
+				echo "No way to figure out where sybase is running! so can't determine sybasedg disk configuration";
+                        	return 1
+               		fi
+                else
+                        echo "Ossdg is not enabled on Admin : $ossAdmin"
+                        return 1
+                fi
+
+	else  
+		echo "No way to figure out where oss is running! so can't determine ossdg disk configuration";
+		return 1
+	fi
+
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_POSTCON
+#
+# This callback function checks expected results.
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_postcon() {
+
+	# Coded to fail in case TC_AUTOMATED=1 before automation complete.
+	# Change return code as required
+
+	return 0
+
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_CLEANUP
+#
+# This callback function is only called if the harness execution mode is 'AT_INDEPENDENT'
+# 
+# This callback restores the target system to the state it was in before the TC 
+# was run. It rolls back changes made by callbacks tc_setup() and tc_test()
+# 
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_cleanup() {
+
+	# Coded to fail in case TC_AUTOMATED=1 before automation complete
+	# Change return code as required
+
+	return 0
+
+}

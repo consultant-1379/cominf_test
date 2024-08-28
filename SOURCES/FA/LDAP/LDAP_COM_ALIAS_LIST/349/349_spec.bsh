@@ -1,0 +1,44 @@
+#!/bin/bash
+
+# TEST CASE SPEC FILE
+# This file is generated/updated using the test framework web interface.
+# Manual updates on test servers are lost when the test package is re-installed.
+#
+# Last modified: Wednesday 15th of May 2013 7:29:32
+#
+
+# These settings must be in BASH script format, they are sourced by other scripts.
+SPEC_FA_NAME="LDAP"
+SPEC_UC_NAME="LDAP_COM_ALIAS_LIST"
+SPEC_TC_ID=349
+SPEC_TC_SLOGAN="List alias for specified domain and alias - supply -d <valid domain> -A <alias>"
+SPEC_TC_TYPE="FT"
+SPEC_TC_POLARITY="positive"
+SPEC_TC_PRIORITY="high"
+SPEC_TC_AUTOMATED=1
+SPEC_TC_DEPENDENT_ONLY=0
+SPEC_TC_TIMEOUT=600
+SPEC_TC_TEST_PASSCODE=0
+SPEC_TC_AUTHOR="xgeohar"
+SPEC_TC_AUTOMATOR="xgeohar"
+# this parameter is not interpreted by harness
+SPEC_TC_DISABLED=0
+
+# Please do not remove the comment lines below.
+# They are used as section locators by the test harness.
+
+# BEGIN_PRE_CONDITIONS
+#Create test domain and add one or more aliases
+# END_PRE_CONDITIONS
+
+
+# BEGIN_MANUAL_STEPS
+#Invoke manage_COM.bsh -l alias -d <tstdom> -A <the_alias>
+# - where 
+#tstdom is the test domain created in tc_precon
+#the_alias is one of the aliases added to the test domain
+# END_MANUAL_STEPS
+
+# BEGIN_POST_CONDITIONS
+#Confirm that the alias is listed for the specified domain
+# END_POST_CONDITIONS

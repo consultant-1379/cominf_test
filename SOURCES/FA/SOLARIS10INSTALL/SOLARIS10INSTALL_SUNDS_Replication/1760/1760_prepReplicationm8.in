@@ -1,0 +1,10 @@
+LDAP Directory Manager password:
+ldappass
+Enter option number:
+8
+Enter Replication destination FQHN
+omsrvs.vts.com
+Continue to update defaultserverlist with
+Y
+Do you want return to the main menu
+n

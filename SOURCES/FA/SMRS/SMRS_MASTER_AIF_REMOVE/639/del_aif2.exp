@@ -1,0 +1,19 @@
+set timeout 10
+
+trap {
+	if [catch {wait -i -1} output] return
+	if {[lindex $output [expr [llength $output] -1]] != 0 } {
+	exit [lindex $output [expr [llength $output] -1]]
+}
+} SIGCHLD
+
+spawn -noecho /opt/ericsson/nms_bismrs_mc/bin/configure_smrs.sh delete aif
+
+for {} 1 {} {
+	expect {
+		eof break
+		"What is the name for this user?" {send "\-1\r"}
+		"Not a valid answer!" { exit 0 }
+		timeout { exit 1 }
+	}
+}

@@ -1,0 +1,24 @@
+DNS Domain Name
+jenkins.com
+Enter a unique name for the masterservice of the OSS RC system using this LDAP domain:
+atrcxb1385
+Enter IP address for the masterservice of the OSS RC system using this LDAP Domain:
+10.44.194.175
+New LDAP domain name
+isol_2.com
+LDAP Directory Manager password:
+ldapadmin
+LDAP name service data migration password:
+ldapadmin
+Re-enter password:
+ldapadmin
+LDAP name service data maintenence password:
+ldapadmin
+Re-enter password:
+ldapadmin
+LDAP name service proxyagent password:
+ldapadmin
+Re-enter password:
+ldapadmin
+Are the values ok?
+y

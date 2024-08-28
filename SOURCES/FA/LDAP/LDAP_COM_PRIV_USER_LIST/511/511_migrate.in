@@ -1,0 +1,16 @@
+LDAP Directory Manager password: 
+PASSWD
+Continue to migrate domain*
+y
+Stage 3: Enter primary LDAP server IP address:
+192.168.0.4
+Is primary LDAP server IP*
+y
+Stage 3: Enter primary LDAP server IP address*
+192.168.0.7
+Is secondary LDAP server IP*
+y
+
+
+
+

@@ -1,0 +1,25 @@
+	<fieldset>
+		<legend>Harness Host Configuration</legend>	
+		<b>Admin1 Hostname&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;:</b>
+		<input type="text" name="CI_ADMIN1_HOSTNAME" id="CI_ADMIN1_HOSTNAME" required size=30><br>
+		<b>Admin2 Hostname&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;:</b>
+		<input type="text" name="CI_ADMIN2_HOSTNAME" id="CI_ADMIN2_HOSTNAME" size=30><br>		
+		<b>Admin1 IPV4 Address&nbsp;&nbsp;:</b>
+		<input type="text" name="CI_ADMIN1_IPV4_ADDRESS" id="ci_admin1_ipv4_address" onblur="validateIpAddress(this,document.getElementById('ip_address_help1'))" required size=30>
+		<span id="ip_address_help1" class="help"></span><br>
+		<b>Admin2 IPV4 Address&nbsp;&nbsp;:</b>
+		<input type="text" name="CI_ADMIN2_IPV4_ADDRESS" id="ci_admin2_ipv4_address" onblur="validateIpAddress(this,document.getElementById('ip_address_help2'))" size=30>
+		<span id="ip_address_help2" class="help"></span><br>
+		<b>Admin1 Root Password:</b>
+		<input type="password" name="CI_ADMIN1_ROOTPW" id="CI_ADMIN1_ROOTPW" value="shroot" required size=30><br>
+		<b>Admin2 Root Password:</b>
+		<input type="password" name="CI_ADMIN2_ROOTPW" id="CI_ADMIN2_ROOTPW" value="shroot" size=30><br>
+		<b>Admin1 ILO Name&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;:</b>
+		<input type="text" name="CI_ADMIN1_ILO_NAME" size=30><br>
+		<b>Admin2 ILO Name&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;:</b>
+		<input type="text" name="CI_ADMIN2_ILO_NAME" size=30><br>
+		<b>Admin1 ILO Root Password:</b>
+		<input type="password" name="CI_ADMIN1_ILO_ROOTPW" value="shroot12"size=30><br>
+		<b>Admin2 ILO Root Password:</b>
+		<input type="password" name="CI_ADMIN2_ILO_ROOTPW" value="shroot12" size=30><br>
+	</fieldset>

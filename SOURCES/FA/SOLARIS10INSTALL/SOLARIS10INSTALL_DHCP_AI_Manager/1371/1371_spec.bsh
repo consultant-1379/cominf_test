@@ -1,0 +1,94 @@
+#!/bin/bash
+
+# TEST CASE SPEC FILE
+# This file is generated/updated using the test framework web interface.
+# Manual updates on test servers are lost when the test package is re-installed.
+#
+# Last modified: Monday 16th of December 2013 9:43:31
+#
+
+# These settings must be in BASH script format, they are sourced by other scripts.
+SPEC_FA_NAME="SOLARIS10INSTALL"
+SPEC_UC_NAME="SOLARIS10INSTALL_DHCP_AI_Manager"
+SPEC_TC_ID=1371
+SPEC_TC_SLOGAN=" ai_manager.sh : Negative testing "
+SPEC_TC_TYPE="FT"
+SPEC_TC_POLARITY="positive"
+SPEC_TC_PRIORITY="high"
+SPEC_TC_AUTOMATED=1
+SPEC_TC_DEPENDENT_ONLY=0
+SPEC_TC_TIMEOUT=300
+SPEC_TC_TEST_PASSCODE=0
+SPEC_TC_AUTHOR="xgansre"
+SPEC_TC_AUTOMATOR="xgansre"
+# this parameter is not interpreted by harness
+SPEC_TC_DISABLED=0
+
+# Please do not remove the comment lines below.
+# They are used as section locators by the test harness.
+
+# BEGIN_PRE_CONDITIONS
+#
+#
+#Mars Path <Initial Installation/DHCP/AI Manager>
+#
+#
+# END_PRE_CONDITIONS
+
+
+# BEGIN_MANUAL_STEPS
+#Action 1:
+#Add an LTE client with multiple NTP server :
+#
+#/ericsson/ocs/bin/ai_manager.sh -add lte_client -a 12.12.12.5 -h "site1eRBS01" -i "eRBS01_SITEtest3" -s 12.12.12.10 -p /LRAN/smrsslave1/AIF/Site1eRBS15/summaryFile.xml -t "10.42.52.99,10.42.52.100,10.42.52.101,10.42.52.102,10.42.52.103" -u 23005253 
+#
+#Action 2:
+#Add an LTE client with garbage values :
+#/ericsson/ocs/bin/ai_manager.sh -add lte_client -a 12.12.12.6 -h "site1eRBS01" -i "eRBS01_SITEtest4" -s 12.12.12.10 -p /LRAN/smrsslave1/AIF/Site1eRBS15/summaryFile.xml -t "10.42.52.103.108" -u 23005253
+#
+#Action 3:
+#Verify that it's not possible to add a client without any network added for that client.
+#/ericsson/ocs/bin/ai_manager.sh -add client -a 14.14.14.12 -h "site1eRBS01" -i "test5" -s 13.13.13.10 -p /LRAN/smrsslave1/AIF/Site1eRBS15/summaryFile.xml 
+#
+#Action 4:
+#Deleting a non-existing client
+#
+#Action 5:
+#Add a client with invalid smrs server ip.
+#./ai_manager.sh -add lte_client -a 19.19.19.9 -h test_01 -i test_05 -s ii.ko.ki.kj -p /test.xml,/test2.xml -t "10.45.192.15" -u 32452454 
+#
+#Action 6:
+#Verify that adding an already existing client/network with -q option throws a proper error message.Execute the following command:
+#
+#bash-3.2# ./ai_manager.sh -add client -a 10.10.125.1 -h tr1 -i tr1 -s 10.0.0.1 -p /test.xml -q
+#Client IP 10.10.125.1 already exists
+#
+#
+#
+#
+#
+#
+# END_MANUAL_STEPS
+
+# BEGIN_POST_CONDITIONS
+#Result1:
+#The client should not be added.Script should display a proper error messages for multiple ntp servers.
+#
+#Result 2:
+#The script should throw an error for invalid ip octet and client should not get added to the dhcp server.Verify that dhcpd.conf_static file and aif_hosts file are not updated with this client.
+#
+#Result 3:
+#The client is not added.
+#
+#Result 4:
+#Verify that script outputs a proper message saying "no such client exits".
+#
+#Result 5:
+#
+#The script should throw an error and verify that client is not added to the dhcp server.
+#
+#Result 6:
+#
+#Script throws a message saying "client already exists"
+# 
+# END_POST_CONDITIONS

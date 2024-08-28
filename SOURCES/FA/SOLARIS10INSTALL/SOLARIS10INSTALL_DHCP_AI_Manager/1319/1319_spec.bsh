@@ -1,0 +1,64 @@
+#!/bin/bash
+
+# TEST CASE SPEC FILE
+# This file is generated/updated using the test framework web interface.
+# Manual updates on test servers are lost when the test package is re-installed.
+#
+# Last modified: Monday 16th of December 2013 9:15:35
+#
+
+# These settings must be in BASH script format, they are sourced by other scripts.
+SPEC_FA_NAME="SOLARIS10INSTALL"
+SPEC_UC_NAME="SOLARIS10INSTALL_DHCP_AI_Manager"
+SPEC_TC_ID=1319
+SPEC_TC_SLOGAN="Verify ai_manager.sh script usage for help "
+SPEC_TC_TYPE="FT"
+SPEC_TC_POLARITY="positive"
+SPEC_TC_PRIORITY="high"
+SPEC_TC_AUTOMATED=1
+SPEC_TC_DEPENDENT_ONLY=0
+SPEC_TC_TIMEOUT=300
+SPEC_TC_TEST_PASSCODE=0
+SPEC_TC_AUTHOR="xgansre"
+SPEC_TC_AUTOMATOR="xgansre"
+# this parameter is not interpreted by harness
+SPEC_TC_DISABLED=0
+
+# Please do not remove the comment lines below.
+# They are used as section locators by the test harness.
+
+# BEGIN_PRE_CONDITIONS
+#Mars Path <Initial Installation/DHCP/AI Manager>
+#
+#Precondition
+#
+#: Infra Server is successfully jumpstarted and contains the correct cominf media.
+#2.EXTRdhcp package is installed.
+#3.the ISC DHCP daemons for IPv4 and IPv6 are running on the server. Check the processes are running. 
+#This can be verified by executing the commands 'ps -ef | grep -i dhcp'. 
+#Verify the SUN DHCP process is disabled on the server, this can be verified by executing the command, 'svcs -a | grep -i dhcp'
+# END_PRE_CONDITIONS
+
+
+# BEGIN_MANUAL_STEPS
+#Action 1
+#
+#: Execute the script without passing any parameters.
+## /ericsson/ocs/bin/ai_manager.sh
+#
+#Action 2:
+#
+#Execute the script with the "-help" parameter
+## /ericsson/ocs/bin/ai_manager.sh -help
+#
+# END_MANUAL_STEPS
+
+# BEGIN_POST_CONDITIONS
+#Result 1:
+#
+#The script help usage is displayed to console
+#
+#Result 2:
+#
+#The script help usage is returned. The Information in the help usage is accurate
+# END_POST_CONDITIONS

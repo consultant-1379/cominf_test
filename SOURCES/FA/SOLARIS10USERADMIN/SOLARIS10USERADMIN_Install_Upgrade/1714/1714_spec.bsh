@@ -1,0 +1,71 @@
+#!/bin/bash
+
+# TEST CASE SPEC FILE
+# This file is generated/updated using the test framework web interface.
+# Manual updates on test servers are lost when the test package is re-installed.
+#
+# Last modified: Tuesday 17th of December 2013 7:12:37
+#
+
+# These settings must be in BASH script format, they are sourced by other scripts.
+SPEC_FA_NAME="SOLARIS10USERADMIN"
+SPEC_UC_NAME="SOLARIS10USERADMIN_Install_Upgrade"
+SPEC_TC_ID=1714
+SPEC_TC_SLOGAN="Login into the SUN DS, after lock limit is reached. "
+SPEC_TC_TYPE="FT"
+SPEC_TC_POLARITY="positive"
+SPEC_TC_PRIORITY="high"
+SPEC_TC_AUTOMATED=1
+SPEC_TC_DEPENDENT_ONLY=0
+SPEC_TC_TIMEOUT=300
+SPEC_TC_TEST_PASSCODE=0
+SPEC_TC_AUTHOR="xlaxain"
+SPEC_TC_AUTOMATOR="xlaxain"
+# this parameter is not interpreted by harness
+SPEC_TC_DISABLED=0
+
+# Please do not remove the comment lines below.
+# They are used as section locators by the test harness.
+
+# BEGIN_PRE_CONDITIONS
+#Path in Mars:- User Administration/Initial Install/Upgrade User Administration Test Cases 
+#
+#The purpose is to verify that you cannot login after the locked limit is reached.
+#
+#Precondition: 
+#
+#Infra Server, security policies are set, COMInf SUN Directory Server System Administration Guide (1/1543-APR 901 0124 Uen )
+#
+# END_PRE_CONDITIONS
+
+
+# BEGIN_MANUAL_STEPS
+#Action 1: 
+#
+#On the Infra, change the default security policies as mentioned in 11.1.11 and create a new user so the policy is activated immediately for that user using the add_user.sh script. Log on from command line to the LDAP client (OSS/UAS) as this user and change the password as prompted then logoff.
+#Action 2: 
+#
+#Wait 10 mins and log on to the LDAP client (OSS/UAS) from the command line . A warning should be displayed stating
+#"Your password will expire within one hour".
+#Action 3: 
+#
+#Log off and 
+#
+#Wait 5 mins. After 5 mins (total duration since user password first set is > 15mins) attempt to log on to the LDAP client (OSS/UAS) from the command line. Logon is refused and the following message is displayed...
+#"Your password has expired. Login incorrect."
+#
+# END_MANUAL_STEPS
+
+# BEGIN_POST_CONDITIONS
+#Result 1: 
+#
+#The new user is created and password is changed as prompted and then logged off
+#
+#Result 2: 
+#
+#The user can logon successfully and warning is displayed
+#
+#Result 3: 
+#
+#The user cannot logon to the system and message displayed as expected. 
+# END_POST_CONDITIONS

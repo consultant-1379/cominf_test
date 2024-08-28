@@ -1,0 +1,121 @@
+# Specify the full path to the local rpm build root
+# RPMBUILD requires the following layout to be available:-
+#  $_topdir/{BUILD,RPMS,S{OURCE,PEC,RPM}S}
+%define _topdir %(pwd)
+# Specifies the build architecture, normally "noarch"
+%define _arch noarch
+# Specifies final installation path prefix
+%define _prefix /opt/ericsson/cominf_test
+
+# =========================
+# Header
+# =========================
+# Short Description
+Summary: COMInf_TEST_HARNESS
+# Application Name - used in RPM name
+Name: COMInf_TEST_HARNESS
+# Application Version - used in RPM name
+Version: R1A01
+# Packaging Revision - used in RPM name
+Release: 0
+# Software Licenced Under
+License: Ericsson
+# RPM Group
+Group: COMInf/TEST
+# Link to Application web site
+# URL: http://TBA/
+# Distributing Organisation
+Vendor: Ericsson AB
+# Build Architecture
+BuildArch: noarch
+
+BuildRoot: %{_topdir}/BUILDROOT/%{name}-%{version}-%{release}.%{_arch}
+
+Requires: python
+
+# Long Description
+%Description
+COMInf test harness for testing COMInf services such as LDAP, DNS, DHCP and SMRS.
+
+# =========================
+# Pre & Post Install
+# =========================
+# If the first argument to %pre is 1, the RPM operation is an initial
+#  installation. If the argument to %pre is 2, the operation is an upgrade
+#  from an existing version to a new one.
+# Similarly, the arguments to a %post are 1 and 2 for a new installation
+#  and upgrade, respectively. (%pre and %post aren't executed during
+#  an uninstallation.)
+# Accepts normal shell (/bin/sh) commands or scripts.
+
+# Pre Install
+%pre
+if [ "$1" == "1" ]; then
+	echo "Pre Install - initial install"
+else if [ "$1" == "2" ]; then
+		echo "Pre Install - upgrade install"
+	fi
+fi
+
+# Post Install
+%post
+if [ "$1" == "1" ]; then
+	echo "Post Install - initial install"
+else if [ "$1" == "2" ]; then
+		echo "Post Install - upgrade install"
+	fi
+fi
+
+# =========================
+# Pre & Post Uninstall
+# =========================
+# If the first argument to %preun and %postun is 0, the action is
+#  uninstallation.
+# If the first argument to %preun and %postun is 1, the action is an upgrade.
+# Accepts normal shell (/bin/sh) commands or scripts.
+
+# Pre Uninstall
+%preun
+if [ "$1" == "0" ]; then
+	echo "Pre Uninstall - uninstall"
+else if [ "$1" == "1" ]; then
+		echo "Pre Uninstall - upgrade uninstall"
+	fi
+fi
+# Post Uninstall
+%postun
+if [ "$1" == "0" ]; then
+	echo "Post Uninstall - uninstall"
+else if [ "$1" == "1" ]; then
+		echo "Post Uninstall - upgrade uninstall"
+	fi
+fi
+
+# =========================
+# Prepare, Build, Install
+# =========================
+# %prep
+# Only required when building from source code files
+
+# %build
+# Only required when building from source code files
+
+%install
+# Used to prepare files for RPM build
+# accepts normal shell (/bin/sh) commands or scripts
+# POD man page generation will also be carried out here
+mkdir -p $RPM_BUILD_ROOT%{_prefix}/harness
+cd $RPM_BUILD_ROOT%{_prefix} ; cp -r %{_topdir}/SOURCES/* .
+
+# =========================
+# Files Layout
+# =========================
+%files
+# Installation path
+%dir %{_prefix}
+%{_prefix}
+# Required sub-directories
+# Files to deploy
+# %{_prefix}/bin/script.bsh
+# Config files to survive an upgrade
+# %config(noreplace) %{_prefix}/config/config.file

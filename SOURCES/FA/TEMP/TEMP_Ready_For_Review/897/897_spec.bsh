@@ -1,0 +1,54 @@
+#!/bin/bash
+
+# TEST CASE SPEC FILE
+# This file is generated/updated using the test framework web interface.
+# Manual updates on test servers are lost when the test package is re-installed.
+#
+# Last modified: Sunday 31st of March 2013 20:37:24
+#
+
+# These settings must be in BASH script format, they are sourced by other scripts.
+SPEC_FA_NAME="DNS"
+SPEC_UC_NAME="DNS_INSTALL_RUN"
+SPEC_TC_ID=897
+SPEC_TC_SLOGAN="system_upgrade script "
+SPEC_TC_TYPE="FT"
+SPEC_TC_POLARITY="positive"
+SPEC_TC_PRIORITY="high"
+SPEC_TC_AUTOMATED=0
+SPEC_TC_DEPENDENT_ONLY=0
+SPEC_TC_TIMEOUT=300
+SPEC_TC_TEST_PASSCODE=0
+SPEC_TC_AUTHOR="eshmuna"
+SPEC_TC_AUTOMATOR="eshmuna"
+# this parameter is not interpreted by harness
+SPEC_TC_DISABLED=0
+
+# Please do not remove the comment lines below.
+# They are used as section locators by the test harness.
+
+# BEGIN_PRE_CONDITIONS
+#- OM Services Server is installed
+#- DNS is setup on install
+# END_PRE_CONDITIONS
+
+
+# BEGIN_MANUAL_STEPS
+#1. Run system_upgrade script on O&M services servers where DNS is configured and check whether setup_dns.bsh is called by upgrade script or not
+#
+#2. Run system_upgrade script on O&M services servers where DNS is not configured and check whether setup_dns.bsh is called by upgrade script or not
+#
+#3. Run system_upgrade script on O&M services servers where DNS is configured and check whether DNS is working fine or not after system upgrade
+#
+# END_MANUAL_STEPS
+
+# BEGIN_POST_CONDITIONS
+#Result 1:
+#Upgrade was successful and DNS script is not called by upgrade script (/ericsson/ocs/log/SUG/<>/)
+#
+#Result 2:
+#Upgrade was successful and DNS script is not called by upgrade script
+#
+#Result 3:
+#Existing DNS setup exists on the servers and DNS is working fine
+# END_POST_CONDITIONS

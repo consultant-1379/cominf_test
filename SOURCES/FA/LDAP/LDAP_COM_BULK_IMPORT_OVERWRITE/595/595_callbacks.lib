@@ -1,0 +1,159 @@
+#!/bin/bash
+#################################################################################
+#
+#
+#	   COPYRIGHT (C) ERICSSON RADIO SYSTEMS AB, Sweden
+#
+#	   The copyright to the document(s) herein is the property of
+#	   Ericsson Radio Systems AB, Sweden.
+#
+#	   The document(s) may be used and/or copied only with the written
+#	   permission from Ericsson Radio Systems AB or in accordance with
+#	   the terms and conditions stipulated in the agreement/contract
+#	   under which the document(s) have been supplied.
+#
+#################################################################################
+
+
+# ATCOMINF Test Callback Library
+
+# Revision History
+# 05/10/12	xamamcg		Initial test for bulk overwrite
+
+# Complete the callbacks in this library to automate the test case.
+#
+# Callbacks are stateless, it is not possible to set a global variable in one callback 
+# and access it it in another.
+#
+# Callbacks are called by the test harness in the following order:
+#
+# tc_setup() 		# Called only for independent TC execution mode to setup TC
+# tc_precon()		# Conditions that should exist before TC can run
+# tc_test()		# Runs the test for this TC
+# tc_postcon()		# Conditions that should/should not exist after successful TC 
+# tc_cleanup()		# Called only for independent TC execution mode to clenup after TC
+
+# All callbacks must PASS for a TC PASS result
+TEST_ROLE=r595a 
+TEST_DOMAIN="1.com"
+BIN_DIR="/ericsson/sdee/bin"
+#################################################################################
+#
+# CALLBACK: TC_SETUP
+#
+# This callback function is only called if the harness execution mode is 'AT_INDEPENDENT'
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_setup() {
+
+    # Replace PASSWD with the correct credentials or data
+    for ii in *.in; do
+        sed -e "s/^PASSWD$/$LDAP_SUPERUSER_PASSWD/" \
+            -e "s/TESTROLE/$TEST_ROLE/" \
+            -e "s/TESTDOM/$TEST_DOMAIN/" $ii > $ii.tmp || {
+            echo "Failed to replace LDAP superuser password holder etc in /usr/local/bin/expect input file $ii, rc $?"
+            return 6
+        }
+    done
+
+
+	return 0
+}
+#################################################################################
+
+#################################################################################
+#
+# CALLBACK: TC_PRECON
+#
+# This callback function checks the correct conditions exist to run the TC.
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+ 
+tc_precon() {
+
+	return 0
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_TEST
+#
+# This callback function runs the test.
+# The harness compares the return code to the SPEC_TC_TEST_PASSCODE value set in the test spec.
+#
+# Return or exit codes:
+#	SPEC_TC_TEST_PASSCODE 	success
+# != SPEC_TC_TEST_PASSCODE 	failure
+ 
+tc_test() {
+
+	${AT_BIN}/con_ex.bsh -d 595.in.tmp -o 595bulkload.exp -c "/ericsson/sdee/bin/manage_COM.bsh -a import -d $TEST_DOMAIN -f 595_import.in.tmp -o -y" || {
+		echo "Failed to generate /usr/local/bin/expect script, $?"
+		return 1
+	}
+
+	/usr/local/bin/expect 595bulkload.exp || {
+		echo "Error during the import"
+		return 2
+	}
+
+	return 0
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_POSTCON
+#
+# This callback function checks expected results.
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_postcon() {
+
+	dmn=$(LDAP_GET_DOMAIN_DN_FORMAT $TEST_DOMAIN)
+	/usr/bin/ldapsearch -D 'cn=Directory Manager' -w $LDAP_SUPERUSER_PASSWD -b "cn=$TEST_ROLE,ou=role,ou=com,$dmn" objectclass=* || {
+		echo "No role r595a"
+		return 1
+	}
+	return 0
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_CLEANUP
+#
+# This callback function is only called if the harness execution mode is 'AT_INDEPENDENT'
+# 
+# This callback restores the target system to the state it was in before the TC 
+# was run. It rolls back changes made by callbacks tc_setup() and tc_test()
+# 
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_cleanup() {
+        # delete role created in tc_test
+        ${AT_BIN}/con_ex.bsh -d 595_remove_role.in.tmp -o 595_expect.exp -c "$BIN_DIR/manage_COM.bsh -r role -d $TEST_DOMAIN " -r
+        /usr/local/bin/expect 595_expect.exp  || {
+                echo "Could not delete role added to default domain - FAIL"
+                return 1
+        }
+
+	rm -f *.exp
+	rm -f *.out
+	rm -f *.in.tmp
+	return 0
+}

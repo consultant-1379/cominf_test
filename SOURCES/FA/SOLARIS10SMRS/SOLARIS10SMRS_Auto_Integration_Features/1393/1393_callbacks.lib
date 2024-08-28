@@ -1,0 +1,205 @@
+#!/bin/bash
+#################################################################################
+#
+#
+#       COPYRIGHT (C) ERICSSON RADIO SYSTEMS AB, Sweden
+#
+#       The copyright to the document(s) herein is the property of
+#       Ericsson Radio Systems AB, Sweden.
+#
+#       The document(s) may be used and/or copied only with the written
+#       permission from Ericsson Radio Systems AB or in accordance with
+#       the terms and conditions stipulated in the agreement/contract
+#       under which the document(s) have been supplied.
+#
+#################################################################################
+
+
+# ATCOMINF Test Callback Library
+
+# Revision History
+# <date>	<signum>	<details>
+
+# Complete the callbacks in this library to automate the test case.
+#
+# Callbacks are stateless, it is not possible to set a global variable in one callback 
+# and access it it in another.
+#
+# Callbacks are called by the test harness in the following order:
+#
+# tc_setup() 		# Called only for independent TC execution mode to setup TC
+# tc_precon()		# Conditions that should exist before TC can run
+# tc_test()		# Runs the test for this TC
+# tc_postcon()		# Conditions that should/should not exist after successful TC 
+# tc_cleanup()		# Called only for independent TC execution mode to cleanup after TC
+
+# All callbacks must PASS for a TC PASS result
+
+SMRS_PROPERTIES=/etc/opt/ericsson/nms_bismrs_mc/bismrs.properties
+
+#################################################################################
+#
+# CALLBACK: TC_SETUP
+#
+# This callback function is only called if the harness execution mode is 'AT_INDEPENDENT'
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_setup() {
+
+        . ${SMRS_PROPERTIES}
+        . ${G_SMRSOSSETCDIR}/smrs_config
+	. ${AT_LIB}/tst_SMRS.lib
+        [ -z $SMRS_MASTER_IP ] && {
+                echo "SMRS_Master is not configured"
+                return 1
+        }
+        [ -z $NEDSS_TRAFFIC_IP ] && {
+                echo "NEDSS is not configured"
+                return 2
+        }
+	. ${AT_LIB}/tst_SMRS.lib
+        SLAVE_SERVICES_LIST $OSS_MASTERSERVICE_IP lst_slave_services
+	echo $lst_slave_services| grep "nedssv4"
+	retcode=$?
+	if [ $retcode = 1 ]; then
+		echo "nedssv4 slave service doesnt exists"
+		return 3
+	fi	
+	return 0
+
+}
+#################################################################################
+
+#################################################################################
+#
+# CALLBACK: TC_PRECON
+#
+# This callback function checks the correct conditions exist to run the TC.
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+ 
+tc_precon() {
+
+        . ${SMRS_PROPERTIES}
+        ${AT_BIN}/con_ex.bsh -d 1393.in -o 1393.exp -c "$G_SMRSOSSBINDIR/configure_smrs.sh add aif"
+	/usr/local/bin/expect 1393.exp || {
+		echo "ERROR Failed to create AIF user"
+                return 4
+        }
+        ${AT_BIN}/con_ex.bsh -d 1393_1.in -o 1393_1.exp -c "$G_SMRSOSSBINDIR/configure_smrs.sh add aif"
+        /usr/local/bin/expect 1393_1.exp || {
+                echo "ERROR Failed to create AIF user"
+                return 5
+        }
+
+	return 0
+
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_TEST
+#
+# This callback function runs the test.
+# The harness compares the return code to the SPEC_TC_TEST_PASSCODE value set in the test spec.
+#
+# Return or exit codes:
+#    SPEC_TC_TEST_PASSCODE 	success
+# != SPEC_TC_TEST_PASSCODE 	failure
+ 
+tc_test() {
+	
+	cmd="id c_1393"	
+       ${AT_BIN}/con_ex.bsh -d 1393_id.in -o 1393_id.exp -c "ssh root@nedss $cmd"
+	/usr/local/bin/expect 1393_id.exp || {
+		echo "Error while running id"
+		return 6
+	}
+	/opt/ericsson/nms_cif_cs/etc/unsupported/bin/cstest -s ONRM_CS lt FtpService | grep c_1393
+	return 0
+
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_POSTCON
+#
+# This callback function checks expected results.
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_postcon() {
+
+	. ${AT_LIB}/tst_SMRS.lib
+	CONSOLE_OUTPUT_MATCH "(c_1393)" || {
+		echo "Error while checking UID"
+		return 7
+	}
+	CHECK_SFTP_AIF nedss "c_1393" "shroot@1" || {
+		echo "ERROR in SFTP connection"
+		return 8
+	}
+	CONSOLE_OUTPUT_MATCH "FtpService=c_1393" || {
+                echo "Error creating FTP service for c_1393 aif"
+                return 9
+        }
+	CONSOLE_OUTPUT_MATCH "FtpService=c1_1393" && {
+        	echo "Error created FTP service for c1_1393 aif"
+                return 10
+        }
+	grep -i ERROR /opt/ericsson/nms_cif_sm/bin/smlog
+	retcode=$?
+	if [ "$retcode" -eq  0 ]; then 
+		echo "ERROR in /opt/ericsson/nms_cif_sm/bin/smlog"
+		return 11
+	fi
+	
+ 	
+	return 0
+
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_CLEANUP
+#
+# This callback function is only called if the harness execution mode is 'AT_INDEPENDENT'
+# 
+# This callback restores the target system to the state it was in before the TC 
+# was run. It rolls back changes made by callbacks tc_setup() and tc_test()
+# 
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_cleanup() {
+
+	. ${SMRS_PROPERTIES}
+        ${AT_BIN}/con_ex.bsh -d 1393_del.in -o 1393_del.exp -c "$G_SMRSOSSBINDIR/configure_smrs.sh delete aif"
+        /usr/local/bin/expect 1393_del.exp || {
+                echo "ERROR Failed to delete c_1393 user"
+                return 12
+        }
+        ${AT_BIN}/con_ex.bsh -d 1393_del2.in -o 1393_del2.exp -c "$G_SMRSOSSBINDIR/configure_smrs.sh delete aif"
+        /usr/local/bin/expect 1393_del2.exp || {
+                echo "ERROR Failed to delete c1_1393 user"
+                return 13
+        }
+
+	
+	return 0
+
+}

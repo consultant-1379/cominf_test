@@ -1,0 +1,15 @@
+#!/bin/bash
+
+# TEST SUITE SPEC FILE
+# This file is generated/updated using the test framework web interface.
+# Manual updates on test servers are lost when the test package is re-installed.
+#
+# Last modified: Thursday 13th of December 2012 12:01:56
+#
+SPEC_TS_NAME=SPARC_IMPORT_NETWORK_ELEMENTS
+SPEC_TS_ID=46
+SPEC_TS_SLOGAN="import WRAN, CORE, GRAN, LTE network elements on to SPARC OSS."
+SPEC_TS_TIMEOUT=300
+SPEC_TS_AUTHOR="eeidle"
+SPEC_TS_INDEPENDENT=1
+SPEC_TS_TC_IDS=(822 823 824 825)

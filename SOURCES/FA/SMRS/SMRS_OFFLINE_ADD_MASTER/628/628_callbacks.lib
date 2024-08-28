@@ -1,0 +1,182 @@
+#!/bin/bash
+#################################################################################
+#
+#
+#       COPYRIGHT (C) ERICSSON RADIO SYSTEMS AB, Sweden
+#
+#       The copyright to the document(s) herein is the property of
+#       Ericsson Radio Systems AB, Sweden.
+#
+#       The document(s) may be used and/or copied only with the written
+#       permission from Ericsson Radio Systems AB or in accordance with
+#       the terms and conditions stipulated in the agreement/contract
+#       under which the document(s) have been supplied.
+#
+#################################################################################
+
+
+# ATCOMINF Test Callback Library
+
+# Revision History
+# <date>	<signum>	<details>
+
+# Complete the callbacks in this library to automate the test case.
+#
+# Callbacks are stateless, it is not possible to set a global variable in one callback 
+# and access it it in another.
+#
+# Callbacks are called by the test harness in the following order:
+#
+# tc_setup() 		# Called only for independent TC execution mode to setup TC
+# tc_precon()		# Conditions that should exist before TC can run
+# tc_test()		# Runs the test for this TC
+# tc_postcon()		# Conditions that should/should not exist after successful TC 
+# tc_cleanup()		# Called only for independent TC execution mode to clenup after TC
+
+# All callbacks must PASS for a TC PASS result
+
+#################################################################################
+#
+# CALLBACK: TC_SETUP
+#
+# This callback function is only called if the harness execution mode is 'AT_INDEPENDENT'
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_setup() {
+	#PREPARE_SMRS
+	return $?
+
+}
+#################################################################################
+
+#################################################################################
+#
+# CALLBACK: TC_PRECON
+#
+# This callback function checks the correct conditions exist to run the TC.
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+ 
+tc_precon() {
+	SMRS_MASTER_IS_INSTALLED || { echo "SMRS Master is not installed"; return 1; }
+	OFFLINE_MASTER_IS_INSTALLED || { echo "Offline Master is not installed"; return 1; }
+	VIP_ON_ONLINE_MASTER ||  { echo "The VIP is not on the online SMRS Master"; return 1; }
+	return 0
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_TEST
+#
+# This callback function runs the test.
+# The harness compares the return code to the SPEC_TC_TEST_PASSCODE value set in the test spec.
+#
+# Return or exit codes:
+#    SPEC_TC_TEST_PASSCODE 	success
+# != SPEC_TC_TEST_PASSCODE 	failure
+ 
+tc_test() {
+	local offlineMasterMaint=$(OFFLINE_MASTER_MAINT_IP)
+	local smrsMasterMaint=$(SMRS_MASTER_MAINT_IP)
+	local vip=$(SMRS_MASTER_IP)
+
+	local onlineMasterHostname=$(HA_ONLINE_MASTER_HOSTNAME)
+	local offlineMasterHostname=$(HA_OFFLINE_MASTER_HOSTNAME)
+
+	# Part 1 switch VIP from online to offline master
+	# unconfigure VIP from online master
+	local output
+	output=$(ssh $smrsMasterMaint /ericsson/smrs/bin/vip_configure.sh -m unconfig 2>/dev/null)
+	[ $? -ne 0 ] && { echo "ERROR: Script completed on online master with non-zero exit code"; return 1; }
+
+	grep "Un-configuring virtual interface on server $onlineMasterHostname" <<< $output > /dev/null 2>&1
+	[ $? -ne 0 ] && { echo "ERROR: Failed to unconfigure VIP on online master $onlineMasterHostname" ; return 1; }
+	grep "VIP configuration on $onlineMasterHostname completed successfully" <<< $output > /dev/null 2>&1
+	[ $? -ne 0 ] && { echo "ERROR: VIP unconfiguration did not complete successfully on online master $onlineMasterHostname" ; return 1; }
+
+	# Configure VIP on offline master
+	output=$(ssh $offlineMasterMaint /ericsson/smrs/bin/vip_configure.sh -m config 2>/dev/null)	
+	[ $? -ne 0 ] && { echo "ERROR: Script completed on offline master with non-zero exit code"; return 1; }
+
+	grep "Configuring virtual interface on server $offlineMasterHostname" <<< $output > /dev/null 2>&1
+	[ $? -ne 0 ] && { echo "ERROR: VIP configuration did not complete successfully on offline master $offlineMasterHostname" ; return 1; }
+	grep "VIP configuration on $offlineMasterHostname completed successfully" <<< $output > /dev/null 2>&1
+	[ $? -ne 0 ] && { echo "ERROR: VIP configuration did not complete successfully on offline master $offlineMasterHostname" ; return 1; }
+
+	# Verify VIP has switched 
+	ssh $onlineMasterHostname "ip a | grep -q $vip" 2>/dev/null && { echo "ERROR: VIP still present on online master $onlineMasterHostname" ; return 1; }
+	ssh $offlineMasterHostname  "ip a | grep -q $vip" 2>/dev/null || { echo "ERROR: VIP not up on offline master $offlineMasterHostname" ; return 1; }
+	ssh $vip "ls" > /dev/null 2>&1 || { echo "ERROR: VIP not functioning on $offlineMasterHostname" ; return 1; }
+
+
+	# Part 2 restore VIP to online master
+	# unconfigure VIP from offline master
+	output=$(ssh $offlineMasterMaint /ericsson/smrs/bin/vip_configure.sh -m unconfig 2>/dev/null)
+	[ $? -ne 0 ] && { echo "ERROR: Script completed on offline master with non-zero exit code"; return 1; }
+
+	grep "Un-configuring virtual interface on server $offlineMasterHostname" <<< $output > /dev/null 2>&1
+	[ $? -ne 0 ] && { echo "ERROR: Failed to unconfigure VIP on offline master $offlineMasterHostname" ; return 1; }
+	grep "VIP configuration on $offlineMasterHostname completed successfully" <<< $output > /dev/null 2>&1
+	[ $? -ne 0 ] && { echo "ERROR: VIP unconfiguration did not complete successfully on offline master $offlineMasterHostname" ; return 1; }
+
+	# Configure VIP on online master
+	output=$(ssh $smrsMasterMaint /ericsson/smrs/bin/vip_configure.sh -m config 2>/dev/null)
+	[ $? -ne 0 ] && { echo "ERROR: Script completed on online master with non-zero exit code"; return 1; }
+
+	grep "Configuring virtual interface on server $onlineMasterHostname" <<< $output > /dev/null 2>&1
+	[ $? -ne 0 ] && { echo "ERROR: VIP configuration did not complete successfully on online master $onlineMasterHostname" ; return 1; }
+	grep "VIP configuration on $onlineMasterHostname completed successfully" <<< $output > /dev/null 2>&1
+	[ $? -ne 0 ] && { echo "ERROR: VIP configuration did not complete successfully on online master $onlineMasterHostname" ; return 1; }
+
+	# Verify VIP has switched
+	ssh $onlineMasterHostname "ip a | grep -q $vip" 2>/dev/null || { echo "ERROR: VIP not up on online master $onlineMasterHostname" ; return 1; }
+	ssh $offlineMasterHostname  "ip a | grep -q $vip" 2>/dev/null && { echo "ERROR: VIP still present on offline master $offlineMasterHostname" ; return 1; }
+	ssh $vip "ls" > /dev/null 2>&1 || { echo "ERROR: VIP not functioning on $onlineMasterHostname" ; return 1; }
+
+	return 0
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_POSTCON
+#
+# This callback function checks expected results.
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_postcon() {
+	return 0
+
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_CLEANUP
+#
+# This callback function is only called if the harness execution mode is 'AT_INDEPENDENT'
+# 
+# This callback restores the target system to the state it was in before the TC 
+# was run. It rolls back changes made by callbacks tc_setup() and tc_test()
+# 
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_cleanup() {
+
+	return 0
+
+}

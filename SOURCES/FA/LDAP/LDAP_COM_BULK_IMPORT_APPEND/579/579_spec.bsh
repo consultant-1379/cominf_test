@@ -1,0 +1,68 @@
+#!/bin/bash
+
+# TEST CASE SPEC FILE
+# This file is generated/updated using the test framework web interface.
+# Manual updates on test servers are lost when the test package is re-installed.
+#
+# Last modified: Tuesday 14th of May 2013 14:06:49
+#
+
+# These settings must be in BASH script format, they are sourced by other scripts.
+SPEC_FA_NAME="LDAP"
+SPEC_UC_NAME="LDAP_COM_BULK_IMPORT_APPEND"
+SPEC_TC_ID=579
+SPEC_TC_SLOGAN="Test validation with valid and invalid files"
+SPEC_TC_TYPE="FT"
+SPEC_TC_POLARITY="positive"
+SPEC_TC_PRIORITY="high"
+SPEC_TC_AUTOMATED=1
+SPEC_TC_DEPENDENT_ONLY=0
+SPEC_TC_TIMEOUT=300
+SPEC_TC_TEST_PASSCODE=0
+SPEC_TC_AUTHOR="xdansan"
+SPEC_TC_AUTOMATOR="xdansan"
+# this parameter is not interpreted by harness
+SPEC_TC_DISABLED=0
+
+# Please do not remove the comment lines below.
+# They are used as section locators by the test harness.
+
+# BEGIN_PRE_CONDITIONS
+#Roles 1 and 2 exist
+#Aliases 1 ans 2 exist
+#Alias 1 points to role1
+#Alias 2 points to roles 1 and 2
+# END_PRE_CONDITIONS
+
+
+# BEGIN_MANUAL_STEPS
+#Call manage_COM.bsh with the "-v" flag (validation) with several files.  None will update the database.
+#Valid files:
+#1 - Add role 2 to alias1
+#2 - Have role 3 in the file, and add to alias 2
+#3 - Have roles 3 and 4 in file, and add both to alias 1 - specify role1 in the role list
+#4 - Add file and ldap roles to a new file alias
+#Invalid files:
+#10 - No DOMAIN line
+#11 - No ALIAS or ROLE lines
+#12 - ALIAS line only has 2 fields
+#13 - ROLE line has no named role
+#14 - Role list in ROLE line has spaces
+#15 - ALIAS has spaces in role list
+#16 - DOMAIN line has no domain
+#17 - DOMAIN line has 2 comma-separated domains, with matching name on command line parameter
+#18 - DOMAIN line has two space-separated domains, with matching name on command line parameter
+#19 - DOMAIN line domain name does not match command line one
+#20 - Add non-existent Role to one of the existing aliases
+#21 - Add non-existent Role to a new Alias
+#22 - Misspell DOMAIN
+#23 - Misspell ALIAS
+#24 - Misspell ROLE
+#25 - Append characters to DOMAIN tag
+#26 - Append characters to ALIAS tag
+#27 - Append characters to ROLE tag
+# END_MANUAL_STEPS
+
+# BEGIN_POST_CONDITIONS
+#All validations produce required error message.  Checks will be made in tc_test(), to reduce confusion with the tests separated from their results.
+# END_POST_CONDITIONS

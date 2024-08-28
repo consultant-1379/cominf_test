@@ -1,0 +1,16 @@
+LDAP Directory Manager password
+PASSWD
+Enter the name of the COM alias to modify:
+nonExistAlias
+Enter the name of the COM alias to modify:
+a591a,a591b
+Enter the name of the COM alias to modify:
+a591a%N
+Enter the name of the COM alias to modify:
+a591a
+Enter the name of the COM role name to remove:
+nonExistRole
+Enter the name of the COM role name to remove:
+r591a,r591b
+Enter the name of the COM role name to remove:
+r591d

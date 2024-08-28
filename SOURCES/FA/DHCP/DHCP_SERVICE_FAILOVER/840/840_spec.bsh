@@ -1,0 +1,48 @@
+#!/bin/bash
+
+# TEST CASE SPEC FILE
+# This file is generated/updated using the test framework web interface.
+# Manual updates on test servers are lost when the test package is re-installed.
+#
+# Last modified: Sunday 31st of March 2013 20:37:24
+#
+
+# These settings must be in BASH script format, they are sourced by other scripts.
+SPEC_FA_NAME="DHCP"
+SPEC_UC_NAME="DHCP_SERVICE_FAILOVER"
+SPEC_TC_ID=840
+SPEC_TC_SLOGAN="Active dhcp failover on primary when already running on primary"
+SPEC_TC_TYPE="FT"
+SPEC_TC_POLARITY="negative"
+SPEC_TC_PRIORITY="high"
+SPEC_TC_AUTOMATED=1
+SPEC_TC_DEPENDENT_ONLY=0
+SPEC_TC_TIMEOUT=300
+SPEC_TC_TEST_PASSCODE=0
+SPEC_TC_AUTHOR="eshmuna"
+SPEC_TC_AUTOMATOR="eshmuna"
+# this parameter is not interpreted by harness
+SPEC_TC_DISABLED=0
+
+# Please do not remove the comment lines below.
+# They are used as section locators by the test harness.
+
+# BEGIN_PRE_CONDITIONS
+#1. DHCP_IS_RUNNING on primary
+#2. No DHCPD_IS_RUNNING on secondary
+#3. Password-less connection between om_serv_master and om_serv_slave is setup.
+# END_PRE_CONDITIONS
+
+
+# BEGIN_MANUAL_STEPS
+#activate_dhcp is run on om_serv_master
+## ./activate_isc_dhcp.sh om_serv_master
+# END_MANUAL_STEPS
+
+# BEGIN_POST_CONDITIONS
+#1. DHCP_IS_RUNNING on primary
+#2. ! DHCPD_IS_RUNNING on secondary
+#3. CONSOLE_OUTPUT_CONTAINS "WARNING stating already enabled on primary"
+#
+#
+# END_POST_CONDITIONS

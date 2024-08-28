@@ -1,0 +1,11 @@
+LDAP Directory Manager password:
+PASSWD
+New local user uidNumber*
+
+New local user password:
+password
+Re-enter password:
+password
+New local user category
+
+New local user description

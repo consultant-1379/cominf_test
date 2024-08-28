@@ -1,0 +1,208 @@
+#!/bin/bash
+#################################################################################
+#
+#
+#       COPYRIGHT (C) ERICSSON RADIO SYSTEMS AB, Sweden
+#
+#       The copyright to the document(s) herein is the property of
+#       Ericsson Radio Systems AB, Sweden.
+#
+#       The document(s) may be used and/or copied only with the written
+#       permission from Ericsson Radio Systems AB or in accordance with
+#       the terms and conditions stipulated in the agreement/contract
+#       under which the document(s) have been supplied.
+#
+#################################################################################
+
+
+# ATCOMINF Test Callback Library
+
+# Revision History
+# <date>	<signum>	<details>
+
+# Complete the callbacks in this library to automate the test case.
+#
+# Callbacks are stateless, it is not possible to set a global variable in one callback 
+# and access it it in another.
+#
+# Callbacks are called by the test harness in the following order:
+#
+# tc_setup() 		# Called only for independent TC execution mode to setup TC
+# tc_precon()		# Conditions that should exist before TC can run
+# tc_test()		# Runs the test for this TC
+# tc_postcon()		# Conditions that should/should not exist after successful TC 
+# tc_cleanup()		# Called only for independent TC execution mode to cleanup after TC
+
+# All callbacks must PASS for a TC PASS result
+
+#################################################################################
+#
+# CALLBACK: TC_SETUP
+#
+# This callback function is only called if the harness execution mode is 'AT_INDEPENDENT'
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_setup() {
+
+	# Coded to fail in case TC_AUTOMATED=1 before automation completed
+	# Change return code as required
+
+	return 0
+
+}
+#################################################################################
+
+#################################################################################
+#
+# CALLBACK: TC_PRECON
+#
+# This callback function checks the correct conditions exist to run the TC.
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+ 
+tc_precon() {
+
+	# Coded to fail in case TC_AUTOMATED=1 before automation completed
+	# Change return code as required
+
+	return 0
+
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_TEST
+#
+# This callback function runs the test.
+# The harness compares the return code to the SPEC_TC_TEST_PASSCODE value set in the test spec.
+#
+# Return or exit codes:
+#    SPEC_TC_TEST_PASSCODE 	success
+# != SPEC_TC_TEST_PASSCODE 	failure
+ 
+tc_test() {
+
+	# Coded to fail in case TC_AUTOMATED=1 before automation complete
+	# Change return code as required
+
+	#return 0
+        retcode=0 
+        # Source Needed files
+        COMMON_GLASSFISH=/ericsson/glassfish/bin/common_glassfish.sh
+        EGREP=/usr/xpg4/bin/egrep
+
+        #Checking if the file with common glassfish variables and functions is present
+        if [ ! -f $COMMON_GLASSFISH ]; then
+                echo "ERROR! $COMMON_GLASSFISH not found "
+                echo "Cannot proceed Exiting..."
+                return 1
+        else
+                echo "Sourcing needed files $COMMON_GLASSFISH "
+                . $COMMON_GLASSFISH
+        fi
+
+
+       # Only proceed if the domain.xml exists
+        if [ ! -f $G3_DOMAIN_XML ]; then
+                echo "$G3_DOMAIN_XML File not found!  cannot proceed"
+                return 1
+        fi
+
+        # Verify max-post-size
+        EXPECT_MAX_POST_SIZE=4097152
+        MAX_POST_SIZE=`$EGREP "max-post-size-bytes"  $G3_DOMAIN_XML | cut -d'"' -f2`
+        # We expect 2 values to be returned for listener1 and listener 2,  both the same.
+        for size in  $MAX_POST_SIZE; do
+                if [ "$size" == "$EXPECT_MAX_POST_SIZE" ]; then
+                        echo "MAX_POST_SIZE correctly set to $size"
+                        retcode=0
+                else
+                        echo "MAX_POST_SIZE incorrectly set to $size or not Set.  \n expected $EXPECT_MAX_POST_S
+IZE"
+                        retcode=$(($retcode+1))
+                fi
+        done
+
+        # Verify AS_JAVA is set
+        ###########################
+        echo -e " \n Verify Glassfish AS_JAVA is set "
+        AS_CONF_FILE=/opt/glassfish3/glassfish/config/asenv.conf
+        # Only proceed if the asenv.conf exists 
+        if [ ! -f $AS_CONF_FILEL ]; then
+                echo "$AS_CONF_FILE File not found!  cannot proceed"
+                return 1
+        fi
+
+        EXPECT_AS_CONF_VAL=/opt/sun/jdk/java
+        AS_CONF_VAL=`$EGREP "AS_JAVA="  $AS_CONF_FILE | cut -d'=' -f2`
+        if [ "$AS_CONF_VAL" == "$EXPECT_AS_CONF_VAL" ]; then
+                echo "AS_CONF  correctly set to $AS_CONF_VAL"
+                retcode=0
+        else
+                echo "AS_CONF VALUE incorrectly set to $AS_CONF_VAL.  \n expected $EXPECT_AS_CONF_VAL"
+                retcode=$(($retcode+1))
+        fi
+
+
+         
+
+        if [ $retcode -ne 0 ]; then
+               echo -e " One or more Glassfish settings are not as expected"
+               return 1
+        else
+               return 0
+        fi
+
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_POSTCON
+#
+# This callback function checks expected results.
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_postcon() {
+
+	# Coded to fail in case TC_AUTOMATED=1 before automation complete.
+	# Change return code as required
+
+	return 0
+
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_CLEANUP
+#
+# This callback function is only called if the harness execution mode is 'AT_INDEPENDENT'
+# 
+# This callback restores the target system to the state it was in before the TC 
+# was run. It rolls back changes made by callbacks tc_setup() and tc_test()
+# 
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_cleanup() {
+
+	# Coded to fail in case TC_AUTOMATED=1 before automation complete
+	# Change return code as required
+
+	return 0
+
+}

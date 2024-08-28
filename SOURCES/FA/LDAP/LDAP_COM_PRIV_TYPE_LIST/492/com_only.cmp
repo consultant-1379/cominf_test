@@ -1,0 +1,6 @@
+
+LDAP Directory Manager password: 
+uid      | userType   | uidNumber | gidNumber | homeDirectory        | loginShell      | domain
+--------------------------------------------------------------------------------------------------------------
+u492     | COM_ONLY   | 1492      | 609       | /tmp                 | /usr/bin/passwd | 1.com
+u492b    | COM_ONLY   | 2492      | 609       | /tmp                 | /usr/bin/passwd | 1.com

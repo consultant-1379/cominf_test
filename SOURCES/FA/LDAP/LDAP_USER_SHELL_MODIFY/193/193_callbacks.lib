@@ -1,0 +1,257 @@
+#!/bin/bash
+#################################################################################
+#
+#
+#       COPYRIGHT (C) ERICSSON RADIO SYSTEMS AB, Sweden
+#
+#       The copyright to the document(s) herein is the property of
+#       Ericsson Radio Systems AB, Sweden.
+#
+#       The document(s) may be used and/or copied only with the written
+#       permission from Ericsson Radio Systems AB or in accordance with
+#       the terms and conditions stipulated in the agreement/contract
+#       under which the document(s) have been supplied.
+#
+#################################################################################
+
+
+# ATCOMINF Test Callback Library
+
+# Revision History
+# <date>	<signum>	<details>
+# 09/08/12	xgeohar		Initial version
+
+# Complete the callbacks in this library to automate the test case.
+#
+# Callbacks are stateless, it is not possible to set a global variable in one callback 
+# and access it it in another.
+#
+# Callbacks are called by the test harness in the following order:
+#
+# tc_setup() 		# Called only for independent TC execution mode to setup TC
+# tc_precon()		# Conditions that should exist before TC can run
+# tc_test()		# Runs the test for this TC
+# tc_postcon()		# Conditions that should/should not exist after successful TC 
+# tc_cleanup()		# Called only for independent TC execution mode to clenup after TC
+
+# All callbacks must PASS for a TC PASS result
+
+LDAP_BIN="/ericsson/sdee/bin"
+
+CONFIG="/ericsson/sdee/ldap_domain_settings/"
+
+OSS_USER="ossUser"
+UNKNOWN_USER="unkUser"
+TEST_DOMAIN="2.com"
+TEST_GROUP="tstgroup"
+
+# /usr/local/bin/expect template and working files
+EXPECT_TMPLT="193_shell.mod.in"
+EXPECT_WRKNG=${EXPECT_TMPLT}.tmp
+
+OUTFILE="/tmp/tcid193.tmp"
+
+# variables for old and new shell
+OLDSH=
+NEWSH=
+
+#################################################################################
+#
+# CALLBACK: TC_SETUP
+#
+# This callback function is only called if the harness execution mode is 'AT_INDEPENDENT'
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_setup() {
+
+
+
+	
+	
+	
+
+	
+
+	# Ensure the enviornment does not exceed 8 domains in order to avoid timeout by the harness framework
+	[[ ` ls /ericsson/sdee/ldap_domain_settings/ | wc -l ` -ge 9 ]] && {
+		echo "${CONFIG} contains more than 8 domains - harness will timeout"
+		return 1
+	}
+
+	
+
+	
+
+    # Replace PASSWD with the correct credentials
+    for ii in *.in; do
+        sed -e "s/^PASSWD$/$LDAP_SUPERUSER_PASSWD/" \
+			-e "s/TESTUSER/$OSS_USER/" \
+			-e "s/TESTDOM/$TEST_DOMAIN/" $ii > $ii.tmp || {
+			echo "Failed to replace LDAP superuser password holder in /usr/local/bin/expect input file $ii"
+			return 1
+		}
+    done
+
+	# If 2.com doesn't exist, create it.
+	LDAP_DOMAIN_EXISTS $G_DOMAIN_NAME_2 || {
+		LDAP_CREATE_DOMAIN_ON_OSS2 $G_DOMAIN_NAME_2 || { echo "ERROR: failed to create domain $G_DOMAIN_NAME_2" ; return 1; }
+	}
+	
+	echo "Creating test group in test domain"
+	${AT_BIN}/con_ex.bsh -d 193_add_group.in.tmp -o 193_expect.exp -c "$LDAP_BIN/add_group.sh -d ${TEST_DOMAIN} -s 30107 -e 40000 -n ${TEST_GROUP} -y"
+	/usr/local/bin/expect 193_expect.exp &>/dev/null || {
+		echo "Test group was not created, error code $?"
+		return 1
+	}
+
+	echo "Creating test user in test domain"
+	${AT_BIN}/con_ex.bsh -d 193_add_user.in.tmp -o 193_expect.exp -c "$LDAP_BIN/add_user.sh -d ${TEST_DOMAIN} -s 30107 -e 40000 -n ${OSS_USER} -y"
+	/usr/local/bin/expect 193_expect.exp &>/dev/null || {
+		echo "Test user was not added to test domain, error code $?"
+		return 1
+	}
+
+	# Add user to group
+	echo "Adding user to group"
+	/usr/bin/ldapmodify -h $HOSTNAME -p $LDAP_PORT -D "cn=directory manager" -w $LDAP_SUPERUSER_PASSWD >/dev/null<<EOF
+dn: cn=${TEST_GROUP},ou=group,dc=2,dc=com
+changetype: modify
+add: memberUid
+memberUid: ${OSS_USER}
+EOF
+
+	return 0
+
+
+}
+#################################################################################
+
+#################################################################################
+#
+# CALLBACK: TC_PRECON
+#
+# This callback function checks the correct conditions exist to run the TC.
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+ 
+tc_precon() {
+
+	LDAP_SERVER_UP || {
+		echo "LDAP is not running. LDAP_SERVER_UP returned $?" 
+		return 1
+	}
+	return 0
+
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_TEST
+#
+# This callback function runs the test.
+# The harness compares the return code to the SPEC_TC_TEST_PASSCODE value set in the test spec.
+#
+# Return or exit codes:
+#    SPEC_TC_TEST_PASSCODE 	success
+# != SPEC_TC_TEST_PASSCODE 	failure
+ 
+tc_test() {
+
+	>$OUTFILE
+
+	# try to change a shell for an unknown user
+	echo "Test 1: change shell for invalid user"
+	${AT_BIN}/con_ex.bsh -d 193_unk_user.in.tmp -o 193_expect.exp -c "$LDAP_BIN/chg_user_login_shell.sh -d ${TEST_DOMAIN} -u ${UNKNOWN_USER}" -r
+	/usr/local/bin/expect 193_expect.exp && {
+		# somehow modified shell for invalid user
+		echo "Shell for unknown user ${UNKNOWN_USER} was changed rc $? - FAIL" >> $OUTFILE
+	}
+
+	echo "Test 2: change shell for valid user"
+	# get the test user shell before change
+	OLDSH=$( /usr/bin/ldapsearch -D "cn=Directory Manager" -w $LDAP_SUPERUSER_PASSWD -b "uid=${OSS_USER},ou=people,dc=2,dc=com" "objectclass=*" | awk ' $1 ~ /loginShell/ { print  $2 } ' )
+	echo "User shell before change $OLDSH"
+	${AT_BIN}/con_ex.bsh -d ${EXPECT_WRKNG} -o 193_expect.exp -c "$LDAP_BIN/chg_user_login_shell.sh -d ${TEST_DOMAIN} -u ${OSS_USER}" -r
+	/usr/local/bin/expect 193_expect.exp  || {
+		# failed to modify password for valid user
+		echo "Shell for valid user ${OSS_USER} was NOT changed rc $? - FAIL" >> $OUTFILE
+	}
+
+	# get the test user shell after change
+	NEWSH=$( /usr/bin/ldapsearch -D "cn=Directory Manager" -w $LDAP_SUPERUSER_PASSWD -b "uid=${OSS_USER},ou=people,dc=2,dc=com" "objectclass=*" | awk ' $1 ~ /loginShell/ { print  $2 } ' )
+	echo "User shell after change $NEWSH"
+
+	# if the old and new shells are the same, the change attempt failed
+	[[ "${OLDSH}" = "${NEWSH}" ]] && {
+		echo "Shells before and after change are the same - FAIL" >> $OUTFILE
+	}
+
+	# if passwords are different last return code is not 0
+	return 0
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_POSTCON
+#
+# This callback function checks expected results.
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_postcon() {
+
+	# report on any failed shell changes
+	[[ -s $OUTFILE ]] && {
+		echo "Some shell change attempts were unexpected:"
+		cat $OUTFILE
+		return 1
+	}
+
+	return 0
+
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_CLEANUP
+#
+# This callback function is only called if the harness execution mode is 'AT_INDEPENDENT'
+# 
+# This callback restores the target system to the state it was in before the TC 
+# was run. It rolls back changes made by callbacks tc_setup() and tc_test()
+# 
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_cleanup() {
+
+	rc=0
+
+	LDAP_DELETE_DOMAIN ${TEST_DOMAIN} || { echo "ERROR: Failed to delete domain ${TEST_DOMAIN}"  return 1 }
+
+	
+	
+
+	# remove the generated working files
+	rm -f *tmp *exp ${EXPECT_WRKNG} $OUTFILE || {
+		echo "Failed to remove the generated working files"
+		return 1
+	}
+
+	return $rc
+
+}

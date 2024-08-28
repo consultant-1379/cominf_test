@@ -1,0 +1,74 @@
+#!/bin/bash
+
+# TEST CASE SPEC FILE
+# This file is generated/updated using the test framework web interface.
+# Manual updates on test servers are lost when the test package is re-installed.
+#
+# Last modified: Sunday 31st of March 2013 20:37:23
+#
+
+# These settings must be in BASH script format, they are sourced by other scripts.
+SPEC_FA_NAME="INSTALL"
+SPEC_UC_NAME="INSTALL_LINIRATOR_RERUN"
+SPEC_TC_ID=49
+SPEC_TC_SLOGAN="Re-run inirator and supply invalid LDAP DN parameters"
+SPEC_TC_TYPE="FT"
+SPEC_TC_POLARITY="negative"
+SPEC_TC_PRIORITY="low"
+SPEC_TC_AUTOMATED=0
+SPEC_TC_DEPENDENT_ONLY=0
+SPEC_TC_TIMEOUT=300
+SPEC_TC_TEST_PASSCODE=0
+SPEC_TC_AUTHOR="xamamcg"
+SPEC_TC_AUTOMATOR="xamamcg"
+# this parameter is not interpreted by harness
+SPEC_TC_DISABLED=0
+
+# Please do not remove the comment lines below.
+# They are used as section locators by the test harness.
+
+# BEGIN_PRE_CONDITIONS
+#1/ RHEL_INSTALLED
+#3/ POSIX_USER_EXISTS ldapadm
+#
+# END_PRE_CONDITIONS
+
+
+# BEGIN_MANUAL_STEPS
+#1/ cp config.ini config.orig
+#2/ iptables -L > iptables.orig
+#3. Run linirator script and answer questions as follows
+#a. Standard for deployment type, valid IP for NTP address  
+#b. y for DHCP, v6 and valid IP address and subnet
+#c. Valid vlaue for DNS domain name
+#d. Valie name/IP for secondary server name and IP address
+#e. cn=abcdefghi, for LDAP Directory Manager DN
+#f. cn=abcdefghi,ou=sales for LDAP Directory Manager DN
+#h. cn= abcdefghi for LDAP Directory Manager DN
+#i. ou=abcdefghi for LDAP Directory Manager DN
+#j. cn=1abcdefghi for LDAP Directory Manager DN
+#k. ABCdefghi for LDAP Directory Manager DN
+#l. cn=DirectoryManager  for LDAP Directory Manager DN
+#m. cn=Dir#Mgr for LDAP Directory Manager DN
+#n. cn=Dir=Mgr for LDAP Directory Manager DN
+#o. cn=abcd for LDAP Directory Manager DN
+#p. Valid answer when re-asked for LDAP Directory Manager DN
+#q. Ctrl C for next question
+# END_MANUAL_STEPS
+
+# BEGIN_POST_CONDITIONS
+#1. iptables -L | diff - iptables.orig
+#2. CONSOLE_OUTPUT_CONTAINS Not a valid answer "cn=abcdefghi,"
+#2. CONSOLE_OUTPUT_CONTAINS Not a valid answer "cn=abcdefghi,ou=sales"
+#2. CONSOLE_OUTPUT_CONTAINS Not a valid answer "cn=abcdefghi,"
+#2. CONSOLE_OUTPUT_CONTAINS Not a valid answer "cn= abcdefghi"
+#2. CONSOLE_OUTPUT_CONTAINS Not a valid answer "ou=abcdefghi"
+#2. CONSOLE_OUTPUT_CONTAINS Not a valid answer "cn=1abcdefghi"
+#2. CONSOLE_OUTPUT_CONTAINS Not a valid answer "ABCdefghi"
+#2. CONSOLE_OUTPUT_CONTAINS Not a valid answer "cn=Directory Manager"
+#2. CONSOLE_OUTPUT_CONTAINS Not a valid answer "cn=Dir#Mgr"
+#2. CONSOLE_OUTPUT_CONTAINS Not a valid answer "cn=Dir=Mgr"
+#2. CONSOLE_OUTPUT_CONTAINS Not a valid answer "cn=abcd"
+#
+#
+# END_POST_CONDITIONS

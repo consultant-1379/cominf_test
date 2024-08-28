@@ -1,0 +1,80 @@
+#!/bin/bash
+
+# TEST CASE SPEC FILE
+# This file is generated/updated using the test framework web interface.
+# Manual updates on test servers are lost when the test package is re-installed.
+#
+# Last modified: Sunday 31st of March 2013 20:37:23
+#
+
+# These settings must be in BASH script format, they are sourced by other scripts.
+SPEC_FA_NAME="SMRS"
+SPEC_UC_NAME="SMRS_IPV4SLAVE_ADD_PRIMNEDSS"
+SPEC_TC_ID=218
+SPEC_TC_SLOGAN="Add IPv4 slave with all network types to primary NEDSS, ARNEIMPORTS yes"
+SPEC_TC_TYPE="FT"
+SPEC_TC_POLARITY="positive"
+SPEC_TC_PRIORITY="high"
+SPEC_TC_AUTOMATED=1
+SPEC_TC_DEPENDENT_ONLY=0
+SPEC_TC_TIMEOUT=400
+SPEC_TC_TEST_PASSCODE=0
+SPEC_TC_AUTHOR="xkalbha"
+SPEC_TC_AUTOMATOR="xkalbha"
+# this parameter is not interpreted by harness
+SPEC_TC_DISABLED=0
+
+# Please do not remove the comment lines below.
+# They are used as section locators by the test harness.
+
+# BEGIN_PRE_CONDITIONS
+#1. TEST_SOLARIS
+#2. gran_nedssv4, core_nedssv4, lran_nedssv4, wran_nedssv4 filesystems configured on the NASConfig file is present
+# END_PRE_CONDITIONS
+
+
+# BEGIN_MANUAL_STEPS
+#1. Create config file for OSS master with all 4 network types enabled, and IPv4 slave called nedssv4, SMRS_SLAVE_NEDSS_IP set to primary NEDSS, NAS_SHARE_NAMES specified for all filesystems, PERFORM_ARNEIMPORTS yes, RESTART_BISMRS_MC yes
+#2. configure_smrs add smrs_slave -f <config file>
+#3. $? -eq 0
+# END_MANUAL_STEPS
+
+# BEGIN_POST_CONDITIONS
+#1. No errors in /var/opt/ericsson/log/add_smrs_slave.sh_log_<date> latest log file
+#2. No warnings in /var/opt/ericsson/log/add_smrs_slave.sh_log_<date> latest log file
+#3. mount command shows gran_nedssv4, core_nedssv4, lran_nedssv4, wran_nedssv4 filesystems mounted on OSS master, OM primary and primary NEDSS
+#4. /export/CORE/nedssv4, /export/GRAN/nedssv4, /export/LRAN/nedssv4, /export/WRAN/nedssv4 exists on OM primary and primary NEDSS
+#5. /etc/vfstab has new filesystems in on OM primary
+#6. /etc/mnttab has new filesystems in on OSS master
+#7. /etc/vfstab has new filesystems in on NEDSS
+#8. Auto mounts in /etc/auto* have new filesystems in on OM primary and primary NEDSS?
+#9. FTP Services are created, i.e output from following on OSS master:
+#/opt/ericsson/nms_cif_cs/etc/unsupported/bin/cstest -s ONRM_CS -ns masterservice lt FtpService
+#contains:
+#SubNetwork=ONRM_ROOT_MO,FtpServer=SMRSSLAVE-LRAN-nedssv4,FtpService=l-sws-nedssv4
+#SubNetwork=ONRM_ROOT_MO,FtpServer=SMRSSLAVE-LRAN-nedssv4,FtpService=l-key-nedssv4
+#SubNetwork=ONRM_ROOT_MO,FtpServer=SMRSSLAVE-LRAN-nedssv4,FtpService=l-back-nedssv4
+#SubNetwork=ONRM_ROOT_MO,FtpServer=SMRSSLAVE-nedssv4,FtpService=swstore-nedssv4
+#SubNetwork=ONRM_ROOT_MO,FtpServer=SMRSSLAVE-nedssv4,FtpService=pmup-nedssv4
+#SubNetwork=ONRM_ROOT_MO,FtpServer=SMRSSLAVE-nedssv4,FtpService=cmup-nedssv4
+#SubNetwork=ONRM_ROOT_MO,FtpServer=SMRSSLAVE-nedssv4,FtpService=cmdown-nedssv4
+#SubNetwork=ONRM_ROOT_MO,FtpServer=SMRSSLAVE-nedssv4,FtpService=backup-nedssv4
+#SubNetwork=ONRM_ROOT_MO,FtpServer=SMRSSLAVE-nedssv4,FtpService=keystore-nedssv4
+#SubNetwork=ONRM_ROOT_MO,FtpServer=SMRSSLAVE-CORE-nedssv4,FtpService=corepmu-nedssv4
+#SubNetwork=ONRM_ROOT_MO,FtpServer=SMRSSLAVE-WRAN-nedssv4,FtpService=w-sws-nedssv4
+#SubNetwork=ONRM_ROOT_MO,FtpServer=SMRSSLAVE-WRAN-nedssv4,FtpService=w-key-nedssv4
+#SubNetwork=ONRM_ROOT_MO,FtpServer=SMRSSLAVE-WRAN-nedssv4,FtpService=w-back-nedssv4
+#12. SMRS_MC is online, i.e.
+#/opt/ericsson/nms_cif_sm/bin/smtool -l BI_SMRS_MC 
+#indicates its online (started state)
+#13. Following user accounts exist on OSS master, OM primary and primary NEDSS:
+#l-sws-nedssv4,l-key-nedssv4,l-back-nedssv4,
+#swstore-nedssv4, pmup-nedssv4, cmup-nedssv4, cmdown-nedssv4 backup-nedssv4, keystore-nedssv4, corepmu-nedssv4, w-sws-nedssv4, w-key-nedssv4, w-back-nedssv4
+#13. Following SMO FTP Services file exist in /var/opt/ericsson/arne/FTPServices:
+#SMO_FTPServiceLRAN_$sl_serv_name
+#SMO_FTPServiceWRAN_$sl_serv_name
+#SMO_FTPServiceGRAN_$sl_serv_name
+#SMO_FTPServiceCORE_$sl_serv_name
+#14. smtool action BI_SMRS_MC printCache file <tmpfile>. <tmpfile> should contain GslaveN1 service.
+#
+# END_POST_CONDITIONS

@@ -1,0 +1,66 @@
+set timeout 40
+
+trap {
+	if [catch {wait -i -1} output] return
+	if {[lindex $output [expr [llength $output] -1]] != 0 } {
+		exit [lindex $output [expr [llength $output] -1]]
+	}
+} SIGCHLD
+
+spawn -noecho /ericsson/sdee/bin/add_group.sh -d vts.com
+
+expect {
+	"LDAP Directory Manager password:" {
+	} default {
+		exit 1
+	}
+}
+sleep 0.15
+send -- "ldappass\r"
+expect {
+	"New local group name:" {
+	} default {
+		exit 2
+	}
+}
+sleep 0.15
+send -- "g170011\r"
+expect {
+	"Start of gidNumber search range" {
+	} default {
+		exit 3
+	}
+}
+sleep 0.15
+send -- "\r\r"
+expect {
+	"End of gidNumber search range" {
+	} default {
+		exit 4
+	}
+}
+sleep 0.15
+send -- "\r\r"
+expect {
+	"New local group gidNumber" {
+	} default {
+		exit 5
+	}
+}
+sleep 0.15
+send -- "\r\r"
+expect {
+	"Continue to create local group" {
+	} default {
+		exit 6
+	}
+}
+sleep 0.15
+send -- "y\r"
+
+set timeout 300
+expect {
+    EOF {}
+    timeout { exit 99 }
+}
+sleep 2

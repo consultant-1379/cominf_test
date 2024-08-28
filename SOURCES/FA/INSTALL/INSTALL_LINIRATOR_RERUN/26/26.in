@@ -1,0 +1,66 @@
+Enter Deployment type: (basic standard)
+standard
+Enter IP address of the NTP Source:
+1.1.1.1
+Do you want to setup DHCP on this server? (y n)
+F
+Do you want to setup DHCP on this server? (y n)
+yes
+Do you want to setup DHCP on this server? (y n)
+Y
+Do you want to setup DHCP on this server? (y n)
+y
+Enter password for BSIM user bsim:
+1234567
+Enter password for BSIM user bsim:
+12345678
+Confirm password for BSIM user bsim:
+password
+Enter password for BSIM user bsim:
+password
+Confirm password for BSIM user bsim:
+password
+Do you want to setup DHCP for IPv6 on this server? (y n)
+T
+Do you want to setup DHCP for IPv6 on this server? (y n)
+no
+Do you want to setup DHCP for IPv6 on this server? (y n)
+Y
+Do you want to setup DHCP for IPv6 on this server? (y n)
+y
+IPv6 address for
+1.1.1.1
+IPv6 address for
+0001:0001:0001:0001:0001:0001:0001:0001:0001
+IPv6 address for
+0001:ABCG:0001:0001:0001:0001:0001:0001
+IPv6 address for
+0001:0001:0001:0001:::
+IPv6 address for
+0001:0001:0001:256.1.1.1
+IPv6 address for
+1:1:1:255.00001.1.1
+IPv6 address for
+1:1:1:1.1.1
+IPv6 address for
+1:1:1:1.1.1.1.1
+IPv6 address for
+1:1:1:1.1.1.0d
+IPv6 address for
+0001::
+IPv6 subnet for
+000G::/64
+IPv6 subnet for
+0001:0002:0003:0004:0005:0006:0007:0008:0009/64
+IPv6 subnet for
+0001::/A0
+IPv6 subnet for
+0001::/1234567890
+IPv6 subnet for
+rubbish
+IPv6 subnet for
+2001:1b70:82a1/64
+IPv6 subnet for
+2001:1b70:82a1::/64
+Enter DNS Domain Name <e.g. dns.companyname.com>:
+\003

@@ -1,0 +1,62 @@
+#!/bin/bash
+
+# TEST CASE SPEC FILE
+# This file is generated/updated using the test framework web interface.
+# Manual updates on test servers are lost when the test package is re-installed.
+#
+# Last modified: Monday 16th of December 2013 9:30:47
+#
+
+# These settings must be in BASH script format, they are sourced by other scripts.
+SPEC_FA_NAME="SOLARIS10SMRS"
+SPEC_UC_NAME="SOLARIS10SMRS_Adding_SMRS_Slave"
+SPEC_TC_ID=1348
+SPEC_TC_SLOGAN="NEDSS 1,NEDSS2 Verification "
+SPEC_TC_TYPE="FT"
+SPEC_TC_POLARITY="positive"
+SPEC_TC_PRIORITY="high"
+SPEC_TC_AUTOMATED=1
+SPEC_TC_DEPENDENT_ONLY=0
+SPEC_TC_TIMEOUT=300
+SPEC_TC_TEST_PASSCODE=0
+SPEC_TC_AUTHOR="xnavema"
+SPEC_TC_AUTOMATOR="xnavema"
+# this parameter is not interpreted by harness
+SPEC_TC_DISABLED=0
+
+# Please do not remove the comment lines below.
+# They are used as section locators by the test harness.
+
+# BEGIN_PRE_CONDITIONS
+#<PATH Under "Verification Specification for Cominf Feature Test for 14.0":Bi-directional SMRS Initial Installation/Adding SMRS Slave Service.>
+#
+#Precondition 
+#
+#OSS Master Server should be connected to the SMRS master service
+#and both NEDSS1 and NEDSS2 Configured.
+#
+# END_PRE_CONDITIONS
+
+
+# BEGIN_MANUAL_STEPS
+#
+#Verify /etc/opt/ericsson/nms_bismrs_mc/smrs_config file is updated properly after
+#Adding and NEDSS1 and NEDSS 2 with slaves configured on all the servers. 105 65-0580/01390 ,105 65-0580/0461,105 65-0580/01464, 105 65-0580/01806
+#
+#Conditional Test
+#
+#Check smrs_config file gets updated properly
+#This file should only be updated by the SMRS scripts
+#
+# END_MANUAL_STEPS
+
+# BEGIN_POST_CONDITIONS
+#Acceptance Criteria
+#
+#Details of ,SMRS MASTER, NEDSS1 ,NEDSS2
+#Check the logs for errors
+#/var/opt/ericsson /logs
+#You should be able to View these slave services while adding the
+#AIF user.
+#Check the FTP services. 
+# END_POST_CONDITIONS

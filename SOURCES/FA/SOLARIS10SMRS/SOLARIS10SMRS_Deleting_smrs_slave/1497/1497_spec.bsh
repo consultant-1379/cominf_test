@@ -1,0 +1,54 @@
+#!/bin/bash
+
+# TEST CASE SPEC FILE
+# This file is generated/updated using the test framework web interface.
+# Manual updates on test servers are lost when the test package is re-installed.
+#
+# Last modified: Monday 16th of December 2013 11:18:17
+#
+
+# These settings must be in BASH script format, they are sourced by other scripts.
+SPEC_FA_NAME="SOLARIS10SMRS"
+SPEC_UC_NAME="SOLARIS10SMRS_Deleting_smrs_slave"
+SPEC_TC_ID=1497
+SPEC_TC_SLOGAN="Slave Service Check on Primary and Secondary NEDSS"
+SPEC_TC_TYPE="FT"
+SPEC_TC_POLARITY="positive"
+SPEC_TC_PRIORITY="high"
+SPEC_TC_AUTOMATED=0
+SPEC_TC_DEPENDENT_ONLY=0
+SPEC_TC_TIMEOUT=300
+SPEC_TC_TEST_PASSCODE=0
+SPEC_TC_AUTHOR="xsougha"
+SPEC_TC_AUTOMATOR="xsougha"
+# this parameter is not interpreted by harness
+SPEC_TC_DISABLED=0
+
+# Please do not remove the comment lines below.
+# They are used as section locators by the test harness.
+
+# BEGIN_PRE_CONDITIONS
+#OSS Master with configured with slave services configured
+#
+#<Path under "Verification Specification for Cominf Feature Test for 14.0":
+#
+#Dismantling Bi-directional SMRS/Deleting Supported Network Elements 
+#>
+# END_PRE_CONDITIONS
+
+
+# BEGIN_MANUAL_STEPS
+#Verify Deleting slave services which are on Primary and Secondary NEDSS
+#
+#./configure_smrs.sh delete slave_service
+#
+#
+# END_MANUAL_STEPS
+
+# BEGIN_POST_CONDITIONS
+#SMRS Slave Services should be deleted successfully from nedss
+#Conditional Test
+#
+#Check all the nodes which were available and mounted before deleting
+#the slave services should no longer be mounted after deleting the slave services. Entries in ericsson/smrs/etc/smrs_config should be checked to confirm the deletion on SMRS master 
+# END_POST_CONDITIONS

@@ -1,0 +1,50 @@
+set timeout 40
+
+trap {
+	if [catch {wait -i -1} output] return
+	if {[lindex $output [expr [llength $output] -1]] != 0 } {
+		exit [lindex $output [expr [llength $output] -1]]
+	}
+} SIGCHLD
+
+spawn -noecho /ericsson/sdee/bin/del_user.sh
+
+expect {
+	"LDAP Directory Manager password" {
+	} default {
+		exit 1
+	}
+}
+sleep 0.15
+send -- "ldappass\r"
+expect {
+	"Local user name" {
+	} default {
+		exit 2
+	}
+}
+sleep 0.15
+send -- "u1718\r"
+expect {
+	"Continue to delete local user" {
+	} default {
+		exit 3
+	}
+}
+sleep 0.15
+send -- "y\r"
+expect {
+	"" {
+	} default {
+		exit 4
+	}
+}
+sleep 0.15
+send -- "\r"
+
+set timeout 300
+expect {
+    EOF {}
+    timeout { exit 99 }
+}
+sleep 2

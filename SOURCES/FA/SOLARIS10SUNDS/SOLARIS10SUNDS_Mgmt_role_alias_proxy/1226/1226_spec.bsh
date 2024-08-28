@@ -1,0 +1,89 @@
+#!/bin/bash
+
+# TEST CASE SPEC FILE
+# This file is generated/updated using the test framework web interface.
+# Manual updates on test servers are lost when the test package is re-installed.
+#
+# Last modified: Monday 16th of December 2013 7:31:51
+#
+
+# These settings must be in BASH script format, they are sourced by other scripts.
+SPEC_FA_NAME="SOLARIS10SUNDS"
+SPEC_UC_NAME="SOLARIS10SUNDS_Mgmt_role_alias_proxy"
+SPEC_TC_ID=1226
+SPEC_TC_SLOGAN="Negative Testing : Addding COM Aliases to ldap domain "
+SPEC_TC_TYPE="FT"
+SPEC_TC_POLARITY="positive"
+SPEC_TC_PRIORITY="high"
+SPEC_TC_AUTOMATED=1
+SPEC_TC_DEPENDENT_ONLY=0
+SPEC_TC_TIMEOUT=300
+SPEC_TC_TEST_PASSCODE=0
+SPEC_TC_AUTHOR="xvinkat"
+SPEC_TC_AUTOMATOR="xvinkat"
+# this parameter is not interpreted by harness
+SPEC_TC_DISABLED=0
+
+# Please do not remove the comment lines below.
+# They are used as section locators by the test harness.
+
+# BEGIN_PRE_CONDITIONS
+#<path to the testcase>
+#
+#SUN-DS/COM LDAP - User Management for 
+#COM-Enabled Nodes/Management of role/role alias/proxy agents
+#
+#Following servers are successfully configured for 13.0.x version.
+#1.O&M primary
+#2.O&M secondary
+#3.OSS
+#4.UAS 
+# END_PRE_CONDITIONS
+
+
+# BEGIN_MANUAL_STEPS
+#1. Try to add the role alias which exceeds length of 70 characters/zero length characters.
+#
+#2. Try to add the role alias with special characters in the name.
+#
+#3. Try to add the role which exists as role name/role alias name in the domain.
+#
+# END_MANUAL_STEPS
+
+# BEGIN_POST_CONDITIONS
+#1. Script should throw an error
+#Ex: bash-3.2# ./manage_COM.bsh -a alias -A uytuweytrwieroiutoieurtoieurtoieurotieurotiueorituoerutoeiurtoieurotuyiweruytieurytjrugkjfh
+#
+#LDAP Directory Manager password:
+#ERROR : Invalid role/alias name [uytuweytrwieroiutoieurtoieurtoieurotieurotiueorituoerutoeiurtoieurotuyiweruytieurytjrugkjfh]; maximum allowed role/alias name length is 70 characters
+#ERROR : Script terminated with errors. No updates have been made.
+#
+#2. Script should throw an error.
+#Ex: bash-3.2# ./manage_COM.bsh -a alias -A ERIC@12234
+#
+#LDAP Directory Manager password:
+#ERROR : Invalid role/alias name [ERIC@12234]; role/alias names may only contain alphanumeric characters, hyphen(-), underscore(_) or dot(.)
+#ERROR : Script terminated with errors. No updates have been made.
+#
+#3. Script should throw an error message by saying "role alias name already exists as role/role alias name in the domain"
+#
+#Ex: bash-3.2# ./manage_COM.bsh -l alias
+#
+#LDAP Directory Manager password:
+#
+#Aliases for domain [atrcus879.com].
+#alias1
+#alias2
+#alias3
+#alias10
+#alias11
+#
+#bash-3.2# ./manage_COM.bsh -a alias -A alias1
+#
+#LDAP Directory Manager password:
+#ERROR : [alias1] already exists as a role/alias in domain [atrcus879.com]
+#ERROR : Script terminated with errors. No updates have been made.
+#
+#
+#
+# END_POST_CONDITIONS

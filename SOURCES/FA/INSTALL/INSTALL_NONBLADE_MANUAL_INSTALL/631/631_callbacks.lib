@@ -1,0 +1,158 @@
+#!/bin/bash
+#################################################################################
+#
+#
+#	   COPYRIGHT (C) ERICSSON RADIO SYSTEMS AB, Sweden
+#
+#	   The copyright to the document(s) herein is the property of
+#	   Ericsson Radio Systems AB, Sweden.
+#
+#	   The document(s) may be used and/or copied only with the written
+#	   permission from Ericsson Radio Systems AB or in accordance with
+#	   the terms and conditions stipulated in the agreement/contract
+#	   under which the document(s) have been supplied.
+#
+#################################################################################
+
+
+# ATCOMINF Test Callback Library
+
+# Revision History
+# 11/10/12	xamamcg	Initial test for invalid values for params.cfg questions
+
+# Complete the callbacks in this library to automate the test case
+# Callbacks are called by the test harness in the following order:
+#
+# tc_setup() 		# Called only for independent TC execution mode to setup TC
+# tc_precon()		# Conditions that should exist before TC can run
+# tc_test()		# Runs the test for this TC
+# tc_postcon()		# Conditions that should/should not exist after successful TC 
+# tc_cleanup()		# Called only for independent TC execution mode to clenup after TC
+
+
+#################################################################################
+#
+# CALLBACK: TC_SETUP
+#
+# This callback function is only called if the harness execution mode is 'AT_INDEPENDENT'
+# In this mode, a TC should set up its own inputs, i.e. it does not depend on outputs 
+# from another TC. 
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_setup() {
+	return 0
+}
+#################################################################################
+
+#################################################################################
+#
+# CALLBACK: TC_PRECON
+#
+# This callback function checks the correct conditions exist to run the TC.
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+ 
+tc_precon() {
+
+	[ -f /ericsson/config/build/params.cfg ] || { echo "params.cfg does not exist"; return 1; }
+
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_TEST
+#
+# This callback function runs the test.
+# The harness compares the return code to the SPEC_TC_TEST_PASSCODE value set in the test spec.
+#
+# Return or exit codes:
+#	SPEC_TC_TEST_PASSCODE 	success
+# != SPEC_TC_TEST_PASSCODE 	failure
+ 
+tc_test() {
+
+
+	# Move params.cfg out of way
+	mv /ericsson/config/build/params.cfg params.cfg.bak
+	# Check linirator exists
+	linfile=/opt/ericsson/cominf_core/bin/cominf_inirator.bsh
+	[ -r ${linfile} ] || { echo "${linfile} does not exist"; return 1; }
+
+	# Run con_ex.bsh to create expect script
+	# 631.in is checked into GIT and has the name and prompt values
+	${AT_BIN}/con_ex.bsh -d 631.in -o 631.exp -c "${linfile} -i"
+	retval=$?
+	[ $retval -ne 0 ] && { echo Failed to create expect script $retval; return 2; }
+
+	# Run linirator with expect script
+	expect 631.exp
+	retval=$?
+	[ $retval -eq 1 ] || { echo Failed to run expect script $retval; return 3; }
+
+	return 0
+
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_POSTCON
+#
+# This callback function checks expected results.
+# The return code decides the final test case verdict.
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_postcon() {
+	# Expect params.cfg to not exist
+	[ -f /ericsson/config/build/params.cfg ] && { echo "params.cfg does exist"; return 1; }
+
+	CONSOLE_OUTPUT_CONTAINS 'Not a valid answer "smrs_slave"' || { echo "No smrs_slave msg"; return 2; }
+	CONSOLE_OUTPUT_CONTAINS 'Not a valid answer "om_serv_masters"' || { echo "No om_serv_masters msg"; return 3; }
+	CONSOLE_OUTPUT_CONTAINS 'Not a valid answer "om_serv_master om_serv_master"' || { echo "No om_serv_master om_serv_master msg"; return 4; }
+	CONSOLE_OUTPUT_CONTAINS 'Not a valid answer "OM_SERV_MASTER"' || { echo "No OM_SERV_MASTER msg"; return 5; }
+	CONSOLE_OUTPUT_CONTAINS 'Not a valid answer "cominf"' || { echo "No cominf msg"; return 6; }
+	CONSOLE_OUTPUT_CONTAINS 'Not a valid answer "cominfs"' || { echo "No cominfs msg"; return 7; }
+	CONSOLE_OUTPUT_CONTAINS 'Not a valid answer "COMINF"' || { echo "No COMINF msg"; return 8; }
+	CONSOLE_OUTPUT_CONTAINS 'Not a valid answer "security security"' || { echo "No security msg"; return 9; }
+	CONSOLE_OUTPUT_CONTAINS 'Not a valid answer "securityca,"' || { echo "No securityca msg"; return 10; }
+	CONSOLE_OUTPUT_CONTAINS 'Not a valid answer "comi%Nf"' || { echo "No se%curity msg"; return 11; }
+	CONSOLE_OUTPUT_CONTAINS 'Not a valid answer "om_serv_master"' || { echo "No om_serv_master msg"; return 12; }
+	CONSOLE_OUTPUT_CONTAINS 'Not a valid answer "A"' || { echo "No A msg"; return 13; }
+	CONSOLE_OUTPUT_CONTAINS 'Not a valid answer "Y"' || { echo "No Y msg"; return 14; }
+	CONSOLE_OUTPUT_CONTAINS 'Not a valid answer "N"' || { echo "No N msg"; return 15; }
+
+	return 0
+
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_CLEANUP
+# 
+# This callback restores the target system to the state it was in before the TC 
+# was run. It rolls back changes made by callbacks tc_setup() and tc_test()
+# 
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_cleanup() {
+	rm -f *.exp
+	[ -r params.cfg.bak ] && { cp params.cfg.bak /ericsson/config/build/params.cfg; }
+	rm -f params.cfg.bak
+	return 0
+
+}

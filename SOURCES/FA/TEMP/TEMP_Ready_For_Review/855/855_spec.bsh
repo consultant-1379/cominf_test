@@ -1,0 +1,66 @@
+#!/bin/bash
+
+# TEST CASE SPEC FILE
+# This file is generated/updated using the test framework web interface.
+# Manual updates on test servers are lost when the test package is re-installed.
+#
+# Last modified: Sunday 31st of March 2013 20:37:24
+#
+
+# These settings must be in BASH script format, they are sourced by other scripts.
+SPEC_FA_NAME="TEMP"
+SPEC_UC_NAME="TEMP_Ready_For_Review"
+SPEC_TC_ID=855
+SPEC_TC_SLOGAN="CORBA security for X86"
+SPEC_TC_TYPE="FT"
+SPEC_TC_POLARITY="positive"
+SPEC_TC_PRIORITY="high"
+SPEC_TC_AUTOMATED=1
+SPEC_TC_DEPENDENT_ONLY=0
+SPEC_TC_TIMEOUT=3600
+SPEC_TC_TEST_PASSCODE=0
+SPEC_TC_AUTHOR="emaisap"
+SPEC_TC_AUTOMATOR="emaisap"
+# this parameter is not interpreted by harness
+SPEC_TC_DISABLED=0
+
+# Please do not remove the comment lines below.
+# They are used as section locators by the test harness.
+
+# BEGIN_PRE_CONDITIONS
+#All required MC's has to be in started state
+#
+#ossrc.p12 file should exist on both admin1 and admin2 in /ericsson/config location if it does not exist then copy ossrc.p12 file
+#
+#
+# END_PRE_CONDITIONS
+
+
+# BEGIN_MANUAL_STEPS
+#Trusted certificate has to be installed on Admin1
+#
+#/opt/ericsson/saoss/bin/security.ksh -viewTrustCerts 
+#
+#Else Trusted certificate has to be installed.
+#
+#Check for the security status and it should be ON
+#
+#/opt/ericsson/saoss/bin/security.ksh -status
+#
+#Else change the security status to ON
+#
+#/opt/ericsson/saoss/bin/security.ksh -change
+#
+#
+#
+#
+#
+# END_MANUAL_STEPS
+
+# BEGIN_POST_CONDITIONS
+#Verify if all MC's are in the same state as before ( Before changing the security status )
+#
+#If MC's are not started after the change in the security then this needs to be investigated.
+#
+#
+# END_POST_CONDITIONS

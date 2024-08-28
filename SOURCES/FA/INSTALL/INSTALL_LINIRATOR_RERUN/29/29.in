@@ -1,0 +1,28 @@
+Enter Deployment type: (basic standard)
+rubbish
+Enter Deployment type: (basic standard)
+STANDARD
+Enter Deployment type: (basic standard)
+standard
+Enter IP address of the NTP Source:
+1.256.1.1
+Enter IP address of the NTP Source:
+1.0001.1.1
+Enter IP address of the NTP Source:
+1.1.1.1::
+Enter IP address of the NTP Source:
+1.1.1.1.1
+Enter IP address of the NTP Source:
+1.1.1
+Enter IP address of the NTP Source:
+1.1..1
+Enter IP address of the NTP Source:
+1.1.0d.1
+Enter IP address of the NTP Source:
+1.1.1.1
+Do you want to setup DHCP on this server? (y n)
+Enter password for BSIM user bsim:
+password
+Confirm password for BSIM user bsim:
+password
+\003

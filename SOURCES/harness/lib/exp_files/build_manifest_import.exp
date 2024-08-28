@@ -1,0 +1,40 @@
+#!./expect -- 
+#exp_internal 1
+set release [lindex $argv 0]
+set shipment [lindex $argv 1]
+
+set timeout 9600
+expect_after timeout exit
+spawn /usr/local/bin/ssh -o ServerAliveInterval=10 root@10.248.1.44
+
+while 1 {
+        expect {
+                "Are you sure you want to continue connecting" {
+                        send "yes\r"}
+                "login: " {
+                        send "root\r"}
+
+                "Password:" {
+                        send "shroot12\r"
+                        break}
+                eof {
+                        puts "warning: timed out"
+                        exit 1}
+                timeout {
+                        puts "warning: timed out"
+                        exit 1}
+                }
+        }
+
+expect "\/#"
+sleep 2
+send -- "ls -l /JUMP/OSSRC_MEDIA/$CI_SHIPMENT/$CI_OSS_PROD_NUM/ossrc_base_sw/build_manifest_i386"
+expect "\/#"
+                if [[ $? -eq 0 ]]; then
+                echo "build_manifest_i386 file found"
+                scp root@10.44.192.247:/JUMP/OSSRC_MEDIA/$CI_SHIPMENT/$CI_OSS_PROD_NUM/ossrc_base_sw/build_manifest_i386 /var/tmp/
+
+                fi     
+
+expect "\/#"
+

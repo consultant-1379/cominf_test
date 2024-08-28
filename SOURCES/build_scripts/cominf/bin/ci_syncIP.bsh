@@ -1,0 +1,83 @@
+#!/bin/bash 
+#------------------------------------------------------------------------
+#
+#       COPYRIGHT (C) ERICSSON RADIO SYSTEMS AB, Sweden
+#
+#       The copyright to the document(s) herein is the property of
+#       Ericsson Radio Systems AB, Sweden.
+#
+#       The document(s) may be used and/or copied only with the written
+#       permission from Ericsson Radio Systems AB or in accordance with
+#       the terms and conditions stipulated in the agreement/contract
+#       under which the document(s) have been supplied.
+#
+#------------------------------------------------------------------------
+# History
+# 19/05/2014    xsripin         First version
+
+scriptname=$(basename $0)
+env_file=$1
+action=$2
+success=0
+
+[ -z $action ] && {
+        printf "ERROR: $scriptname needs an argument\n"
+        exit 1
+}
+
+if [ $action == "U" ]; then
+        ref_file=/proj/cominf/cominf/.jenkins-cominf/servername_upgrade.txt
+        echo "Using $ref_file"
+elif [ $action == "II" ]; then
+        ref_file=/proj/cominf/cominf/.jenkins-cominf/servername_II.txt
+        echo "Using $ref_file"
+elif [ $action == "S" ]; then
+        ref_file=/proj/cominf/cominf/.jenkins-cominf/servername_SMRS.txt
+        echo "Using $ref_file"
+else
+        echo "Invalid argument for sync_ip.bsh"
+	exit 1
+fi
+
+
+update_ip_in_env_file() {
+[ -z $ref_file ] && {
+        printf "ERROR: $scriptname needs an argument\n"
+        exit 1
+}
+
+[ -f $ref_file ] && {
+        new_ip=$(grep vapp_ip $ref_file | awk -F= '{print $2}')
+        new_host=$(grep vapp_host $ref_file | awk -F= '{print $2}')
+        [ ! -z $new_ip ] && {
+                grep "$new_ip$" $env_file > /dev/null
+                ret=$?
+                if [ $ret == 1 ]; then
+                        old_ip=$(grep CI_SERVER_IP $env_file| head -1 | awk -F"=" '{print $2}')
+                        [ ! -z $old_ip ] && {
+                                sed -i "s/$old_ip/$new_ip/g" $env_file
+                                [ $? -eq 0 ] && success=1
+                        }
+                fi
+        }
+        [ ! -z $new_host ]  && {
+                grep "$new_host$" $env_file > /dev/null
+                ret=$?
+                  if [ $ret == 1 ]; then
+                        old_host=$(grep CI_SERVER_HOSTNAME $env_file | head -5 | awk -F"=" '{print $2}' | tail -1)
+                                [ ! -z $old_host ] && {
+                                sed -i "s/$old_host/$new_host/g" $env_file
+                                [ $? -eq 0 ] && success=1
+                        }
+                fi
+
+        }
+}
+
+return 0
+
+}
+# Main 
+
+update_ip_in_env_file
+

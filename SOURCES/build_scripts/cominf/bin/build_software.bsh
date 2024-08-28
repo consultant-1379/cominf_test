@@ -1,0 +1,443 @@
+#!/bin/bash 
+#------------------------------------------------------------------------
+#
+#       COPYRIGHT (C) ERICSSON RADIO SYSTEMS AB, Sweden
+#
+#       The copyright to the document(s) herein is the property of
+#       Ericsson Radio Systems AB, Sweden.
+#
+#       The document(s) may be used and/or copied only with the written
+#       permission from Ericsson Radio Systems AB or in accordance with
+#       the terms and conditions stipulated in the agreement/contract
+#       under which the document(s) have been supplied.
+#
+#------------------------------------------------------------------------
+
+# History
+# 09/08/2013   xsougha         First version
+#
+# This script calls the media build script to build cominf
+# media and packages
+#
+
+usage() {
+cat << EOF
+
+Usage:  ${G_SCRIPTNAME} [-h] 
+
+This script is called by the Jenkins server. It performs the following actions:
+
+-Builds Cominf OM Services packages and media 
+-Caches media on MWS
+-p packagename 
+
+
+EOF
+
+return 0
+}
+
+#
+# Function to create a tar ball from supplied rpm
+#
+create_test_harness_tarball() {
+	local test_rpm=$1
+	local tmp_dir="/tmp/cominf_test_rpm"
+	if [ ! -s "$test_rpm" ]; then
+		echo "Error rpm \"$1\" does not exist or is empty"
+		return 1
+	fi
+	if [ -d $tmp_dir ]; then
+		/bin/rm -rf $tmp_dir || return 1
+	fi
+	mkdir -p $tmp_dir || return 1
+	cd $tmp_dir
+	$RPM2CPIO $test_rpm | cpio -idv > /dev/null 2>&1 || return 1 
+	[ -d $tmp_dir/opt ] || return 1
+	tar -zcvf $G_TESTHARNESS_TGZ  opt > /dev/null || return 1
+	echo "Creating cominf test harness tarball $WORKSPACE/$G_TESTHARNESS_TGZ"
+	/bin/cp -f $G_TESTHARNESS_TGZ $WORKSPACE || {
+		echo "Error - copy of test harness tarball to workspace dir $WORKSPACE"
+		return 1
+	}
+	
+
+}
+
+#
+# Function to cache media on MWS
+#
+cache_media_mws() {
+	# if kickstarts are in progress
+	# at the moment then we wait
+
+	l_count=0
+	while pgrep -f $G_JUMPSTARTSCRIPT > /dev/null; do
+		echo "Waiting for $G_JUMPSTARTSCRIPT to finish"
+		if [ $l_count -gt 360 ]; then
+			echo "Error - giving up on waiting for $G_JUMPSTARTSCRIPT to finish"
+			return 1
+		fi   
+		sleep 10
+		let l_count+=1
+	done
+	ssh root@$G_MWS_IP mkdir -p $G_MWS_TMPDIR || {
+                echo "** Error failed to create dir $G_MWS_TMPDIR on MWS"
+                return 1
+        }
+
+	printf "\n** caching media on MWS **\n"
+	for file in $G_SCRIPTDIR/cache_new_media.bsh $G_ETCDIR/ci.env ; do
+		scp $file root@$G_MWS_IP:$G_MWS_TMPDIR || return 1
+	done
+	#ssh -t root@$G_MWS_IP $G_MWS_TMPDIR/cache_new_media.bsh $G_CLEARCASE_HOST $G_CLEARCASE_USER $G_OCS_CLEARCASE_VIEW ${G_COMINFISOLOCATION}/${G_MEDIA_NAME}.iso || return 1
+	ssh -t root@$G_MWS_IP $G_MWS_TMPDIR/cache_new_media.bsh  || return 1
+    #   ssh -t root@$G_MWS_IP ./java_update.sh || return 1
+}
+
+cache_media_mws_vapp() {
+	$G_SSH_SETUPSCRIPT ssh "-oPort=2119 root@$G_MWS_IP mkdir -p $G_MWS_TMPDIR" shroot|| {
+                echo "** Error failed to create dir $G_MWS_TMPDIR on MWS"
+                return 1
+        }
+	printf "\n** caching media on MWS **\n"
+	for file in $G_SCRIPTDIR/cache_new_media.bsh $G_ETCDIR/ci.env ; do
+		$G_SSH_SETUPSCRIPT scp "-oPort=2119 $file root@$G_MWS_IP:$G_MWS_TMPDIR" shroot || return 1
+	done
+	$G_SSH_SETUPSCRIPT ssh "-t -oPort=2119 root@$G_MWS_IP $G_MWS_TMPDIR/cache_new_media.bsh" shroot  || return 1
+	
+}
+#
+# function to build packages and media
+#
+build_packages_and_media() {
+
+if [ ! -z "$G_PACKAGE" ]; then
+	echo "** Buildig $G_PACKAGE in build servers **"
+	ssh ${G_CLEARCASE_USER}@${G_CLEARCASE_HOST} "$CT setview -exec \"cd /vobs ; $G_COMINFBUILDSCRIPT -m $G_MEDIA_NAME -c -S -p $G_PACKAGE\" $G_OCS_CLEARCASE_VIEW" || {
+		echo "** Error failed to build $G_PACKAGE  package **"
+		exit 1
+	}
+exit 0
+
+elif [ $G_SKIP_BUILD == "FALSE" ]; then
+	G_YSTRDAY_DATE=`date --utc +%d-%b-%y -d "yesterday"`
+	rm -rf /tmp/scm_changes
+	ssh ${G_CLEARCASE_USER}@${G_CLEARCASE_HOST} "$CT setview -exec \"/usr/atria/bin/cleartool lshistory -all -since $G_YSTRDAY_DATE.18:30:11utc+0000 -fmt '\"%Nd\" \"%u\" \"%En\" \"%Vn\" \"%e\" \"%o\" \n%c\n' -branch brtype:$G_DEV_BRANCH -nco /vobs/cominf_media/\" $G_OCS_CLEARCASE_VIEW" > /tmp/scm_changes || {
+		echo "Error: lshistory command failed"
+		cat /tmp/scm_changes
+		exit 1
+	}
+	if [ -s /tmp/scm_changes ]; then
+		echo "** Building COMInf packages and Media because of the changes below **"
+		cat /tmp/scm_changes	
+		echo "Changing Media r-state in media info file"
+		
+	        /usr/atria/bin/cleartool setview -exec "/usr/atria/bin/cleartool co -nc $G_MEDIA_INFO" $G_OCS_CLEARCASE_VIEW  || {
+	                echo "Unable to checkout media info file"
+        	        exit 1
+        	}
+	        /usr/atria/bin/cleartool setview -exec "/proj/cominf/cominf/.jenkins-cominf/perl_command" $G_OCS_CLEARCASE_VIEW || {
+                        echo "Unable to edit media Info file"
+                        /usr/atria/bin/cleartool setview -exec "echo no | /usr/atria/bin/cleartool unco $G_MEDIA_INFO" $G_OCS_CLEARCASE_VIEW  || {
+                                echo "Unable to uncheckout media info file"
+                                exit 1
+                        }
+                        exit 1
+                }
+		echo "Changing Media Revision in media info file"
+		pre_rev=`/usr/atria/bin/cleartool setview -exec "grep \^REVISION $G_MEDIA_INFO" $G_OCS_CLEARCASE_VIEW`
+		pre_rev=`echo $pre_rev | awk -F= '{print $2}'`
+		lat_rev=$(revisonInc $pre_rev)
+cat > /tmp/rev_inc <<EOF || return 1
+#!/bin/bash
+sed s/REVISION=$pre_rev/REVISION=$lat_rev/g $G_MEDIA_INFO > /tmp/media_info.$$
+cp -f /tmp/media_info.$$ $G_MEDIA_INFO
+rm -rf /tmp/media_info.$$
+EOF
+		chmod 777 /tmp/rev_inc
+		/usr/atria/bin/cleartool setview -exec "/tmp/rev_inc" $G_OCS_CLEARCASE_VIEW || {
+			echo "unable to increase the version"
+			exit 1
+		}
+		
+	        /usr/atria/bin/cleartool setview -exec "/usr/atria/bin/cleartool ci -nc $G_MEDIA_INFO " $G_OCS_CLEARCASE_VIEW  >> /dev/null || {
+        	        echo "Unable to checkin media info file"
+			/usr/atria/bin/cleartool setview -exec "/usr/atria/bin/cleartool unco  $G_MEDIA_INFO" $G_OCS_CLEARCASE_VIEW  || {
+                	        echo "Unable to uncheckout media info file"
+        	                exit 1
+	                }
+                	exit 1
+	        }
+
+		ssh ${G_CLEARCASE_USER}@${G_CLEARCASE_HOST} "$CT setview -exec \"cd /vobs ; $G_COMINFBUILDSCRIPT -m $G_MEDIA_NAME -c \" $G_OCS_CLEARCASE_VIEW" || {
+			echo "** Error failed to build cominf packages/media **"
+			exit 1
+		}	
+	
+		l_rstate=`$CT setview -exec "grep MEDIA_R_STATE $G_MEDIA_INFO" $G_OCS_CLEARCASE_VIEW`
+		l_rstate=`echo $l_rstate | awk -F= '{print $2}'`
+
+		cat >/tmp/copy-iso <<EOF || return 2    
+#!/bin/bash
+cd /vobs/cominf_media/media_build/iso
+tar -cvzf 19089-CXP9018028_$l_rstate.tar.gz 19089-CXP9018028_$l_rstate.*
+echo "Copying 19089-CXP9018028_$l_rstate.tar.gz to workspace"
+scp $G_MEDIA_INFO /vobs/cominf_media/media_build/iso/19089-CXP9018028_$l_rstate.tar.gz $G_WORKSPACE
+echo "Copying 19089-CXP9018028_$l_rstate.tar.gz to mws"
+scp $G_MEDIA_INFO /vobs/cominf_media/media_build/iso/19089-CXP9018028_$l_rstate.tar.gz root@$G_CI_IP:$G_MWS_ISO
+EOF
+		chmod 777 /tmp/copy-iso
+		scp /tmp/copy-iso ${G_CLEARCASE_USER}@${G_CLEARCASE_HOST}:/tmp/
+		echo "Copying cominf files from build server to workspace and MWS"
+		ssh -o TCPKeepAlive=yes ${G_CLEARCASE_USER}@${G_CLEARCASE_HOST} "$CT setview -exec \"/tmp/copy-iso\" $G_OCS_CLEARCASE_VIEW" || {
+			echo "** Error - failed to copy cominf packages from build server to workspace/MWS**"
+	               	exit 1
+	        }       
+		ssh root@$G_CI_IP "cd $G_MWS_ISO; gunzip -c 19089-CXP9018028_$l_rstate.tar.gz | tar -xvf -"
+		cd $G_WORKSPACE; gunzip -c 19089-CXP9018028_$l_rstate.tar.gz | tar -xvf -
+		#echo "Copying cominf files from build server to mws"
+		#sd sh ${G_CLEARCASE_USER}@${G_CLEARCASE_HOST} "$CT setview -exec \"/tmp/copy_iso_mws\" $G_OCS_CLEARCASE_VIEW" || {
+		#	echo "** Error - failed to copy cominf packages from build server to mws**"
+		#	exit 1
+		#}	
+	else 
+		echo "EXITING since there are no changes since the last ISO build"
+		exit 0
+	fi
+	rm -rf /tmp/copy-iso /tmp/scm_changes
+elif [ $G_SKIP_BUILD == "TRUE" ]; then
+	command="iptables -t nat -A PREROUTING -i eth0 -p tcp -m tcp --dport 2119 -j DNAT --to-destination 192.168.0.119:22"
+	command2="service iptables save"
+	. /proj/cominf/cominf/.jenkins-cominf/servername_upgrade.txt
+	$G_SSH_SETUPSCRIPT ssh "root@$vapp_ip $command" shroot 
+	$G_SSH_SETUPSCRIPT ssh "root@$vapp_ip $command2" shroot || {
+		echo "Unable to run $command2 in $vapp_ip"
+	}
+	l_rstate=`$CT setview -exec "grep MEDIA_R_STATE $G_MEDIA_INFO" $G_OCS_CLEARCASE_VIEW`
+	l_rstate=`echo $l_rstate | awk -F= '{print $2}'`
+	
+	$G_SSH_SETUPSCRIPT scp "-oPort=2119 $G_WORKSPACE/media_info $G_WORKSPACE/19089-CXP9018028_$l_rstate.tar.gz root@$vapp_ip:$G_MWS_ISO " shroot || {
+		echo "Unable to copy iso to mws of $vapp_host"
+	}
+	echo "Extracting the media from tar"
+	$G_SSH_SETUPSCRIPT ssh "-oPort=2119 root@$vapp_ip cd $G_MWS_ISO\;gunzip -c $G_MWS_ISO/19089-CXP9018028_$l_rstate.tar.gz | tar -xvf -" shroot || {
+		echo "Unable to extract the media"
+	}
+	
+	
+	
+else 
+	echo "Arguments are missing"
+	exit 1	
+fi
+}
+# build cominf test harness
+#build_script=$WORKSPACE/build.sh
+#repo_name=cominf_test
+#version=R1A01
+#rpmfile=$WORKSPACE/RPMS/noarch/$G_COMINF_TEST_HARNESS_RPM 
+#if [ -f $rpmfile ]; then
+#	/bin/rm -f $rpmfile
+#fi
+#echo -e "*********************************************************\n"
+#if [ -x $build_script ]; then
+#	echo "building $repo_name rpm using command $build_script"
+#	if $build_script $version > /dev/null 2>&1 > /dev/null;  then
+#		if [ -s $rpmfile ]; then
+#		create_test_harness_tarball $WORKSPACE/RPMS/noarch/$G_COMINF_TEST_HARNESS_RPM || {
+#			echo "Failed to create cominf test harness tarball"
+#			exit 1
+#		}
+#		else
+#			echo "** Error - rpm file $rpmfile does not exist or is empty **"
+#		fi
+#	else
+#		echo "Error - build script $build_script failed"
+#		exit 1
+#	fi
+#else
+#	echo "Note: no build script found for repo $repo_name. Assuming no rpm build needed."
+#fi
+
+#${G_SCRIPTDIR}/build_smrs_package.bsh || {
+#	echo "Error - failed to build smrs package"
+#	exit 1
+#}
+# tar up cominf software
+#cd $WORKSPACE
+#[ -f $G_COMINF_SOFTWARE_TGZ ] && /bin/rm -f $G_COMINF_SOFTWARE_TGZ
+#echo "Creating cominf software tar file"
+#tar zcvf $G_COMINF_SOFTWARE_TGZ $G_COMINF_PACKAGES $G_TESTHARNESS_TGZ || {
+#	echo "** Error failed to create cominf software tar file"
+#	exit 1
+#} 
+
+
+revisonInc () {
+	inputRev=$1
+	revArray=( `echo $inputRev | fold -w1` )
+	revLen=${#revArray[@]}
+	index=`expr $revLen - 1`
+
+	for((j=$index;j>=0;j--))
+	do
+	        findNextRev ${revArray[j]}
+	        if [ $outRev == "A" ] && [ $j -ne 0 ];then
+	                revArray[j]=$outRev
+	                continue
+	        elif [ $outRev == "A" ] && [ $j -eq 0 ];then
+	                revArray[j]="AA"
+	                break
+	        else
+	                revArray[j]=$outRev
+	                break
+	        fi
+	done
+
+echo ${revArray[@]} | tr -d " "
+
+}
+
+findNextRev() {
+outRev=""
+        validRevs=( A B C D E F G H J K L M N O S T U V X Y Z )
+        frev=$1
+        for((i=0;i<${#validRevs[@]};i++))
+do
+         if [ ${validRevs[i]} == $frev ] && [ ${validRevs[i]} != "Z" ]; then
+                ((i++))
+                outRev=${validRevs[i]}
+                break
+        elif [ ${validRevs[i]} == "Z" ]; then
+                outRev=A
+        else
+                continue
+        fi
+done
+
+}
+
+
+operateSMRS () {
+
+        l_smrszip=`ls $G_SMRS_BUILD_PATH`
+        $G_UNZIP $G_SMRS_BUILD_PATH/$l_smrszip -d $G_SMRS_BUILD_PATH
+        l_smrspkg=`ls $G_SMRS_BUILD_PATH | grep ERICbismrs`
+	mv $G_SMRS_BUILD_PATH/$l_smrspkg $G_SMRS_BUILD_PATH/ERICbismrsmc.pkg
+	l_smrspkg=$G_SMRS_BUILD_PATH/ERICbismrsmc.pkg
+	l_OSRCMedia=`grep PEER1_APPL_MEDIA_LOC  $G_ETCDIR/oss_cloud_install_media_config.template | awk -F '=' '{ print $2 }'|sed 's/.\(.*\)/\1/' | sed 's/\(.*\)./\1/'`
+	l_smrsMWS=$l_OSRCMedia/ossrc_base_sw/eric_app/common/
+        scp $l_smrspkg root@$G_MWS_IP:$l_smrsMWS
+        rm -rf $l_smrspkg
+
+}
+
+#MAIN
+
+G_INST_TYPE=cominf
+G_SCRIPTNAME=$(/bin/basename $0)
+G_SCRIPTDIR=$(cd $(/usr/bin/dirname $0); pwd)
+G_ETCDIR=$( dirname $G_SCRIPTDIR )/etc
+. $G_ETCDIR/ci.env
+. /proj/cominf/cominf/.jenkins-cominf/servername_upgrade.txt
+G_SSH_SETUPSCRIPT=$G_SCRIPTDIR/ssh_setup.sh
+G_BUILD_ROOTDIR=$( /usr/bin/dirname $( /usr/bin/dirname $G_SCRIPTDIR ))
+G_JUMPSTARTSCRIPT=/export/scripts/CLOUD/bin/master.sh
+G_SRC_BOOTSTRAPDIR=$G_BUILD_ROOTDIR/bootstrap/$G_INST_TYPE
+G_SRC_CXPINFODIR=$G_BUILD_ROOTDIR/cxp_info
+G_SRC_REPODATA=$G_BUILD_ROOTDIR/repodata
+G_COMPSXMLFILE=$G_SRC_REPODATA/comps.xml
+G_DEST_PACKAGEDIRNAME=packages
+G_COMINF_SOFTWARE_TGZ=cominf_software.tar.gz
+tarfilename=$(basename $G_COMINF_TEST_HARNESS_RPM)
+G_TESTHARNESS_TGZ=${tarfilename%.*}.tar.gz
+G_COMINFMEDIAVOBPATH=/vobs/cominf_media/media_build
+G_COMINFBUILDSCRIPT=${G_COMINFMEDIAVOBPATH}/bin/cominf_build.bsh
+G_COMINFISOLOCATION=${G_COMINFMEDIAVOBPATH}/iso
+G_MEDIA_NAME=om_services
+G_MEDIA_INFO=/vobs/cominf_media/media_build/om_services/dvd/manifest/media_info
+G_COMINF_PACKAGES="ERICocs.pkg ERICsdse.pkg ERICpkg.adm"
+G_SSH_SETUPSCRIPT=$G_SCRIPTDIR/ssh_setup.sh
+G_MWS_ISO="/ISO/cominf_CI/"
+G_SMRS_BUILD_PATH=$G_SCRIPTDIR/../../../../swdi/pkg/
+G_UNZIP=/usr/bin/unzip
+G_WORKSPACE=/proj/cominf/cominf/.jenkins-cominf/workspace-cf1/ISO
+G_SKIP_BUILD=FALSE
+
+while getopts ":j:h:p:d:s" opt
+	do
+	case ${opt} in
+		h)      # Print help and exit OK
+			usage
+			exit 0
+		;;
+		j)
+			G_JENKINSJOBNAME=$OPTARG
+		;;
+		p)
+			G_PACKAGE=$OPTARG
+		;;
+		d)
+			G_DEV_BRANCH=$OPTARG
+		;;
+		s)
+			G_SKIP_BUILD="TRUE"
+			G_MWS_TMPDIR="/JUMP/tmp"
+			G_MWS_ISO="/JUMP/"
+			G_MWS_IP=$vapp_ip
+		;;
+		*)      # Print usage and exit error
+			usage
+			exit 1
+		;;
+	esac
+done
+
+## check for installed utilities
+#for utility in $GIT $RPMBUILD $RPM2CPIO $CREATEREPO; do
+#	if [ ! -x $utility ]; then
+#		echo "Error - looks like $utility not installed. Install associated rpm & try again."
+#		exit 1
+#	fi
+#done
+
+# get the IP of HUB server
+#G_CLEARCASE_HOST=$(${G_SCRIPTDIR}/select_hub_server.py)
+G_CLEARCASE_HOST=$G_DEFAULT_CLEARCASE_HOST
+[ -z "$G_CLEARCASE_HOST" ] && {
+	echo "Failed to determine IP of clearcase host"
+	exit 1
+}
+
+if [ -z "$WORKSPACE" ]; then 
+	# script called outside jenkins env
+	if [ -z "$G_JENKINSJOBNAME" ]; then
+		echo "** Error - jenkins job name must be specified if script not run from jenkins"
+		exit 1
+	else
+		WORKSPACE=$HOME/workspace/$G_JENKINSJOBNAME
+	fi
+fi
+
+if [ ! -d "$WORKSPACE" ]; then
+	echo "** Error - workspace dir \"$WORKSPACE\" does not exist"
+	exit 1
+fi
+
+#operateSMRS
+build_packages_and_media
+
+# cache new media
+if [ $G_SKIP_BUILD = "FALSE" ]; then 
+	cache_media_mws || {
+		echo "** Error failed to cache cominf media"
+		exit 1  
+	}
+else 
+	cache_media_mws_vapp || {
+		echo "** Error failed to cache cominf media"
+		exit 1  
+	}
+fi
+exit 0

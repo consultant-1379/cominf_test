@@ -1,0 +1,54 @@
+#!/bin/bash
+
+# TEST CASE SPEC FILE
+# This file is generated/updated using the test framework web interface.
+# Manual updates on test servers are lost when the test package is re-installed.
+#
+# Last modified: Monday 7th of October 2013 7:07:07
+#
+
+# These settings must be in BASH script format, they are sourced by other scripts.
+SPEC_FA_NAME="MULTIOSS"
+SPEC_UC_NAME="MULTIOSS_LDAP"
+SPEC_TC_ID=999
+SPEC_TC_SLOGAN="Verify adding a Global User to a Global Group"
+SPEC_TC_TYPE="FT"
+SPEC_TC_POLARITY="positive"
+SPEC_TC_PRIORITY="high"
+SPEC_TC_AUTOMATED=1
+SPEC_TC_DEPENDENT_ONLY=0
+SPEC_TC_TIMEOUT=300
+SPEC_TC_TEST_PASSCODE=0
+SPEC_TC_AUTHOR="xsougha"
+SPEC_TC_AUTOMATOR="xsougha"
+# this parameter is not interpreted by harness
+SPEC_TC_DISABLED=0
+
+# Please do not remove the comment lines below.
+# They are used as section locators by the test harness.
+
+# BEGIN_PRE_CONDITIONS
+#Both Global group and user must exist in the GD. 
+# END_PRE_CONDITIONS
+
+
+# BEGIN_MANUAL_STEPS
+#(1) Execute the following:
+#
+#/ericsson/sdee/bin/add_user_to_group.sh -G
+#Answer all prompts  
+#   Acceptance Criteria  bash-3.00# /ericsson/sdee/bin/add_user_to_group.sh -G
+#Using LDAP domain settings file [/ericsson/sdee/ldap_domain_settings/globaldomain.settings]
+#LDAP domain: [globaldomain]
+#LDAP Directory Manager DN: [cn=directory manager]
+#LDAP Directory Manager password:
+#The selected domain [globaldomain] is the GD.
+#Global group name: FM
+#Global user name: johnb
+#Add global user [johnb] to global group [FM] (y/n)? [y]
+#Adding global user [johnb] to global group [FM] in domain [globaldomain] ... OK  
+# END_MANUAL_STEPS
+
+# BEGIN_POST_CONDITIONS
+#None
+# END_POST_CONDITIONS

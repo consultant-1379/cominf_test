@@ -1,0 +1,233 @@
+#!/bin/bash
+#################################################################################
+#
+#
+#       COPYRIGHT (C) ERICSSON RADIO SYSTEMS AB, Sweden
+#
+#       The copyright to the document(s) herein is the property of
+#       Ericsson Radio Systems AB, Sweden.
+#
+#       The document(s) may be used and/or copied only with the written
+#       permission from Ericsson Radio Systems AB or in accordance with
+#       the terms and conditions stipulated in the agreement/contract
+#       under which the document(s) have been supplied.
+#
+#################################################################################
+
+
+# ATCOMINF Test Callback Library
+
+# Revision History
+# <date>	<signum>	<details>
+
+# Complete the callbacks in this library to automate the test case.
+#
+# Callbacks are stateless, it is not possible to set a global variable in one callback 
+# and access it it in another.
+#
+# Callbacks are called by the test harness in the following order:
+#
+# tc_setup() 		# Called only for independent TC execution mode to setup TC
+# tc_precon()		# Conditions that should exist before TC can run
+# tc_test()		# Runs the test for this TC
+# tc_postcon()		# Conditions that should/should not exist after successful TC 
+# tc_cleanup()		# Called only for independent TC execution mode to cleanup after TC
+
+# All callbacks must PASS for a TC PASS result
+
+#################################################################################
+#
+# CALLBACK: TC_SETUP
+#
+# This callback function is only called if the harness execution mode is 'AT_INDEPENDENT'
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_setup() {
+
+	return 0
+
+}
+#################################################################################
+
+#################################################################################
+#
+# CALLBACK: TC_PRECON
+#
+# This callback function checks the correct conditions exist to run the TC.
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+ 
+tc_precon() {
+
+	return 0
+
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_TEST
+#
+# This callback function runs the test.
+# The harness compares the return code to the SPEC_TC_TEST_PASSCODE value set in the test spec.
+#
+# Return or exit codes:
+#    SPEC_TC_TEST_PASSCODE 	success
+# != SPEC_TC_TEST_PASSCODE 	failure
+
+tc_test() {
+
+
+pkginfo ERICodj 2> /dev/null
+ret=$?
+if [[ $ret == 0 ]]; then
+
+        #ACTION1:- Adding a COM_APP  user
+        ${AT_BIN}/con_ex.bsh -d 1771_add_user.in -o 1771_add_user.in.exp -c "/ericsson/opendj/bin/add_user.sh -t COM_APP"
+        /usr/local/bin/expect 1771_add_user.in.exp || {
+                echo "Error while adding COM_APP user"
+                return 1
+        }
+        CNT=`grep -c "OK" ${TC_CONSOLE_FILE}`
+        ACNT="2"
+        [ "$CNT" -eq "$ACNT" ] || {
+                echo "Error while adding COM_APP user"
+                return 1
+        }
+        ldapsearch -D "cn=directory manager" -w "ldappass" -b "uid=com_app2,ou=people,dc=vts,dc=com" "objectclass=*"
+        [ $? -eq 0 ] || {
+                echo "Error fetching COM_APP user details using ldapsearch command "
+                return 1
+        }
+        echo "COM_APP user is created successfully."
+
+        #ACTION2:- Checking replication status between primary and secondary
+        ${AT_BIN}/con_ex.bsh -d 1771_prepReplicationm2.in -o 1771_prepReplicationm2.exp -c "/ericsson/opendj/bin/prepReplication.sh"
+        /usr/local/bin/expect 1771_prepReplicationm2.exp || {
+                echo "Error while running script prepReplication.sh in master "
+                return 1
+        }
+
+        CNT=`grep "status ran successfully" ${TC_CONSOLE_FILE}`
+        [ $? -eq 0 ] || {
+                echo "Error in replication status."
+                return 1
+        }
+
+else
+        #ACTION1:- Adding a COM_APP  user
+        ${AT_BIN}/con_ex.bsh -d 1771_add_user.in -o 1771_add_user.in.exp -c "/ericsson/sdee/bin/add_user.sh -t COM_APP"
+        /usr/local/bin/expect 1771_add_user.in.exp || {
+                echo "Error while adding COM_APP user"
+                return 1
+        }
+        CNT=`grep -c "OK" ${TC_CONSOLE_FILE}`
+        ACNT="2"
+        [ "$CNT" -eq "$ACNT" ] || {
+                echo "Error while adding COM_APP user"
+                return 1
+        }
+        ldapsearch -D "cn=directory manager" -w "ldappass" -b "uid=com_app2,ou=people,dc=vts,dc=com" "objectclass=*"
+        [ $? -eq 0 ] || {
+                echo "Error fetching COM_APP user details using ldapsearch command "
+                return 1
+        }
+        echo "COM_APP user is created successfully."
+
+        #ACTION2:- Checking replication status between primary and secondary
+        ${AT_BIN}/con_ex.bsh -d 1771_prepReplicationm.in -o 1771_prepReplicationm.exp -c "/ericsson/sdee/bin/prepReplication.sh"
+        /usr/local/bin/expect 1771_prepReplicationm.exp || {
+                echo "Error while running script prepReplication.sh in master "
+                return 1
+        }
+        CNT1=`cat ${TC_CONSOLE_FILE}| egrep -c "INFO Check replication status ran successfully|INFO Listing replication agreement was successful"`
+        echo $CNT1
+        ACNT1="2"
+        echo $ACNT1
+        [ "$CNT1" -eq "$ACNT1" ] || {
+                echo "Error in replication status."
+                return 1
+        }
+        CNT2=`grep -c "OK" ${TC_CONSOLE_FILE}`
+        ACNT2="5"
+        echo $CNT2
+        echo $ACNT2
+        [ "$CNT2" -eq "$ACNT2" ] || {
+                echo "Error in replication status."
+                return 1
+        }
+
+fi
+    return 0
+
+}
+
+ 
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_POSTCON
+#
+# This callback function checks expected results.
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_postcon() {
+
+	return 0
+
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_CLEANUP
+#
+# This callback function is only called if the harness execution mode is 'AT_INDEPENDENT'
+# 
+# This callback restores the target system to the state it was in before the TC 
+# was run. It rolls back changes made by callbacks tc_setup() and tc_test()
+# 
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_cleanup() {
+
+pkginfo ERICodj 2> /dev/null
+if [[ $? -eq 0 ]]; then
+        PATH_DELUSER=/ericsson/opendj/bin/del_user.sh
+else
+        PATH_DELUSER=/ericsson/sdee/bin/del_user.sh
+fi
+
+        #Deleting a COM_APP  user
+        ${AT_BIN}/con_ex.bsh -d 1771_del_user.in -o 1771_del_user.in.exp -c "${PATH_DELUSER}"
+        /usr/local/bin/expect 1771_del_user.in.exp || {
+                echo "Error while deleting COM_APP user"
+                return 1
+        }
+        cnt3=`grep "OK" ${TC_CONSOLE_FILE}`
+        ret=$?
+        [ $ret -eq 0 ] || {
+                echo "Error while deleting COM_APP user"
+                return 1
+        }
+        rm -rf *.exp
+        return 0
+
+}
+
+      
+

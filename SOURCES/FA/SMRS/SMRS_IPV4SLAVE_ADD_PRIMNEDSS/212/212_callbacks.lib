@@ -1,0 +1,156 @@
+#!/bin/bash
+#################################################################################
+#
+#
+#       COPYRIGHT (C) ERICSSON RADIO SYSTEMS AB, Sweden
+#
+#       The copyright to the document(s) herein is the property of
+#       Ericsson Radio Systems AB, Sweden.
+#
+#       The document(s) may be used and/or copied only with the written
+#       permission from Ericsson Radio Systems AB or in accordance with
+#       the terms and conditions stipulated in the agreement/contract
+#       under which the document(s) have been supplied.
+#
+#################################################################################
+
+
+# ATCOMINF Test Callback Library
+
+# Revision History
+# 09-08-12 	xkalbha		Initial version
+
+# Complete the callbacks in this library to automate the test case.
+#
+# Callbacks are stateless, it is not possible to set a global variable in one callback 
+# and access it it in another.
+#
+# Callbacks are called by the test harness in the following order:
+#
+# tc_setup() 		# Called only for independent TC execution mode to setup TC
+# tc_precon()		# Conditions that should exist before TC can run
+# tc_test()		# Runs the test for this TC
+# tc_postcon()		# Conditions that should/should not exist after successful TC 
+# tc_cleanup()		# Called only for independent TC execution mode to clenup after TC
+
+# All callbacks must PASS for a TC PASS result
+
+#################################################################################
+#
+# CALLBACK: TC_SETUP
+#
+# This callback function is only called if the harness execution mode is 'AT_INDEPENDENT'
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_setup() {
+
+	return 0
+}
+#################################################################################
+
+#################################################################################
+#
+# CALLBACK: TC_PRECON
+#
+# This callback function checks the correct conditions exist to run the TC.
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+ 
+tc_precon() {
+
+        #  Check have SMRS hosts ip file for this OSS maser
+        name=`hostname`
+        filename="smrs.hosts.ip.$name"
+        [ -r $filename ] || { echo "  SMRS hosts ip file $filename does not exist"; return 2; }
+        #Copy to smrs.hosts.ip file
+        cp $filename "smrs.hosts.ip"
+
+        smrs_master_ip=$(awk 'NR==1' smrs.hosts.ip)
+        nedss_ip=$(awk 'NR==2' smrs.hosts.ip)
+	# oss_alias=$(awk 'NR==3' smrs.hosts.ip)
+
+	ssh $smrs_master_ip  grep "$nedss_ip" /etc/inet/hosts > /dev/null
+        [ $? -eq 0 ] && { echo nedss seems to be installed, precondition not valid; return 1; }
+	
+	sed "s/^SMRS_SLAVE_NEDSS_IP=.*$/SMRS_SLAVE_NEDSS_IP=${nedss_ip}/" smrs_slave_config.valid > smrs_slave_config.valid2
+	return 0
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_TEST
+#
+# This callback function runs the test.
+# The harness compares the return code to the SPEC_TC_TEST_PASSCODE value set in the test spec.
+#
+# Return or exit codes:
+#    SPEC_TC_TEST_PASSCODE 	success
+# != SPEC_TC_TEST_PASSCODE 	failure
+ 
+tc_test() {
+
+        cmd='/opt/ericsson/nms_bismrs_mc/bin/configure_smrs.sh add slave_service -f smrs_slave_config.valid2'
+
+        ${AT_BIN}/con_ex.bsh -d 212.in -o 212.exp -c "${cmd}"
+        retval=$?
+        [ $retval -ne 0 ] && { echo Failed to create expect script $retval; return 2; }
+
+        /usr/local/bin/expect 212.exp
+
+	[ $? -eq 0 ] && { echo "running main command returned 0 while NEDSS was not configured before adding slave service on it" ; return 1; }
+
+	return 0 
+
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_POSTCON
+#
+# This callback function checks expected results.
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_postcon() {
+
+	nedss_ip=$(awk 'NR==2' smrs.hosts.ip)
+
+	CONSOLE_OUTPUT_CONTAINS "ERROR NEDSS $nedss_ip is not configured"
+	[ $? -eq 0 ] || { echo "output did not contain the Error message: ERROR NEDSS $nedss_ip is not configured"; return 2; }
+
+	return 0
+
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_CLEANUP
+#
+# This callback function is only called if the harness execution mode is 'AT_INDEPENDENT'
+# 
+# This callback restores the target system to the state it was in before the TC 
+# was run. It rolls back changes made by callbacks tc_setup() and tc_test()
+# 
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_cleanup() {
+
+	#rm -f 212.exp
+	return 0
+
+}

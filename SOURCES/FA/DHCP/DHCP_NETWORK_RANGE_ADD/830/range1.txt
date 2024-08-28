@@ -1,0 +1,32 @@
+#START of 114.41.95.0
+subnet 114.41.95.0 netmask 255.255.255.0 {
+option routers 114.41.95.1;
+option broadcast-address 114.41.95.255;
+option domain-name-servers 1.1.1.1;
+option domain-name "conservapedia.org";
+
+#START of RANGE 114.41.95.10
+default-lease-time 4500;
+option tftp-server-name "10.45.201.45";
+option ntp-servers 10.42.52.99,10.42.52.100;
+option www-server 10.42.52.101,10.42.52.102;
+range 114.41.95.10 114.41.95.15;
+#END of RANGE 114.41.95.10
+}
+#END of 114.41.95.0
+#START of 114.41.96.0
+subnet 114.41.96.0 netmask 255.255.255.0 {
+option routers 114.41.96.1;
+option broadcast-address 114.41.96.255;
+option domain-name-servers 1.1.1.1;
+option domain-name "misc.org";
+
+#START of RANGE 114.41.96.20
+default-lease-time 3500;
+option tftp-server-name "10.45.201.45";
+option ntp-servers 10.42.52.99,10.42.52.100;
+option www-server 10.42.52.101,10.42.52.102;
+range 114.41.96.20 114.41.96.25;
+#END of RANGE 114.41.96.20
+}
+#END of 114.41.96.0

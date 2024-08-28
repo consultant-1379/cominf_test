@@ -1,0 +1,227 @@
+#!/bin/bash
+#################################################################################
+#
+#
+#       COPYRIGHT (C) ERICSSON RADIO SYSTEMS AB, Sweden
+#
+#       The copyright to the document(s) herein is the property of
+#       Ericsson Radio Systems AB, Sweden.
+#
+#       The document(s) may be used and/or copied only with the written
+#       permission from Ericsson Radio Systems AB or in accordance with
+#       the terms and conditions stipulated in the agreement/contract
+#       under which the document(s) have been supplied.
+#
+#################################################################################
+
+
+# ATCOMINF Test Callback Library
+
+# Revision History
+# 14/12/12	xamamcg		Initial version
+
+# Complete the callbacks in this library to automate the test case.
+#
+# Callbacks are stateless, it is not possible to set a global variable in one callback 
+# and access it it in another.
+#
+# Callbacks are called by the test harness in the following order:
+#
+# tc_setup() 		# Called only for independent TC execution mode to setup TC
+# tc_precon()		# Conditions that should exist before TC can run
+# tc_test()		# Runs the test for this TC
+# tc_postcon()		# Conditions that should/should not exist after successful TC 
+# tc_cleanup()		# Called only for independent TC execution mode to cleanup after TC
+
+# All callbacks must PASS for a TC PASS result
+
+#################################################################################
+#
+# CALLBACK: TC_SETUP
+#
+# This callback function is only called if the harness execution mode is 'AT_INDEPENDENT'
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_setup() {
+
+	return 0
+
+}
+#################################################################################
+
+#################################################################################
+#
+# CALLBACK: TC_PRECON
+#
+# This callback function checks the correct conditions exist to run the TC.
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+ 
+tc_precon() {
+
+	DHCP_SERVER_RUNNING &>/dev/null || { 
+		echo "dhcpd not running on primary"
+		return 1
+	}
+	 #Verify its not on on secondary
+	ssh -o StrictHostKeyChecking=no om_serv_slave 'cat /var/run/dhcpd.pid' &>/dev/null && { 
+		echo "dhcpd running on secondary"
+		return 2
+	}
+	return 0
+
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_TEST
+#
+# This callback function runs the test.
+# The harness compares the return code to the SPEC_TC_TEST_PASSCODE value set in the test spec.
+#
+# Return or exit codes:
+#    SPEC_TC_TEST_PASSCODE 	success
+# != SPEC_TC_TEST_PASSCODE 	failure
+ 
+tc_test() {
+	# Add a network so that can prove that it does sync the network files up
+	DHCP_NETWORK_EXISTS 113.41.93.0 &>/dev/null || {
+		echo "Creating Test Network"
+		/ericsson/ocs/bin/ai_manager.sh -add net -a 113.41.93.0 -m 255.255.255.0 -r 113.41.93.1 -d abc.com -n 127.0.0.1 -q &>/dev/null || { 
+			echo "Failed to add network $?"
+			return 1
+		}
+		touch network.created
+	}
+	# Add a client so that can prove that it does sync the client files up
+	DHCP_CLIENT_IN_CONFIG node2 113.41.93.8 &>/dev/null || {
+		/ericsson/ocs/bin/ai_manager.sh -add client -a 113.41.93.8 -h node2.abc.com -s 127.0.0.1 -i node2 -p /usr/local/etc/temp.xml -q &>/dev/null || { 
+			echo "Failed to add client $?"
+			return 2
+		}
+		touch client.created
+	}
+	# Do a list on OM Primary and prove they can be seen
+	/ericsson/ocs/bin/ai_manager.sh -list all > all_prim.tmp
+	grep node2 all_prim.tmp &>/dev/null || { 
+		echo "Client not seen on list"
+		return 3; 
+	}
+	grep 113.41.93.0 all_prim.tmp &>/dev/null || { 
+		echo "Network not seen on list"
+		return 4
+	}
+	# Now failover
+	echo "Failing Over"
+	ssh -o StrictHostKeyChecking=no om_serv_slave '/ericsson/ocs/bin/activate_isc_dhcp.sh om_serv_slave' &>/dev/null || { 
+		echo "Failed to run activate_isc_dhcp $?"
+		return 5
+	}
+
+	# Do a list on OM Secondary and prove they can be seen
+	ssh -o StrictHostKeyChecking=no om_serv_slave '/ericsson/ocs/bin/ai_manager.sh -list all' > all_sec.tmp
+	grep node2 all_sec.tmp &>/dev/null || { 
+		echo "Client not seen on list after failover"
+		return 6
+	}
+	grep 113.41.93.0 all_sec.tmp &>/dev/null || { 
+		echo "Network not seen on list after failover"
+		return 7
+	}
+	return 0
+
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_POSTCON
+#
+# This callback function checks expected results.
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_postcon() {
+	# Verify NOT running on primary
+	DHCP_SERVER_RUNNING &>/dev/null && { 
+		echo "dhcpd running on primary"
+		return 1
+	}
+	# Verify its running on secondary
+	ssh -o StrictHostKeyChecking=no om_serv_slave 'cat /var/run/dhcpd.pid' &>/dev/null || { 
+		echo "dhcpd not running on secondary"
+		return 2
+	}
+
+	# Verify dhcp files synch'd
+	ssh -o StrictHostKeyChecking=no om_serv_slave 'cat /usr/local/etc/dhcpd.conf' > dhcpd.conf.tmp
+	diff /usr/local/etc/dhcpd.conf dhcpd.conf.tmp || { 
+		echo "dhcpd.conf differs"
+		return 3
+	}
+	ssh -o StrictHostKeyChecking=no om_serv_slave 'cat /usr/local/etc/dhcpd.conf_subnet' > dhcpd.conf_subnet.tmp
+	diff /usr/local/etc/dhcpd.conf_subnet dhcpd.conf_subnet.tmp || { 
+		echo "dhcpd.conf_subnet differs"
+		return 4
+	}
+	ssh -o StrictHostKeyChecking=no om_serv_slave 'cat /usr/local/etc/dhcpd.conf_static' > dhcpd.conf_static.tmp
+	diff /usr/local/etc/dhcpd.conf_static dhcpd.conf_static.tmp || { 
+		echo "dhcpd.conf_static differs"
+		return 5
+	}
+
+
+	return 0
+
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_CLEANUP
+#
+# This callback function is only called if the harness execution mode is 'AT_INDEPENDENT'
+# 
+# This callback restores the target system to the state it was in before the TC 
+# was run. It rolls back changes made by callbacks tc_setup() and tc_test()
+# 
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_cleanup() {
+
+
+        # Switch dhcp on on primary
+        echo "Failing back to master"
+        /ericsson/ocs/bin/activate_isc_dhcp.sh om_serv_master &>/dev/null || {
+                echo "Unable to failback dhcp to the master server"
+                return 1
+        }
+        [ -r created.client ] && {
+                /ericsson/ocs/bin/ai_manager.sh -delete client -i node2 -q || {
+                        echo "Unable to delete test client"
+                        return 2
+                }
+        }
+        [ -r created.network ] && {
+                /ericsson/ocs/bin/ai_manager.sh -delete net -a 113.41.93.0 -q || {
+                        echo "Unabel to delete test network"
+                        return 3
+                }
+        }
+        # Remove any temporary files
+        rm -f *.tmp client.created network.created
+        return $?
+}

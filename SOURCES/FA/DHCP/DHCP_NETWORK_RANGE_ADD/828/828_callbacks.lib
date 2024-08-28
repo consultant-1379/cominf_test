@@ -1,0 +1,176 @@
+#!/bin/bash
+#################################################################################
+#
+#
+#       COPYRIGHT (C) ERICSSON RADIO SYSTEMS AB, Sweden
+#
+#       The copyright to the document(s) herein is the property of
+#       Ericsson Radio Systems AB, Sweden.
+#
+#       The document(s) may be used and/or copied only with the written
+#       permission from Ericsson Radio Systems AB or in accordance with
+#       the terms and conditions stipulated in the agreement/contract
+#       under which the document(s) have been supplied.
+#
+#################################################################################
+
+
+# ATCOMINF Test Callback Library
+
+# Revision History
+# 2012-12-13    xamamcg    Initial version
+
+# Complete the callbacks in this library to automate the test case.
+#
+# Callbacks are stateless, it is not possible to set a global variable in one callback 
+# and access it it in another.
+#
+# Callbacks are called by the test harness in the following order:
+#
+# tc_setup() 		# Called only for independent TC execution mode to setup TC
+# tc_precon()		# Conditions that should exist before TC can run
+# tc_test()		# Runs the test for this TC
+# tc_postcon()		# Conditions that should/should not exist after successful TC 
+# tc_cleanup()		# Called only for independent TC execution mode to clenup after TC
+
+# All callbacks must PASS for a TC PASS result
+
+#################################################################################
+#
+# CALLBACK: TC_SETUP
+#
+# This callback function is only called if the harness execution mode is 'AT_INDEPENDENT'
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_setup() {
+	cp /usr/local/etc/dhcpd.conf_subnet ./dhcpd.conf.bak
+	if [ -r /usr/local/etc/dhcpd.conf_subnet ]; then
+		cp /usr/local/etc/dhcpd.conf_subnet ./dhcpd.conf_subnet.bak
+	fi
+	return 0
+
+}
+#################################################################################
+
+#################################################################################
+#
+# CALLBACK: TC_PRECON
+#
+# This callback function checks the correct conditions exist to run the TC.
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+ 
+tc_precon() {
+
+	DHCP_SERVER_INSTALLED || {
+		echo "DHCP server not installed"
+		return 1
+	}
+
+	DHCP_SERVER_RUNNING || {
+		echo "DHCP server not running"
+		return 2
+	}
+
+	return 0
+
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_TEST
+#
+# This callback function runs the test.
+# The harness compares the return code to the SPEC_TC_TEST_PASSCODE value set in the test spec.
+#
+# Return or exit codes:
+#    SPEC_TC_TEST_PASSCODE 	success
+# != SPEC_TC_TEST_PASSCODE 	failure
+tc_test() {
+
+	# Need to add network first
+	echo "Test 1: Adding network, 114.41.95.0"
+	/ericsson/ocs/bin/ai_manager.sh -add net -a 114.41.95.0 -d conservapedia.org -r 114.41.95.1 -n "1.1.1.1" -m 255.255.255.0 -q || {
+		echo "Error creating test network, error code $?"
+		return 1
+	}
+
+	echo "Test 2: Adding range to network"
+	/ericsson/ocs/bin/ai_manager.sh -add range -n 255.255.255.0 -r 114.41.95.1 -b 114.41.95.10 -e 114.41.95.15 -s 10.45.201.45 -l 3500 -t "10.42.52.99,10.42.52.100" -w "10.42.52.101,10.42.52.102"  -q || {
+		echo "Error creating test range, error code $?"
+		return 2
+	}
+
+	# Restart dhcpd
+# service
+	#service dhcpd restart 2&1> dhcpd.tmp || { echo "Failed to restart dhcpd"; return 4; }
+	/etc/rc2.d/S96dhcpd restart 2&1> dhcpd.tmp || { echo "Failed to restart dhcpd"; return 4; }
+	grep -v OK dhcpd.tmp && { echo "Errors in dhcpd restart"; cat dhcpd.tmp; return 5; }
+
+	return 0
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_POSTCON
+#
+# This callback function checks expected results.
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_postcon() {
+
+	# Prove subnet file is as expected
+
+        diff range.txt /usr/local/etc/dhcpd.conf_subnet && { echo "Subnet file not as expected"; return 1; }	
+	/ericsson/ocs/bin/ai_manager.sh -list nets 2> err.tmp 1> nets.tmp || { echo "Failed to list networks"; return 2; }
+
+	# Check range is in output
+	grep "range 114.41.95.10 114.41.95.15" nets.tmp || { echo "List networks doesn't contain range"; cat nets.tmp; return 3; }
+
+	return 0
+
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_CLEANUP
+#
+# This callback function is only called if the harness execution mode is 'AT_INDEPENDENT'
+# 
+# This callback restores the target system to the state it was in before the TC 
+# was run. It rolls back changes made by callbacks tc_setup() and tc_test()
+# 
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_cleanup() {
+
+	/ericsson/ocs/bin/ai_manager.sh -delete net -a 114.41.95.0 -q
+
+	if [ -r ./dhcpd.conf_subnet.bak ]; then 
+		cat ./dhcpd.conf_subnet.bak > /usr/local/etc/dhcpd.conf_subnet
+	else
+		rm /usr/local/etc/dhcpd.conf_subnet
+	fi
+
+#	rm *.tmp
+#	rm *.bak
+#	rm *.exp
+	return 0
+
+}

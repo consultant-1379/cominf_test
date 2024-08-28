@@ -1,0 +1,90 @@
+#!/bin/bash
+
+# TEST CASE SPEC FILE
+# This file is generated/updated using the test framework web interface.
+# Manual updates on test servers are lost when the test package is re-installed.
+#
+# Last modified: Monday 16th of December 2013 7:38:46
+#
+
+# These settings must be in BASH script format, they are sourced by other scripts.
+SPEC_FA_NAME="SOLARIS10SUNDS"
+SPEC_UC_NAME="SOLARIS10SUNDS_Conflict_Domain_Migration"
+SPEC_TC_ID=1237
+SPEC_TC_SLOGAN="Verify the proper functionality of resolve_conflicts.bsh in a “resolve” mode for the previously accepted proposals "
+SPEC_TC_TYPE="FT"
+SPEC_TC_POLARITY="positive"
+SPEC_TC_PRIORITY="high"
+SPEC_TC_AUTOMATED=0
+SPEC_TC_DEPENDENT_ONLY=0
+SPEC_TC_TIMEOUT=300
+SPEC_TC_TEST_PASSCODE=0
+SPEC_TC_AUTHOR="xlaxain"
+SPEC_TC_AUTOMATOR="xlaxain"
+# this parameter is not interpreted by harness
+SPEC_TC_DISABLED=0
+
+# Please do not remove the comment lines below.
+# They are used as section locators by the test harness.
+
+# BEGIN_PRE_CONDITIONS
+#Path in Mars:- SUN-DS/Conflict Resolution & Global Domain Migration       
+#
+#Make sure that the proposals have been previously accepted
+# END_PRE_CONDITIONS
+
+
+# BEGIN_MANUAL_STEPS
+#Execute resolve_conflicts.bsh in resolve mode as follows:
+#/ericsson/sdee/bin/resolve_conflicts.bsh –w –u –d <domain>
+#e.g. bash-3.00# /ericsson/sdee/bin/resolve_conflicts.bsh -w -u -d 2.com
+#Using LDAP domain settings file [/ericsson/sdee/ldap_domain_settings/2.com.settings]
+#LDAP domain: [2.com]
+#LDAP Directory Manager DN: [cn=directory manager]
+#LDAP Directory Manager password:
+#OSS-RC masterservice: [ms2]
+#The selected domain [2.com] is an isolated domain not using the GD.
+#Enter passphrase for //.ssh/id_dsa:
+#JOB_1 ID_MATCH [clare, 19000] -> [clare, FREE_ID]
+#.
+#. <job output not shown>
+#.
+#JOB_2 ID_MATCH [rose, 20000] -> [rose, FREE_ID]
+#.
+#. <job output not shown>
+#.
+#JOB_3 NAME_MATCH [cindy, 18000] -> [cindy, 28000]
+#.
+#. <remaining jobs not shown>
+#.
+#
+# END_MANUAL_STEPS
+
+# BEGIN_POST_CONDITIONS
+#Accepted proposals job file: /ericsson/sdee/GDmig/2.com/conflicts/resolve/user/user_accepted_proposals.jobs
+#Log file: /ericsson/sdee/log/resolve_conflicts.bsh_20-08-2011_20-13-20.log
+#bash-3.00#
+#bash-3.00# cat /ericsson/sdee/GDmig/2.com/conflicts/resolve/user/user_accepted_proposals.jobs
+#ORDER STATUS CONFLICT TYPE CHAIN/LOOP NAME ID NEW_ID DOMAIN
+#JOB_1 DONE 1 ID_MATCH NO clare 19000 1000 2.com
+#JOB_2 DONE 2 ID_MATCH NO rose 20000 1001 2.com
+#JOB_3 DONE 4 NAME_MATCH NO cindy 18000 28000 2.com
+#JOB_4 DONE 8 ID_MATCH CHAIN_1 dan 6666 1005 2.com
+#JOB_5 DONE 7 NAME_MATCH CHAIN_1 gerry 9999 6666 2.com
+#JOB_6 DONE 6 NAME_MATCH CHAIN_1 paddy 8888 9999 2.com
+#JOB_7 DONE 5 NAME_MATCH CHAIN_1 cyril 7777 8888 2.com
+#JOB_8 DONE 13 NAME_MATCH CHAIN_4 frank 2222 1234 2.com
+#JOB_9 DONE 12 NAME_MATCH CHAIN_4 dave 1111 2222 2.com
+#JOB_10 DONE 11 NAME_MATCH CHAIN_4 des 5555 1111 2.com
+#JOB_11 DONE 10 NAME_MATCH CHAIN_4 ruby 4444 5555 2.com
+#JOB_12 DONE 9 NAME_MATCH CHAIN_4 kate 3333 4444 2.com
+#JOB_13 DONE 15 NAME_MATCH CHAIN_5 ben 13000 23000 2.com
+#JOB_14 DONE 14 NAME_MATCH CHAIN_5 jack 12000 13000 2.com
+#JOB_15 DONE 16 NAME_MATCH LOOP_2 harry 16000 1006 2.com
+#JOB_16 DONE 18 NAME_MATCH LOOP_2 charlie 15000 16000 2.com
+#JOB_17 DONE 17 NAME_MATCH LOOP_2 tom 14000 15000 2.com
+#JOB_18 DONE 16 NAME_MATCH LOOP_2 harry FREE_ID 14000 2.com
+#JOB_19 DONE 19 NAME_MATCH LOOP_3 john 11000 1006 2.com
+#JOB_20 DONE 20 NAME_MATCH LOOP_3 sam 10000 11000 2.com
+#JOB_21 DONE 
+# END_POST_CONDITIONS

@@ -1,0 +1,297 @@
+#!/bin/bash
+#################################################################################
+#
+#
+#       COPYRIGHT (C) ERICSSON RADIO SYSTEMS AB, Sweden
+#
+#       The copyright to the document(s) herein is the property of
+#       Ericsson Radio Systems AB, Sweden.
+#
+#       The document(s) may be used and/or copied only with the written
+#       permission from Ericsson Radio Systems AB or in accordance with
+#       the terms and conditions stipulated in the agreement/contract
+#       under which the document(s) have been supplied.
+#
+#################################################################################
+
+
+# ATCOMINF Test Callback Library
+
+# Revision History
+# 2012-12-14    xamamcg    Initial version
+
+# Complete the callbacks in this library to automate the test case.
+#
+# Callbacks are stateless, it is not possible to set a global variable in one callback 
+# and access it it in another.
+#
+# Callbacks are called by the test harness in the following order:
+#
+# tc_setup() 		# Called only for independent TC execution mode to setup TC
+# tc_precon()		# Conditions that should exist before TC can run
+# tc_test()		# Runs the test for this TC
+# tc_postcon()		# Conditions that should/should not exist after successful TC 
+# tc_cleanup()		# Called only for independent TC execution mode to clenup after TC
+
+# All callbacks must PASS for a TC PASS result
+
+#################################################################################
+#
+# CALLBACK: TC_SETUP
+#
+# This callback function is only called if the harness execution mode is 'AT_INDEPENDENT'
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_setup() {
+	cp /usr/local/etc/dhcpd.conf ./dhcpd.conf.bak
+	if [ -r /usr/local/etc/dhcpd.conf_subnet ]; then
+		cp /usr/local/etc/dhcpd.conf_subnet ./dhcpd.conf_subnet.bak
+	fi
+	# Need to add network first
+	echo " Adding network, 114.41.95.0"
+	/ericsson/ocs/bin/ai_manager.sh -add net -a 114.41.95.0 -m 255.255.255.0 -r 114.41.95.1 -d conservapedia.org -n "1.1.1.1" > /dev/null || {
+		echo "Error creating test network, error code $?"
+		return 1
+	}
+
+	echo "Adding range to network"
+	/ericsson/ocs/bin/ai_manager.sh -add range -n 255.255.255.0 -r 114.41.95.1 -b 114.41.95.10 -e 114.41.95.15 -s 10.45.201.45 -l 4500 -t "10.42.52.99,10.42.52.100" -w "10.42.52.101 10.42.52.102"  -q > /dev/null || {
+		echo "Error creating test network, error code $?"
+		return 2
+	}
+
+	# Need to add another network 
+	echo " Adding network, 114.41.96.0"
+	/ericsson/ocs/bin/ai_manager.sh -add net -a 114.41.96.0 -m 255.255.255.0 -r 114.41.96.1 -d misc.org -n "1.1.1.1" > /dev/null || {
+		echo "Error creating test network, error code $?"
+		return 3
+	}
+	# Need to add another network 
+	echo " Adding network, 114.41.98.0"
+	/ericsson/ocs/bin/ai_manager.sh -add net -a 114.41.98.0 -m 255.255.255.0 -r 114.41.98.1 -d random.org -n "1.1.1.1" > /dev/null || {
+		echo "Error creating test network, error code $?"
+		return 4
+	}
+	echo "Adding 0 range to network"
+	/ericsson/ocs/bin/ai_manager.sh -add range -n 255.255.255.0 -r 114.41.98.1 -b 114.41.98.0 -e 114.41.98.2 -s 10.45.201.45 -l 4500 -t "10.42.52.99,10.42.52.100" -w "10.42.52.101 10.42.52.102"  -q > /dev/null || {
+		echo "Error creating test network, error code $?"
+		return 5
+	}
+
+	return 0
+
+}
+#################################################################################
+
+#################################################################################
+#
+# CALLBACK: TC_PRECON
+#
+# This callback function checks the correct conditions exist to run the TC.
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+ 
+tc_precon() {
+
+	DHCP_SERVER_INSTALLED > /dev/null || {
+		echo "DHCP server not installed"
+		return 1
+	}
+
+	DHCP_SERVER_RUNNING > /dev/null || {
+		echo "DHCP server not running"
+		return 2
+	}
+
+	return 0
+
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_TEST
+#
+# This callback function runs the test.
+# The harness compares the return code to the SPEC_TC_TEST_PASSCODE value set in the test spec.
+#
+# Return or exit codes:
+#    SPEC_TC_TEST_PASSCODE 	success
+# != SPEC_TC_TEST_PASSCODE 	failure
+ 
+tc_test() {
+
+	echo "Test 1: Check ip in range"
+	/ericsson/ocs/bin/ai_manager.sh -check ip -a 114.41.95.12
+	retval=$?
+	[ $retval -eq 1 ] > /dev/null || {
+		echo "Error checking ip in middle of range, error code $retval"
+		return 1
+	}
+
+	echo "Test 2: Check ip at start of range"
+	/ericsson/ocs/bin/ai_manager.sh -check ip -a 114.41.95.10
+	retval=$?
+	[ $retval -eq 1 ] > /dev/null || {
+		echo "Error checking ip in start of range, error code $retval"
+		return 2
+	}
+
+	echo "Test 3: Check ip at end of range"
+	/ericsson/ocs/bin/ai_manager.sh -check ip -a 114.41.95.15
+	retval=$?
+	[ $retval -eq 1 ] > /dev/null || {
+		echo "Error checking ip in end of range, error code $retval"
+		return 3
+	}
+
+	echo "Test 4: Check ip in range"
+	/ericsson/ocs/bin/ai_manager.sh -check ip -a 114.41.95.013
+	retval=$?
+	[ $retval -eq 1 ] > /dev/null || {
+		echo "Error checking ip in middle of range, error code $retval"
+		return 4
+	}
+
+	echo "Test 5: Check ip not in range"
+	/ericsson/ocs/bin/ai_manager.sh -check ip -a 114.41.95.16 > tmp.txt || {
+		echo "Error checking ip just after range, error code $?"
+		return 5
+	}
+
+	echo "Test 6: Check ip not in range"
+	/ericsson/ocs/bin/ai_manager.sh -check ip -a 114.41.95.9 >> tmp.txt || {
+		echo "Error checking ip just before range, error code $?"
+		return 6
+	}
+
+	echo "Test 7: Check ip not in range"
+	/ericsson/ocs/bin/ai_manager.sh -check ip -a 114.41.95.116  >> tmp.txt || {
+		echo "Error checking ip along way from range, error code $?"
+		return 7
+	}
+
+	echo "Test 8: Check ip in network with no range"
+	/ericsson/ocs/bin/ai_manager.sh -check ip -a 114.41.96.9  >> tmp.txt || {
+		echo "Error checking ip in network with no range, error code $?"
+		return 8
+	}
+
+	echo "Test 9: Check ip not in network"
+	/ericsson/ocs/bin/ai_manager.sh -check ip -a 114.41.97.9
+	retval=$?
+	[ $retval -eq 1 ] || {
+		echo "Error checking ip in no network, error code $retval"
+		return 9
+	}
+
+	echo "Test 10: Check ip not in range by bsim"
+	su - bsim -c '/ericsson/ocs/bin/ai_manager.sh -check ip -a 114.41.95.118'  || {
+		echo "Error checking ip along way from range by bsim, error code $?"
+		return 10
+	}
+
+	echo "Test 11: Check invalid ip "
+	/ericsson/ocs/bin/ai_manager.sh -check ip -a 114.41.95.256
+	retval=$?
+	[ $retval -eq 1 ] >> tmp.txt || {
+		echo "Error checking invalid ip, error code $retval"
+		return 11
+	}
+	echo "Test 12: Check ip in 0 range"
+	/ericsson/ocs/bin/ai_manager.sh -check ip -a 114.41.98.0
+	retval=$?
+	[ $retval -eq 1 ] >> tmp.txt || {
+		echo "Error checking ip in zero range, error code $retval"
+		return 12
+	}
+	echo "Test 13: Check ip not in 0 range"
+	/ericsson/ocs/bin/ai_manager.sh -check ip -a 114.41.98.3 >> tmp.txt || {
+		echo "Error checking ip NOT in zero range, error code $retval"
+		return 13
+	}
+	return 0
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_POSTCON
+#
+# This callback function checks expected results.
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_postcon() {
+
+	CONSOLE_OUTPUT_CONTAINS "114.41.95.12 exists within a defined range" || { echo "No 12 exists msg"; return 1; }
+	CONSOLE_OUTPUT_CONTAINS "114.41.95.10 exists within a defined range" || { echo "No 12 exists msg"; return 2; }
+	CONSOLE_OUTPUT_CONTAINS "114.41.95.15 exists within a defined range" || { echo "No 12 exists msg"; return 3; }
+	CONSOLE_OUTPUT_CONTAINS "114.41.95.013 exists within a defined range" || { echo "No invalid ip address msg"; return 4; }
+	grep "114.41.95.16 does not exist within a defined range" tmp.txt || { echo "No 16 not exist msg"; return 5; }
+	grep "114.41.95.9 does not exist within a defined range" tmp.txt || { echo "No 9 not exist msg"; return 6; }
+	grep "114.41.95.116 does not exist within a defined range, ok to use as a static IP" tmp.txt || { echo "No 116 not exist msg"; return 7; }
+	grep "No range defined for IP 114.41.96.9 network 114.41.96.0" tmp.txt || { echo "No 9 not exist msg"; return 8; }
+	CONSOLE_OUTPUT_CONTAINS "No Network exists for IP 114.41.97.9" || { echo "No non-network msg"; return 9; }
+	CONSOLE_OUTPUT_CONTAINS "114.41.95.118 does not exist within a defined range" || { echo "No 118 not exist msg"; return 10; }
+	CONSOLE_OUTPUT_CONTAINS "Out of range in the IP Address [114.41.95.256]" || { echo "No invalid ip address msg"; return 11; }
+	CONSOLE_OUTPUT_CONTAINS "114.41.98.0 exists within a defined range" > /dev/null || { echo "No 0 exists msg"; return 12; }
+	grep "114.41.98.3 does not exist within a defined range" tmp.txt > /dev/null || { echo "No 0 not exist msg"; return 13; }
+	return 0
+
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_CLEANUP
+#
+# This callback function is only called if the harness execution mode is 'AT_INDEPENDENT'
+# 
+# This callback restores the target system to the state it was in before the TC 
+# was run. It rolls back changes made by callbacks tc_setup() and tc_test()
+# 
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_cleanup() {
+
+	/ericsson/ocs/bin/ai_manager.sh -delete net -a 114.41.95.0 -q > /dev/null || {
+	echo "Could not delete the network 114.41.95.0"
+	return 1
+	}
+
+	/ericsson/ocs/bin/ai_manager.sh -delete net -a 114.41.96.0 -q /dev/null || {
+	echo "Could not delete the network 114.41.96.0"
+	return 2
+	}
+
+	/ericsson/ocs/bin/ai_manager.sh -delete net -a 114.41.98.0 -q /dev/null || {
+	echo "Could not delete the network 114.41.98.0"
+	return 3
+	}
+
+	if [ -r ./dhcpd.conf_subnet.bak ]; then 
+		cat ./dhcpd.conf_subnet.bak > /etc/dhcp/dhcpd.conf_subnet
+	else
+		rm /etc/dhcp/dhcpd.conf_subnet
+	fi
+	
+	rm tmp.txt
+	rm -f *.tmp
+	rm -f *.bak
+	
+	return 0
+	
+	}

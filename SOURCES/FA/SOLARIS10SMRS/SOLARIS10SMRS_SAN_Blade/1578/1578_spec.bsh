@@ -1,0 +1,54 @@
+#!/bin/bash
+
+# TEST CASE SPEC FILE
+# This file is generated/updated using the test framework web interface.
+# Manual updates on test servers are lost when the test package is re-installed.
+#
+# Last modified: Tuesday 17th of December 2013 4:51:04
+#
+
+# These settings must be in BASH script format, they are sourced by other scripts.
+SPEC_FA_NAME="SOLARIS10SMRS"
+SPEC_UC_NAME="SOLARIS10SMRS_SAN_Blade"
+SPEC_TC_ID=1578
+SPEC_TC_SLOGAN="Modification of FTP service definitions "
+SPEC_TC_TYPE="FT"
+SPEC_TC_POLARITY="positive"
+SPEC_TC_PRIORITY="high"
+SPEC_TC_AUTOMATED=0
+SPEC_TC_DEPENDENT_ONLY=0
+SPEC_TC_TIMEOUT=300
+SPEC_TC_TEST_PASSCODE=0
+SPEC_TC_AUTHOR="xnavema"
+SPEC_TC_AUTOMATOR="xnavema"
+# this parameter is not interpreted by harness
+SPEC_TC_DISABLED=0
+
+# Please do not remove the comment lines below.
+# They are used as section locators by the test harness.
+
+# BEGIN_PRE_CONDITIONS
+#<PATH Under "Verification Specification for Cominf Feature Test for 14.0":Bi-directional SMRS Initial Installation/SAN use in blade deployment >
+# END_PRE_CONDITIONS
+
+
+# BEGIN_MANUAL_STEPS
+#105 65-0580/01416 1.17: Moving from SMRS slave to SMRS master
+#SMRS shall provide a procedure to modify associations from an SMRS slave to an SMRS master for eNodeBs and RBSs
+#A script shall be provided to modify associations with a NEDSS to the SMRS master for both eNodeBs and RBSs.
+#Currently SMRS provides a script , extract_data.sh, that takes an export from ARNE, modifies associations from one FTPService to another, and performs an optional import.
+#This should be replaced with a new script, migrate_connections.sh
+#The logic of the script shall remain the same but will have to be modified;
+#- Only support modification of eNodeB and RBS associations
+#- Move data from NEDSS directories to the SMRS master directories
+#- Alter permissions from old ftp service accounts (NEDSS) to new ftp service accounts (NESS)
+#The script shall be included in the Bi-SMRS MC package.
+#
+#
+#A script shall be provided to modify associations with a NEDSS to the SMRS master for both eNodeBs and RBSs.
+#
+# END_MANUAL_STEPS
+
+# BEGIN_POST_CONDITIONS
+#<none>
+# END_POST_CONDITIONS

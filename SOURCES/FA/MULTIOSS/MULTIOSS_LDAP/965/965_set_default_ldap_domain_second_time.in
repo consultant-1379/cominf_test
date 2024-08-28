@@ -1,0 +1,7 @@
+LDAP Directory Manager DN
+cn=directory manager
+LDAP Directory Manager password:
+ldapadmin
+New default LDAP domain
+3.com
+is already the default domain for the LDAP administration scripts.

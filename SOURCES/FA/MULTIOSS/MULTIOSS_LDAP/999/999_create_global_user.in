@@ -1,0 +1,20 @@
+LDAP Directory Manager password:
+ldapadmin
+New global user name:
+u999G
+Start of uidNumber search range
+1000
+End of uidNumber search range
+59999
+New global user uidNumber
+2400
+New global user password:
+password
+Re-enter password:
+password
+New global user category 
+custom
+New global user description 
+OSS-RC user
+Continue to create global user
+y

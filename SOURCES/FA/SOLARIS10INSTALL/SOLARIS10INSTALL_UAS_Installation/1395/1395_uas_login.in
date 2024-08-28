@@ -1,0 +1,12 @@
+Password:
+shroot
+#
+/opt/firefox/bin/firefox -v > /var/tmp/pkg1.txt
+#
+scp -o StrictHostKeyChecking=no /var/tmp/pkg1.txt root@omsrvm:/var/tmp/pkg.txt
+Password
+shroot
+#
+rm /var/tmp/pkg1.txt
+#
+exit

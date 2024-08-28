@@ -1,0 +1,225 @@
+#!/bin/bash
+#################################################################################
+#
+#
+#       COPYRIGHT (C) ERICSSON RADIO SYSTEMS AB, Sweden
+#
+#       The copyright to the document(s) herein is the property of
+#       Ericsson Radio Systems AB, Sweden.
+#
+#       The document(s) may be used and/or copied only with the written
+#       permission from Ericsson Radio Systems AB or in accordance with
+#       the terms and conditions stipulated in the agreement/contract
+#       under which the document(s) have been supplied.
+#
+#################################################################################
+
+
+# ATCOMINF Test Callback Library
+
+# Revision History
+# <date>	<signum>	<details>
+
+# Complete the callbacks in this library to automate the test case.
+#
+# Callbacks are stateless, it is not possible to set a global variable in one callback 
+# and access it it in another.
+#
+# Callbacks are called by the test harness in the following order:
+#
+# tc_setup() 		# Called only for independent TC execution mode to setup TC
+# tc_precon()		# Conditions that should exist before TC can run
+# tc_test()		# Runs the test for this TC
+# tc_postcon()		# Conditions that should/should not exist after successful TC 
+# tc_cleanup()		# Called only for independent TC execution mode to cleanup after TC
+
+# All callbacks must PASS for a TC PASS result
+
+#################################################################################
+#
+# CALLBACK: TC_SETUP
+#
+# This callback function is only called if the harness execution mode is 'AT_INDEPENDENT'
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_setup() {
+	return 0
+}
+#################################################################################
+
+#################################################################################
+#
+# CALLBACK: TC_PRECON
+#
+# This callback function checks the correct conditions exist to run the TC.
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+ 
+tc_precon() {
+	return 0
+}
+################################################################################
+
+
+
+
+#################################################################################
+#
+# CALLBACK: TC_TEST
+#
+# This callback function runs the test.
+# The harness compares the return code to the SPEC_TC_TEST_PASSCODE value set in the test spec.
+#
+# Return or exit codes:
+#    SPEC_TC_TEST_PASSCODE 	success
+# != SPEC_TC_TEST_PASSCODE 	failure
+
+tc_test() {
+
+pkginfo ERICodj 2> /dev/null
+ret=$?
+if [[ $ret == 0 ]]; then
+		
+		 #Checking for errors in last executed prepReplication script
+        VALUE=`ls -ltr /ericsson/opendj/log/prepReplication.sh_*|awk '{ print $9 }'|tail -1`;
+        grep "ERROR" $VALUE && {
+                echo "Error in the last executed prepReplication script"
+                return 1
+        }
+
+        #Checking option 2 of prepReplication
+        ${AT_BIN}/con_ex.bsh -d 1756_prepReplicationm2.in -o 1756_prepReplicationm2.exp -c "/ericsson/opendj/bin/prepReplication.sh"
+        /usr/local/bin/expect 1756_prepReplicationm2.exp || {
+                echo "Error while running script prepReplication.sh in master with option 2"
+                return 1
+        }
+
+        CNT=`grep "status ran successfully" ${TC_CONSOLE_FILE}`
+        [ $? -eq 0 ] || {
+                echo "Replication status was not ok in infra master."
+                return 1
+        }
+
+        ${AT_BIN}/con_ex.bsh -d 1756_prepReplications2.in -o 1756_prepReplications2.exp -c "/ericsson/opendj/bin/prepReplication.sh"
+        scp 1756_prepReplications2.exp root@omsrvs:/var/tmp/
+        ssh omsrvs /usr/local/bin/expect /var/tmp/1756_prepReplications2.exp || {
+                echo "Error while running script prepReplication.sh in slave with option 3"
+                return 1
+        }
+
+
+else
+
+        #Checking for errors in last executed prepReplication script
+        VALUE=`ls -ltr /ericsson/sdee/log/prepReplication.sh_*|awk '{ print $9 }'|tail -1`;
+        grep "ERROR" $VALUE && {
+                echo "Error in the last executed prepReplication script"
+                return 1
+        }
+
+        #Checking option 3 of prepReplication
+        ${AT_BIN}/con_ex.bsh -d 1756_prepReplicationm3.in -o 1756_prepReplicationm3.exp -c "/ericsson/sdee/bin/prepReplication.sh"
+        /usr/local/bin/expect 1756_prepReplicationm3.exp || {
+                echo "Error while running script prepReplication.sh in master with option 3"
+                return 1
+        }
+
+        CNT=`grep -c "OK" ${TC_CONSOLE_FILE}`
+        RESULT=3
+        [ "$CNT" -eq "$RESULT" ] || {
+                echo "Replication status was not ok in infra master."
+                return 1
+        }
+        ${AT_BIN}/con_ex.bsh -d 1756_prepReplications3.in -o 1756_prepReplications3.exp -c "/ericsson/sdee/bin/prepReplication.sh"
+        scp 1756_prepReplications3.exp root@omsrvs:/var/tmp/
+        ssh omsrvs /usr/local/bin/expect /var/tmp/1756_prepReplications3.exp || {
+                echo "Error while running script prepReplication.sh in slave with option 3"
+                return 1
+        }
+
+        hostname
+        CNT1=`grep -c "OK" ${TC_CONSOLE_FILE}`
+        RESULT1=6
+        #echo $RESULT1
+        [ "$CNT1" -eq "$RESULT1" ]  || {
+                       echo "Replication status was not ok in infra slave."
+                       return 1
+        }
+
+        Checking option 6 of prepReplication
+        ${AT_BIN}/con_ex.bsh -d 1756_prepReplicationm6.in -o 1756_prepReplicationm6.exp -c "/ericsson/sdee/bin/prepReplication.sh"
+        /usr/local/bin/expect 1756_prepReplicationm6.exp || {
+                echo "Error while running script prepReplication.sh in master with option 6"
+                return 1
+        }
+        hostname
+        CONSOLE_OUTPUT_CONTAINS "replication agreement was successful" || {
+                       echo "Replication agreement was unsuccessful in infra master."
+                       return 1
+        }
+        ${AT_BIN}/con_ex.bsh -d 1756_prepReplications6.in -o 1756_prepReplications6.exp -c "/ericsson/sdee/bin/prepReplication.sh"
+        scp 1756_prepReplications6.exp root@omsrvs:/var/tmp/
+        ssh omsrvs /usr/local/bin/expect /var/tmp/1756_prepReplications6.exp || {
+                echo "Error while running script prepReplication.sh in slave with option 6"
+                return 1
+        }
+        CNT2=`grep -c "replication agreement was successful." ${TC_CONSOLE_FILE}`
+        #echo $cnt2
+        RESULT2=2
+        [ "$CNT2" -eq "$RESULT2" ] || {
+                       echo "Replication agreement was unsuccessful in infra slave"
+                       return 1
+        }
+fi
+
+        return 0
+
+}
+
+ 
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_POSTCON
+#
+# This callback function checks expected results.
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_postcon() {
+
+	rm -rf *.exp
+        return 0
+
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_CLEANUP
+#
+# This callback function is only called if the harness execution mode is 'AT_INDEPENDENT'
+# 
+# This callback restores the target system to the state it was in before the TC 
+# was run. It rolls back changes made by callbacks tc_setup() and tc_test()
+# 
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_cleanup() {
+	
+          rm -rf *.exp
+          return 0
+
+}

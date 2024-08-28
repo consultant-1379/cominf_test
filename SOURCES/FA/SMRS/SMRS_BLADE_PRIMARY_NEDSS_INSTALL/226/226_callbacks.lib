@@ -1,0 +1,306 @@
+#!/bin/bash
+#################################################################################
+#
+#
+#		COPYRIGHT (C) ERICSSON RADIO SYSTEMS AB, Sweden
+#
+#		The copyright to the document(s) herein is the property of
+#		Ericsson Radio Systems AB, Sweden.
+#
+#		The document(s) may be used and/or copied only with the written
+#		permission from Ericsson Radio Systems AB or in accordance with
+#		the terms and conditions stipulated in the agreement/contract
+#		under which the document(s) have been supplied.
+#
+#################################################################################
+
+
+# ATCOMINF Test Callback Library
+
+# Revision History
+# 16-08-12	   xkalbha	 initial version of test to add NEDSS when no GRAN
+
+# Complete the callbacks in this library to automate the test case.
+#
+# Callbacks are stateless, it is not possible to set a global variable in one callback 
+# and access it it in another.
+#
+# Callbacks are called by the test harness in the following order:
+#
+# tc_setup()		# Called only for independent TC execution mode to setup TC
+# tc_precon()		# Conditions that should exist before TC can run
+# tc_test()		# Runs the test for this TC
+# tc_postcon()		# Conditions that should/should not exist after successful TC 
+# tc_cleanup()		# Called only for independent TC execution mode to clenup after TC
+
+# All callbacks must PASS for a TC PASS result
+
+#################################################################################
+#
+# CALLBACK: TC_SETUP
+#
+# This callback function is only called if the harness execution mode is 'AT_INDEPENDENT'
+#
+# Return or exit codes:
+#  0	success
+# >0	failure
+
+tc_setup() {
+
+
+	return 0
+
+}
+#################################################################################
+
+#################################################################################
+#
+# CALLBACK: TC_PRECON
+#
+# This callback function checks the correct conditions exist to run the TC.
+#
+# Return or exit codes:
+#  0	success
+# >0	failure
+ 
+tc_precon() {
+
+	# Check if set up as smrs_master, quick check for smrs_master in /etc/inet/hosts
+	grep "smrs_master" /etc/inet/hosts >& /dev/null || { echo "Failed to find smrs_master in /etc/inet/hosts on OSS Master"; return 1; }
+
+	#  Check have nedss config file for this OSS maser
+	name=`hostname`
+	filename="nedss_config.$name"
+	[ -r $filename ] || { echo "NEDSS config $filename does not exist"; return 2; }
+
+	return 0
+
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_TEST
+#
+# This callback function runs the test.
+# The harness compares the return code to the SPEC_TC_TEST_PASSCODE value set in the test spec.
+#
+# Return or exit codes:
+#	 SPEC_TC_TEST_PASSCODE	success
+# != SPEC_TC_TEST_PASSCODE	failure
+ 
+tc_test() {
+	#Copy to nedss_config.valid correct nedss file 
+	name=`hostname`
+	filename="nedss_config.$name"
+	cp $filename "nedss_config.valid"
+
+	
+	
+	grep 'NEDSS_TRAFFIC_IP'  /etc/opt/ericsson/nms_bismrs_mc/smrs_config  || { 
+	
+	echo "NEDSS is not configured"
+	# Add NEDSS command is defined and run
+
+	cmd='/opt/ericsson/nms_bismrs_mc/bin/configure_smrs.sh add nedss -f nedss_config.valid'
+	
+	${AT_BIN}/con_ex.bsh -d 226.in -o 226.exp -c "${cmd}"
+	retval=$?
+	[ $retval -ne 0 ] && { echo "Failed to create expect script $retval"; return 2; }
+
+	/usr/local/bin/expect 226.exp
+
+	[ $? -eq 0 ] || { echo main command to add nedss failed; return 1; }
+	
+	}
+
+	return 0
+
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_POSTCON
+#
+# This callback function checks expected results.
+#
+# Return or exit codes:
+#  0	success
+# >0	failure
+
+tc_postcon() {
+
+
+	# I. check ntp to see if NEDSS gets time from OM primary
+
+	OM_PRIMARY_IP=$(grep "smrs_master" /etc/inet/hosts | awk '{print $1}')
+	
+	ssh smrs_master
+	[ $? -eq 0 ] || { echo ssh to smrs_master failed; return 1; } 
+
+	NEDSS_IP=$(awk -F= '/^NEDSS_TRAFFIC_IP/ {print $2}' nedss_config.valid)
+   
+	NEDSS_TRAFFIC_HOSTNAME=$(awk -F= '/^NEDSS_TRAFFIC_HOSTNAME/ {print $2}' nedss_config.valid)
+
+	ssh smrs_master ssh ${NEDSS_IP} <<EOF
+
+	ntpq -pn 2>/dev/null |awk '\$4 ~ /^u\$/{print \$1}' | grep smrs_master 
+	[ \$? -eq 0 ] || { exit 19; }
+	exit 0
+EOF
+	[ $? -eq 0 ] ||  { echo OM Primary was not found in the up stream NTP servers for NEDSS; return 1; }
+
+	# II. checking time by ssh to om primary, NEDSS and then om primary and check times
+
+	# trying to get date on om primary
+	
+	dateOnPrimaryBegin=$( ssh smrs_master date -u +%d%m%y)
+	
+	[ $? -eq 0 ] || { echo "ssh to OM Primary to get begin date  failed"; return 2; }
+
+	# trying to get date on nedss
+
+	dateOnNedss=$(ssh smrs_master ssh ${NEDSS_IP} date -u +%d%m%y)
+
+	[ $? -eq 0 ] || { echo "ssh to nedss to get date  failed"; return 3; }
+	
+	# trying to get date on om primary
+	
+	dateOnPrimaryEnd=$(ssh smrs_master date -u +%d%m%y)
+
+	[ $? -eq 0 ] || { echo "ssh to OM Primary to get end date  failed"; return 4; }
+
+	# comapring times to see if NTP synchronization works correctly
+	[ "${dateOnPrimaryBegin}" -le "${dateOnNedss}" -a "${dateOnNedss}" -le "${dateOnPrimaryEnd}" ] || { echo "NTP synchrinization failure;date on NEDSS was not in synch with that of OM Primary"; return 5; }
+	
+	# III. Checking NFS mounts
+
+	ssh smrs_master ssh ${NEDSS_IP} mount | grep  /export/GRAN  || { echo " GRAN filesystem check on NEDSS failed"; return 6; }
+
+	ssh smrs_master ssh ${NEDSS_IP} mount | grep  /export/WRAN  || { echo " WRAN filesystem check on NEDSS failed"; return 7; }
+	
+	ssh smrs_master ssh ${NEDSS_IP} mount | grep  /export/LRAN  || { echo " LRAN filesystem check on NEDSS failed"; return 8; }
+	
+	ssh smrs_master ssh ${NEDSS_IP} mount | grep  /export/CORE  || { echo " CORE filesystem check on NEDSS failed"; return 9; }
+
+
+	# IV. check file system contents on NEDSS to see if the same as OM_Primary
+
+	ssh smrs_master mount | grep /export/GRAN > /tmp/fs_cont_omprimary
+	ssh smrs_master ssh ${NEDSS_IP} mount | grep /export/GRAN > /tmp/fs_cont_nedss	
+
+	ssh smrs_master mount | grep /export/WRAN >> /tmp/fs_cont_omprimary
+	ssh smrs_master ssh ${NEDSS_IP} mount | grep /export/WRAN >> /tmp/fs_cont_nedss	
+
+	ssh smrs_master mount | grep /export/LRAN >> /tmp/fs_cont_omprimary
+	ssh smrs_master ssh ${NEDSS_IP} mount | grep /export/LRAN >> /tmp/fs_cont_nedss	
+
+	ssh smrs_master mount | grep /export/CORE >> /tmp/fs_cont_omprimary
+	ssh smrs_master ssh ${NEDSS_IP} mount | grep /export/CORE >> /tmp/fs_cont_nedss	
+	
+	# nedss.fs file contains all the directories to exist after adding NEDSS on both SMRS Master and NEDSS
+	cat /tmp/fs_cont_omprimary | /usr/xpg4/bin/grep -f nedss.fs > /tmp/ompriN1.fs
+
+	cat /tmp/fs_cont_nedss | /usr/xpg4/bin/grep -f nedss.fs > /tmp/nedssN1.fs
+
+	diff /tmp/nedssN1.fs /tmp/ompriN1.fs
+	[ $? -eq 0 ] || { echo "filesystem check on SMRS Master and NEDSS failed"; return 10; }
+	
+	# V. Check TFTP service is enabled on NEDSS
+
+	ssh smrs_master ssh $NEDSS_IP "cat /ericsson/config/ericsson_use_config | grep smrs_master" && { echo "smrs_master configuration found in slave"; return 3; }
+	ssh smrs_master ssh ${NEDSS_IP} <<EOF
+
+	# create a test file under /export/GRAN/tftp for testing
+	touch /export/GRAN/tftp/test.xkalbha	
+
+	# VI. Check syslog  config and operation
+
+ # check if syslog is running on NEDSS
+	ps -ea | grep syslogd
+	[ $? -eq 0 ] || { echo "syslog is not running on NEDSS, Test failed" ; exit 3; }
+
+		# check syslog worksI
+
+		if [ -s /export/GRAN/syslog/${NEDSS_TRAFFIC_HOSTNAME}_local7.info ]
+		then
+				lines=$(cat /export/GRAN/syslog/${NEDSS_TRAFFIC_HOSTNAME}_local7.info|wc -l)
+
+				logger -t smrs -p local7.info "xkalbha"
+				sleep 5
+				sed 1,${lines}d /export/GRAN/syslog/${NEDSS_TRAFFIC_HOSTNAME}_local7.info >>/tmp/syslog.log
+				grep xkalbha /tmp/syslog.log
+				retval=$?
+				rm -f /tmp/syslog.log
+				[ $retval -eq 0 ] || { echo syslog did not work on NEDSS, Test failed; exit 1; }
+
+		else
+				logger -t smrs -p local7.info "xkalbha"
+				sleep 5
+				grep xkalbha  /export/GRAN/syslog/${NEDSS_TRAFFIC_HOSTNAME}_local7.info
+				[ $? -eq 0 ] || { echo syslog did not work on NEDSS, Test failed; exit 4; }
+
+		fi
+EOF
+
+	#[ $? -eq 0 ] || { echo syslog test failed; return 11; }
+
+	rm -f test.xkalbha
+	echo get test.xkalbha|tftp ${NEDSS_IP}	
+	[ -f test.xkalbha ] || { echo tftp test failed; return 12; }
+	# cleanup
+	ssh smrs_master ssh ${NEDSS_IP} rm -f /export/GRAN/tftp/test.xkalbha
+
+	
+
+
+	# IX. check /etc/inet/hosts on OM Primary  for NEDSS entry
+	ssh smrs_master cat /etc/inet/hosts  | grep ${NEDSS_IP}
+	[ $? -eq 0 ] || { echo NEDSS was not found in the /etc/inet/hosts on OM_PRIMARY, Test failed; return 16; }
+
+	# X. check /etc/inet/hosts on NEDSS for OM Primary entry
+	ssh smrs_master  ssh ${NEDSS_IP} cat /etc/inet/hosts  | grep smrs_master
+	[ $? -eq 0 ] || { echo OM_PRIMARY was not found in the /etc/inet/hosts on NEDSS, Test failed; return 17; }
+
+
+	
+
+	
+
+	# cleanup test.xkalbha
+	ssh smrs_master ssh ${NEDSS_IP} rm -f /export/GRAN/tftp/test.xkalbha
+	return 0
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_CLEANUP
+#
+# This callback function is only called if the harness execution mode is 'AT_INDEPENDENT'
+# 
+# This callback restores the target system to the state it was in before the TC 
+# was run. It rolls back changes made by callbacks tc_setup() and tc_test()
+# 
+# Return or exit codes:
+#  0	success
+# >0	failure
+
+tc_cleanup() {
+
+	# SMRS cleanup is performed via the test suite
+
+	rm -f /tmp/fs_cont_nedss 
+	rm -f /tmp/fs_cont_omprimary
+	rm -f mount.data
+	rm -f test.xkalbha
+	rm -f 226.exp
+	rm -f ssh.log
+	rm -f nedss_config.valid
+	return 0
+
+}

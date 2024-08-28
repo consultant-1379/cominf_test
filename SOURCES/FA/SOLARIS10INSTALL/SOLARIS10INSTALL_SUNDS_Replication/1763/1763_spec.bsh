@@ -1,0 +1,103 @@
+#!/bin/bash
+
+# TEST CASE SPEC FILE
+# This file is generated/updated using the test framework web interface.
+# Manual updates on test servers are lost when the test package is re-installed.
+#
+# Last modified: Tuesday 17th of December 2013 9:52:17
+#
+
+# These settings must be in BASH script format, they are sourced by other scripts.
+SPEC_FA_NAME="SOLARIS10INSTALL"
+SPEC_UC_NAME="SOLARIS10INSTALL_SUNDS_Replication"
+SPEC_TC_ID=1763
+SPEC_TC_SLOGAN="Verify LDAP replication can be disabled. "
+SPEC_TC_TYPE="FT"
+SPEC_TC_POLARITY="positive"
+SPEC_TC_PRIORITY="high"
+SPEC_TC_AUTOMATED=1
+SPEC_TC_DEPENDENT_ONLY=0
+SPEC_TC_TIMEOUT=300
+SPEC_TC_TEST_PASSCODE=0
+SPEC_TC_AUTHOR="xgansre"
+SPEC_TC_AUTOMATOR="xlaxain"
+# this parameter is not interpreted by harness
+SPEC_TC_DISABLED=0
+
+# Please do not remove the comment lines below.
+# They are used as section locators by the test harness.
+
+# BEGIN_PRE_CONDITIONS
+#Precondition: 
+#Replication is enabled for standard deployment and replication agreements are established.
+#
+#Mars Path<Initial Installation/SUN-DS Replication >
+# END_PRE_CONDITIONS
+
+
+# BEGIN_MANUAL_STEPS
+#Action 1
+#: Execute option 7 (Disable replication) of /ericsson/sdee/bin/prepReplication.sh on Primary Infra
+#
+#Action 2: 
+#Execute option 6 of /ericsson/sdee/bin/prepReplication.sh on Primary Infra to list replication agreements.
+#
+#Action 3: 
+#Execute option 3 of /ericsson/sdee/bin/prepReplication.sh on Secondary Infra to check replication status against Primary Infra.
+#
+#Action 4:
+#Execute options 1,2 & 5 of /ericsson/sdee/bin/prepReplication.sh on Primary Infra to re-establish replication against Secondary Infra.
+#
+#Action 5: 
+#Execute option 3 of /ericsson/sdee/bin/prepReplication.sh on both Infra to check replication status.
+#
+#
+# END_MANUAL_STEPS
+
+# BEGIN_POST_CONDITIONS
+#Result 1: 
+#Replication is disabled and sun-ds is restarted. The user is prompted to return to main menu and there are no errors reported in /ericsson/sdee/log/replication_<timestamp>.log
+#
+#Result 2: 
+#Option 6 returns that there are no replication agreements.
+#---------------------------------------
+#listing existing replication agreements
+#---------------------------------------
+#Currently no replication agreement exists.
+#
+#Result 3: 
+#This returns replication is NOT OK
+#--------------------------------------
+#Trying to check replication status....
+#using ldap domain = dc=atrcus771,dc=athtem,dc=eei,dc=ericsson,dc=se
+#using target machine = atx807vm9.athtem.eei.ericsson.se
+#--------------------------------------
+#Configuration Status : NOT OK
+#Authentication Status : NOT OK
+#Initialization Status : NOT OK
+#Status : Error Sending Updates
+#Last Message : Replication error updating replica: Unable to start a replication session : fatal error - Replica does not exit
+#Pending Changes : 0
+#-----------------------------------------
+#Check replication status ran successfully
+#-----------------------------------------
+#
+#Result 4: 
+#Options 1, 2 & 5 are successful and replication is set-up and initialised.
+#
+#Result 5: 
+#Replication is enabled and status is ok.
+#--------------------------------------
+#Trying to check replication status....
+#using ldap domain = dc=atrcus771,dc=athtem,dc=eei,dc=ericsson,dc=se
+#using target machine = atx807vm9.athtem.eei.ericsson.se
+#--------------------------------------
+#Configuration Status : OK
+#Authentication Status : OK
+#Initialization Status : OK
+#Status : Enabled
+#Last Update Date : Apr 22, 2010 5:16:26 PM
+#-----------------------------------------
+#Check replication status ran successfully
+#----------------------------------------- 
+# END_POST_CONDITIONS

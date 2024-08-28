@@ -1,0 +1,18 @@
+LDAP Directory Manager password:
+PASSWD
+Enter option number*
+2
+Enter Replication destination FQHN*
+omsrvs.vts.com
+Enter MultiMaster password*
+PASSWD
+Re-enter password*
+PASSWD
+Continue to setup replication with*
+
+Press .Y. To continue, .N. to re-enter, .Q. to quit and .M. to return to main menu*
+Y
+Do you want return to the main menu*
+n
+
+

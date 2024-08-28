@@ -1,0 +1,74 @@
+#!/bin/bash
+
+# TEST CASE SPEC FILE
+# This file is generated/updated using the test framework web interface.
+# Manual updates on test servers are lost when the test package is re-installed.
+#
+# Last modified: Friday 31st of May 2013 9:46:49
+#
+
+# These settings must be in BASH script format, they are sourced by other scripts.
+SPEC_FA_NAME="LDAP"
+SPEC_UC_NAME="LDAP_COM_BULK_IMPORT_APPEND"
+SPEC_TC_ID=562
+SPEC_TC_SLOGAN="Test line syntax for alias, domain and role"
+SPEC_TC_TYPE="FT"
+SPEC_TC_POLARITY="negative"
+SPEC_TC_PRIORITY="high"
+SPEC_TC_AUTOMATED=1
+SPEC_TC_DEPENDENT_ONLY=0
+SPEC_TC_TIMEOUT=300
+SPEC_TC_TEST_PASSCODE=0
+SPEC_TC_AUTHOR="xdansan"
+SPEC_TC_AUTOMATOR="xdansan"
+# this parameter is not interpreted by harness
+SPEC_TC_DISABLED=0
+
+# Please do not remove the comment lines below.
+# They are used as section locators by the test harness.
+
+# BEGIN_PRE_CONDITIONS
+#1. create valid import file bulk1.txt:
+#DOMAIN 1.com
+## comments are allowed
+#
+#ROLE role1
+##comments are allowed
+#ALIAS alias1 role1
+#2. create invalid import file (domain line) bulk2.txt:
+#DOMAIN,1.com
+## comments are allowed
+#
+#ROLE role2
+##comments are allowed
+#ALIAS alias2 role2
+#3. create invalid import file (rule line) bulk3.txt:
+#DOMAIN 1.com
+## comments are allowed
+#
+#ROLE role2,role3,#,role4
+##comments are allowed
+#ALIAS alias2 role2
+#4. create invalid import file (alias line) bulk4.txt:
+#DOMAIN 1.com
+## comments are allowed
+#
+#ROLE role2,role3,role4
+##comments are allowed
+#ALIAS alias2 role1:role2
+#
+# END_PRE_CONDITIONS
+
+
+# BEGIN_MANUAL_STEPS
+#1. manage_COM.bsh -a import -d 1.com -f bulk1.txt
+#2. !manage_COM.bsh -a import -d 1.com -f bulk2.txt
+#3. !manage_COM.bsh -a import -d 1.com -f bulk3.txt
+#4. !manage_COM.bsh -a import -d 1.com -f bulk4.txt
+# END_MANUAL_STEPS
+
+# BEGIN_POST_CONDITIONS
+#1. role1 and alias1 created,
+#2. alias2 not created
+#3. role2,role3, role4 not created
+# END_POST_CONDITIONS

@@ -1,0 +1,139 @@
+#!/bin/bash
+
+# TEST CASE SPEC FILE
+# This file is generated/updated using the test framework web interface.
+# Manual updates on test servers are lost when the test package is re-installed.
+#
+# Last modified: Monday 16th of December 2013 11:21:33
+#
+
+# These settings must be in BASH script format, they are sourced by other scripts.
+SPEC_FA_NAME="SOLARIS10INSTALL"
+SPEC_UC_NAME="SOLARIS10INSTALL_DHCP_Failover"
+SPEC_TC_ID=1504
+SPEC_TC_SLOGAN="Verify the activation of DHCP on the Slave server following the shutdown of the Master server. "
+SPEC_TC_TYPE="FT"
+SPEC_TC_POLARITY="positive"
+SPEC_TC_PRIORITY="high"
+SPEC_TC_AUTOMATED=0
+SPEC_TC_DEPENDENT_ONLY=0
+SPEC_TC_TIMEOUT=300
+SPEC_TC_TEST_PASSCODE=0
+SPEC_TC_AUTHOR="xsripin"
+SPEC_TC_AUTOMATOR="xsripin"
+# this parameter is not interpreted by harness
+SPEC_TC_DISABLED=0
+
+# Please do not remove the comment lines below.
+# They are used as section locators by the test harness.
+
+# BEGIN_PRE_CONDITIONS
+#<path under "Verification Specification for Cominf Feature Test for 14.0 ":
+#Initial Installation/DHCP Failover/ISC DHCP IPv4 Failover
+#> 
+#
+#Verify the activation of DHCP on the Slave server following the shutdown of the Master server.
+#
+#Precondition: 
+#MWS , 
+#OSS MS,
+#om_serv_master , om_serv_slave
+#MWS, profile for om_serv_master configured for IPv4 and IPv6(Dualstack).
+#MWS, profile for om_serv_slave configured for IPv4 and IPv6(Dualstack).
+#MWS configured with latest Solaris, Solaris O&M media, COMInf media
+#‘om_serv_master’, ‘om_serv_slave’ successfully jumpstarted with COMInf media using MWS.
+#IPv6 interface file , /etc/hostname6.<interface>, has been renamed. Server restarted to disable IPv6 daemon.
+#
+#Master server is the active DHCP server.
+#IPv4 daemon only running on Master server. 
+#
+#A cronjob exists on both the master server and slave server for the script ‘/ericsson/ocs/bin/dhcp_check.sh’, to transfer the IPv4 DHCP files between the active DHCP server and the non-active server.
+#
+#
+# END_PRE_CONDITIONS
+
+
+# BEGIN_MANUAL_STEPS
+#Action 1: 
+#Power down the Master server.
+#
+#Action 2: 
+#On the Slave server, execute the following command:
+#/ericsson/ocs/bin/ activate_isc_dhcp.sh om_serv_slave
+#
+#Action 3: 
+#Verify a logfile, ‘/ericsson/ocs/log/activate_isc_dhcp.<timestamp>.log’ is generated on the Slave server in the following directory, /ericsson/ocs/log/.
+#
+#Verify the logfile contents contains information relevant to the activation of DHCP on the Slave server. ,i.e. Stopping daemons on Slave server, renaming DHCP start script
+#
+#Verify the IPv4 DHCP configuration files are copied from the /var/tmp/ to the correct location on the server to enable IPv4 DHCP.
+#
+#Action 4: 
+#On the Master server, execute the following command to verify the IPv4 DHCP daemon is running on the Slave server.
+#ps -ef | grep -i dhcp
+#
+#Action 5: 
+#On the Slave server, verify the DHCP start file /etc/rc2.d/s96dhcpd has been renamed to /etc/rc2.d/S96dhcpd.
+#Verify with the following command:
+#ls -ltr /etc/rc2.d/
+#
+#Action 6: 
+#On the Slave server, verify the IPv4 DHCP configuration files have been correctly copied to the correct locations.
+#Verify using date DHCP activation script was executed.
+#/usr/local/etc/dhcpd.conf_subnet from /var/tmp/
+#/usr/local/etc/dhcpd.conf_static from /var/tmp/
+#/var/lib/dhcp/dhcpd.leases from /var/tmp/
+#/usr/local/etc/dhcpd.conf from /var/tmp/
+#/ericsson/ocs/etc/aif_hosts from /var/tmp/
+#
+# 
+# END_MANUAL_STEPS
+
+# BEGIN_POST_CONDITIONS
+#Result 1:
+#The Master server is successfully powered down.
+#
+#Result 2:
+#The command successfully executes.
+#
+#Result 3:
+#
+#A logfile ‘/ericsson/ocs/log/activate_isc_dhcp.<timestamp>.log ‘is generated in the directory /ericsson/ocs/log/.
+#
+#The contents of the logfile contain the correct information.
+#
+#The IPv4 DHCP configuration files are copied to the correct location from /var/tmp/ on the Slave server.
+#
+#bash-3.00# more activate_isc_dhcp.2011-10-13_10:14:05.log
+#2011-10-13 10:14:05 INFO Script ./activate_isc_dhcp.sh started
+#2011-10-13 10:14:05 INFO Checking if the om_serv_master is available
+#2011-10-13 10:14:25 INFO The om_serv_master server is not alive
+#2011-10-13 10:14:25 ERROR The om_serv_master server is not available. Taking the files from /var/tmp
+#2011-10-13 10:14:25 INFO Copying the /usr/local/etc/dhcpd.conf_subnet from /var/tmp/
+#2011-10-13 10:14:25 INFO Copying the /usr/local/etc/dhcpd.conf_static from /var/tmp/
+#2011-10-13 10:14:25 INFO Copying the /var/lib/dhcp/dhcpd.leases from /var/tmp/
+#2011-10-13 10:14:25 INFO Copying the /usr/local/etc/dhcpd.conf from /var/tmp/
+#2011-10-13 10:14:25 INFO Copying the /ericsson/ocs/etc/aif_hosts from /var/tmp/
+#2011-10-13 10:14:25 INFO Renaming startup file on om_serv_slave host
+#2011-10-13 10:14:25 INFO The DHCPD Server is started succesfully on om_serv_slave Server
+#2011-10-13 10:14:25 INFO Checking cron job to copy DHCP configuration to master
+#2011-10-13 10:14:25 INFO cron job to copy DHCP configuration to slave defined
+#2011-10-13 10:14:25 INFO Script ./activate_isc_dhcp.sh has completed
+#2011-10-13 10:14:25 INFO See log file /ericsson/ocs/log/activate_isc_dhcp.2011-10-13_10:14:05.log
+#bash-3.00#
+#
+#
+#Result 4:
+#The IPv4 daemon is running on the Slave server.
+#A printout similar to below is received.
+#
+#ps -ef | grep -i dhcp
+#root 24459 1 0 17:42:32 ? 0:00 /usr/local/sbin/dhcpd -q -lf /var/lib/dhcp/dhcpd.leases -cf /usr/local/etc/dhcp
+#
+#Result 5:
+#On the Slave server the DHCP restart file /etc/rc2.d/s96dhcpd file has been renamed to /etc/rc2.d/S96dhcpd.
+#
+#Result 6:
+#The IPv4 DHCP configuration files have been correctly copied to the correct locations.
+#
+# END_POST_CONDITIONS

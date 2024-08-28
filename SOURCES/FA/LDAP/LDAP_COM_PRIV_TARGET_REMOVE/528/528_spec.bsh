@@ -1,0 +1,47 @@
+#!/bin/bash
+
+# TEST CASE SPEC FILE
+# This file is generated/updated using the test framework web interface.
+# Manual updates on test servers are lost when the test package is re-installed.
+#
+# Last modified: Tuesday 14th of May 2013 10:35:46
+#
+
+# These settings must be in BASH script format, they are sourced by other scripts.
+SPEC_FA_NAME="LDAP"
+SPEC_UC_NAME="LDAP_COM_PRIV_TARGET_REMOVE"
+SPEC_TC_ID=528
+SPEC_TC_SLOGAN="Deleting non last target on a com_oss user without -y"
+SPEC_TC_TYPE="FT"
+SPEC_TC_POLARITY="positive"
+SPEC_TC_PRIORITY="high"
+SPEC_TC_AUTOMATED=1
+SPEC_TC_DEPENDENT_ONLY=0
+SPEC_TC_TIMEOUT=300
+SPEC_TC_TEST_PASSCODE=0
+SPEC_TC_AUTHOR="xamamcg"
+SPEC_TC_AUTOMATOR="xamamcg"
+# this parameter is not interpreted by harness
+SPEC_TC_DISABLED=0
+
+# Please do not remove the comment lines below.
+# They are used as section locators by the test harness.
+
+# BEGIN_PRE_CONDITIONS
+#1. User u528 exists in 1.com of type com_oss
+#2. User u528 has targets target1 and target2
+#3. Role r528 exists
+#4. User u528 has role r528 added on no targets
+#3. Alias a528 exists
+#4. User u528 has alias a528 added on no targets
+# END_PRE_CONDITIONS
+
+
+# BEGIN_MANUAL_STEPS
+#1. manage_COM_privs.bsh -r target -u u528 -T target1 -d 1.com
+#answer Yes to whether want to proceed
+# END_MANUAL_STEPS
+
+# BEGIN_POST_CONDITIONS
+#1. list user -u u528 -d 1.com shows that user has target2 and role r528 and alias a528 and that user is of type COM_OSS
+# END_POST_CONDITIONS

@@ -1,0 +1,169 @@
+#!/bin/bash
+#################################################################################
+#
+#
+#       COPYRIGHT (C) ERICSSON RADIO SYSTEMS AB, Sweden
+#
+#       The copyright to the document(s) herein is the property of
+#       Ericsson Radio Systems AB, Sweden.
+#
+#       The document(s) may be used and/or copied only with the written
+#       permission from Ericsson Radio Systems AB or in accordance with
+#       the terms and conditions stipulated in the agreement/contract
+#       under which the document(s) have been supplied.
+#
+#################################################################################
+
+
+# ATCOMINF Test Callback Library
+
+# Revision History
+# <date>	xsougha		First Version
+
+# Complete the callbacks in this library to automate the test case.
+#
+# Callbacks are stateless, it is not possible to set a global variable in one callback 
+# and access it it in another.
+#
+# Callbacks are called by the test harness in the following order:
+#
+# tc_setup() 		# Called only for independent TC execution mode to setup TC
+# tc_precon()		# Conditions that should exist before TC can run
+# tc_test()		# Runs the test for this TC
+# tc_postcon()		# Conditions that should/should not exist after successful TC 
+# tc_cleanup()		# Called only for independent TC execution mode to cleanup after TC
+
+# All callbacks must PASS for a TC PASS result
+
+#################################################################################
+#
+# CALLBACK: TC_SETUP
+#
+# This callback function is only called if the harness execution mode is 'AT_INDEPENDENT'
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_setup() {
+	return 0
+}
+#################################################################################
+
+#################################################################################
+#
+# CALLBACK: TC_PRECON
+#
+# This callback function checks the correct conditions exist to run the TC.
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+ 
+tc_precon() {
+	return 0
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_TEST
+#
+# This callback function runs the test.
+# The harness compares the return code to the SPEC_TC_TEST_PASSCODE value set in the test spec.
+#
+# Return or exit codes:
+#    SPEC_TC_TEST_PASSCODE 	success
+# != SPEC_TC_TEST_PASSCODE 	failure
+ 
+tc_test() {
+        # Adding a user u1676
+        ${AT_BIN}/con_ex.bsh -d 1676_add_user_u1676.in -o 1676_add_user_u1676.exp -c "/ericsson/sdee/bin/add_user.sh"
+        /usr/local/bin/expect 1676_add_user_u1676.exp
+        CONSOLE_OUTPUT_CONTAINS "INFO: successfully added u1676" || {
+                echo "Failed to add new user u1676"
+                return 1
+        }
+
+        # Trying to login with correct password
+        ${AT_BIN}/con_ex.bsh -d 1676_login_u1676_current_password.in -o 1676_login_u1676_current_password.exp -c "ssh u1676@ossmaster"
+        /usr/local/bin/expect 1676_login_u1676_current_password.exp || {
+                echo "Failed to perform unsuccessful login attempts to ossmaster"
+                return 2
+        }
+
+        # Changing user password
+	echo "CHANGING PASSWORD ###########################"
+        ${AT_BIN}/con_ex.bsh -d 1676_chg_user_password_u1676.in -o 1676_chg_user_password_u1676.exp -c "/ericsson/sdee/bin/chg_user_password.sh"
+        /usr/local/bin/expect 1676_chg_user_password_u1676.exp 
+	CONSOLE_OUTPUT_CONTAINS "INFO: Local user [u1676] Type [OSS_ONLY] Domain [vts.com]: Password changed." || {
+                echo "Failed to change user password of u1676"
+                return 3
+        }
+
+        # Performing a login attempt with changed login credentials. Login should succeed with changed password.
+        ${AT_BIN}/con_ex.bsh -d 1676_login_u1676_changed_password.in -o 1676_login_u1676_changed_password.exp -c "ssh u1676@ossmaster"
+        /usr/local/bin/expect 1676_login_u1676_changed_password.exp  
+	CONSOLE_OUTPUT_CONTAINS "u1676@ossmaster-atvts" || { 
+                echo "Failed to login to ossmaster using changed creds of u1676"
+                return 4
+        }
+
+	# Performing a login attempt with old login credentials. Login should fail.
+	echo "CHANGING PASSWORDDDDDDDDDDDDDDD ###########################"
+        ${AT_BIN}/con_ex.bsh -d 1676_login_u1676_old_password.in -o 1676_login_u1676_old_password.exp -c "ssh u1676@ossmaster"
+        /usr/local/bin/expect 1676_login_u1676_old_password.exp
+        CONSOLE_OUTPUT_CONTAINS "Permission denied" || {
+                echo "Failed to login to ossmaster using correct creds of u1676"
+                return 5
+        }
+
+	return 0
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_POSTCON
+#
+# This callback function checks expected results.
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_postcon() {
+	# Deleting user u1676
+
+	return 0
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_CLEANUP
+#
+# This callback function is only called if the harness execution mode is 'AT_INDEPENDENT'
+# 
+# This callback restores the target system to the state it was in before the TC 
+# was run. It rolls back changes made by callbacks tc_setup() and tc_test()
+# 
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_cleanup() {
+	# Removing any temporary files used
+	rm -rf /var/tmp/*.ldif *.exp
+        ${AT_BIN}/con_ex.bsh -d 1676_del_user_u1676.in -o 1676_del_user_u1676.exp -c "/ericsson/sdee/bin/del_user.sh"
+        /usr/local/bin/expect 1676_del_user_u1676.exp
+        CONSOLE_OUTPUT_CONTAINS "OK: Account deleted" || {
+                echo "Failed to delete user u1676"
+                return 1
+        }
+
+	return 0
+}

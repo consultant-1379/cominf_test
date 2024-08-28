@@ -1,0 +1,74 @@
+set timeout 40
+
+trap {
+	if [catch {wait -i -1} output] return
+	if {[lindex $output [expr [llength $output] -1]] != 0 } {
+		exit [lindex $output [expr [llength $output] -1]]
+	}
+} SIGCHLD
+
+spawn -noecho /opt/ericsson/nms_bismrs_mc/bin/configure_smrs.sh add aif
+
+expect {
+	"Enter Network Type" {
+	} default {
+		exit 1
+	}
+}
+sleep 0.15
+send -- "CORE\r"
+expect {
+	"What is the name for this user" {
+	} default {
+		exit 2
+	}
+}
+sleep 0.15
+send -- "c_1409\r"
+expect {
+	"What is the password for this user" {
+	} default {
+		exit 3
+	}
+}
+sleep 0.15
+send -- "shroot@1\r"
+expect {
+	"Please confirm the password for this user" {
+	} default {
+		exit 4
+	}
+}
+sleep 0.15
+send -- "shroot@1\r"
+expect {
+	"Would you like to create autoIntegration FtpService for that user" {
+	} default {
+		exit 5
+	}
+}
+sleep 0.15
+send -- "yes\r"
+expect {
+	"Please enter number of required option" {
+	} default {
+		exit 6
+	}
+}
+sleep 0.15
+send -- "1\r"
+expect {
+	"Do you wish to restart BI_SMRS_MC on the OSS master if required" {
+	} default {
+		exit 7
+	}
+}
+sleep 0.15
+send -- "yes\r"
+
+set timeout 300
+expect {
+    EOF {}
+    timeout { exit 99 }
+}
+sleep 2

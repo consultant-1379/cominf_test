@@ -1,0 +1,82 @@
+#!/bin/bash
+
+# TEST CASE SPEC FILE
+# This file is generated/updated using the test framework web interface.
+# Manual updates on test servers are lost when the test package is re-installed.
+#
+# Last modified: Monday 16th of December 2013 9:33:59
+#
+
+# These settings must be in BASH script format, they are sourced by other scripts.
+SPEC_FA_NAME="SOLARIS10SUNDS"
+SPEC_UC_NAME="SOLARIS10SUNDS_Mgmt_role_alias_proxy"
+SPEC_TC_ID=1350
+SPEC_TC_SLOGAN="/ericsson/sdee/bin/manage_com.bsh: verifying command line mode."
+SPEC_TC_TYPE="FT"
+SPEC_TC_POLARITY="positive"
+SPEC_TC_PRIORITY="high"
+SPEC_TC_AUTOMATED=1
+SPEC_TC_DEPENDENT_ONLY=0
+SPEC_TC_TIMEOUT=300
+SPEC_TC_TEST_PASSCODE=0
+SPEC_TC_AUTHOR="xvinkat"
+SPEC_TC_AUTOMATOR="xvinkat"
+# this parameter is not interpreted by harness
+SPEC_TC_DISABLED=0
+
+# Please do not remove the comment lines below.
+# They are used as section locators by the test harness.
+
+# BEGIN_PRE_CONDITIONS
+#<path to the testcase>
+#
+#SUN-DS/COM LDAP - User Management for 
+#COM-Enabled Nodes/Management of role/role alias/proxy agents
+#
+#
+#
+#
+# END_PRE_CONDITIONS
+
+
+# BEGIN_MANUAL_STEPS
+#1.Supplying -d domain at the command line: 
+#
+#bash-3.2# ./manage_COM.bsh -d apg.com -a alias
+#
+#
+#2.Adding existing role to alias
+#bash-3.2# ./manage_COM.bsh -m alias -A test1 -i
+#
+#
+#3.Adding role to role alais
+#bash-3.2# ./manage_COM.bsh -m alias -A test1 -i -R test5 
+#
+#
+#4.Removing role from alias
+#
+#bash-3.2# ./manage_COM.bsh -m alias -A test1 -x -R test5
+#
+#5.Adding multiple roles:
+#./manage_COM.bsh -a role -R test8,test11,test56
+#
+#
+#6.Execute the ldap search command to list all the roles that were added/deleted to/from the domain:
+#ldapsearch -D "cn=directory manager" -w <ldap pwd> -b "ou=<rolealias/role/proxyaagent>,ou=com,dc=<ldap domain>" "objectclass=*" | grep -i <role/alias/proxyname>
+# 
+# END_MANUAL_STEPS
+
+# BEGIN_POST_CONDITIONS
+#1. scripts executes successfully and alias is added to the domain.
+#
+#2.proper error message is displayed.
+#
+#3. Successful execution.
+#
+#4.Successful execution.
+#
+#5.successful execution.
+#
+#6.Command list the role/aliases/proxies that were added/deleted to/from the domain.
+#
+# END_POST_CONDITIONS

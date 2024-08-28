@@ -1,0 +1,61 @@
+#!/bin/bash
+
+# TEST CASE SPEC FILE
+# This file is generated/updated using the test framework web interface.
+# Manual updates on test servers are lost when the test package is re-installed.
+#
+# Last modified: Friday 31st of May 2013 9:49:07
+#
+
+# These settings must be in BASH script format, they are sourced by other scripts.
+SPEC_FA_NAME="LDAP"
+SPEC_UC_NAME="LDAP_COM_BULK_IMPORT_APPEND"
+SPEC_TC_ID=577
+SPEC_TC_SLOGAN="Test that for each alias line, if the alias name matches an LDAP alias then add any new roles to the LDAP definition"
+SPEC_TC_TYPE="FT"
+SPEC_TC_POLARITY="positive"
+SPEC_TC_PRIORITY="high"
+SPEC_TC_AUTOMATED=1
+SPEC_TC_DEPENDENT_ONLY=0
+SPEC_TC_TIMEOUT=300
+SPEC_TC_TEST_PASSCODE=0
+SPEC_TC_AUTHOR="xdansan"
+SPEC_TC_AUTOMATOR="xdansan"
+# this parameter is not interpreted by harness
+SPEC_TC_DISABLED=0
+
+# Please do not remove the comment lines below.
+# They are used as section locators by the test harness.
+
+# BEGIN_PRE_CONDITIONS
+#4 roles exist in the database
+#Alias 1 refers to role 1
+#Alias 2 refers to roles 2 and 3
+#Alias 3 refers to role 4
+#Alias 4 refers to role 3
+#Alias 5 refers to role 1
+#Alias 6 does not exist
+# END_PRE_CONDITIONS
+
+
+# BEGIN_MANUAL_STEPS
+#In the import file:
+#Role 5 created
+#Alias 1 refers to role1 and role2
+#Alias 2 refers to role 2 and role3
+#Alias 3 refers to role 1
+#Alias 5 refers to role1 and role5
+#Alias 6 refers to roles 1, 2 and 3
+#
+#(note, Alias 4 not in file)
+# END_MANUAL_STEPS
+
+# BEGIN_POST_CONDITIONS
+#In the database:
+#Alias 1 refers to role1 and role2
+#Alias 2 refers to role 2 and role3
+#Alias 3 refers to role 1 and 4
+#Alias 4 refers to role 3
+#Alias 5 refers to role1 and role5
+#Alias 6 refers to roles 1, 2 and 3
+# END_POST_CONDITIONS

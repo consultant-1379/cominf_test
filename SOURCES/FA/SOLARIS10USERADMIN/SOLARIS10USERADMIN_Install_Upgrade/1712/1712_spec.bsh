@@ -1,0 +1,129 @@
+#!/bin/bash
+
+# TEST CASE SPEC FILE
+# This file is generated/updated using the test framework web interface.
+# Manual updates on test servers are lost when the test package is re-installed.
+#
+# Last modified: Tuesday 17th of December 2013 7:10:52
+#
+
+# These settings must be in BASH script format, they are sourced by other scripts.
+SPEC_FA_NAME="SOLARIS10USERADMIN"
+SPEC_UC_NAME="SOLARIS10USERADMIN_Install_Upgrade"
+SPEC_TC_ID=1712
+SPEC_TC_SLOGAN="Change security setting to prepare for locking/unlocking testing "
+SPEC_TC_TYPE="FT"
+SPEC_TC_POLARITY="positive"
+SPEC_TC_PRIORITY="high"
+SPEC_TC_AUTOMATED=1
+SPEC_TC_DEPENDENT_ONLY=0
+SPEC_TC_TIMEOUT=300
+SPEC_TC_TEST_PASSCODE=0
+SPEC_TC_AUTHOR="xlaxain"
+SPEC_TC_AUTOMATOR="xlaxain"
+# this parameter is not interpreted by harness
+SPEC_TC_DISABLED=0
+
+# Please do not remove the comment lines below.
+# They are used as section locators by the test harness.
+
+# BEGIN_PRE_CONDITIONS
+#Path in Mars:- User Administration/Initial Install/Upgrade User Administration Test Cases 
+#
+#The purpose is to verify that you can successfully modify the default security policies.
+#Precondition: 
+#
+#Infra Server, security policies are set, COMInf SUN Directory Server System Administration Guide (1/1543-APR 901 0124 Uen 
+# END_PRE_CONDITIONS
+
+
+# BEGIN_MANUAL_STEPS
+#Action 1: 
+#
+#On the Infra verify the security policy with the command
+##ldapsearch -D "cn=directory manager" -w <ldap bind pw> -b "dc=<ldap domain name>" "(&(objectclass=ldapsubentry)(cn=securitypolicy))"
+#E.g.
+##ldapsearch -D "cn=directory manager" -w shroot11 -b "dc=atrcus764,dc=athtem,dc=eei,dc=ericsson,dc=se" "(&(objectclass=ldapsubentry)(cn=securitypolicy))"
+#
+#Action 2: 
+#
+#On the Infra update the LDAP Security policies by creating the following files substituting the text "
+#
+#dc=athtem,dc=eei,dc=ericsson,dc=se" with the ldap domain name applicable or your system.
+#
+#File 1: securitypolicy1.ldif
+#dn: cn=SecurityPolicy,dc=atrcus764,dc=athtem,dc=eei,dc=ericsson,dc=se
+#changetype: modify
+#replace: pwdMaxAge
+#pwdMaxAge: 900
+#-
+#replace: pwdMinAge
+#pwdMinAge: 300
+#-
+#replace: pwdExpireWarning
+#pwdExpireWarning: 300
+#
+#Action 3: 
+#
+#On the Infra execute the following commands to edit the security policy
+##ldapmodify -D "cn=directory manager" -a -v -f / /var/tmp/securitypolicy1.ldif
+#Verify the security policy with the command
+## ldapsearch -D "cn=directory manager" -w <ldap bind pw> -b "dc=<ldap domain name>" "(&(objectclass=ldapsubentry)(cn=securitypolicy))"
+##ldapsearch -D "cn=directory manager" -w shroot11 âEuro b "dc=atrcus764,dc=athtem,dc=eei,dc=ericsson,dc=se" "(&(objectclass=ldapsubentry)(cn=securitypolicy))" pwdMaxAge pwdExpireWarning pwdMinAge
+#version: 1
+#dn: cn=SecurityPolicy,dc=cominf,dc=eei,dc=ericsson,dc=se
+#pwdMaxAge: 900
+#pwdExpireWarning: 300
+#pwdMinAge: 300
+#
+# END_MANUAL_STEPS
+
+# BEGIN_POST_CONDITIONS
+#Result 1: 
+#
+#The defaults are listed as follows...
+#version: 1
+#dn: cn=SecurityPolicy,dc=atrcus771,dc=athtem,dc=eei,dc=ericsson,dc=se
+#objectClass: top
+#objectClass: ldapsubentry
+#objectClass: pwdPolicy
+#objectClass: sunPwdPolicy
+#objectClass: passwordPolicy
+#cn: SecurityPolicy
+#pwdAttribute: userPassword
+#pwdLockout: TRUE
+#pwdFailureCountInterval: 600
+#pwdAllowUserChange: TRUE
+#pwdMustChange: TRUE
+#pwdMinLength: 8
+#pwdMaxFailure: 3
+#pwdLockoutDuration: 3600
+#pwdExpireWarning: 604800
+#pwdMaxAge: 3628800
+#pwdInHistory: 3
+#pwdMinAge: 3600
+#pwdCheckQuality: 2
+#passwordLockout: on
+#passwordResetFailureCount: 600
+#passwordChange: on
+#passwordMustChange: on
+#passwordMinLength: 8
+#passwordMaxFailure: 3
+#passwordUnlock: on
+#passwordLockoutDuration: 3600
+#passwordWarning: 604800
+#passwordExp: on
+#passwordMaxAge: 3628800
+#passwordInHistory: 3
+#passwordMinAge: 3600
+#passwordCheckSyntax: on
+#
+#
+#Result 2: 
+#
+#The files are created successfully.
+#
+#Result 3: 
+#
+#The security policy is modified successfully. 
+# END_POST_CONDITIONS

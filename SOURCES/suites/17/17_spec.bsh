@@ -1,0 +1,15 @@
+#!/bin/bash
+
+# TEST SUITE SPEC FILE
+# This file is generated/updated using the test framework web interface.
+# Manual updates on test servers are lost when the test package is re-installed.
+#
+# Last modified: Wednesday 5th of December 2012 10:09:05
+#
+SPEC_TS_NAME=LDAP_DOMAIN_MIGRATE_NEGATIVE
+SPEC_TS_ID=17
+SPEC_TS_SLOGAN="Migration of second and subsequent domains - negative tests."
+SPEC_TS_TIMEOUT=300
+SPEC_TS_AUTHOR="eturdan"
+SPEC_TS_INDEPENDENT=0
+SPEC_TS_TC_IDS=(705 706 707)

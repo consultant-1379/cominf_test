@@ -1,0 +1,15 @@
+#!/bin/bash
+
+# TEST SUITE SPEC FILE
+# This file is generated/updated using the test framework web interface.
+# Manual updates on test servers are lost when the test package is re-installed.
+#
+# Last modified: Wednesday 11th of September 2013 8:04:54
+#
+SPEC_TS_NAME=SMRS_NONBLADE_ONLY
+SPEC_TS_ID=16
+SPEC_TS_SLOGAN="SMRS on non-blade servers"
+SPEC_TS_TIMEOUT=300
+SPEC_TS_AUTHOR="xbahzam"
+SPEC_TS_INDEPENDENT=1
+SPEC_TS_TC_IDS=(699 68)

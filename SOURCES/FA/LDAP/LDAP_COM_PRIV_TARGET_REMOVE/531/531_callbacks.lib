@@ -1,0 +1,309 @@
+#!/bin/bash
+#################################################################################
+#
+#
+#	   COPYRIGHT (C) ERICSSON RADIO SYSTEMS AB, Sweden
+#
+#	   The copyright to the document(s) herein is the property of
+#	   Ericsson Radio Systems AB, Sweden.
+#
+#	   The document(s) may be used and/or copied only with the written
+#	   permission from Ericsson Radio Systems AB or in accordance with
+#	   the terms and conditions stipulated in the agreement/contract
+#	   under which the document(s) have been supplied.
+#
+#################################################################################
+
+
+# ATCOMINF Test Callback Library
+
+# Revision History
+# 28/09/12	xamamcg		Initial test for remove target from COM_ONLY user
+
+# Complete the callbacks in this library to automate the test case.
+#
+# Callbacks are stateless, it is not possible to set a global variable in one callback 
+# and access it it in another.
+#
+# Callbacks are called by the test harness in the following order:
+#
+# tc_setup() 		# Called only for independent TC execution mode to setup TC
+# tc_precon()		# Conditions that should exist before TC can run
+# tc_test()		# Runs the test for this TC
+# tc_postcon()		# Conditions that should/should not exist after successful TC 
+# tc_cleanup()		# Called only for independent TC execution mode to clenup after TC
+
+# All callbacks must PASS for a TC PASS result
+
+#################################################################################
+#
+# CALLBACK: TC_SETUP
+#
+# This callback function is only called if the harness execution mode is 'AT_INDEPENDENT'
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_setup() {
+
+
+
+
+
+	
+	# Replace PASSWD with the correct credentials or data
+	for ii in *.in; do
+		sed -e "s/^PASSWD$/$LDAP_SUPERUSER_PASSWD/" $ii > $ii.tmp || {
+			echo "Failed to replace LDAP superuser password holder etc in /usr/local/bin/expect input file $ii, rc $?"
+			return 2
+		}
+	done
+
+#-------------------------------------------------------------------------------
+# Create a test user  
+#-------------------------------------------------------------------------------
+
+	CMD='/ericsson/sdee/bin/add_user.sh -t COM_ONLY -d 1.com -n u531 -i 1531 -C bhavana -y'
+	${AT_BIN}/con_ex.bsh -d 531adduser.in.tmp -o 531adduser.exp -c "$CMD" || {
+		echo "Failed to generate /usr/local/bin/expect script, $?"
+		return 3
+	}
+
+	/usr/local/bin/expect 531adduser.exp ||{
+		echo "Failed to create user, error code $?"
+		return 4
+	}
+#-------------------------------------------------------------------------------
+# Create a test role
+#-------------------------------------------------------------------------------
+
+	CMD='/ericsson/sdee/bin/manage_COM.bsh -a role -d 1.com -R r531 -y'
+	${AT_BIN}/con_ex.bsh -d 531.in.tmp -o 531role.exp -c "$CMD" || {
+		echo "Failed to generate /usr/local/bin/expect script, $?"
+		return 5
+	}
+
+	/usr/local/bin/expect 531role.exp || {
+		echo "Failed to create role, error code $?"
+		return 6
+	}
+#-------------------------------------------------------------------------------
+# Create a test alias
+#-------------------------------------------------------------------------------
+
+	CMD='/ericsson/sdee/bin/manage_COM.bsh -a alias -d 1.com -A a531 -R r531 -y'
+	${AT_BIN}/con_ex.bsh -d 531.in.tmp -o 531role.exp -c "$CMD" || {
+		echo "Failed to generate /usr/local/bin/expect script, $?"
+		return 7
+	}
+
+	/usr/local/bin/expect 531role.exp || {
+		echo "Failed to create alias, error code $?"
+		return 8
+	}
+#-------------------------------------------------------------------------------
+# Add target to user
+#-------------------------------------------------------------------------------
+
+	CMD='/ericsson/sdee/bin/manage_COM_privs.bsh -a target -d 1.com -T target1 -u u531 -y'
+	${AT_BIN}/con_ex.bsh -d 531.in.tmp -o 531role.exp -c "$CMD" || {
+		echo "Failed to generate /usr/local/bin/expect script, $?"
+		return 9
+	}
+
+	/usr/local/bin/expect 531role.exp || {
+		echo "Failed to create target, error code $?"
+		return 10
+	}
+#-------------------------------------------------------------------------------
+# Add target2 to user
+#-------------------------------------------------------------------------------
+
+	CMD='/ericsson/sdee/bin/manage_COM_privs.bsh -a target -d 1.com -T target2 -u u531 -y'
+	${AT_BIN}/con_ex.bsh -d 531.in.tmp -o 531role.exp -c "$CMD" || {
+		echo "Failed to generate /usr/local/bin/expect script, $?"
+		return 11
+	}
+
+	/usr/local/bin/expect 531role.exp || {
+		echo "Failed to create target, error code $?"
+		return 12
+	}
+#-------------------------------------------------------------------------------
+# Add target3 to user
+#-------------------------------------------------------------------------------
+
+	CMD='/ericsson/sdee/bin/manage_COM_privs.bsh -a target -d 1.com -T target3 -u u531 -y'
+	${AT_BIN}/con_ex.bsh -d 531.in.tmp -o 531role.exp -c "$CMD" || {
+		echo "Failed to generate /usr/local/bin/expect script, $?"
+		return 13
+	}
+
+	/usr/local/bin/expect 531role.exp || {
+		echo "Failed to create target, error code $?"
+		return 14
+	}
+	return 0
+}
+#################################################################################
+
+#################################################################################
+#
+# CALLBACK: TC_PRECON
+#
+# This callback function checks the correct conditions exist to run the TC.
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+ 
+tc_precon() {
+
+#-------------------------------------------------------------------------------
+#  Check LDAP is running
+#-------------------------------------------------------------------------------
+
+	LDAP_SERVER_UP || {
+		echo "LDAP server not running"
+		return 1
+	}
+
+#-------------------------------------------------------------------------------
+#  Test user is present
+#-------------------------------------------------------------------------------
+
+	/usr/bin/ldapsearch -D 'cn=Directory Manager' -w $LDAP_SUPERUSER_PASSWD -b uid=u531,ou=people,dc=1,dc=com objectclass=* | grep "ericssonUserAuthenticationScope: target1" || {
+		echo "Found no target for user u531"
+		return 1
+	}
+	/usr/bin/ldapsearch -D 'cn=Directory Manager' -w $LDAP_SUPERUSER_PASSWD -b uid=u531,ou=people,dc=1,dc=com objectclass=* | grep "ericssonUserAuthenticationScope: target2" || {
+		echo "Found no target for user u531"
+		return 2
+	}
+	/usr/bin/ldapsearch -D 'cn=Directory Manager' -w $LDAP_SUPERUSER_PASSWD -b uid=u531,ou=people,dc=1,dc=com objectclass=* | grep "ericssonUserAuthenticationScope: target3" || {
+		echo "Found no target for user u531"
+		return 3
+	}
+	CONSOLE_OUTPUT_CONTAINS "Creating LDAP entry for local user [u531] in local domain [1.com] as user type [COM_ONLY] ... OK" || {
+		echo "user is not COM_ONLY"
+		return 4
+	}
+	return 0
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_TEST
+#
+# This callback function runs the test.
+# The harness compares the return code to the SPEC_TC_TEST_PASSCODE value set in the test spec.
+#
+# Return or exit codes:
+#	SPEC_TC_TEST_PASSCODE 	success
+# != SPEC_TC_TEST_PASSCODE 	failure
+ 
+tc_test() {
+
+	CMD='/ericsson/sdee/bin/manage_COM_privs.bsh -r target -d 1.com'
+	${AT_BIN}/con_ex.bsh -d 531rem.in.tmp -o 531remtarget.exp -c "$CMD" || {
+		echo "Failed to generate /usr/local/bin/expect script, $?"
+		return 1
+	}
+
+	/usr/local/bin/expect 531remtarget.exp || {
+		echo "Failed to remove target, error code $?"
+		return 2
+	}
+
+	
+
+	return 0
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_POSTCON
+#
+# This callback function checks expected results.
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_postcon() {
+
+	# Check user is in database 
+	/usr/bin/ldapsearch -D 'cn=Directory Manager' -w $LDAP_SUPERUSER_PASSWD -b uid=u531,ou=people,dc=1,dc=com objectclass=* | grep "uid: u531" || {
+		echo "u531 user does not exists ... This wasn't expected"
+		return 1
+	}
+	# Check user has one target
+	/usr/bin/ldapsearch -D 'cn=Directory Manager' -w $LDAP_SUPERUSER_PASSWD -b uid=u531,ou=people,dc=1,dc=com objectclass=* | grep "ericssonUserAuthenticationScope: target2" || {
+		echo "u531 user has no targets... This wasn't expected"
+		return 2
+	}
+	# Check user has not got target1
+	/usr/bin/ldapsearch -D 'cn=Directory Manager' -w $LDAP_SUPERUSER_PASSWD -b uid=u531,ou=people,dc=1,dc=com objectclass=* | grep "ericssonUserAuthenticationScope: target1" && {
+		echo "u531 user has target1... This wasn't expected"
+		return 3
+	}
+	# Check user has not got target3
+	/usr/bin/ldapsearch -D 'cn=Directory Manager' -w $LDAP_SUPERUSER_PASSWD -b uid=u531,ou=people,dc=1,dc=com objectclass=* | grep "ericssonUserAuthenticationScope: target1" && {
+		echo "u531 user has target3... This wasn't expected"
+		return 4
+	}
+
+	
+	# Check user is still COM_ONLY
+	CONSOLE_OUTPUT_CONTAINS "INFO : User [u531] is type COM_ONLY." || {
+		echo "User is wrong type"
+		return 5
+	}
+	return 0
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_CLEANUP
+#
+# This callback function is only called if the harness execution mode is 'AT_INDEPENDENT'
+# 
+# This callback restores the target system to the state it was in before the TC 
+# was run. It rolls back changes made by callbacks tc_setup() and tc_test()
+# 
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_cleanup() {
+
+	echo "Deleting test user 1"
+        ${AT_BIN}/con_ex.bsh -d 531.in.tmp -o 531remuser.exp -c "/ericsson/sdee/bin/del_user.sh -d 1.com -n u531 -y" || {
+                echo "Failed to generate /usr/local/bin/expect script, $?"
+                return 1
+        }
+
+        /usr/local/bin/expect 531remuser.exp >/dev/null || {
+                echo "Failed to delete user, error code $?"
+                return 2
+        }
+	  # Remove roles
+	echo "Deleting test user roles"
+        ${AT_BIN}/con_ex.bsh -d 531.in.tmp -o 531_expect.exp -c "/ericsson/sdee/bin/manage_COM.bsh -r role -d 1.com -R r531 -y " -r
+        /usr/local/bin/expect 531_expect.exp >/dev/null || {
+                echo "Could not delete role added to 1.com domain - FAIL"
+                return 9
+        }
+	
+	rm -f *.exp
+	rm -f *.out
+	rm -f *.in.tmp
+	return 0
+}

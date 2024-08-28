@@ -1,0 +1,3 @@
+01^/ericsson/opendj/bin/add_user.sh -d vts.com -n t148001 -s 1200 -e 1249 -C "comment"^Unable to create user t148001
+02^/ericsson/opendj/bin/add_user.sh -t COM_ONLY -d vts.com -n t148002 -s 1200 -e 1249 -C "comment"^Unable to create user t148002
+03^/ericsson/opendj/bin/add_user.sh -t COM_APP -d vts.com -n t148003 -s 1200 -e 1249 -C "comment"^Unable to create user t148003

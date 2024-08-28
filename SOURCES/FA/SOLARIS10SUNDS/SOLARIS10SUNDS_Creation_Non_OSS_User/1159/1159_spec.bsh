@@ -1,0 +1,72 @@
+#!/bin/bash
+
+# TEST CASE SPEC FILE
+# This file is generated/updated using the test framework web interface.
+# Manual updates on test servers are lost when the test package is re-installed.
+#
+# Last modified: Monday 16th of December 2013 6:32:44
+#
+
+# These settings must be in BASH script format, they are sourced by other scripts.
+SPEC_FA_NAME="SOLARIS10SUNDS"
+SPEC_UC_NAME="SOLARIS10SUNDS_Creation_Non_OSS_User"
+SPEC_TC_ID=1159
+SPEC_TC_SLOGAN="Creation of COM_ONLY user type "
+SPEC_TC_TYPE="FT"
+SPEC_TC_POLARITY="positive"
+SPEC_TC_PRIORITY="high"
+SPEC_TC_AUTOMATED=1
+SPEC_TC_DEPENDENT_ONLY=0
+SPEC_TC_TIMEOUT=300
+SPEC_TC_TEST_PASSCODE=0
+SPEC_TC_AUTHOR="xvinkat"
+SPEC_TC_AUTOMATOR="xvinkat"
+# this parameter is not interpreted by harness
+SPEC_TC_DISABLED=0
+
+# Please do not remove the comment lines below.
+# They are used as section locators by the test harness.
+
+# BEGIN_PRE_CONDITIONS
+#<path to the test case>
+#
+#SUN-DS/COM LDAP - User Management for 
+#COM-Enabled Nodes/Creation of a Non OSS user
+#
+#
+#Following servers are successfully install and configured:
+#1.O&M primary
+#2.O&M secondary
+#3.OSS
+#4.UAS 
+#
+# END_PRE_CONDITIONS
+
+
+# BEGIN_MANUAL_STEPS
+#1.Execute the add_user.sh to create the user with the type COM_ONLY.
+#execute the following command :
+#cd /ericsson/sdee/bin
+#./add_user.sh -t COM_ONLY
+#2.Verfiy that no OSS account is created for this user entry
+#3.Verify the Login shell is /usr/bin/passwd
+#4.Verify primary and secondary groups of COM_ONLY user. 
+# END_MANUAL_STEPS
+
+# BEGIN_POST_CONDITIONS
+#1.COM_ONLY user is created successfully.To verify this execute the following ldapsearch command on the O&M primary server :
+#
+#/usr/bin/ldapsearch -T -D "cn=directory manager" -w <ldap pwd> -b "dc=<ldap domain>" "objectclass=posixaccount" | grep -i <username>
+#
+#2.The homedirectory for this user is /tmp.To verify this, try to ssh from O&M primary server to OSS.The ssh connection should fail.
+#
+#3.Execute the ldap search command to list the user that is created in step 1 and check for the loginShell entry
+#
+#/usr/bin/ldapsearch -T -D "cn=directory manager" -w <ldap pwd> -b "dc=<ldap domain>" "objectclass=posixaccount"
+#
+#The login shell for this user entry is /usr/bin/passwd
+#4.primary group is "com" and there is no secondary group for COM_ONLY users.
+#execute id <com only user name> on oss server to check the same.
+#root@atrcus879:/# id comonly1
+#uid=1001(comonly1) gid=609(comgrp) 
+# END_POST_CONDITIONS

@@ -1,0 +1,31 @@
+# host name of traffic handling interface.
+NEDSS_TRAFFIC_HOSTNAME=@
+Rubbish
+#
+# IP address of traffic handling interface.
+# In SMRS-HA environment this will be VIP
+NEDSS_TRAFFIC_IP=10.10.10.5
+# If adding a secondary NEDSS specify the traffic IP of the primary NEDSS.
+# This parameter should be left blank if adding primary NEDSS.
+NEDSS_PRIMARY_TRAFFIC_IP=
+
+# specify if IPv6 address configured on traffic NIC
+#NEDSS_TRAFFIC_IPV6=
+
+# For SMRS-HA system the following additional parameters need to be specified
+
+# NEDSS traffic NIC
+#NEDSS_TRAFFIC_NIC=
+
+# IP of physical traffic NIC. This will replace the VIP on the physical interface
+#NEDSS_TRAFFIC_PIP=
+
+# New hostname to assign to the physical NIC.
+#NEDSS_TRAFFIC_PHOSTNAME=
+
+# maintenance NIC
+#NEDSS_MAINT_NIC=
+ 
+# IP of maintenance NIC
+#NEDSS_MAINT_IP=
+

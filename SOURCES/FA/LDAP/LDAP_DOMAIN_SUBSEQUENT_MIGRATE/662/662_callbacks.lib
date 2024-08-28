@@ -1,0 +1,209 @@
+#!/bin/bash
+#################################################################################
+#
+#
+#       COPYRIGHT (C) ERICSSON RADIO SYSTEMS AB, Sweden
+#
+#       The copyright to the document(s) herein is the property of
+#       Ericsson Radio Systems AB, Sweden.
+#
+#       The document(s) may be used and/or copied only with the written
+#       permission from Ericsson Radio Systems AB or in accordance with
+#       the terms and conditions stipulated in the agreement/contract
+#       under which the document(s) have been supplied.
+#
+#################################################################################
+
+
+# ATCOMINF Test Callback Library
+
+# Revision History
+# <date>	<signum>	<details>
+
+# Complete the callbacks in this library to automate the test case.
+#
+# Callbacks are stateless, it is not possible to set a global variable in one callback 
+# and access it it in another.
+#
+# Callbacks are called by the test harness in the following order:
+#
+# tc_setup() 		# Called only for independent TC execution mode to setup TC
+# tc_precon()		# Conditions that should exist before TC can run
+# tc_test()		# Runs the test for this TC
+# tc_postcon()		# Conditions that should/should not exist after successful TC 
+# tc_cleanup()		# Called only for independent TC execution mode to clenup after TC
+
+# All callbacks must PASS for a TC PASS result
+
+/ericsson/sdee/
+export BIND_TOKEN=${LDAP_SUPERUSER_PASSWD}
+
+#################################################################################
+#
+# CALLBACK: TC_SETUP
+#
+# This callback function is only called if the harness execution mode is 'AT_INDEPENDENT'
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_setup() {
+
+	# Part of a test suite, no setup required
+
+	return 0
+
+}
+#################################################################################
+
+#################################################################################
+#
+# CALLBACK: TC_PRECON
+#
+# This callback function checks the correct conditions exist to run the TC.
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+ 
+tc_precon() {
+
+#-------------------------------------------------------------------------------
+#  Check LDAP is running
+#-------------------------------------------------------------------------------
+
+	LDAP_SERVER_UP || {
+		echo "LDAP server not running"
+		return 1
+	}
+
+	return 0
+
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_TEST
+#
+# This callback function runs the test.
+# The harness compares the return code to the SPEC_TC_TEST_PASSCODE value set in the test spec.
+#
+# Return or exit codes:
+#    SPEC_TC_TEST_PASSCODE 	success
+# != SPEC_TC_TEST_PASSCODE 	failure
+ 
+tc_test() {
+/ericsson/sdee/
+export BIND_TOKEN=${LDAP_SUPERUSER_PASSWD}
+
+	mkdir -p /ericsson/sdee/GDmig/2.com/migrate || {
+		echo "creating directory for excluded user & group files failed. error $?"
+		return 1
+	}
+#
+	chmod 755 /ericsson/sdee/GDmig/2.com/migrate || {
+		echo "changing ownership of directory for excluded user & group files failed. error $?"
+		return 1
+	}
+#
+	echo "usr2excl" > /ericsson/sdee/GDmig/2.com/migrate/exclude_users || {
+		echo "adding [usr2excl] to excluded users file failed. error $?"
+		return 1
+	}
+#
+	echo "matched" >> /ericsson/sdee/GDmig/2.com/migrate/exclude_users || {
+		echo "adding [matched] to excluded users file failed. error $?"
+		return 1
+	}
+#
+	echo "grp2excl" > /ericsson/sdee/GDmig/2.com/migrate/exclude_groups || {
+		echo "adding [grp2excl] to excluded groups file failed. error $?"
+		return 1
+	}
+#
+	/ericsson/sdee/bin/migrate_domain.bsh -d 2.com -y || {
+		echo "failed to migrate isolated domain users and groups to the global domain. error $?"
+		return 1
+	}
+
+	return 0
+
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_POSTCON
+#
+# This callback function checks expected results.
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_postcon() {
+
+	CONSOLE_OUTPUT_COUNT "Global match; removing local user entry" 7 || {
+		echo "Unexpected number of global user matches, expected [7]."
+		return 2
+	}
+	CONSOLE_OUTPUT_COUNT "Local match; retaining local user entry" 3 || {
+		echo "Unexpected number of local user matches, expected [3]."
+		return 2
+	}
+	CONSOLE_OUTPUT_COUNT "Excluded (COM user)" 4 || {
+		echo "Unexpected number of COM user matches, expected [4]."
+		return 2
+	}
+	CONSOLE_OUTPUT_COUNT "OSS_ONLY]: New GD entry" 8 || {
+		echo "Unexpected number of new GD users, expected [8]."
+		return 2
+	}
+#
+	CONSOLE_OUTPUT_COUNT "Global match; removing local group entry" 11 || {
+		echo "Unexpected number of global group matches, expected [11]."
+		return 3
+	}
+	CONSOLE_OUTPUT_COUNT "Excluded (COM group)" 1 || {
+		echo "Unexpected number of excluded group matches, expected [1]."
+		return 3
+	}
+	CONSOLE_OUTPUT_COUNT "Excluded (COM user)" 4 || {
+		echo "Unexpected number of COM user matches, expected [4]."
+		return 3
+	}
+	CONSOLE_OUTPUT_COUNT "OSS_ONLY]: New GD entry" 8 || {
+		echo "Unexpected number of new GD users, expected [8]."
+		return 3
+	}
+
+	return 0
+
+}
+#################################################################################
+# [rose 1001 COM_APP]: Excluded (COM user)
+
+#################################################################################
+#
+# CALLBACK: TC_CLEANUP
+#
+# This callback function is only called if the harness execution mode is 'AT_INDEPENDENT'
+# 
+# This callback restores the target system to the state it was in before the TC 
+# was run. It rolls back changes made by callbacks tc_setup() and tc_test()
+# 
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_cleanup() {
+
+	# Part of a test suite, no cleanup required
+
+	return 0
+
+}

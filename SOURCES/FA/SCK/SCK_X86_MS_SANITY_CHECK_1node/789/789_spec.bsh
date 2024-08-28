@@ -1,0 +1,52 @@
+#!/bin/bash
+
+# TEST CASE SPEC FILE
+# This file is generated/updated using the test framework web interface.
+# Manual updates on test servers are lost when the test package is re-installed.
+#
+# Last modified: Friday 19th of April 2013 7:12:44
+#
+
+# These settings must be in BASH script format, they are sourced by other scripts.
+SPEC_FA_NAME="SCK"
+SPEC_UC_NAME="SCK_X86_MS_SANITY_CHECK_1node"
+SPEC_TC_ID=789
+SPEC_TC_SLOGAN="Validate cp.status for O13.2.7"
+SPEC_TC_TYPE="UNIT"
+SPEC_TC_POLARITY="positive"
+SPEC_TC_PRIORITY="high"
+SPEC_TC_AUTOMATED=1
+SPEC_TC_DEPENDENT_ONLY=0
+SPEC_TC_TIMEOUT=300
+SPEC_TC_TEST_PASSCODE=0
+SPEC_TC_AUTHOR="eeidle"
+SPEC_TC_AUTOMATOR="eeidle"
+# this parameter is not interpreted by harness
+SPEC_TC_DISABLED=0
+
+# Please do not remove the comment lines below.
+# They are used as section locators by the test harness.
+
+# BEGIN_PRE_CONDITIONS
+#OSS file systems must be mounted and /var/opt/ericsson/sck/data/cp.status exists.
+#location of Delivery Management cp.status must be known for comparisson purposes, or alternatively the
+#CI Environment file must contain correct values e.g.
+#CI_SHIPMENT=13.2.5
+#CI_OSS_PROD_NUM=AOM_901092
+#CI_OSS_PROD_REV=R3E03
+#
+#
+# END_PRE_CONDITIONS
+
+
+# BEGIN_MANUAL_STEPS
+#Compare cp.status with DM cp.status for that LLSV (Awaiting input from DM) or 
+#Compare cp.status with known values in the CI Environment file.
+#
+#
+#
+# END_MANUAL_STEPS
+
+# BEGIN_POST_CONDITIONS
+#None
+# END_POST_CONDITIONS

@@ -1,0 +1,54 @@
+#!/bin/bash
+
+# TEST CASE SPEC FILE
+# This file is generated/updated using the test framework web interface.
+# Manual updates on test servers are lost when the test package is re-installed.
+#
+# Last modified: Sunday 31st of March 2013 20:37:24
+#
+
+# These settings must be in BASH script format, they are sourced by other scripts.
+SPEC_FA_NAME="SMRS"
+SPEC_UC_NAME="SMRS_MASTER_REMOVE"
+SPEC_TC_ID=609
+SPEC_TC_SLOGAN="Verify can disconnect smrs master server from OSS Admin server in Single OSS Environment"
+SPEC_TC_TYPE="FT"
+SPEC_TC_POLARITY="positive"
+SPEC_TC_PRIORITY="high"
+SPEC_TC_AUTOMATED=1
+SPEC_TC_DEPENDENT_ONLY=0
+SPEC_TC_TIMEOUT=300
+SPEC_TC_TEST_PASSCODE=0
+SPEC_TC_AUTHOR="edavmax"
+SPEC_TC_AUTOMATOR="edavmax"
+# this parameter is not interpreted by harness
+SPEC_TC_DISABLED=0
+
+# Please do not remove the comment lines below.
+# They are used as section locators by the test harness.
+
+# BEGIN_PRE_CONDITIONS
+#- SMRS master has been connected to OSS master i.e. "configure_smrs.sh add smrs_master" has been run
+#
+#
+# END_PRE_CONDITIONS
+
+
+# BEGIN_MANUAL_STEPS
+#- Login to OSS master as root
+#
+#- /opt/ericsson/nms_bismrs_mc/bin/configure_smrs.sh delete smrs_master
+#
+#-Say "yes" to continue
+#-Say "yes" to completely dismantle
+# END_MANUAL_STEPS
+
+# BEGIN_POST_CONDITIONS
+#-SMO accounts have been removed on OSS and SMRS master 
+#-SMO FtpServices have been removed from ONRM
+#-Can no longer login from OSS master => smrs master without entering password
+#-aif group removed on smrs master
+#-nms group removed on smrs master
+#-smrsuser removed on smrs master
+#-smrs_nfs service is disabled on OSS master and file systems are umounted
+# END_POST_CONDITIONS

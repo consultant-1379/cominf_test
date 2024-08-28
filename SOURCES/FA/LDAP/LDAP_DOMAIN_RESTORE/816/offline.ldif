@@ -1,0 +1,335 @@
+dn: dc=1,dc=com
+objectClass: domain
+objectClass: nisDomainObject
+objectClass: top
+nisDomain: 1.com
+dc: 1
+entryUUID: 17473feb-5714-483a-8949-80f04d161959
+aci: (target="ldap:///dc=1,dc=com")(targetattr != "aci || userPassword || pwdHistory || pwdChangedTime || pwdGraceUseTime || pwdFailureTime || pwdAccountLockedTime")(version 3.0; acl "MasterServer Sync Access";allow (all)userdn = "ldap:///cn=mssync,dc=1,dc=com";)
+aci: (target="ldap:///ou=people,dc=1,dc=com")(targetattr = "*")(version 3.0; acl "Deny MSSync Access to people"; deny (all)userdn = "ldap:///cn=mssync,dc=1,dc=com";)
+aci: (target="ldap:///ou=group,dc=1,dc=com")(targetattr = "*")(version 3.0; acl "Deny MSSync Access to group"; deny (all)userdn = "ldap:///cn=mssync,dc=1,dc=com";)
+aci: (target="ldap:///dc=1,dc=com") (targetattr = "*")(version 3.0; acl "MasterServer Admin Access";allow (all)userdn = "ldap:///cn=msadmin,dc=1,dc=com";)
+aci: (target="ldap:///dc=1,dc=com") (targetattr = "*||+")(version 3.0; acl "ldapadm Access";allow (all)userdn = "ldap:///cn=ldapadm,dc=globaldomain";)
+aci: (targetscope="subtree") (targetattr!="aci")(version 3.0; acl "Proxy agent read access";allow (read, search, compare)userdn = "ldap:///cn=proxyagent,ou=profile,dc=1,dc=com";)
+aci: (targetattr="userPassword")(version 3.0; acl "modify own password";allow (write)userdn = "ldap:///self";)
+aci: (target="ldap:///dc=1,dc=com")(targetattr!="aci")(targetscope="base")(version 3.0; acl "anonymous baseDN read access";allow (read, search, compare)userdn = "ldap:///anyone";)
+aci: (target="ldap:///cn=default,ou=profile,dc=1,dc=com")(targetattr!="aci")(version 3.0; acl "anonymous profile read access";allow (read, search, compare)userdn = "ldap:///anyone";)
+creatorsName: cn=Directory Manager,cn=Root DNs,cn=config
+createTimestamp: 20121128133645Z
+modifyTimestamp: 20121128133645Z
+modifiersName: cn=Directory Manager,cn=Root DNs,cn=config
+
+dn: ou=people,dc=1,dc=com
+objectClass: organizationalUnit
+objectClass: top
+ou: people
+entryUUID: 61a63b58-390e-43a9-9638-6954dff82559
+createTimestamp: 20121128133645Z
+creatorsName: cn=Directory Manager,cn=Root DNs,cn=config
+
+dn: ou=group,dc=1,dc=com
+objectClass: organizationalUnit
+objectClass: top
+ou: group
+entryUUID: 16399651-d86a-499a-b514-3ed5bb2afc6c
+createTimestamp: 20121128133645Z
+creatorsName: cn=Directory Manager,cn=Root DNs,cn=config
+
+dn: ou=ipTnet,dc=1,dc=com
+objectClass: organizationalUnit
+objectClass: top
+ou: ipTnet
+entryUUID: 47978218-c935-4b82-9abf-3d0d162ea31d
+createTimestamp: 20121128133645Z
+creatorsName: cn=Directory Manager,cn=Root DNs,cn=config
+
+dn: ou=Timezone,dc=1,dc=com
+objectClass: organizationalUnit
+objectClass: top
+ou: Timezone
+entryUUID: 14c40722-0b6a-4107-b550-39a5459ca95c
+createTimestamp: 20121128133645Z
+creatorsName: cn=Directory Manager,cn=Root DNs,cn=config
+
+dn: ou=SolarisProfAttr,dc=1,dc=com
+objectClass: organizationalUnit
+objectClass: top
+ou: SolarisProfAttr
+entryUUID: e65576ea-8d37-407c-a2c8-fea34a3d6d4a
+createTimestamp: 20121128133645Z
+creatorsName: cn=Directory Manager,cn=Root DNs,cn=config
+
+dn: ou=SolarisAuthAttr,dc=1,dc=com
+objectClass: organizationalUnit
+objectClass: top
+ou: SolarisAuthAttr
+entryUUID: b8441419-ce69-4c69-a5c6-1f1762f05456
+createTimestamp: 20121128133645Z
+creatorsName: cn=Directory Manager,cn=Root DNs,cn=config
+
+dn: ou=projects,dc=1,dc=com
+objectClass: organizationalUnit
+objectClass: top
+ou: projects
+entryUUID: de2dba0f-3ef6-4f86-bfe0-d60803a873f5
+createTimestamp: 20121128133645Z
+creatorsName: cn=Directory Manager,cn=Root DNs,cn=config
+
+dn: ou=printers,dc=1,dc=com
+objectClass: organizationalUnit
+objectClass: top
+ou: printers
+entryUUID: d7aa5840-becc-4165-8f7f-0b81e3de6724
+createTimestamp: 20121128133645Z
+creatorsName: cn=Directory Manager,cn=Root DNs,cn=config
+
+dn: ou=ethers,dc=1,dc=com
+objectClass: organizationalUnit
+objectClass: top
+ou: ethers
+entryUUID: b42a846f-85d2-481d-847f-999aa060f578
+createTimestamp: 20121128133645Z
+creatorsName: cn=Directory Manager,cn=Root DNs,cn=config
+
+dn: ou=services,dc=1,dc=com
+objectClass: organizationalUnit
+objectClass: top
+ou: services
+entryUUID: 9aee5034-bbb3-4041-95bf-57af08594c5a
+createTimestamp: 20121128133645Z
+creatorsName: cn=Directory Manager,cn=Root DNs,cn=config
+
+dn: ou=hosts,dc=1,dc=com
+objectClass: organizationalUnit
+objectClass: top
+ou: hosts
+entryUUID: ede76cc2-0d57-4023-a5b6-dec54c2756c9
+createTimestamp: 20121128133645Z
+creatorsName: cn=Directory Manager,cn=Root DNs,cn=config
+
+dn: ou=aliases,dc=1,dc=com
+objectClass: organizationalUnit
+objectClass: top
+ou: aliases
+entryUUID: 73b3c254-b487-4b4f-ba6a-2da681fcce87
+createTimestamp: 20121128133645Z
+creatorsName: cn=Directory Manager,cn=Root DNs,cn=config
+
+dn: ou=netgroup,dc=1,dc=com
+objectClass: organizationalUnit
+objectClass: top
+ou: netgroup
+entryUUID: 3aad80a5-b80d-424f-851c-f15526c267b8
+createTimestamp: 20121128133645Z
+creatorsName: cn=Directory Manager,cn=Root DNs,cn=config
+
+dn: ou=networks,dc=1,dc=com
+objectClass: organizationalUnit
+objectClass: top
+ou: networks
+entryUUID: 798b15be-2823-45d3-a556-429bf9cb67e4
+createTimestamp: 20121128133645Z
+creatorsName: cn=Directory Manager,cn=Root DNs,cn=config
+
+dn: ou=protocols,dc=1,dc=com
+objectClass: organizationalUnit
+objectClass: top
+ou: protocols
+entryUUID: ab1a9764-7cf7-4dab-97db-575acc9e8258
+createTimestamp: 20121128133645Z
+creatorsName: cn=Directory Manager,cn=Root DNs,cn=config
+
+dn: ou=rpc,dc=1,dc=com
+objectClass: organizationalUnit
+objectClass: top
+ou: rpc
+entryUUID: 0142c8e2-5167-4c01-b3e6-0076cdb3f9a0
+createTimestamp: 20121128133645Z
+creatorsName: cn=Directory Manager,cn=Root DNs,cn=config
+
+dn: automountMapName=auto_home,dc=1,dc=com
+objectClass: automountMap
+objectClass: top
+automountMapName: auto_home
+entryUUID: 1f086d29-586e-4260-aa43-20337f29b72c
+createTimestamp: 20121128133645Z
+creatorsName: cn=Directory Manager,cn=Root DNs,cn=config
+
+dn: automountMapName=auto_direct,dc=1,dc=com
+objectClass: automountMap
+objectClass: top
+automountMapName: auto_direct
+entryUUID: 800e5bbb-a739-4671-a34c-96ab832a5196
+createTimestamp: 20121128133645Z
+creatorsName: cn=Directory Manager,cn=Root DNs,cn=config
+
+dn: automountMapName=auto_master,dc=1,dc=com
+objectClass: automountMap
+objectClass: top
+automountMapName: auto_master
+entryUUID: 75c466a6-379b-4c21-a8d0-a3fcac17501f
+createTimestamp: 20121128133645Z
+creatorsName: cn=Directory Manager,cn=Root DNs,cn=config
+
+dn: automountMapName=auto_shared,dc=1,dc=com
+objectClass: automountMap
+objectClass: top
+automountMapName: auto_shared
+entryUUID: 46dd33ab-968b-4c70-ab83-882a00bd5c67
+createTimestamp: 20121128133645Z
+creatorsName: cn=Directory Manager,cn=Root DNs,cn=config
+
+dn: cn=com,ou=group,dc=1,dc=com
+objectClass: groupOfUniqueNames
+objectClass: posixGroup
+objectClass: top
+cn: com
+gidNumber: 609
+entryUUID: 62f10e34-7a13-47c2-835b-78dd37b4d284
+createTimestamp: 20121128133645Z
+creatorsName: cn=Directory Manager,cn=Root DNs,cn=config
+
+dn: ou=com,dc=1,dc=com
+objectClass: organizationalUnit
+objectClass: top
+ou: com
+entryUUID: a2528881-fd8b-464e-bb49-5845b9c6d1f2
+createTimestamp: 20121128133645Z
+creatorsName: cn=Directory Manager,cn=Root DNs,cn=config
+
+dn: ou=proxyagent,ou=com,dc=1,dc=com
+objectClass: organizationalUnit
+objectClass: top
+ou: proxyagent
+entryUUID: 57ec69e2-59d7-48e2-ae4e-d342443e97b6
+createTimestamp: 20121128133645Z
+creatorsName: cn=Directory Manager,cn=Root DNs,cn=config
+
+dn: ou=role,ou=com,dc=1,dc=com
+objectClass: organizationalUnit
+objectClass: top
+ou: role
+entryUUID: 20f54043-c9ab-4cfd-b88e-432cea08ab6b
+createTimestamp: 20121128133645Z
+creatorsName: cn=Directory Manager,cn=Root DNs,cn=config
+
+dn: ou=rolealias,ou=com,dc=1,dc=com
+objectClass: organizationalUnit
+objectClass: top
+ou: rolealias
+entryUUID: 6513da95-8be5-464e-8f21-f3e528905142
+createTimestamp: 20121128133645Z
+creatorsName: cn=Directory Manager,cn=Root DNs,cn=config
+
+dn: ou=profile,dc=1,dc=com
+objectClass: organizationalUnit
+objectClass: top
+ou: profile
+entryUUID: cbdc661c-8d74-499f-98c7-7b7a131a2299
+createTimestamp: 20121128133645Z
+creatorsName: cn=Directory Manager,cn=Root DNs,cn=config
+
+dn: cn=proxyagent,ou=profile,dc=1,dc=com
+objectClass: person
+objectClass: organizationalPerson
+objectClass: inetOrgPerson
+objectClass: top
+givenName: proxy
+cn: proxyagent
+sn: agent
+userPassword: {SSHA}LByOM3T6BxdoiLKuuU4MzyynnV9x98G/ltViTQ==
+ds-rlim-lookthrough-limit: 10000
+entryUUID: a23b181b-5a3b-4e3b-aa61-8372f54e0b0b
+createTimestamp: 20121128133645Z
+creatorsName: cn=Directory Manager,cn=Root DNs,cn=config
+pwdChangedTime: 20121128133645.510Z
+ds-rlim-size-limit: 10000
+
+dn: cn=default,ou=profile,dc=1,dc=com
+objectClass: top
+objectClass: DUAConfigProfile
+defaultServerList: 10.45.201.188
+defaultSearchBase: dc=1,dc=com
+cn: default
+searchTimeLimit: 30
+defaultSearchScope: one
+bindTimeLimit: 60
+followReferrals: FALSE
+authenticationMethod: tls:simple
+profileTTL: 600
+credentialLevel: proxy
+entryUUID: 4ea650e2-b32a-41d7-b984-3de4f1da94d3
+createTimestamp: 20121128133645Z
+creatorsName: cn=Directory Manager,cn=Root DNs,cn=config
+
+dn: cn=msadmin,dc=1,dc=com
+objectClass: person
+objectClass: top
+cn: MasterServer Admin
+cn: msadmin
+sn: MasterServer Admin
+userPassword: {SSHA}SM8rOVo5glGgMMxL3b2OHqyIhkjoDkZgrZoZLw==
+entryUUID: e297a277-6f05-4abf-a28b-66469dd8c029
+createTimestamp: 20121128133645Z
+creatorsName: cn=Directory Manager,cn=Root DNs,cn=config
+pwdChangedTime: 20121128133645.510Z
+
+dn: cn=mssync,dc=1,dc=com
+objectClass: person
+objectClass: top
+cn: MasterServer Sync
+cn: mssync
+sn: MasterServer Sync
+userPassword: {SSHA}p1m46vabuWB5sW8f7DYfqTwStjNlFujYj4NjMw==
+entryUUID: 7e27eb54-8b45-44df-9d6e-c37565880cd5
+createTimestamp: 20121128133645Z
+creatorsName: cn=Directory Manager,cn=Root DNs,cn=config
+pwdChangedTime: 20121128133645.510Z
+
+dn: cn=PWD Policy for Users,dc=1,dc=com
+objectClass: extensibleObject
+objectClass: collectiveAttributeSubEntry
+objectClass: subentry
+objectClass: top
+cn: PWD Policy for Users
+ds-pwp-password-policy-dn;collective: cn=1.com Password Policy,cn=Password Policies,cn=config
+subtreeSpecification: { base "ou=people", specificationFilter "(objectclass=person)"}
+entryUUID: 34e817f5-a9d0-489b-a400-b60cd332dc80
+createTimestamp: 20121128133709Z
+creatorsName: cn=Directory Manager,cn=Root DNs,cn=config
+
+dn: cn=Group814,ou=group,dc=1,dc=com
+objectClass: groupOfUniqueNames
+objectClass: posixGroup
+objectClass: top
+memberUid: User814
+cn: Group814
+gidNumber: 30107
+entryUUID: ee4d3879-7fa7-4d03-913b-dcb869aeea99
+creatorsName: cn=Directory Manager,cn=Root DNs,cn=config
+createTimestamp: 20121218221915Z
+modifyTimestamp: 20121218221924Z
+modifiersName: cn=Directory Manager,cn=Root DNs,cn=config
+
+dn: uid=User814,ou=people,dc=1,dc=com
+objectClass: person
+objectClass: organizationalPerson
+objectClass: inetOrgPerson
+objectClass: shadowAccount
+objectClass: posixAccount
+objectClass: top
+description: OSS-RC user
+uid: User814
+cn: User814
+sn: User814
+loginShell: /usr/bin/tcsh
+userPassword: {SSHA}5kqQJhiDIOvOHhwJfg6DkwU5RVNAcf7HvmdltA==
+homeDirectory: /home/User814
+uidNumber: 40107
+gidNumber: 205
+pwdReset: TRUE
+entryUUID: ee5065ab-ead6-4116-842d-94885e9f97e0
+createTimestamp: 20121218221920Z
+creatorsName: cn=Directory Manager,cn=Root DNs,cn=config
+pwdChangedTime: 20121218221920.727Z
+

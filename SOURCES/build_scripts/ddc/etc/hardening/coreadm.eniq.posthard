@@ -1,0 +1,10 @@
+  global core file pattern: 
+     global core file content: default
+       init core file pattern: /eniq/local_logs/core_dumps/core_%n_%f_%u_%g
+       init core file content: default
+            global core dumps: disabled
+       per-process core dumps: enabled
+      global setid core dumps: enabled
+ per-process setid core dumps: disabled
+     global core dump logging: enabled
+

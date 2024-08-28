@@ -1,0 +1,48 @@
+#!/bin/bash
+
+# TEST CASE SPEC FILE
+# This file is generated/updated using the test framework web interface.
+# Manual updates on test servers are lost when the test package is re-installed.
+#
+# Last modified: Monday 7th of October 2013 7:55:31
+#
+
+# These settings must be in BASH script format, they are sourced by other scripts.
+SPEC_FA_NAME="MULTIOSS"
+SPEC_UC_NAME="MULTIOSS_LDAP"
+SPEC_TC_ID=1004
+SPEC_TC_SLOGAN="Verify Deleting a user using the –G and –n switches at command line(No confirmation will be asked at input)"
+SPEC_TC_TYPE="FT"
+SPEC_TC_POLARITY="positive"
+SPEC_TC_PRIORITY="high"
+SPEC_TC_AUTOMATED=1
+SPEC_TC_DEPENDENT_ONLY=0
+SPEC_TC_TIMEOUT=300
+SPEC_TC_TEST_PASSCODE=0
+SPEC_TC_AUTHOR="xsougha"
+SPEC_TC_AUTOMATOR="xsougha"
+# this parameter is not interpreted by harness
+SPEC_TC_DISABLED=0
+
+# Please do not remove the comment lines below.
+# They are used as section locators by the test harness.
+
+# BEGIN_PRE_CONDITIONS
+#User to be delated must be present
+# END_PRE_CONDITIONS
+
+
+# BEGIN_MANUAL_STEPS
+#(1) Execute the below steps:
+#
+#/ericsson/sdee/bin/del_user.sh -G -n JessieB
+#Answer all prompts  
+#   Acceptance Criteria  No confirmation will be asked for deleting the user when the –y switch is used. You should expect a similar output as the one below: 
+#e.g.
+#OSS-RC account removal results for global user [JessieB]:
+#OK: Account removed: Domain:[1.com]; Masterservice:[atrcxb989]; User:[JessieB]; uidNumber:[12003].
+# END_MANUAL_STEPS
+
+# BEGIN_POST_CONDITIONS
+#None
+# END_POST_CONDITIONS

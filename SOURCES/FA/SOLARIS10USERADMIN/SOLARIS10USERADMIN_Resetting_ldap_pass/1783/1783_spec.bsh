@@ -1,0 +1,186 @@
+#!/bin/bash
+
+# TEST CASE SPEC FILE
+# This file is generated/updated using the test framework web interface.
+# Manual updates on test servers are lost when the test package is re-installed.
+#
+# Last modified: Thursday 16th of January 2014 13:16:55
+#
+
+# These settings must be in BASH script format, they are sourced by other scripts.
+SPEC_FA_NAME="SOLARIS10USERADMIN"
+SPEC_UC_NAME="SOLARIS10USERADMIN_Resetting_ldap_pass"
+SPEC_TC_ID=1783
+SPEC_TC_SLOGAN="Resetting ldap password positive"
+SPEC_TC_TYPE="FT"
+SPEC_TC_POLARITY="positive"
+SPEC_TC_PRIORITY="high"
+SPEC_TC_AUTOMATED=0
+SPEC_TC_DEPENDENT_ONLY=0
+SPEC_TC_TIMEOUT=300
+SPEC_TC_TEST_PASSCODE=0
+SPEC_TC_AUTHOR="xsougha"
+SPEC_TC_AUTOMATOR="xsougha"
+# this parameter is not interpreted by harness
+SPEC_TC_DISABLED=0
+
+# Please do not remove the comment lines below.
+# They are used as section locators by the test harness.
+
+# BEGIN_PRE_CONDITIONS
+#None
+# END_PRE_CONDITIONS
+
+
+# BEGIN_MANUAL_STEPS
+#1.
+#
+#ACTION:-
+#
+#Check the usage of the reset_user_password.sh script using the below command.
+#
+#./reset_user_password.sh -h
+#
+#RESULT:-
+#
+#Usage should be dispalyed clearly with available options.
+#
+#2. 
+#
+#ACTION:-
+#
+#Reset the user password without passing any arguments.
+#
+#./reset_user_password.sh 
+#
+#
+#RESULT:-
+#
+#Password reset should be applied for the user.
+#
+#
+#3.
+#
+#ACTION:-
+#
+#Reset all the users passwords with "-a" option.
+#
+#./reset_user_password.sh -a
+#
+#RESULT:-
+#
+#Password reset should be applied for all the existing users except nmsadm.
+#
+#
+#5.
+#
+#ACTION:-
+#
+#Reset single user password using "-u" option.
+#
+#./reset_user_password.sh -u primary1
+#
+#RESULT:-
+#
+#Password reset should be applied for the user specified.
+#
+#
+#6. 
+#
+#ACTION:-
+#
+#Reset the password of specific type of user using "-t" option .
+#
+#./reset_user_password.sh -t COM_APP
+#./reset_user_password.sh -t COM_OSS
+#./reset_user_password.sh -t COM_ONLY
+#./reset_user_password.sh -t OSS_ONLY
+#
+#
+#RESULT:-
+#
+#Password reset should be applied for the specific type users.
+#When there are no users,Error message should be displayed that there are no users to reset the password
+#
+#
+#8.
+#
+#ACTION:-
+#
+#Reset bulk users passwords using "-f" option.
+#./reset_user_password.sh -f /var/tmp/file1 (valid file with existing users)
+#
+#bash-3.2# cat /var/tmp/file1
+#primary1
+#primary2
+#prim55
+#
+#RESULT:-
+#
+#Password reset should be applied for the bulk users specified in the file.
+#
+#9.
+#
+#ACTION:-
+#
+#Give usernames separated by blank lines in the file, and try to reset the passwords for the same.
+#
+#./reset_user_password.sh -f /var/tmp/file6
+#
+#bash-3.2# cat /var/tmp/file6
+#primary4
+#
+#
+#
+#
+#primary5
+#
+#
+#primary2
+#
+#
+#RESULT:-
+#
+#
+#Password reset should be applied for all the users specified in the file.
+#
+#10.
+#
+#ACTION:-
+#
+#Check "-d" option with all the other options available.Give a valid domain name.
+#
+#./reset_user_password.sh -d ldap274.com 
+#./reset_user_password.sh -a -d ldap274.com 
+#./reset_user_password.sh -f /var/tmp/file1 -d ldap274.com 
+#./reset_user_password.sh -t OSS_ONLY -d ldap274.com 
+#./reset_user_password.sh -u primary1 -d ldap274.com 
+#./reset_user_password.sh -f /var/tmp/file1 -d ldap274.com
+#./reset_user_password.sh -t COM_APP -d ldap274.com
+#./reset_user_password.sh -t COM_ONLY -d ldap274.com
+#./reset_user_password.sh -t COM_OSS -d ldap274.com
+#./reset_user_password.sh -t OSS_ONLY -d ldap274.com
+#
+#RESULT:-
+#
+#Password reset should be applied for the users in all scenarios specified above.
+#
+#Note:perform all the above test cases for global domain users repalcing -d with -G
+#
+#
+#
+#11.
+#
+#ACTION:-
+#
+#verify the reset_user_password functionality by Loging into UAS with user whose password was reset.
+#
+#RESULT:-
+#
+#User should be able login with old password.
+#After login it should ask for new password.
+# END_MANUAL_STEPS
+
+# BEGIN_POST_CONDITIONS
+#None
+# END_POST_CONDITIONS

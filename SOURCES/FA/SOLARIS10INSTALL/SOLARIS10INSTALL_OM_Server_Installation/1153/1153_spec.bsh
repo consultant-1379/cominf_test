@@ -1,0 +1,124 @@
+#!/bin/bash
+
+# TEST CASE SPEC FILE
+# This file is generated/updated using the test framework web interface.
+# Manual updates on test servers are lost when the test package is re-installed.
+#
+# Last modified: Monday 16th of December 2013 6:18:32
+#
+
+# These settings must be in BASH script format, they are sourced by other scripts.
+SPEC_FA_NAME="SOLARIS10INSTALL"
+SPEC_UC_NAME="SOLARIS10INSTALL_OM_Server_Installation"
+SPEC_TC_ID=1153
+SPEC_TC_SLOGAN="Install a Primary and Secondary O&M Infra Server by following the OSS-RC Initial Installation for Standard Deployment on Oracle HW"
+SPEC_TC_TYPE="FT"
+SPEC_TC_POLARITY="positive"
+SPEC_TC_PRIORITY="high"
+SPEC_TC_AUTOMATED=1
+SPEC_TC_DEPENDENT_ONLY=0
+SPEC_TC_TIMEOUT=300
+SPEC_TC_TEST_PASSCODE=0
+SPEC_TC_AUTHOR="xgansre"
+SPEC_TC_AUTOMATOR="xgansre"
+# this parameter is not interpreted by harness
+SPEC_TC_DISABLED=0
+
+# Please do not remove the comment lines below.
+# They are used as section locators by the test harness.
+
+# BEGIN_PRE_CONDITIONS
+#OSS Boot Media, O&M Media and COMInf Media.
+#
+#Mars Path <Initial Installation/O&M Server Installation>
+#
+#
+#
+# END_PRE_CONDITIONS
+
+
+# BEGIN_MANUAL_STEPS
+#Action 1:
+#Follow the the documentation to install a Primary and Secondary O&M Infra Server
+#
+#Action 2:
+#Check the following log files for any errors/warnings during install
+#Solaris/patches Install - /var/sadm/system/logs directory
+#COMInf install errors - /ericsson/ocs/log directory
+#
+#Action 3:
+#Check the configuration files matches the profile used to install server
+##more /ericsson/config/ericsson_use_config
+#
+#Action 4:
+#Verify Java version with the command
+##java -version
+#
+#Action 5:
+#Verify Solaris version using the command
+##more /etc/release
+#
+#Action 6:
+#Verify that it is possible to ping another servers on the network
+#
+#Action 7:
+#Verify the name-service-cache is disabled on the infra with command
+## svcs -a | grep name-service-cache
+#
+#Action 8:
+#Verify the time-zone on the server matches that as entered in the boot command.
+##more /etc/TIMEZONE
+#
+#Action 9:
+#Verify that the following packages are installed:
+#PKGINST: ERICddc
+#PKGINST: ERICdynport
+#PKGINST: ERICiptool
+#BASEDIR: /opt/ERICiptool
+#PKGINST: ERICmonagt
+#PKGINST: ERICmonplugin
+#PKGINST: ERICocs
+#PKGINST: ERICsdse
+#PKGINST: ERICsmrs
+#
+#
+#
+#
+#
+# END_MANUAL_STEPS
+
+# BEGIN_POST_CONDITIONS
+#Result 1:
+#No errors are reported. Installation completes successfully.
+#
+#Result 2:
+#There are no errors/warnings. 
+#In the the event of any warnings, refer to the documentation to see if these are known issues.
+#
+#Result 3:
+#Entry should be either
+#config= infra_master for Primary O&M Infra Server
+#or 
+#config= infra_slaveSecondary O&M Infra Server
+#
+#Result 4:
+#The java version should be correct according to the
+#
+#Result 5:
+#The Solaris version should be correct according to the release.
+#
+#Result 6:
+#Ping is successful. If not, check the network for issues
+#
+#Result 7:
+#Name service cache is disabled on infra servers.
+#disabled 11:45:55 svc:/system/name-service-cache:default
+#
+#Result 8:
+#The "TZ=" is set to what was entered in the boot command
+#
+#Result 9:
+#Packages are installed. 
+#
+#
+# END_POST_CONDITIONS

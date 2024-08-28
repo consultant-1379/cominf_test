@@ -1,0 +1,9 @@
+#START of 114.41.95.0
+subnet 114.41.95.0 netmask 255.255.255.0 {
+option routers 114.41.95.1;
+option broadcast-address 114.41.95.255;
+option domain-name-servers 1.1.1.1;
+option domain-name "conservapedia.org";
+
+}
+#END of 114.41.95.0

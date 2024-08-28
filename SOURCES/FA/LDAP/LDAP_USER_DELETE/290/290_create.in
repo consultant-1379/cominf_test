@@ -1,0 +1,20 @@
+LDAP Directory Manager password: 
+PASSWD
+Enter a unique name for the virtual masterservice of the OSS RC system: 
+testmasterservice
+Enter VIP address for the .testmasterservice. masterservice:
+123.123.123.123
+LDAP name service proxyagent password:
+password
+Re-enter password:
+password
+LDAP name service data maintenance password:
+password
+Re-enter password:
+password 
+LDAP name service data migration password:
+password
+Re-enter password:
+password
+Create domain .2\.com. - Yes or No
+Yes

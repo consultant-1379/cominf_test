@@ -1,0 +1,15 @@
+#!/bin/bash
+
+# TEST SUITE SPEC FILE
+# This file is generated/updated using the test framework web interface.
+# Manual updates on test servers are lost when the test package is re-installed.
+#
+# Last modified: Thursday 30th of May 2013 12:30:24
+#
+SPEC_TS_NAME=X86_POSTINSTALL
+SPEC_TS_ID=64
+SPEC_TS_SLOGAN="Add second node to the cluster"
+SPEC_TS_TIMEOUT=4500
+SPEC_TS_AUTHOR="xshisan"
+SPEC_TS_INDEPENDENT=1
+SPEC_TS_TC_IDS=(641 642 689 637 643 690 672 686 674 687 688)

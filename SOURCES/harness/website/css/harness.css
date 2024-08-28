@@ -1,0 +1,134 @@
+body, p, div, span, td, blockquote {
+    font-family: Verdana, Arial, Helvetica, sans-serif;
+    font-size: 12pt;        
+    font-style: normal;     
+}
+
+h1, h2, h3, h4, h5, h6 {
+font-family: trebuchet ms, arial, verdana, lucida grande, sans-serif;
+line-height: normal;
+font-weight: bold;
+background-color: transparent;
+padding-top: 0;
+margin-top: 0;
+}
+
+dt {
+
+font-weight: bold;
+
+}
+
+.solid {border-style: solid; border-width: 1px; } 
+.double {border-style: double; border-width: 1px; } 
+.groove {border-style: groove; border-width: 1px; } 
+.dotted {border-style: dotted; border-width: 1px; } 
+.dashed {border-style: dashed; border-width: 1px; } 
+.inset {border-style: inset; border-width: 1px; } 
+.outset {border-style: outset; border-width: 1px; } 
+.ridge {border-style: ridge; border-width: 1px; } 
+.hidden {border-style: hidden; border-width: 1px; }
+
+body {
+    background-color: #ffffff;
+}
+
+#maxw {
+    width: 100%; 
+}
+
+#maxwh {
+    min-height: 900px;
+    width: 100%; 
+    height: 80%;
+}
+
+
+
+table.form {    
+  border: 0
+  cell-spacing: 2px;
+  border-spacing:2px;
+}
+
+
+
+td.formlabel {        
+  width: 15%;
+  background-color: #EEF1FA;      
+  font-size: 10pt;        
+  font-style: normal;     
+  color: #000066; vertical-align: middle; 
+  padding: 2px;
+}
+
+td.formfield, td.control {
+  background-color: #EEF1FA;
+  font-size: 10pt;
+  font-style: normal;
+  color: #000066; vertical-align: middle;
+  padding: 2px;
+}
+
+
+.helptext {
+  font-size: 8pt;
+  font-weight: normal;
+}
+
+tr.grey {
+  background-color: #D3D3D3;      
+  font-size: 10pt;        
+  font-style: normal;     
+  font-weight: normal;     
+  color: #000000; 
+  vertical-align: middle; 
+}
+
+tr.admin {
+  background-color: #D3D3D3;
+  font-size: 10pt;
+  font-style: normal;
+  font-weight: normal;
+  color: #000000;
+  vertical-align: middle;
+ 
+}
+
+
+tr.normal {
+  background-color: #FFFFFF;
+  font-size: 10pt;
+  font-style: normal;
+  font-weight: normal;
+  color: #000000;
+  vertical-align: middle;
+}
+
+
+
+.fieldnote {        
+  font-size: 8pt; font-style: normal;     
+  color: #999999;
+}
+.fielderror {       
+  font-size: 8pt; font-style: normal;     
+  color: red;
+}
+
+
+input, textarea {
+  border: 1px solid #666666;
+
+}
+
+.scrollable{
+   overflow: auto;
+   width: 100%; /* adjust this width depending to amount of text to display */
+   height: 100%; /* adjust height depending on number of options to display */
+   border: 1px silver solid;
+}
+.scrollable select{
+   border: none;
+}
+

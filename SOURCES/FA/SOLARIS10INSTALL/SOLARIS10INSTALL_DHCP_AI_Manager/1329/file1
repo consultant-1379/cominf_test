@@ -1,0 +1,17 @@
+#!/bin/bash
+/ericsson/ocs/bin/ai_manager.sh -init > /dev/null
+/ericsson/ocs/bin/ai_manager.sh -add net -a 190.45.201.0 -m 255.255.255.0 -r 190.45.201.1 -d athtem.eei.ericsson.se -n "159.107.163.3,10.42.33.198" -q 
+if [ ` echo $?` -eq 0 ]
+then 
+echo "yes"
+else
+echo "no"
+fi
+/ericsson/ocs/bin/ai_manager.sh -list nets | grep 190.45.201
+if [ ` echo $? ` -eq 0 ] 
+then
+echo "yes"
+else
+echo "no"
+fi
+

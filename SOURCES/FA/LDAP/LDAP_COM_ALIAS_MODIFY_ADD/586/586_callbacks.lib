@@ -1,0 +1,446 @@
+#!/bin/bash
+#################################################################################
+#
+#
+#	   COPYRIGHT (C) ERICSSON RADIO SYSTEMS AB, Sweden
+#
+#	   The copyright to the document(s) herein is the property of
+#	   Ericsson Radio Systems AB, Sweden.
+#
+#	   The document(s) may be used and/or copied only with the written
+#	   permission from Ericsson Radio Systems AB or in accordance with
+#	   the terms and conditions stipulated in the agreement/contract
+#	   under which the document(s) have been supplied.
+#
+#################################################################################
+
+
+# ATCOMINF Test Callback Library
+
+# Revision History
+# <date>	<signum>	<details>
+# 08/10/12	xbahzam		Initial version
+
+# Complete the callbacks in this library to automate the test case.
+#
+# Callbacks are stateless, it is not possible to set a global variable in one callback 
+# and access it it in another.
+#
+# Callbacks are called by the test harness in the following order:
+#
+# tc_setup() 		# Called only for independent TC execution mode to setup TC
+# tc_precon()		# Conditions that should exist before TC can run
+# tc_test()		# Runs the test for this TC
+# tc_postcon()		# Conditions that should/should not exist after successful TC 
+# tc_cleanup()		# Called only for independent TC execution mode to clenup after TC
+
+# All callbacks must PASS for a TC PASS result
+
+LDAP_BIN="/ericsson/sdee/bin"
+
+CONFIG="/ericsson/sdee/ldap_domain_settings/"
+
+TEST_ROLE1="r586a"
+TEST_ROLE2="r586b"
+TEST_ALIAS1="a586a"
+TEST_ALIAS2="a586b"
+
+OUTFILE="/tmp/tcid586.tmp"
+
+#################################################################################
+#
+# CALLBACK: TC_SETUP
+#
+# This callback function is only called if the harness execution mode is 'AT_INDEPENDENT'
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_setup() {
+
+	
+	
+	
+
+	
+
+	# Ensure the enviornment does not exceed 8 domains in order to avoid timeout by the harness framework
+	[[ ` ls /ericsson/sdee/ldap_domain_settings/ | wc -l ` -ge 9 ]] && {
+		echo "${CONFIG} contains more than 8 domains - harness will timeout"
+		return 1
+	}
+
+	
+
+	# Replace PASSWD with the correct credentials
+	for ii in *.in; do
+		sed -e "s/^PASSWD$/$LDAP_SUPERUSER_PASSWD/" \
+			-e "s/TESTALIAS1/$TEST_ALIAS1/" \
+			-e "s/TESTALIAS2/$TEST_ALIAS2/" \
+			-e "s/TESTROLE1/$TEST_ROLE1/" \
+			-e "s/TESTROLE2/$TEST_ROLE2/" $ii > $ii.tmp || {
+			echo "Failed to replace LDAP superuser password holder in /usr/local/bin/expect input file $ii"
+			return 1
+		}
+	done
+
+	
+
+	# check that enable_COM.bsh has run by running manage_COM.bsh -l alias
+	# this will return an error if enable_COM.bsh has not been run
+	# can use justPassword.in.tmp as this contains expected strings
+	echo "Check that enable_COM.bsh has been run"
+	${AT_BIN}/con_ex.bsh -d justPassword.in.tmp -o 586_expect.exp -c "$LDAP_BIN/manage_COM.bsh -l alias " -r
+	/usr/local/bin/expect 586_expect.exp |grep 'No such object' &>/dev/null && {
+		# enable_COM.bsh has not been run - try to run it
+		${AT_BIN}/con_ex.bsh -d justPassword.in.tmp -o 586_expect.exp -c "$LDAP_BIN/enable_COM.bsh -y " -r
+		/usr/local/bin/expect 586_expect.exp &>/dev/null || {
+			echo "enable_COM.bsh did not complete correctly - rc $? - FAIL"
+			return 1
+		}
+	}
+	
+	rc=0
+
+	# add role 1 to default domain in order to add alias
+	echo "Adding role ${TEST_ROLE1} to default domain"
+	${AT_BIN}/con_ex.bsh -d justPassword.in.tmp -o 586_expect.exp -c "$LDAP_BIN/manage_COM.bsh -a role -R ${TEST_ROLE1} -y " -r
+	/usr/local/bin/expect 586_expect.exp || {
+		# Failed to add role 1 to default domain
+		echo "Add role 1 to default domain failed - rc $? - FAIL"
+		return 1
+	}
+
+	# add alias 1 with test role 1 to default domain
+	echo "Add alias ${TEST_ALIAS1} to default domain"
+	${AT_BIN}/con_ex.bsh -d justPassword.in.tmp -o 586_expect.exp -c "$LDAP_BIN/manage_COM.bsh -a alias -A ${TEST_ALIAS1} -R ${TEST_ROLE1} -y " -r
+	/usr/local/bin/expect 586_expect.exp || {
+		# Failed to add alias 1 with role 1 to default domain
+		echo "Add alias 1 ${TEST_ALIAS1} with role ${TEST_ROLE1} to default domain failed - rc $? - FAIL"
+		rc=2
+	}
+
+	# add role 2 to default domain, this role int not added to the alias here
+	echo "Adding role ${TEST_ROLE2} to default domain"
+	${AT_BIN}/con_ex.bsh -d justPassword.in.tmp -o 586_expect.exp -c "$LDAP_BIN/manage_COM.bsh -a role -R ${TEST_ROLE2} -y " -r
+	/usr/local/bin/expect 586_expect.exp || {
+		# Failed to add role 2 to default domain
+		echo "Add role 2 to default domain failed - rc $? - FAIL"
+		rc=3
+	}
+
+	# add alias 2 with test role 2 to default domain
+	echo "Add alias ${TEST_ALIAS2} to default domain"
+	${AT_BIN}/con_ex.bsh -d justPassword.in.tmp -o 586_expect.exp -c "$LDAP_BIN/manage_COM.bsh -a alias -A ${TEST_ALIAS2} -R ${TEST_ROLE2} -y " -r
+	/usr/local/bin/expect 586_expect.exp || {
+		# Failed to add alias 2 with role 2 to default domain
+		echo "Add alias 2 ${TEST_ALIAS2} with role ${TEST_ROLE2} to default domain failed - rc $? - FAIL"
+		rc=4
+	}
+
+	return $rc
+
+}
+#################################################################################
+
+#################################################################################
+#
+# CALLBACK: TC_PRECON
+#
+# This callback function checks the correct conditions exist to run the TC.
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+ 
+tc_precon() {
+
+	LDAP_SERVER_UP || {
+		echo "LDAP is not running. LDAP_SERVER_UP returned $?" 
+		return 1
+	}
+
+	rc=0 
+
+
+	# check if the test alias 1 has been added
+	echo "List the aliases in the default domain - /usr/local/bin/expect alias added above"
+	${AT_BIN}/con_ex.bsh -d justPassword.in.tmp -o 586_expect.exp -c "$LDAP_BIN/manage_COM.bsh -l alias  " -r
+	/usr/local/bin/expect 586_expect.exp | tr -d '\r' | grep "${TEST_ALIAS1}" || {
+		echo "Could not find alias added to default domain - FAIL"
+		return 1
+	}
+
+	# check if the test alias 2 has been added
+	echo "List the aliases in the default domain - /usr/local/bin/expect alias added above"
+	${AT_BIN}/con_ex.bsh -d justPassword.in.tmp -o 586_expect.exp -c "$LDAP_BIN/manage_COM.bsh -l alias  " -r
+	/usr/local/bin/expect 586_expect.exp | tr -d '\r' | grep "${TEST_ALIAS2}" || {
+		echo "Could not find alias added to default domain - FAIL"
+		rc=2
+	}
+
+	# check if the test roles 1 and 2 have been added 
+	echo "List the roles in the default domain - /usr/local/bin/expect role added above"
+	${AT_BIN}/con_ex.bsh -d justPassword.in.tmp -o 586_expect.exp -c "$LDAP_BIN/manage_COM.bsh -l role " -r
+	/usr/local/bin/expect 586_expect.exp | tr -d '\r' > preConRoleList.tmp 
+
+	grep "${TEST_ROLE1}" preConRoleList.tmp || {
+		echo "Could not find role ${TEST_ROLE1} added to default domain - FAIL"
+		rc=3
+	}
+
+	grep "${TEST_ROLE2}" preConRoleList.tmp || {
+		echo "Could not find role ${TEST_ROLE2} added to default domain - FAIL"
+		rc=4
+	}
+
+	# check if the role 1 has been added to alias 1
+	echo "List the roles in the alias - /usr/local/bin/expect alias to contain only role 1"
+	${AT_BIN}/con_ex.bsh -d justPassword.in.tmp -o 586_expect.exp -c "$LDAP_BIN/manage_COM.bsh -l alias -A ${TEST_ALIAS1} " -r
+	/usr/local/bin/expect 586_expect.exp | tr -d '\r' > preConAliasRoleList.tmp
+
+	grep "${TEST_ROLE1}" preConAliasRoleList.tmp || {
+		echo "Could not find role ${TEST_ROLE1} added to alias ${TEST_ALIAS1} - FAIL"
+		rc=5
+	}
+
+	# check if the role 2 has been added to alias 2
+	echo "List the roles in the alias - /usr/local/bin/expect alias to contain only role 1"
+	${AT_BIN}/con_ex.bsh -d justPassword.in.tmp -o 586_expect.exp -c "$LDAP_BIN/manage_COM.bsh -l alias -A ${TEST_ALIAS2} " -r
+	/usr/local/bin/expect 586_expect.exp | tr -d '\r' > preConAliasRoleList.tmp
+
+	grep "${TEST_ROLE2}" preConAliasRoleList.tmp || {
+		echo "Test role ${TEST_ROLE2} is not added to alias ${TEST_ALIAS2} - FAIL"
+		rc=6
+	}
+
+	return $rc
+
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_TEST
+#
+# This callback function runs the test.
+# The harness compares the return code to the SPEC_TC_TEST_PASSCODE value set in the test spec.
+#
+# Return or exit codes:
+#	SPEC_TC_TEST_PASSCODE 	success
+# != SPEC_TC_TEST_PASSCODE 	failure
+ 
+tc_test() {
+
+	>$OUTFILE
+
+	# Testing invalid options to add role to alias via modify alias (-m alias)
+	echo "Test: invalid options to add role to alias via modify alias (-m alias)"
+
+	echo "Test 1:$LDAP_BIN/manage_COM.bsh -m alias"
+	${AT_BIN}/con_ex.bsh -d 586_modify.in.tmp -o 586_expect.exp -c "$LDAP_BIN/manage_COM.bsh -m alias" -r
+	/usr/local/bin/expect 586_expect.exp  && {
+		echo "/manage_COM.bsh -m alias; succeeded- rc $? - FAIL" >> $OUTFILE
+	}
+
+	echo "Test 2: $LDAP_BIN/manage_COM.bsh -m alias -i -x "
+	${AT_BIN}/con_ex.bsh -d 586_modify.in.tmp -o 586_expect.exp -c "$LDAP_BIN/manage_COM.bsh -m alias -i -x" -r
+	/usr/local/bin/expect 586_expect.exp  && {
+		echo "/manage_COM.bsh -m alias -i -x; succeeded- rc $? - FAIL" >> $OUTFILE
+	}
+
+	echo "Test 3: $LDAP_BIN/manage_COM.bsh -m alias -A a586a -R r586a,r586b -i -y "
+	${AT_BIN}/con_ex.bsh -d 586_modify.in.tmp -o 586_expect.exp -c "$LDAP_BIN/manage_COM.bsh -m alias -A a586a -R r586a,r586b -i -y " -r
+	/usr/local/bin/expect 586_expect.exp && {
+		echo "/manage_COM.bsh -m alias -A a586a -R r586a,r586b -i -y; succeeded- rc $? - FAIL" >> $OUTFILE
+	}
+
+
+	echo "Test 4: $LDAP_BIN/manage_COM.bsh -m alias -A a586a -R r586b -i -n"
+	${AT_BIN}/con_ex.bsh -d 586_modify.in.tmp -o 586_expect.exp -c "$LDAP_BIN/manage_COM.bsh -m alias -A a586a -R r586b -i -n" -r
+	/usr/local/bin/expect 586_expect.exp  && {
+		echo "/manage_COM.bsh -m alias -A a586a -R r586b -i -n; succeeded- rc $? - FAIL" >> $OUTFILE
+	}
+
+	echo "Test 5: $LDAP_BIN/manage_COM.bsh -m alias -A a586a -R r586b -i -y -e"
+	${AT_BIN}/con_ex.bsh -d 586_modify.in.tmp -o 586_expect.exp -c "$LDAP_BIN/manage_COM.bsh -m alias -A a586a -R r586b -i -y -e" -r
+	/usr/local/bin/expect 586_expect.exp && {
+		echo "/manage_COM.bsh -m alias  -A a586a -R r586b -i -y -e; succeeded- rc $? - FAIL" >> $OUTFILE
+	}
+
+	echo "Test 6: $LDAP_BIN/manage_COM.bsh -m alias -A a586a,a586b -R r586b -i -y "
+	${AT_BIN}/con_ex.bsh -d 586_modify.in.tmp -o 586_expect.exp -c "$LDAP_BIN/manage_COM.bsh -m alias -A a586a,a586b -R r586b -i -y " -r
+	/usr/local/bin/expect 586_expect.exp  && {
+		echo "/manage_COM.bsh -m alias -A a586a,a586b -R r586b -i -y ; succeeded- rc $? - FAIL" >> $OUTFILE
+	}
+
+	echo "Test 7: $LDAP_BIN/manage_COM.bsh -m alias -A a586a -R a586b -i -y "
+	${AT_BIN}/con_ex.bsh -d 586_modify.in.tmp -o 586_expect.exp -c "$LDAP_BIN/manage_COM.bsh -m alias -A a586a -R a586b -i -y " -r
+	/usr/local/bin/expect 586_expect.exp  && {
+		echo "/manage_COM.bsh -m alias -A a586a -R a586b -i -y ; succeeded- rc $? - FAIL" >> $OUTFILE
+	}
+
+	echo "Test 8: $LDAP_BIN/manage_COM.bsh -m alias -A r586a -R r586b -i -y "
+	${AT_BIN}/con_ex.bsh -d 586_modify.in.tmp -o 586_expect.exp -c "$LDAP_BIN/manage_COM.bsh -m alias  -A r586a -R r586b -i -y " -r
+	/usr/local/bin/expect 586_expect.exp  && {
+		echo "/manage_COM.bsh -m alias -A r586a -R r586b -i -y ; succeeded- rc $? - FAIL" >> $OUTFILE
+	}
+	# return 0 and let tc_postcon identify errors
+	return 0
+
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_POSTCON
+#
+# This callback function checks expected results.
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_postcon() {
+
+	rc=0
+
+
+	# check if the test alias 1 is still there
+	echo "List the aliases in the default domain - /usr/local/bin/expect alias added above"
+	${AT_BIN}/con_ex.bsh -d justPassword.in.tmp -o 586_expect.exp -c "$LDAP_BIN/manage_COM.bsh -l alias  " -r
+	/usr/local/bin/expect 586_expect.exp | tr -d '\r' | grep "${TEST_ALIAS1}" || {
+		echo "Could not find alias ${TEST_ALIAS1} added to default domain - FAIL"
+		return 1
+	}
+
+	# check if the test alias 2 is still there
+	echo "List the aliases in the default domain - /usr/local/bin/expect alias added above"
+	${AT_BIN}/con_ex.bsh -d justPassword.in.tmp -o 586_expect.exp -c "$LDAP_BIN/manage_COM.bsh -l alias  " -r
+	/usr/local/bin/expect 586_expect.exp | tr -d '\r' | grep "${TEST_ALIAS2}" || {
+		echo "Could not find alias ${TEST_ALIAS2} added to default domain - FAIL"
+		rc=2
+	}
+	# check if the test roles 1 & 2 are still there
+	echo "List the roles in the default domain - /usr/local/bin/expect roles 1 & 2"
+	${AT_BIN}/con_ex.bsh -d justPassword.in.tmp -o 586_expect.exp -c "$LDAP_BIN/manage_COM.bsh -l role " -r
+	/usr/local/bin/expect 586_expect.exp | tr -d '\r' > postConRoleList.tmp 
+
+	grep "${TEST_ROLE1}" postConRoleList.tmp || {
+		echo "Could not find role ${TEST_ROLE1} after trying to modify the alias - FAIL"
+		rc=3
+	}
+
+	grep "${TEST_ROLE2}" postConRoleList.tmp || {
+		echo "Could not find role ${TEST_ROLE2} after trying to modify the alias - FAIL"
+		rc=4
+	}
+
+	# check if role 1 is contained in the alias 1
+	echo "List the roles in the alias ${TEST_ALIAS1} - /usr/local/bin/expect alias point to role 1 ${TEST_ROLE1} "
+	${AT_BIN}/con_ex.bsh -d justPassword.in.tmp -o 586_expect.exp -c "$LDAP_BIN/manage_COM.bsh -l alias -A ${TEST_ALIAS1} " -r
+	/usr/local/bin/expect 586_expect.exp | tr -d '\r' > postConAliasRoleList.tmp
+	
+	grep "${TEST_ROLE1}" postConRoleList.tmp || {
+		echo "Test role ${TEST_ROLE1} was not cobtained in the alias ${TEST_ALIAS1} after trying to modify the alias - FAIL"
+		rc=5
+	}
+
+	# check if role 2 is contained in the alias 2
+	echo "List the roles in the alias ${TEST_ALIAS2} - /usr/local/bin/expect alias point to role 1 ${TEST_ROLE2} "
+	${AT_BIN}/con_ex.bsh -d justPassword.in.tmp -o 586_expect.exp -c "$LDAP_BIN/manage_COM.bsh -l alias -A ${TEST_ALIAS2} " -r
+	/usr/local/bin/expect 586_expect.exp | tr -d '\r' > postConAliasRoleList.tmp
+	
+	grep "${TEST_ROLE2}" postConRoleList.tmp || {
+		echo "Test role ${TEST_ROLE2} was not cobtained in the alias ${TEST_ALIAS2} after trying to modify the alias - FAIL"
+		rc=6
+	}
+
+	CONSOLE_OUTPUT_CONTAINS "ERROR : checkOptionUsage: Options -i & -x are mutally exclusive. Please select one or the other." || {
+	echo " Failed to find the Test1 error message"
+	rc=1
+	}
+	
+	CONSOLE_OUTPUT_CONTAINS "ERROR : checkOptionUsage: Options -i & -x are mutally exclusive. Please select one or the other." || {
+	echo " Failed to find the Test2 error message"
+	rc=2
+	}
+	
+	CONSOLE_OUTPUT_CONTAINS "ERROR : Only one role can be supplied." || {
+	echo " Failed to find the Test3 error message"
+	rc=3
+	}
+	
+	CONSOLE_OUTPUT_CONTAINS "/ericsson/sdee/bin/manage_COM.bsh: illegal option -- n" || {
+	echo " Failed to find the Test4 error message"
+	rc=4
+	}
+	
+	CONSOLE_OUTPUT_CONTAINS "/ericsson/sdee/bin/manage_COM.bsh: illegal option -- e" || {
+	echo " Failed to find the Test5 error message"
+	rc=5
+	}
+	
+	CONSOLE_OUTPUT_CONTAINS "ERROR : Only one alias can be supplied." || {
+	echo " Failed to find the Test6 error message"
+	rc=6
+	}
+	
+	CONSOLE_OUTPUT_CONTAINS "ERROR : [a586b] does not exist as a role in domain [vts.com]." || {
+	echo " Failed to find the Test7 error message"
+	rc=7
+	}
+	
+	CONSOLE_OUTPUT_CONTAINS "ERROR : [r586a] does not exist as an alias in domain [vts.com]." || {
+	echo " Failed to find the Test8 error message"
+	rc=8
+	}
+	
+
+	# report on any failed modify alias attempts
+	[[ -s $OUTFILE ]] && {
+		echo "Some modify alias attempts failed:"
+		cat $OUTFILE
+		return 10
+	}
+
+	return $rc
+
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_CLEANUP
+#
+# This callback function is only called if the harness execution mode is 'AT_INDEPENDENT'
+# 
+# This callback restores the target system to the state it was in before the TC 
+# was run. It rolls back changes made by callbacks tc_setup() and tc_test()
+# 
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_cleanup() {
+
+	rc=0
+	# Remove roles
+        ${AT_BIN}/con_ex.bsh -d 586_remove_role.in.tmp -o 586_expect.exp -c "$LDAP_BIN/manage_COM.bsh -r role  " -r
+        /usr/local/bin/expect 586_expect.exp  || {
+                echo "Could not delete role added to default domain - FAIL"
+                return 1
+        }
+	# remove the generated /usr/local/bin/expect files
+	rm -f *tmp *exp  $OUTFILE || {
+		echo "Failed to remove the generated working files"
+		return 1
+	}
+
+	return 0
+
+}

@@ -1,0 +1,9 @@
+set VERSANT_BIN /ericsson/versant/bin
+spawn  su - nmsadm -c $VERSANT_BIN/vrsnt_admin.sh
+expect "Enter your choice:"
+send "10\r"
+expect "Please enter the database name"
+send "ONRM_CS\r"
+set timeout 1800 
+expect "Press <Return> to continue:"
+send "\r"

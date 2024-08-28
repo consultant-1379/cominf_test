@@ -1,0 +1,42 @@
+set timeout 40
+
+trap {
+	if [catch {wait -i -1} output] return
+	if {[lindex $output [expr [llength $output] -1]] != 0 } {
+		exit [lindex $output [expr [llength $output] -1]]
+	}
+} SIGCHLD
+
+spawn -noecho /opt/ericsson/nms_bismrs_mc/bin/configure_smrs.sh delete aif
+
+expect {
+	"What is the name for this user" {
+	} default {
+		exit 1
+	}
+}
+sleep 0.15
+send -- "g1_1414\r"
+expect {
+	"Would you like to remove autoIntegration FtpService for that user" {
+	} default {
+		exit 2
+	}
+}
+sleep 0.15
+send -- "yes\r"
+expect {
+	"Are you sure you want to delete this user" {
+	} default {
+		exit 3
+	}
+}
+sleep 0.15
+send -- "yes\r"
+
+set timeout 300
+expect {
+    EOF {}
+    timeout { exit 99 }
+}
+sleep 2

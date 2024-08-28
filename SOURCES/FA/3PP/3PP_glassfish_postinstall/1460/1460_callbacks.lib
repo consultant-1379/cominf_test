@@ -1,0 +1,299 @@
+#!/bin/bash
+#################################################################################
+#
+#
+#       COPYRIGHT (C) ERICSSON RADIO SYSTEMS AB, Sweden
+#
+#       The copyright to the document(s) herein is the property of
+#       Ericsson Radio Systems AB, Sweden.
+#
+#       The document(s) may be used and/or copied only with the written
+#       permission from Ericsson Radio Systems AB or in accordance with
+#       the terms and conditions stipulated in the agreement/contract
+#       under which the document(s) have been supplied.
+#
+#################################################################################
+
+
+# ATCOMINF Test Callback Library
+
+# Revision History
+# <date>	<signum>	<details>
+
+# Complete the callbacks in this library to automate the test case.
+#
+# Callbacks are stateless, it is not possible to set a global variable in one callback 
+# and access it it in another.
+#
+# Callbacks are called by the test harness in the following order:
+#
+# tc_setup() 		# Called only for independent TC execution mode to setup TC
+# tc_precon()		# Conditions that should exist before TC can run
+# tc_test()		# Runs the test for this TC
+# tc_postcon()		# Conditions that should/should not exist after successful TC 
+# tc_cleanup()		# Called only for independent TC execution mode to cleanup after TC
+
+# All callbacks must PASS for a TC PASS result
+
+#################################################################################
+#
+# CALLBACK: TC_SETUP
+#
+# This callback function is only called if the harness execution mode is 'AT_INDEPENDENT'
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_setup() {
+
+	# Coded to fail in case TC_AUTOMATED=1 before automation completed
+	# Change return code as required
+
+	return 0
+
+}
+#################################################################################
+
+#################################################################################
+#
+# CALLBACK: TC_PRECON
+#
+# This callback function checks the correct conditions exist to run the TC.
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+ 
+tc_precon() {
+
+	# Coded to fail in case TC_AUTOMATED=1 before automation completed
+	# Change return code as required
+
+	return 0
+
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_TEST
+#
+# This callback function runs the test.
+# The harness compares the return code to the SPEC_TC_TEST_PASSCODE value set in the test spec.
+#
+# Return or exit codes:
+#    SPEC_TC_TEST_PASSCODE 	success
+# != SPEC_TC_TEST_PASSCODE 	failure
+ 
+tc_test() {
+
+	# Coded to fail in case TC_AUTOMATED=1 before automation complete
+	# Change return code as required
+
+	#return 123
+
+
+
+        ##########################
+        #
+        ##########################
+        function checkLdapClient()
+        {
+        status=`svcs -H  ldap/client | awk '{print $1}'`
+
+        if [ "$status" != "online" ]
+        then
+                printf "LDAP Client is not running\n Assume no Ldap servers are attached .\n...."
+                return 3
+
+        else
+                printf "LDAP Client is up and running..Continuing..\n"
+        fi
+        }
+        
+        
+        ##############################
+        # domain XMl Check
+        #############################
+
+        function domainxml_checking(){
+        LDAP_SETTINGS="$LDAP_SETTINGS ossrealm ldaps ldapRealm Djava.naming.referral"
+        for opt in $LDAP_SETTINGS
+        do
+                echo "Checking LDAP_SETTING ${opt} "
+                # OK 14/04 ideally we should interogate each option and match to server ldap info
+                cat /opt/glassfish3/glassfish/domains/domain1/config/domain.xml | grep "\\$opt" > /dev/null
+                if [ $? -eq 0 ]; then
+                        echo "${opt} exists in Domain.xml"
+                        #echo "optval is $optval"
+                else
+                           echo " ======  Problem ${opt} does not exist in domain.xml======"
+                           retcode=$(($retcode+1))
+                fi
+                echo ""
+        done
+
+        return $retcode
+        }
+
+
+        ######################
+        #Main Body#
+        ######################
+        TIMESTAMP=`date +%Y%m%d_%H%M%S`
+        SOURCE_LOCATION="/export/home/"
+        LDAP_LOG_DIR="/opt/glassfish3/glassfish/domains/domain1/logs"
+        SCRIPTDIR="`cd \`/usr/bin/dirname $0\`; pwd`"
+        SCRIPTNAME="`/usr/bin/basename $0`"
+        TLSPORT="636"
+        CERTSTORE=/var/ldap/cert8.db
+        LDAPCOMMAND=/bin/ldapsearch
+        DS_IPADDRESS=""
+        USER_PASSWORD=""
+        userName="proxyagent"
+        BIND_USER_ID="cn=$userName,ou=profile"
+        LDAP_DOMAIN=""
+        LDAP_LIST_DUMP_FILE="/var/tmp/ldap_list.dump"
+        LDAPLIST="/bin/ldaplist"
+        LDAPCLIENT="/usr/sbin/ldapclient"
+        LDAPFILE_DIR=/var/ldap
+        CERTUTIL=/usr/sfw/bin/certutil
+        TMP_CERT_FILE=/tmp/rootca.cert
+        KEYTOOL=/bin/keytool
+        ALIAS=cacert
+        NS_LDAP_SERVERS=""
+        COMMON_GLASSFISH=/ericsson/glassfish/bin/common_glassfish.sh
+        GROUP_SEARCH_FILTER="(&(objectclass\=posixGroup)(gidnumber\=205))"
+        directory=""
+        REALM_NAME=ossrealm
+        ldapclient=TRUE
+        # mmmm
+
+         if [ ! -f $G3_DOMAIN_XML ]; then
+                echo "$G3_DOMAIN_XML File not found!  cannot proceed"
+                return 1
+        fi
+
+        #Checking if the file with common glassfish variables and functions is present
+        if [ ! -f $COMMON_GLASSFISH ]; then
+                echo "ERROR! $COMMON_GLASSFISH not found "
+                echo "Cannot proceed Exiting..."
+                return 1
+        else
+                echo "Sourcing needed files $COMMON_GLASSFISH "
+                . $COMMON_GLASSFISH
+        fi
+
+
+
+
+        # Check if ldapclient configigured
+        checkLdapClient
+        if [ $? -eq 3 ]; then
+                ldapclient=FALSE
+                echo -e "\n ldap client  NOT configured, no changes expected to glassfish domain "
+        fi
+
+
+        # No ldap client,  therefore we dont expect any ldap info in domain.xml
+        if [ "$ldapclient" == "FALSE" ]; then
+                LDAP_SETTINGS="$LDAP_SETTINGS ossrealm ldaps ldapRealm"
+                for opt in $LDAP_SETTINGS
+                do
+                        #echo "Checking for LDAP_SETTING ${opt}"
+                        cat /opt/glassfish3/glassfish/domains/domain1/config/domain.xml | grep "\\$opt" > /dev/null
+                        if [ $? -eq 0 ]; then
+                           echo "${opt} exists Domain.xml"
+                           echo " ======  Problem ${opt} should not exist in domain.xml when ldap client is not configured======"
+                           retcode=$(($retcode+1))
+                        else
+                           echo "so far so good no $opt found in Domain.xml"
+                        fi
+                done
+
+                return $retcode
+
+        else
+                echo -e "\n ldap client configured we expect to see Ldap realm information"
+                # Call function to verify Several JVM options iset in Domain.xml
+                domainxml_checking
+
+                # Add check to see if config ldap has ever been ran.  i.e test for logfile
+                latestlog=$(ls -t /opt/glassfish3/glassfish/domains/domain1/logs/config_ldap*.log | head -1)
+                if [ -z "$latestlog" ]; then
+                        echo -e "warning No config_ldap logfile in  $LDAP_LOG_DIR \nlooks like it has never been ran"
+                        return 0
+                else
+                        grep "config_ldap run successfully" $latestlog  > /dev/null
+                        if [ $? -ne 0 ]; then
+                           echo -e "\nunsucessful run of config ldap detected in $latestlog"
+                           retcode=$(($retcode+1))
+                        fi
+                fi
+
+
+                #future development 
+                # Can we test each individual ldap setting 
+                # can we test ldap logon or similar  through glassfish from command line ?
+
+
+                return $retcode
+fi
+
+
+
+
+
+        
+        
+
+
+
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_POSTCON
+#
+# This callback function checks expected results.
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_postcon() {
+
+	# Coded to fail in case TC_AUTOMATED=1 before automation complete.
+	# Change return code as required
+
+	return 0
+
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_CLEANUP
+#
+# This callback function is only called if the harness execution mode is 'AT_INDEPENDENT'
+# 
+# This callback restores the target system to the state it was in before the TC 
+# was run. It rolls back changes made by callbacks tc_setup() and tc_test()
+# 
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_cleanup() {
+
+	# Coded to fail in case TC_AUTOMATED=1 before automation complete
+	# Change return code as required
+
+	return 0
+
+}

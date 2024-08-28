@@ -1,0 +1,15 @@
+#!/bin/bash
+
+# TEST SUITE SPEC FILE
+# This file is generated/updated using the test framework web interface.
+# Manual updates on test servers are lost when the test package is re-installed.
+#
+# Last modified: Wednesday 24th of April 2013 5:08:26
+#
+SPEC_TS_NAME=X86_POST_INSTALL_ADMIN2
+SPEC_TS_ID=56
+SPEC_TS_SLOGAN="X86 Add Admin2 to cluster and Sybase switch over"
+SPEC_TS_TIMEOUT=3000
+SPEC_TS_AUTHOR="xramhar"
+SPEC_TS_INDEPENDENT=0
+SPEC_TS_TC_IDS=(674 687)

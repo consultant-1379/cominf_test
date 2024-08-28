@@ -1,0 +1,262 @@
+#!/bin/bash
+
+# TEST CASE SPEC FILE
+# This file is generated/updated using the test framework web interface.
+# Manual updates on test servers are lost when the test package is re-installed.
+#
+# Last modified: Thursday 16th of January 2014 13:16:18
+#
+
+# These settings must be in BASH script format, they are sourced by other scripts.
+SPEC_FA_NAME="SOLARIS10USERADMIN"
+SPEC_UC_NAME="SOLARIS10USERADMIN_Resetting_ldap_pass"
+SPEC_TC_ID=1785
+SPEC_TC_SLOGAN="Resetting ldap password negative"
+SPEC_TC_TYPE="FT"
+SPEC_TC_POLARITY="positive"
+SPEC_TC_PRIORITY="high"
+SPEC_TC_AUTOMATED=1
+SPEC_TC_DEPENDENT_ONLY=0
+SPEC_TC_TIMEOUT=300
+SPEC_TC_TEST_PASSCODE=0
+SPEC_TC_AUTHOR="xsougha"
+SPEC_TC_AUTOMATOR="xsougha"
+# this parameter is not interpreted by harness
+SPEC_TC_DISABLED=0
+
+# Please do not remove the comment lines below.
+# They are used as section locators by the test harness.
+
+# BEGIN_PRE_CONDITIONS
+#None
+# END_PRE_CONDITIONS
+
+
+# BEGIN_MANUAL_STEPS
+#1.
+#
+#ACTION:-
+#
+#Try to reset the user's passowrd with invalid domain name and by using special characters.
+#
+#./reset_user_password.sh -d ldap27%@#.com 
+#./reset_user_password.sh -u primary1 -d ldap.com 
+#./reset_user_password.sh -a -d ldap.com 
+#
+#RESULT:-
+#
+#Error should be displayed that domain name doesnot exist.
+#
+#2.
+#
+#ACTION:-
+#
+#Reset the user's password with invalid file as argument and file name with special characters.
+#
+#RESULT:-
+#
+#Error should be displayed as file doesnot exist.
+#
+#4.
+#
+#ACTION:-
+#
+#Reset the users password with file containing non-existing users and users names with special characters.
+#
+#./reset_user_password.sh -f /var/tmp/file2 ( file with invalid users.)
+#
+#bash-3.2# cat /var/tmp/file2
+#primary44
+#primary66
+#primary77
+#pri@%!;
+#
+#RESULT:-
+#
+#Error message should be displayed that users doesnot exist.
+#
+#5.
+#
+#ACTION:-
+#
+#Reset users password with file containing both valid and invalid users.
+#
+#./reset_user_password.sh -f /var/tmp/fil3 ( file with both valid and invalid users.)
+#
+#bash-3.2# cat /var/tmp/fil3
+#pri12
+#sec44
+#third66
+#primary1
+#second1
+#
+#RESULT:-
+#
+#Password reset should be applied for valid users.
+#Error message should be displayed for invalid users that user doesnot exist.
+#
+#
+#6.
+#
+#Run the reset_user_password.sh script with an empty file as argument to "-f" option.
+#./reset_user_password.sh -f /var/tmp/empty (empty file)
+#
+#RESULT:-
+#
+#Error message should be displayed that file is empty.
+#
+#
+#7.
+#
+#ACTION:-
+#
+#Check the -h option with all the other options.
+#
+#./reset_user_password.sh -h -d ldap274.com
+#./reset_user_password.sh -h -a
+#./reset_user_password.sh -h -u primary1
+#./reset_user_password.sh -h -f /var/tmp/file1
+#./reset_user_password.sh -h -t COM_APP
+#./reset_user_password.sh -h -t COM_OSS
+#./reset_user_password.sh -h -t COM_ONLY
+#./reset_user_password.sh -h -t OSS_ONLY
+#
+#
+#RESULT:-
+#
+#usage should be applied.
+#
+#8.
+#
+#ACTION:-
+#
+#Try to reset the password of user "nmsadm".
+#
+#./reset_user_password.sh -u nmsadm
+#
+#RESULT:-
+#
+#Password reset should not be applied for nmsadm user.
+#
+#9.
+#
+#ACTION:-
+#
+#Give invalid user type with -t option.
+#
+#
+#./reset_user_password.sh -t abcd -d ldap274.com (-t with invalid type)
+#
+#RESULT:-
+#
+#Error should be displayed that user type is invalid.
+#
+#10.
+#
+#ACTION:-
+#
+#Try to reset users password with invalid combination of options as below:-
+#
+#(invalid option usage)
+#
+#./reset_user_password.sh -a -u primary1
+#./reset_user_password.sh -a -f /var/tmp/file1
+#./reset_user_password.sh -f /var/tmp/file1 -t COM_APP
+#./reset_user_password.sh -a -t COM_APP
+#./reset_user_password.sh -a -t COM_APP
+#./reset_user_password.sh -t COM_APP -f file1
+#./reset_user_password.sh -d -G ldap.com
+#./reset_user_password.sh -f file1 -u user1
+#./reset_user_password.sh -u user1 -t COM_APP
+#./reset_user_password.sh -u user1 -f file1
+#
+#
+#
+#RESULT:-
+#
+#usage should be displayed.
+#
+#
+#11.
+#
+#ACTION:-
+#
+#Reset user password with file containing digits as usernames.
+#
+#./reset_user_password.sh -f /var/tmp/file8 (file with digits)
+#
+#bash-3.2# cat /var/tmp/file8
+#12345
+#
+#RESULT:-
+#
+#Reset password should not be applied.
+#Error should be displayed that user is invalid.
+#
+#
+#12.
+#
+#ACTION:-
+#
+#Reset the password of user with file containing username length more than 8.
+#
+#./reset_user_password.sh -f /var/tmp/file1 (file with username length more than 8)
+#
+#bash-3.2# cat /var/tmp/file1
+#primary1 valid user
+#primary2 valid user
+#primary55 invalid user
+#
+#RESULT:-
+#
+#Reset password should not be applied.
+#Error should be displayed that user is invalid.
+#
+#
+#13.
+#AcTION:
+#
+#give the same user name multiple times in the file and try to reset the password of the user
+#
+#./reset_user_password.sh -f file1
+#
+#
+#bash-3.2# cat file1
+#user1
+#user1
+#user1
+#user1
+#
+#
+#Result:
+#
+#reset of the password of the user in the file should happen only once
+#
+#
+#14.
+#
+#give the same users name multiple times in the file alternatively and try to reset the passwords of the users
+#
+#./reset_user_password.sh -f file1
+#
+#bash-3.2# cat file1
+#user1
+#user2
+#user1
+#user2
+#user1
+#user2
+#user1
+#user2
+#
+#Result:
+#
+#reset of the password of the each user in the file should happen only once
+#
+#Note:perform all the above test cases for gloabal domain users repalcing -d with -G
+#
+# END_MANUAL_STEPS
+
+# BEGIN_POST_CONDITIONS
+#None
+# END_POST_CONDITIONS

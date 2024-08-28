@@ -1,0 +1,6 @@
+
+LDAP Directory Manager password: 
+uid      | userType   | uidNumber | gidNumber | homeDirectory        | loginShell      | domain
+--------------------------------------------------------------------------------------------------------------
+u439     | COM_APP    | 1439      | 609       |                      | /dev/null       | 1.com
+u439b    | COM_APP    | 2439      | 609       |                      | /dev/null       | 1.com

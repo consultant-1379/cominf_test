@@ -1,0 +1,15 @@
+#!/bin/bash
+
+# TEST SUITE SPEC FILE
+# This file is generated/updated using the test framework web interface.
+# Manual updates on test servers are lost when the test package is re-installed.
+#
+# Last modified: Wednesday 18th of September 2013 14:34:34
+#
+SPEC_TS_NAME=File_System_Check_Postinstall
+SPEC_TS_ID=58
+SPEC_TS_SLOGAN="X86 Master server Reconfiguration and Ckeck file system size"
+SPEC_TS_TIMEOUT=300
+SPEC_TS_AUTHOR="xnatsha"
+SPEC_TS_INDEPENDENT=0
+SPEC_TS_TC_IDS=(900 927)

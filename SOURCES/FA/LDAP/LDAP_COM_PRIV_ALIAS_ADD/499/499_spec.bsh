@@ -1,0 +1,80 @@
+#!/bin/bash
+
+# TEST CASE SPEC FILE
+# This file is generated/updated using the test framework web interface.
+# Manual updates on test servers are lost when the test package is re-installed.
+#
+# Last modified: Monday 13th of May 2013 13:14:22
+#
+
+# These settings must be in BASH script format, they are sourced by other scripts.
+SPEC_FA_NAME="LDAP"
+SPEC_UC_NAME="LDAP_COM_PRIV_ALIAS_ADD"
+SPEC_TC_ID=499
+SPEC_TC_SLOGAN="Invalid parameters to add alias to user"
+SPEC_TC_TYPE="FT"
+SPEC_TC_POLARITY="negative"
+SPEC_TC_PRIORITY="low"
+SPEC_TC_AUTOMATED=1
+SPEC_TC_DEPENDENT_ONLY=0
+SPEC_TC_TIMEOUT=300
+SPEC_TC_TEST_PASSCODE=0
+SPEC_TC_AUTHOR="xamamcg"
+SPEC_TC_AUTOMATOR="xamamcg"
+# this parameter is not interpreted by harness
+SPEC_TC_DISABLED=0
+
+# Please do not remove the comment lines below.
+# They are used as section locators by the test harness.
+
+# BEGIN_PRE_CONDITIONS
+#1. role499 exists and alias499 exists
+#2. user499a and user499b exists
+#3. user499a has target target1
+# END_PRE_CONDITIONS
+
+
+# BEGIN_MANUAL_STEPS
+#1. ! manage_COM_privs.bsh -a alias -d 1.com -u u499a -A role499 -y -e
+#2. ! manage_COM_privs.bsh -a alias -d 1.com -u u499b -A role499 -y
+#3. ! manage_COM_privs.bsh -a aliases -d 1.com -u u499a -A role499 -y
+#4. ! manage_COM_privs.bsh -a alias -d -u u499a -A role499 -y
+#5. ! manage_COM_privs.bsh -a alias -d -u -A role499 -y
+#6. ! manage_COM_privs.bsh -a alias -d wrong.com -u u499a -A role499 -y
+#7. ! manage_COM_privs.bsh -a alias -d 1.com -u u499not -A role499 -y
+#8. ! manage_COM_privs.bsh -a alias -d 1.com -u u499a -A roleNEW -y
+#9. manage_COM_privs.bsh -a alias -d 1.com -u u499a -A role499 and then answer No to whether to proceed
+#10. ! su - bsim -c 'manage_COM_privs.bsh -a alias -d 1.com -u u499a -A role499 -y'
+#11. ! manage_COM_privs.bsh -a alias -d 1.com -u u499a -A target789012345678901234567890123456789012345678901:role499 -y
+#12. ! manage_COM_privs.bsh -a alias -d 1.com -u u499a -A _target:role499 -y
+#13. ! manage_COM_privs.bsh -a alias -d 1.com -u u499a -A 1target:role499 -y
+#14. ! manage_COM_privs.bsh -a alias -d 1.com -u u499a -A -target:role499 -y
+#15. ! manage_COM_privs.bsh -a alias -d 1.com -u u499a -A target-:role499 -y
+#16. ! manage_COM_privs.bsh -a alias -d 1.com -u u499a -A target_:role499 -y
+#17. ! manage_COM_privs.bsh -a alias -d 1.com -u u499a -A tar%get:role499 -y
+#18. ! manage_COM_privs.bsh -a alias -d 1.com -u u499a -A role499:target1:role499 -y
+#19. ! manage_COM_privs.bsh -a alias -d 1.com -u u499a -R target1:role499 -y
+# END_MANUAL_STEPS
+
+# BEGIN_POST_CONDITIONS
+#1. CONSOLE_OUTPUT_CONTAINS "illegal option -- e"
+#2. CONSOLE_OUTPUT_CONTAINS "ERROR : At least one target must be supplied"
+#3. CONSOLE_OUTPUT_CONTAINS "ERROR : Invalid modifier [roles] for action [add]."
+#4. CONSOLE_OUTPUT_CONTAINS "Domain [-u] does not exist"
+#5. CONSOLE_OUTPUT_CONTAINS "Domain [wrong.com] does not exist"
+#6. CONSOLE_OUTPUT_CONTAINS "Requested user [u432not] does not existin domain"
+#7. CONSOLE_OUTPUT_CONTAINS "WARNING : [roleNEW] does not exist"
+#8. CONSOLE_OUTPUT_CONTAINS "ERROR : No valid role supplied"
+#9. CONSOLE_OUTPUT_CONTAINS "INFO: Cancelled"
+#10. CONSOLE_OUTPUT_CONTAINS "manage_COM_privs.bsh: Permission denied"
+#11. CONSOLE_OUTPUT_CONTAINS "Targets cannot contain more than 50 characters"
+#12. CONSOLE_OUTPUT_CONTAINS "Invalid target name [_target]; target names must start with an alpha"
+#13. CONSOLE_OUTPUT_CONTAINS "Invalid target name [1target]; target names must start with an alpha"
+#14. CONSOLE_OUTPUT_CONTAINS "Invalid target name [-target]; target names must start with an alpha"
+#15. CONSOLE_OUTPUT_CONTAINS "Invalid target name [target-]; target names must end with an"
+#16. CONSOLE_OUTPUT_CONTAINS "Invalid target name [target_]; target names must end with an"
+#17. CONSOLE_OUTPUT_CONTAINS "Invalid characters in role name list"
+#18. CONSOLE_OUTPUT_CONTAINS "Invalid option combination"
+#19.User u432a has no roles
+#20. Usage statement appears 4 times
+# END_POST_CONDITIONS

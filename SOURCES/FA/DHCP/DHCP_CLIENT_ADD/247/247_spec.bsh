@@ -1,0 +1,56 @@
+#!/bin/bash
+
+# TEST CASE SPEC FILE
+# This file is generated/updated using the test framework web interface.
+# Manual updates on test servers are lost when the test package is re-installed.
+#
+# Last modified: Tuesday 14th of May 2013 8:04:10
+#
+
+# These settings must be in BASH script format, they are sourced by other scripts.
+SPEC_FA_NAME="DHCP"
+SPEC_UC_NAME="DHCP_CLIENT_ADD"
+SPEC_TC_ID=247
+SPEC_TC_SLOGAN="Test client creation as BSIM and Root user "
+SPEC_TC_TYPE="FT"
+SPEC_TC_POLARITY="positive"
+SPEC_TC_PRIORITY="high"
+SPEC_TC_AUTOMATED=1
+SPEC_TC_DEPENDENT_ONLY=0
+SPEC_TC_TIMEOUT=300
+SPEC_TC_TEST_PASSCODE=0
+SPEC_TC_AUTHOR="eshmuna"
+SPEC_TC_AUTOMATOR="eshmuna"
+# this parameter is not interpreted by harness
+SPEC_TC_DISABLED=0
+
+# Please do not remove the comment lines below.
+# They are used as section locators by the test harness.
+
+# BEGIN_PRE_CONDITIONS
+#DHCP_SERVER_INSTALLED
+#DHCP_SERVER_RUNNING
+#Config file is present and readable
+#BSIM user should exists, if not create by the following command on Infra/OM Services Server
+#
+#/ericsson/ocs/bin/create_bsim.sh
+# END_PRE_CONDITIONS
+
+
+# BEGIN_MANUAL_STEPS
+#su - bsim (to login as a bsim user)
+#
+#Create client as BSIM user 
+#
+#/ericsson/ocs/bin/ai_manager.sh -add client -a 192.168.1.2 -h site1RBS15 -i RBS15_SITE1 -s 10.0.2.111 
+#-p /WRAN/smrsslave1/AIF/Site1RBS15/summaryFile.xml
+#
+#
+# END_MANUAL_STEPS
+
+# BEGIN_POST_CONDITIONS
+#List the client
+## /ericsson/ocs/bin/ai_manager.sh -list hosts
+#
+#Client should exist in the list
+# END_POST_CONDITIONS

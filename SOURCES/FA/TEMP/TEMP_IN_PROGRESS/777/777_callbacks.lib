@@ -1,0 +1,188 @@
+#!/bin/bash
+#################################################################################
+#
+#
+#       COPYRIGHT (C) ERICSSON RADIO SYSTEMS AB, Sweden
+#
+#       The copyright to the document(s) herein is the property of
+#       Ericsson Radio Systems AB, Sweden.
+#
+#       The document(s) may be used and/or copied only with the written
+#       permission from Ericsson Radio Systems AB or in accordance with
+#       the terms and conditions stipulated in the agreement/contract
+#       under which the document(s) have been supplied.
+#
+#################################################################################
+
+
+# ATCOMINF Test Callback Library
+
+# Revision History
+# <date>	<signum>	<details>
+
+# Complete the callbacks in this library to automate the test case.
+#
+# Callbacks are stateless, it is not possible to set a global variable in one callback 
+# and access it it in another.
+#
+# Callbacks are called by the test harness in the following order:
+#
+# tc_setup() 		# Called only for independent TC execution mode to setup TC
+# tc_precon()		# Conditions that should exist before TC can run
+# tc_test()		# Runs the test for this TC
+# tc_postcon()		# Conditions that should/should not exist after successful TC 
+# tc_cleanup()		# Called only for independent TC execution mode to cleanup after TC
+
+# All callbacks must PASS for a TC PASS result
+
+#################################################################################
+#
+# CALLBACK: TC_SETUP
+#
+# This callback function is only called if the harness execution mode is 'AT_INDEPENDENT'
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_setup() {
+
+	# Coded to fail in case TC_AUTOMATED=1 before automation completed
+	# Change return code as required
+
+	return 0 
+
+}
+#################################################################################
+
+#################################################################################
+#
+# CALLBACK: TC_PRECON
+#
+# This callback function checks the correct conditions exist to run the TC.
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+ 
+tc_precon() {
+
+	# Coded to fail in case TC_AUTOMATED=1 before automation completed
+	# Change return code as required
+
+	return 0
+
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_TEST
+#
+# This callback function runs the test.
+# The harness compares the return code to the SPEC_TC_TEST_PASSCODE value set in the test spec.
+#
+# Return or exit codes:
+#    SPEC_TC_TEST_PASSCODE 	success
+# != SPEC_TC_TEST_PASSCODE 	failure
+ 
+tc_test() {
+
+	# Coded to fail in case TC_AUTOMATED=1 before automation complete
+	# Change return code as required
+
+	# check if JASScustm pkg is installed in admin 1 before Node Hardening Audit
+	JASS=`pkginfo | grep -i JASScustm | awk ' { print $2 } '`
+	if [ $JASS != JASScustm ]
+	then
+		echo "JASScustm pkg is not installed in this server, please install JASScustm before Audit"
+	return 1
+	else
+	 echo "JASScustm is installed"
+	fi
+
+	# check if Node Hardening has been applied and cluster reboot done
+	telnet_status=`svcs -a | grep -i telnet | awk ' { print $1 }'`
+	if [ $telnet_status != disabled ]
+	then
+		echo "verify that Node hardening has been applied and cluster rebooted"	
+	return 1
+	else
+		echo "Node hardening has been applied and cluster rebooted, hence audit will start now"
+	fi
+		/opt/SUNWjass/bin/eric-hardening-audit.sh > /dev/null
+		echo "############################################################################################################################################"
+                echo "Below are the error after audit including the known error stated in the Node Hardening SAG and how many they are"
+                echo "############################################################################################################################################"
+
+		 cat /tmp/eric-hardening-audit.log | grep FAIL | wc -l
+		cat /tmp/eric-hardening-audit.log | grep FAIL 
+		cp /tmp/eric-hardening-audit.log /tmp/eric-hardening-audit.log_orig
+
+{       while read line ; do
+                cat /tmp/eric-hardening-audit.log  |/usr/xpg4/bin/grep -Fv "$line" > /tmp/temp.$$
+                mv /tmp/temp.$$ /tmp/eric-hardening-audit.log
+       done
+} < 12_2_KnownErrors
+
+	KnownErrors=`cat /tmp/eric-hardening-audit.log | awk ' NR >=4 { print }' | wc -l`
+	if [ $KnownErrors == 0 ]
+	then
+		echo "No errors reported after audit"
+		return 0
+	else
+		echo "############################################################################################################################################"
+		echo "Below are the error after audit excluding the known error stated in the Node Hardening SAG and how many they are"
+		echo "############################################################################################################################################"
+		cat /tmp/eric-hardening-audit.log | grep FAIL
+		cat /tmp/eric-hardening-audit.log | grep FAIL | wc -l
+		return 1
+	fi
+
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_POSTCON
+#
+# This callback function checks expected results.
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_postcon() {
+
+	# Coded to fail in case TC_AUTOMATED=1 before automation complete.
+	# Change return code as required
+
+	return 0
+
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_CLEANUP
+#
+# This callback function is only called if the harness execution mode is 'AT_INDEPENDENT'
+# 
+# This callback restores the target system to the state it was in before the TC 
+# was run. It rolls back changes made by callbacks tc_setup() and tc_test()
+# 
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_cleanup() {
+
+	# Coded to fail in case TC_AUTOMATED=1 before automation complete
+	# Change return code as required
+
+	return 0
+
+}

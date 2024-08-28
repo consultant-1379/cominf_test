@@ -1,0 +1,163 @@
+#!/bin/bash
+#################################################################################
+#
+#
+#       COPYRIGHT (C) ERICSSON RADIO SYSTEMS AB, Sweden
+#
+#       The copyright to the document(s) herein is the property of
+#       Ericsson Radio Systems AB, Sweden.
+#
+#       The document(s) may be used and/or copied only with the written
+#       permission from Ericsson Radio Systems AB or in accordance with
+#       the terms and conditions stipulated in the agreement/contract
+#       under which the document(s) have been supplied.
+#
+#################################################################################
+
+
+# ATCOMINF Test Callback Library
+
+# Revision History
+# <date>	<signum>	<details>
+
+# Complete the callbacks in this library to automate the test case.
+#
+# Callbacks are stateless, it is not possible to set a global variable in one callback 
+# and access it it in another.
+#
+# Callbacks are called by the test harness in the following order:
+#
+# tc_setup() 		# Called only for independent TC execution mode to setup TC
+# tc_precon()		# Conditions that should exist before TC can run
+# tc_test()		# Runs the test for this TC
+# tc_postcon()		# Conditions that should/should not exist after successful TC 
+			# Returns the final TC verdict to the harness
+# tc_cleanup()		# Called only for independent TC execution mode to clenup after TC
+
+
+#################################################################################
+#
+# CALLBACK: TC_SETUP
+#
+# This callback function is only called if the harness execution mode is 'AT_INDEPENDENT'
+# In this mode, a TC should set up its own inputs, i.e. it does not depend on outputs 
+# from another TC. 
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_setup() {
+
+	return 0
+
+}
+#################################################################################
+
+#################################################################################
+#
+# CALLBACK: TC_PRECON
+#
+# This callback function checks the correct conditions exist to run the TC.
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+ 
+tc_precon() {
+
+	name=`hostname`
+	filename="NEDSS_IP.$name"
+	[ -r $filename ] || { echo "No NEDSS location found"; return 1; }
+
+	NEDSS_IP=`cat $filename`
+	# Generate expect script so can login to remote box
+	cmd="ssh $NEDSS_IP grep config=smrs_slave /ericsson/config/build/params.cfg"
+	${AT_BIN}/con_ex.bsh -d 21.in -o 21.exp -c "${cmd}"
+	retval=$?
+	[ $retval -ne 0 ] && { echo "Failed to create expect script $retval"; return 1; }
+
+	expect 21.exp 
+	retval=$?
+	[ $retval -ne 0 ] && { echo "Failed to ssh $retval"; return 2; }
+	return 0
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_TEST
+#
+# This callback function runs the test.
+# The harness compares the return code to the SPEC_TC_TEST_PASSCODE value set in the test spec.
+#
+# Return or exit codes:
+#    SPEC_TC_TEST_PASSCODE 	success
+# != SPEC_TC_TEST_PASSCODE 	failure
+ 
+tc_test() {
+	name=`hostname`
+	filename="NEDSS_IP.$name"
+	NEDSS_IP=`cat $filename`
+	# Generate expect script so can login to remote box
+	cmd="ssh $NEDSS_IP rpm -qa"
+	${AT_BIN}/con_ex.bsh -d 21.in -o 21.exp -c "${cmd}"
+	retval=$?
+	[ $retval -ne 0 ] && { echo "Failed to create expect script $retval"; return 1; }
+
+	expect 21.exp > 21.tmp
+	retval=$?
+	[ $retval -ne 0 ] && { echo "Failed to ssh $retval"; return 2; }
+
+	# Now check 21.tmp contains correct rpms
+	grep "^dhcp-common-" 21.tmp || { echo "No DHCP RPM"; cat 21.tmp; return 3; }
+	grep "^expect" 21.tmp || { echo "No expect RPM"; cat 21.tmp; return 4; }
+	grep "^rsync-" 21.tmp || { echo "No rsync RPM"; cat 21.tmp; return 5; }
+	grep "^ntp-" 21.tmp || { echo "No ntp RPM"; cat 21.tmp; return 6; }
+	grep "^tftp-0" 21.tmp || { echo "No tftp RPM"; cat 21.tmp; return 7; }
+	grep "^tftp-server-0" 21.tmp || { echo "No tftp server RPM"; cat 21.tmp; return 8; }
+	grep "^COMInf_CORE-" 21.tmp && { echo "Found COMInf_core RPM"; cat 21.tmp; return 9; }
+	grep "^COMInf_LDAP-" 21.tmp && { echo "Found COMInf_ldap RPM"; cat 21.tmp; return 10; }
+	grep "^OpenDJ-" 21.tmp && { echo "Found OpenDJ RPM"; cat 21.tmp; return 11; }
+
+	return 0
+
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_POSTCON
+#
+# This callback function checks expected results.
+# It returns the final TC verdict to the harness
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_postcon() {
+
+	return 0
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_CLEANUP
+# 
+# This callback restores the target system to the state it was in before the TC 
+# was run. It rolls back changes made by callbacks tc_setup() and tc_test()
+# 
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_cleanup() {
+
+	return 0
+
+}

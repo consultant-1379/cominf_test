@@ -1,0 +1,42 @@
+BEHIND_GATEWAY="yes"
+ESXI_VERSION=""
+
+#DHCP_SERVER='atjumpx1'
+#DHCP_SERVER_IP='159.107.177.94'
+#DHCP_SERVER_ROOT_PASS='1reland'
+
+# SFS Variables
+SFS_HOSTNAME="sfs"
+
+# OMSERV Master Variables
+OMSERVM_HOSTNAME='omsrvm'
+OMSERVM_FQHN='omsrvm.vts.com'
+OMSERVM_IP_ADDR='192.168.0.4'
+OMSERVM_NETMASK='255.255.0.0'
+OMSERVM_MAC_ADDR='00:50:56:00:00:04'
+OMSERVM_ARCH='i86pc'
+OMSERVM_IPV6_PARAMETER='YES'
+OMSERVM_CLIENT_HOSTNAME_V6='omsrvm_v6'
+OMSERVM_CLIENT_IP_ADDR_V6='2001:1b70:82a1:0103::4/64'
+OMSERVM_ROUTER_IP_ADDR_V6='2001:1b70:82a1:0103::1'
+OMSERVM_DEPL_TYPE='Enhanced'
+OMSERVM_STOR_BASE_VIP='172.16.30.24'
+OMSERVM_STOR_BASE_NIC='e1000g1'
+OMSERVM_STOR_HOSTNAME='omservmsvip'
+
+# General Variables
+LDAPDOMAIN='vts.com'
+UNIQUE_MASTERSERVICE='ossmaster'
+dm_pass='ldappass'
+ns_data_migration_pass='ldappass'
+ns_data_maintenence_pass='ldappass'
+proxyagent_pass='ldappass'
+#NTP_SOURCE='159.107.173.12'
+NTP_SOURCE="192.168.0.1"
+
+CAASADM_USER="caasadm"
+CAASADM_PASS="1caaspass"
+NEUSER_PASS="1nepass"
+SCSUSER_PASS="1scspass"
+
+NETSIM_HOSTNAME="netsim"

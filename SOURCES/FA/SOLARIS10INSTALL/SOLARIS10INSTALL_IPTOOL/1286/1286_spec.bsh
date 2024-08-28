@@ -1,0 +1,65 @@
+#!/bin/bash
+
+# TEST CASE SPEC FILE
+# This file is generated/updated using the test framework web interface.
+# Manual updates on test servers are lost when the test package is re-installed.
+#
+# Last modified: Monday 16th of December 2013 8:54:45
+#
+
+# These settings must be in BASH script format, they are sourced by other scripts.
+SPEC_FA_NAME="SOLARIS10INSTALL"
+SPEC_UC_NAME="SOLARIS10INSTALL_IPTOOL"
+SPEC_TC_ID=1286
+SPEC_TC_SLOGAN="Router configuration "
+SPEC_TC_TYPE="FT"
+SPEC_TC_POLARITY="positive"
+SPEC_TC_PRIORITY="high"
+SPEC_TC_AUTOMATED=1
+SPEC_TC_DEPENDENT_ONLY=0
+SPEC_TC_TIMEOUT=300
+SPEC_TC_TEST_PASSCODE=0
+SPEC_TC_AUTHOR="xgansre"
+SPEC_TC_AUTOMATOR="xgansre"
+# this parameter is not interpreted by harness
+SPEC_TC_DISABLED=0
+
+# Please do not remove the comment lines below.
+# They are used as section locators by the test harness.
+
+# BEGIN_PRE_CONDITIONS
+#
+#Mars Path <Initial Installation/Automated installation of IPTOOL >
+#
+# END_PRE_CONDITIONS
+
+
+# BEGIN_MANUAL_STEPS
+#verify that router gets configured.This can be verified by executing the command :
+#netstat -nr
+#
+# END_MANUAL_STEPS
+
+# BEGIN_POST_CONDITIONS
+#Result : The configured router is displayed with this cmd.
+#bash-3.2# netstat -nr
+#
+#Routing Table: IPv4
+#Destination Gateway Flags Ref Use Interface
+#-------------------- -------------------- ----- ----- ---------- ---------
+#default 10.45.201.1 UG 1 28
+#10.45.201.0 10.45.201.4 U 1 387 e1000g0
+#10.45.201.0 10.45.201.119 U 1 0 e1000g1
+#10.45.201.0 10.45.201.150 U 1 0 e1000g0:99
+#224.0.0.0 10.45.201.4 U 1 0 e1000g0
+#127.0.0.1 127.0.0.1 UH 5 4093 lo0
+#
+#Routing Table: IPv6
+#Destination/Mask Gateway Flags Ref Use If
+#--------------------------- --------------------------- ----- --- ------- -----
+#2001:1b70:82a1:b::/64 2001:1b70:82a1:b:0:3008:4:1 U 1 0 e1000g0:1
+#fe80::/10 fe80::250:56ff:fe82:154 U 1 0 e1000g0
+#ff00::/8 fe80::250:56ff:fe82:154 U 1 0 e1000g0
+#default 2001:1b70:82a1:b:0:3008:0:1 UG 1 0
+#::1 ::1 UH 1 63 lo0 
+# END_POST_CONDITIONS

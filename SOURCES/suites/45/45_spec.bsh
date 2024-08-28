@@ -1,0 +1,15 @@
+#!/bin/bash
+
+# TEST SUITE SPEC FILE
+# This file is generated/updated using the test framework web interface.
+# Manual updates on test servers are lost when the test package is re-installed.
+#
+# Last modified: Thursday 13th of December 2012 9:48:32
+#
+SPEC_TS_NAME=SPARC_MS_ROBUSTNESS
+SPEC_TS_ID=45
+SPEC_TS_SLOGAN="Robustness test suite for SPARC OSS Master server. Includes Server restarts. Harness host must not be the OSS."
+SPEC_TS_TIMEOUT=3600
+SPEC_TS_AUTHOR="eeidle"
+SPEC_TS_INDEPENDENT=1
+SPEC_TS_TC_IDS=(767)

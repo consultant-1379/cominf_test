@@ -1,0 +1,4 @@
+DOMAIN vts.com
+ACTION add
+OBJECT target
+t148001 osstarget1,osstarget2

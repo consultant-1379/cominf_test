@@ -1,0 +1,18 @@
+Password
+shroot
+#
+scp -r /ericsson/ocs/log/ root@omsrvm:/var/tmp/ 
+Password
+shroot
+#
+pkginfo -l > /var/tmp/pkg_version.txt
+#
+/opt/firefox/bin/firefox -v >> /var/tmp/pkg_version.txt
+#
+scp /var/tmp/pkg_version.txt root@omsrvm:/var/tmp/pkg_version.txt
+Password
+shroot
+#
+rm /var/tmp/pkg_version.txt
+#
+exit

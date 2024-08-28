@@ -1,0 +1,247 @@
+#!/bin/bash
+#################################################################################
+#
+#
+#       COPYRIGHT (C) ERICSSON RADIO SYSTEMS AB, Sweden
+#
+#       The copyright to the document(s) herein is the property of
+#       Ericsson Radio Systems AB, Sweden.
+#
+#       The document(s) may be used and/or copied only with the written
+#       permission from Ericsson Radio Systems AB or in accordance with
+#       the terms and conditions stipulated in the agreement/contract
+#       under which the document(s) have been supplied.
+#
+#################################################################################
+
+
+# ATCOMINF Test Callback Library
+
+# Revision History
+# <date>	<signum>	<details>
+# 05/09/13	xkalbha		Initial version
+
+# Complete the callbacks in this library to automate the test case.
+#
+# Callbacks are stateless, it is not possible to set a global variable in one callback 
+# and access it it in another.
+#
+# Callbacks are called by the test harness in the following order:
+#
+# tc_setup() 		# Called only for independent TC execution mode to setup TC
+# tc_precon()		# Conditions that should exist before TC can run
+# tc_test()		# Runs the test for this TC
+# tc_postcon()		# Conditions that should/should not exist after successful TC 
+# tc_cleanup()		# Called only for independent TC execution mode to clenup after TC
+
+# All callbacks must PASS for a TC PASS result
+
+LDAP_BIN="/ericsson/sdee/bin"
+CONFIG="/ericsson/sdee/ldap_domain_settings/"
+TEST_ROLE="tstrole325"
+TEST_ALIAS="tstalias"
+
+# /usr/local/bin/expect template and working files
+EXPECT_TMPLT="325_add_alias.in"
+EXPECT_WRKNG=${EXPECT_TMPLT}.tmp
+
+OUTFILE="/tmp/tcid325.tmp"
+
+#################################################################################
+#
+# CALLBACK: TC_SETUP
+#
+# This callback function is only called if the harness execution mode is 'AT_INDEPENDENT'
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_setup() {
+
+	
+
+	# Ensure the enviornment does not exceed 8 domains in order to avoid timeout by the harness framework
+	[[ ` ls /ericsson/sdee/ldap_domain_settings/ | wc -l ` -ge 9 ]] && {
+		echo "${CONFIG} contains more than 8 domains - harness will timeout"
+		return 1
+	}
+
+    # Replace PASSWD with the correct credentials
+    for ii in *.in; do
+        sed -e "s/^PASSWD$/$LDAP_SUPERUSER_PASSWD/" \
+			-e "s/TESTALIAS/$TEST_ALIAS/" \
+			-e "s/TESTROLE/$TEST_ROLE/" $ii > $ii.tmp || {
+			echo "Failed to replace LDAP superuser password holder in /usr/local/bin/expect input file $ii"
+			return 1
+		}
+    done
+
+	# check that enable_COM.bsh has run by running manage_COM.bsh -l alias
+	# this will return an error if enable_COM.bsh has not been run
+	# can use 325_add_role.in.tmp as this contains expected strings
+	echo "Check that enable_COM.bsh has been run"
+	${AT_BIN}/con_ex.bsh -d 325_add_role.in.tmp -o 325_expect.exp -c "$LDAP_BIN/manage_COM.bsh -l alias " -r
+	/usr/local/bin/expect 325_expect.exp |grep 'No such object' &>/dev/null && {
+		# enable_COM.bsh has not been run - try to run it
+		${AT_BIN}/con_ex.bsh -d 325_add_role.in.tmp -o 325_expect.exp -c "$LDAP_BIN/enable_COM.bsh -y " -r
+		/usr/local/bin/expect 325_expect.exp &>/dev/null || {
+			echo "enable_COM.bsh did not complete correctly - rc $? - FAIL"
+			return 1
+		}
+	}
+
+	
+	LDAP_SET_DEFAULT_DOMAIN vts.com || { echo "Failed to set default domain as vts.com"; return 1 ; }
+	
+	# add role to default domain in order to add alias
+	echo "Adding role ${TEST_ROLE} to default domain"
+	${AT_BIN}/con_ex.bsh -d 325_add_role.in.tmp -o 325_expect.exp -c "$LDAP_BIN/manage_COM.bsh -a role -R ${TEST_ROLE} -y " -r
+	/usr/local/bin/expect 325_expect.exp || {
+		# Failed to add role to default domain
+		echo "Add role to default domain failed - rc $? - FAIL" >> $OUTFILE
+		return 1
+	}
+
+	return 0
+
+}
+#################################################################################
+
+#################################################################################
+#
+# CALLBACK: TC_PRECON
+#
+# This callback function checks the correct conditions exist to run the TC.
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+ 
+tc_precon() {
+
+	LDAP_SERVER_UP || {
+		echo "LDAP server is not running. LDAP_SERVER_UP returned $?" 
+		return 1
+	}
+
+	return 0
+
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_TEST
+#
+# This callback function runs the test.
+# The harness compares the return code to the SPEC_TC_TEST_PASSCODE value set in the test spec.
+#
+# Return or exit codes:
+#    SPEC_TC_TEST_PASSCODE 	success
+# != SPEC_TC_TEST_PASSCODE 	failure
+ 
+tc_test() {
+
+	>$OUTFILE
+
+	# add alias to default domain
+	echo "Test 1: Add a valid alias to default domain, supply alias and role"
+	${AT_BIN}/con_ex.bsh -d ${EXPECT_WRKNG} -o 325_expect.exp -c "$LDAP_BIN/manage_COM.bsh -a alias -A ${TEST_ALIAS} -R ${TEST_ROLE} -y " -r
+	/usr/local/bin/expect 325_expect.exp || {
+		# Failed to add alias to default domain
+		echo "Add alias to default domain failed - rc $? - FAIL" >> $OUTFILE
+	}
+
+	return 0
+
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_POSTCON
+#
+# This callback function checks expected results.
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_postcon() {
+
+	rc=0
+
+	# list the alias added to the default domain
+	echo "List the aliases in the default domain - /usr/local/bin/expect alias added above"
+	${AT_BIN}/con_ex.bsh -d 325_list.in.tmp -o 325_expect.exp -c "$LDAP_BIN/manage_COM.bsh -l alias  " -r
+	/usr/local/bin/expect 325_expect.exp | grep "${TEST_ALIAS}" || {
+		# Failed to find alias added to default domain
+		echo "Could not find alias added to default domain - FAIL" >> $OUTFILE
+		return 1
+	}
+
+	# list the role added to the default domain
+	echo "List the roles in the default domain - /usr/local/bin/expect role added above"
+	${AT_BIN}/con_ex.bsh -d 325_list.in.tmp -o 325_expect.exp -c "$LDAP_BIN/manage_COM.bsh -l role  " -r
+	/usr/local/bin/expect 325_expect.exp | grep "${TEST_ROLE}" || {
+		# Failed to find role added to default domain
+		echo "Could not find role added to default domain - FAIL" >> $OUTFILE
+		return 1
+	}
+
+	# report on any failed add alias attempts
+	[[ -s $OUTFILE ]] && {
+		echo "Some add alias attempts failed:"
+		cat $OUTFILE
+		return 1
+	}
+
+	return $rc
+
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_CLEANUP
+#
+# This callback function is only called if the harness execution mode is 'AT_INDEPENDENT'
+# 
+# This callback restores the target system to the state it was in before the TC 
+# was run. It rolls back changes made by callbacks tc_setup() and tc_test()
+# 
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_cleanup() {
+
+	rc=0
+
+    echo "Test 1: Remove alias from default domain - do not supply domain, /usr/local/bin/expect prompt for alias"
+    ${AT_BIN}/con_ex.bsh -d justpasswd.in.tmp -o remove_alias.exp -c "$LDAP_BIN/manage_COM.bsh -r alias -A ${TEST_ALIAS} -y " -r
+    /usr/local/bin/expect remove_alias.exp || {
+        # Failed to remove alias
+        echo "Remove alias ${TEST_ALIAS} from default domain name failed - rc $?" >> $OUTFILE
+    }
+
+        # delete role created in tc_test
+        ${AT_BIN}/con_ex.bsh -d 325_remove_role.in.tmp -o 325_expect.exp -c "$LDAP_BIN/manage_COM.bsh -r role  " -r
+        /usr/local/bin/expect 325_expect.exp  || {
+                echo "Could not delete role added to default domain - FAIL"
+                return 1
+        }
+
+	# remove the generated /usr/local/bin/expect files
+	rm -f *tmp *exp ${EXPECT_WRKNG} $OUTFILE || {
+		echo "Failed to remove the generated working files"
+		return 1
+	}
+
+	return $rc
+
+}

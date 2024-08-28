@@ -1,0 +1,71 @@
+#!/bin/bash
+
+# TEST CASE SPEC FILE
+# This file is generated/updated using the test framework web interface.
+# Manual updates on test servers are lost when the test package is re-installed.
+#
+# Last modified: Tuesday 17th of December 2013 9:53:51
+#
+
+# These settings must be in BASH script format, they are sourced by other scripts.
+SPEC_FA_NAME="SOLARIS10INSTALL"
+SPEC_UC_NAME="SOLARIS10INSTALL_SUNDS_Replication"
+SPEC_TC_ID=1766
+SPEC_TC_SLOGAN="Verify LDAP replication agreement can be removed. "
+SPEC_TC_TYPE="FT"
+SPEC_TC_POLARITY="positive"
+SPEC_TC_PRIORITY="high"
+SPEC_TC_AUTOMATED=1
+SPEC_TC_DEPENDENT_ONLY=0
+SPEC_TC_TIMEOUT=300
+SPEC_TC_TEST_PASSCODE=0
+SPEC_TC_AUTHOR="xgansre"
+SPEC_TC_AUTOMATOR="xlaxain"
+# this parameter is not interpreted by harness
+SPEC_TC_DISABLED=0
+
+# Please do not remove the comment lines below.
+# They are used as section locators by the test harness.
+
+# BEGIN_PRE_CONDITIONS
+#Mars Path<Initial Installation/SUN-DS Replication >
+#Precondition: 
+#Replication is enabled for standard deployment and replication agreements are established.
+#
+#
+# END_PRE_CONDITIONS
+
+
+# BEGIN_MANUAL_STEPS
+#Action 1: 
+#Execute option 5 of /ericsson/sdee/bin/prepReplication.sh on Primary Infra to remove replication agreement.
+#
+#Action 2: 
+#Execute option 6 of /ericsson/sdee/bin/prepReplication.sh on Primary Infra to list replication agreements.
+#
+#Action 3: 
+#Execute option 6 of /ericsson/sdee/bin/prepReplication.sh on Secondary Infra to list replication agreements.
+#
+#Action 4:
+#Execute option 2 of /ericsson/sdee/bin/prepReplication.sh on primary Infra to re-establish agreements
+#
+#
+# END_MANUAL_STEPS
+
+# BEGIN_POST_CONDITIONS
+#Result 1: 
+#The replication agreement is removed successfully.
+#
+#Result 2: 
+#Option 6 returns that there are no replication agreements.
+#---------------------------------------
+#listing existing replication agreements
+#---------------------------------------
+#Currently no replication agreement exists.
+#
+#Result 3: 
+#The replication agreement is still listed on the secondary infra.
+#
+#Result 4: 
+#Replication agreement is successfully re-establish 
+# END_POST_CONDITIONS

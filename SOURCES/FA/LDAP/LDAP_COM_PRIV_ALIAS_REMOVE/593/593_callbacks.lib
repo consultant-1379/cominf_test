@@ -1,0 +1,614 @@
+#!/bin/bash
+#################################################################################
+#
+#
+#	   COPYRIGHT (C) ERICSSON RADIO SYSTEMS AB, Sweden
+#
+#	   The copyright to the document(s) herein is the property of
+#	   Ericsson Radio Systems AB, Sweden.
+#
+#	   The document(s) may be used and/or copied only with the written
+#	   permission from Ericsson Radio Systems AB or in accordance with
+#	   the terms and conditions stipulated in the agreement/contract
+#	   under which the document(s) have been supplied.
+#
+#################################################################################
+
+
+# ATCOMINF Test Callback Library
+
+# Revision History
+# 04/10/12	xamamcg		Initial test for invalid options on remove role
+
+# Complete the callbacks in this library to automate the test case.
+#
+# Callbacks are stateless, it is not possible to set a global variable in one callback 
+# and access it it in another.
+#
+# Callbacks are called by the test harness in the following order:
+#
+# tc_setup() 		# Called only for independent TC execution mode to setup TC
+# tc_precon()		# Conditions that should exist before TC can run
+# tc_test()		# Runs the test for this TC
+# tc_postcon()		# Conditions that should/should not exist after successful TC 
+# tc_cleanup()		# Called only for independent TC execution mode to clenup after TC
+
+# All callbacks must PASS for a TC PASS result
+
+#################################################################################
+#
+# CALLBACK: TC_SETUP
+#
+# This callback function is only called if the harness execution mode is 'AT_INDEPENDENT'
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_setup() {
+
+
+
+
+
+	
+	
+	
+	# Replace PASSWD with the correct credentials or data
+	for ii in *.in; do
+		sed -e "s/^PASSWD$/$LDAP_SUPERUSER_PASSWD/" $ii > $ii.tmp || {
+			echo "Failed to replace LDAP superuser password holder etc in /usr/local/bin/expect input file $ii, rc $?"
+			return 2
+		}
+	done
+
+#-------------------------------------------------------------------------------
+# Create a test user  
+#-------------------------------------------------------------------------------
+
+	CMD='/ericsson/sdee/bin/add_user.sh -t COM_ONLY -d 1.com -n u593 -i 1593 -C bhavana -y'
+	${AT_BIN}/con_ex.bsh -d 593adduser.in.tmp -o 593adduser.exp -c "$CMD" || {
+		echo "Failed to generate /usr/local/bin/expect script, $?"
+		return 3
+	}
+
+	/usr/local/bin/expect 593adduser.exp &&{
+		echo "Failed to create user, error code $?"
+		return 4
+	}
+#-------------------------------------------------------------------------------
+# Create a test role
+#-------------------------------------------------------------------------------
+
+	CMD='/ericsson/sdee/bin/manage_COM.bsh -a role -d 1.com -R r593a -y'
+	${AT_BIN}/con_ex.bsh -d 593.in.tmp -o 593role.exp -c "$CMD" || {
+		echo "Failed to generate /usr/local/bin/expect script, $?"
+		return 5
+	}
+
+	/usr/local/bin/expect 593role.exp || {
+		echo "Failed to create role, error code $?"
+		return 6
+	}
+#-------------------------------------------------------------------------------
+# Create a test role
+#-------------------------------------------------------------------------------
+
+	CMD='/ericsson/sdee/bin/manage_COM.bsh -a role -d 1.com -R r593b -y'
+	${AT_BIN}/con_ex.bsh -d 593.in.tmp -o 593role.exp -c "$CMD" || {
+		echo "Failed to generate /usr/local/bin/expect script, $?"
+		return 7
+	}
+
+	/usr/local/bin/expect 593role.exp || {
+		echo "Failed to create role, error code $?"
+		return 8
+	}
+#-------------------------------------------------------------------------------
+# Create a test role
+#-------------------------------------------------------------------------------
+
+	CMD='/ericsson/sdee/bin/manage_COM.bsh -a role -d 1.com -R r593c -y'
+	${AT_BIN}/con_ex.bsh -d 593.in.tmp -o 593role.exp -c "$CMD" || {
+		echo "Failed to generate /usr/local/bin/expect script, $?"
+		return 9
+	}
+
+	/usr/local/bin/expect 593role.exp || {
+		echo "Failed to create role, error code $?"
+		return 10
+	}
+#-------------------------------------------------------------------------------
+# Create a test alias
+#-------------------------------------------------------------------------------
+
+	CMD='/ericsson/sdee/bin/manage_COM.bsh -a alias -d 1.com -A a593a -R r593a -y'
+	${AT_BIN}/con_ex.bsh -d 593.in.tmp -o 593role.exp -c "$CMD" || {
+		echo "Failed to generate /usr/local/bin/expect script, $?"
+		return 11
+	}
+
+	/usr/local/bin/expect 593role.exp || {
+		echo "Failed to create alias, error code $?"
+		return 12
+	}
+#-------------------------------------------------------------------------------
+# Create a test alias
+#-------------------------------------------------------------------------------
+
+	CMD='/ericsson/sdee/bin/manage_COM.bsh -a alias -d 1.com -A a593b -R r593b -y'
+	${AT_BIN}/con_ex.bsh -d 593.in.tmp -o 593role.exp -c "$CMD" || {
+		echo "Failed to generate /usr/local/bin/expect script, $?"
+		return 13
+	}
+
+	/usr/local/bin/expect 593role.exp || {
+		echo "Failed to create alias, error code $?"
+		return 14
+	}
+#-------------------------------------------------------------------------------
+# Create a test alias
+#-------------------------------------------------------------------------------
+
+	CMD='/ericsson/sdee/bin/manage_COM.bsh -a alias -d 1.com -A a593c -R r593c -y'
+	${AT_BIN}/con_ex.bsh -d 593.in.tmp -o 593role.exp -c "$CMD" || {
+		echo "Failed to generate /usr/local/bin/expect script, $?"
+		return 15
+	}
+
+	/usr/local/bin/expect 593role.exp || {
+		echo "Failed to create alias, error code $?"
+		return 16
+	}
+#-------------------------------------------------------------------------------
+# Add target to user
+#-------------------------------------------------------------------------------
+
+	CMD='/ericsson/sdee/bin/manage_COM_privs.bsh -a target -d 1.com -T target1 -u u593 -y'
+	${AT_BIN}/con_ex.bsh -d 593.in.tmp -o 593role.exp -c "$CMD" || {
+		echo "Failed to generate /usr/local/bin/expect script, $?"
+		return 17
+	}
+
+	/usr/local/bin/expect 593role.exp || {
+		echo "Failed to create target, error code $?"
+		return 18
+	}
+#-------------------------------------------------------------------------------
+# Add target to user
+#-------------------------------------------------------------------------------
+
+	CMD='/ericsson/sdee/bin/manage_COM_privs.bsh -a target -d 1.com -T target2 -u u593 -y'
+	${AT_BIN}/con_ex.bsh -d 593.in.tmp -o 593role.exp -c "$CMD" || {
+		echo "Failed to generate /usr/local/bin/expect script, $?"
+		return 19
+	}
+
+	/usr/local/bin/expect 593role.exp || {
+		echo "Failed to create target, error code $?"
+		return 20
+	}
+#-------------------------------------------------------------------------------
+# Add alias to user
+#-------------------------------------------------------------------------------
+
+	CMD='/ericsson/sdee/bin/manage_COM_privs.bsh -a alias -d 1.com -A a593a -u u593 -y'
+	${AT_BIN}/con_ex.bsh -d 593.in.tmp -o 593role.exp -c "$CMD" || {
+		echo "Failed to generate /usr/local/bin/expect script, $?"
+		return 21
+	}
+
+	/usr/local/bin/expect 593role.exp || {
+		echo "Failed to create alias, error code $?"
+		return 22
+	}
+#-------------------------------------------------------------------------------
+# Add target/alias to user
+#-------------------------------------------------------------------------------
+
+	CMD='/ericsson/sdee/bin/manage_COM_privs.bsh -a alias -d 1.com -A target3:a593b -u u593 -y'
+	${AT_BIN}/con_ex.bsh -d 593.in.tmp -o 593role.exp -c "$CMD" || {
+		echo "Failed to generate /usr/local/bin/expect script, $?"
+		return 23
+	}
+
+	/usr/local/bin/expect 593role.exp || {
+		echo "Failed to create target, error code $?"
+		return 24
+	}
+#-------------------------------------------------------------------------------
+# Add role to user
+#-------------------------------------------------------------------------------
+
+	CMD='/ericsson/sdee/bin/manage_COM_privs.bsh -a role -d 1.com -R r593c -u u593 -y'
+	${AT_BIN}/con_ex.bsh -d 593.in.tmp -o 593role.exp -c "$CMD" || {
+		echo "Failed to generate /usr/local/bin/expect script, $?"
+		return 25
+	}
+
+	/usr/local/bin/expect 593role.exp || {
+		echo "Failed to create role, error code $?"
+		return 26
+	}
+	return 0
+}
+#################################################################################
+
+#################################################################################
+#
+# CALLBACK: TC_PRECON
+#
+# This callback function checks the correct conditions exist to run the TC.
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+ 
+tc_precon() {
+
+#-------------------------------------------------------------------------------
+#  Check LDAP is running
+#-------------------------------------------------------------------------------
+
+	LDAP_SERVER_UP || {
+		echo "LDAP server not running"
+		return 1
+	}
+
+#-------------------------------------------------------------------------------
+#  Test user is present
+#-------------------------------------------------------------------------------
+
+	/usr/bin/ldapsearch -D 'cn=Directory Manager' -w $LDAP_SUPERUSER_PASSWD -b uid=u593,ou=people,dc=1,dc=com objectclass=* > u593.out || {
+		echo "Failed to do LDAP search"
+		return 1
+	}
+	grep 'ericssonUserAuthenticationScope: target1' u593.out || {
+		echo "Found no target for user u593"
+		return 2
+	}
+	grep 'ericssonUserAuthenticationScope: target2' u593.out || {
+		echo "Found no target for user u593"
+		return 3
+	}
+	grep 'ericssonUserAuthenticationScope: target3' u593.out || {
+		echo "Found no target for user u593"
+		return 4
+	}
+	grep 'ericssonUserAuthorizationScope: a593a' u593.out || {
+		echo "Found no alias for user u593"
+		return 5
+	}
+	grep 'ericssonUserAuthorizationScope: target3:a593b' u593.out || {
+		echo "Found no alias for user u593"
+		return 6
+	}
+	grep 'ericssonUserAuthorizationScope: r593c' u593.out || {
+		echo "Found no role for user u593"
+		return 7
+	}
+	# Check output shows  user is type com_only
+
+	/usr/bin/ldapsearch -D 'cn=Directory Manager' -w $LDAP_SUPERUSER_PASSWD -b uid=u593,ou=people,dc=1,dc=com objectclass=* |  grep "gidNumber: 609" || {
+		echo "User is wrong type"
+		return 8
+	}
+	return 0
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_TEST
+#
+# This callback function runs the test.
+# The harness compares the return code to the SPEC_TC_TEST_PASSCODE value set in the test spec.
+#
+# Return or exit codes:
+#	SPEC_TC_TEST_PASSCODE 	success
+# != SPEC_TC_TEST_PASSCODE 	failure
+ 
+tc_test() {
+	echo "Test1"
+	CMD='/ericsson/sdee/bin/manage_COM_privs.bsh -r alias -d 1.com -u u593 -A a593c -y'
+	${AT_BIN}/con_ex.bsh -d 593.in.tmp -o 593remtarget.exp -c "$CMD" || {
+		echo "Failed to generate /usr/local/bin/expect script, $?"
+		return 1
+	}
+
+	/usr/local/bin/expect 593remtarget.exp
+	retval=$?
+	[ $retval -eq 1 ] && { #Warning instead of error message
+		echo "Removed absent alias, error code $retval"
+		return 2
+	}
+
+	echo "Test2"
+	CMD='/ericsson/sdee/bin/manage_COM_privs.bsh -r alias -d 1.com -u u593 -A a593NotExist -y'
+	${AT_BIN}/con_ex.bsh -d 593.in.tmp -o 593remtarget.exp -c "$CMD" || {
+		echo "Failed to generate /usr/local/bin/expect script, $?"
+		return 3
+	}
+
+	/usr/local/bin/expect 593remtarget.exp
+	retval=$?
+	[ $retval -eq 1 ] || {
+		echo "Wrong error on alias not exist error code $retval"
+		return 4
+	}
+	echo "Test3"
+	CMD='/ericsson/sdee/bin/manage_COM_privs.bsh -r alias -d 1.com -u u593 -A target2:a593b -y'
+	${AT_BIN}/con_ex.bsh -d 593.in.tmp -o 593remtarget.exp -c "$CMD" || {
+		echo "Failed to generate /usr/local/bin/expect script, $?"
+		return 5
+	}
+
+	/usr/local/bin/expect 593remtarget.exp
+	retval=$?
+	[ $retval -eq 1 ] && { #Warning instead of error message
+		echo "Wrong error on alias that was not added with this target or code $retval"
+		return 6
+	}
+	echo "Test4"
+	CMD='/ericsson/sdee/bin/manage_COM_privs.bsh -r alias -d 1.com -u u593 -A target2:a593a -y'
+	${AT_BIN}/con_ex.bsh -d 593.in.tmp -o 593remtarget.exp -c "$CMD" || {
+		echo "Failed to generate /usr/local/bin/expect script, $?"
+		return 7
+	}
+
+	/usr/local/bin/expect 593remtarget.exp
+	retval=$?
+	[ $retval -eq 1 ] && { #Warning instead of error message
+		echo "Wrong error on alias that was not added with target error code $retval"
+		return 8
+	}
+	echo "Test5"
+	CMD='/ericsson/sdee/bin/manage_COM_privs.bsh -r alias -d 1.com -u u593 -A a593%a -y'
+	${AT_BIN}/con_ex.bsh -d 593.in.tmp -o 593remtarget.exp -c "$CMD" || {
+		echo "Failed to generate /usr/local/bin/expect script, $?"
+		return 9
+	}
+
+	/usr/local/bin/expect 593remtarget.exp
+	retval=$?
+	[ $retval -eq 1 ] || {
+		echo "Wrong error on invalid alias error code $retval"
+		return 10
+	}
+	echo "Test6"
+	CMD='/ericsson/sdee/bin/manage_COM_privs.bsh -r alias -d 1.com -u u593Not -A a593a -y'
+	${AT_BIN}/con_ex.bsh -d 593.in.tmp -o 593remtarget.exp -c "$CMD" || {
+		echo "Failed to generate /usr/local/bin/expect script, $?"
+		return 11
+	}
+
+	/usr/local/bin/expect 593remtarget.exp
+	retval=$?
+	[ $retval -eq 1 ] || {
+		echo "Wrong error on user not exist error code $retval"
+		return 12
+	}
+	echo "Test7"
+	/ericsson/sdee/bin/manage_COM_privs.bsh -r alias -d 1.com -u u593 -A target3:a593b -y -e
+	retval=$?
+	[ $retval -eq 1 ] || {
+		echo "Wrong error on -e error code $retval"
+		return 13
+	}
+	echo "Test8"
+	/ericsson/sdee/bin/manage_COM_privs.bsh -r alias -d 1.com -u u593 -A target3:a593b -n 
+	retval=$?
+	[ $retval -eq 1 ] || {
+		echo "Wrong error on -n error code $retval"
+		return 14
+	}
+	echo "Test9"
+	/ericsson/sdee/bin/manage_COM_privs.bsh -r alias -d 1.com -u u593 -T target3:a593b -y 
+	retval=$?
+	[ $retval -eq 1 ] || {
+		echo "Wrong error on -R error code $retval"
+		return 15
+	}
+	echo "Test10"
+	/ericsson/sdee/bin/manage_COM_privs.bsh -r aliases -d 1.com -u u593 -A target3:a593b -y 
+	retval=$?
+	[ $retval -eq 1 ] || {
+		echo "Wrong error on aliases error code $retval"
+		return 16
+	}
+	echo "Test11"
+	CMD='/ericsson/sdee/bin/manage_COM_privs.bsh -r alias -u u593 -A target3:a593b -d wrong.com -y'
+	${AT_BIN}/con_ex.bsh -d 593.in.tmp -o 593remtarget.exp -c "$CMD" || {
+		echo "Failed to generate /usr/local/bin/expect script, $?"
+		return 17
+	}
+
+	/usr/local/bin/expect 593remtarget.exp
+	retval=$?
+	[ $retval -eq 1 ] || {
+		echo "Wrong error on wrong.com error code $retval"
+		return 18
+	}
+	echo "Test12"
+	CMD='/ericsson/sdee/bin/manage_COM_privs.bsh -r alias -u u593 -A target3:a593b -d 1%com -y'
+	${AT_BIN}/con_ex.bsh -d 593.in.tmp -o 593remtarget.exp -c "$CMD" || {
+		echo "Failed to generate /usr/local/bin/expect script, $?"
+		return 19
+	}
+
+	/usr/local/bin/expect 593remtarget.exp
+	retval=$?
+	[ $retval -eq 1 ] || {
+		echo "Wrong error on 1%com error code $retval"
+		return 20
+	}
+	echo "Test13"
+	CMD='/ericsson/sdee/bin/manage_COM_privs.bsh -r alias -u u593 -T target3 -d 1.com -y'
+	${AT_BIN}/con_ex.bsh -d 593.in.tmp -o 593remtarget.exp -c "$CMD" || {
+		echo "Failed to generate /usr/local/bin/expect script, $?"
+		return 21
+	}
+
+	/usr/local/bin/expect 593remtarget.exp
+	retval=$?
+	[ $retval -eq 1 ] || {
+		echo "Wrong error on invalid option error code $retval"
+		return 22
+	}
+	echo "Test14"
+	CMD='/ericsson/sdee/bin/manage_COM_privs.bsh -r alias -d 1.com -u u593 -A a593b:target2:a593b -y'
+	${AT_BIN}/con_ex.bsh -d 593.in.tmp -o 593remtarget.exp -c "$CMD" || {
+		echo "Failed to generate /usr/local/bin/expect script, $?"
+		return 23
+	}
+
+	/usr/local/bin/expect 593remtarget.exp
+	retval=$?
+	[ $retval -eq 1 ] && {
+		echo "Wrong error on multi colon error code $retval"
+		return 24
+	}
+	echo "Test15"
+	CMD='/ericsson/sdee/bin/manage_COM_privs.bsh -r alias -d 1.com -u u593 -A r593c -y'
+	${AT_BIN}/con_ex.bsh -d 593.in.tmp -o 593remtarget.exp -c "$CMD" || {
+		echo "Failed to generate /usr/local/bin/expect script, $?"
+		return 25
+	}
+
+	/usr/local/bin/expect 593remtarget.exp
+	retval=$?
+	[ $retval -eq 1 ] || {
+		echo "Wrong error when we give name of role but say it is a alias, error code $retval"
+		return 26
+	}
+	echo "Test16"
+	CMD='/ericsson/sdee/bin/manage_COM_privs.bsh -r alias -d 1.com -u u593 -R r593c -y'
+	${AT_BIN}/con_ex.bsh -d 593.in.tmp -o 593remtarget.exp -c "$CMD" || {
+		echo "Failed to generate /usr/local/bin/expect script, $?"
+		return 27
+	}
+
+	/usr/local/bin/expect 593remtarget.exp
+	retval=$?
+	[ $retval -eq 1 ] || {
+		echo "Wrong error when we give -R, error code $retval"
+		return 28
+	}
+
+
+	return 0
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_POSTCON
+#
+# This callback function checks expected results.
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_postcon() {
+
+	# Check user is in database 
+	/usr/bin/ldapsearch -D 'cn=Directory Manager' -w $LDAP_SUPERUSER_PASSWD -b uid=u593,ou=people,dc=1,dc=com objectclass=* | grep "uid: u593" || {
+		echo "u593 user does not exists ... This wasn't expected"
+		return 1
+	}
+	# Check user has three targets still
+	/usr/bin/ldapsearch -D 'cn=Directory Manager' -w $LDAP_SUPERUSER_PASSWD -b uid=u593,ou=people,dc=1,dc=com objectclass=* | grep "ericssonUserAuthenticationScope: target1" || {
+		echo "u593 user has no targets... This wasn't expected"
+		return 2
+	}
+	/usr/bin/ldapsearch -D 'cn=Directory Manager' -w $LDAP_SUPERUSER_PASSWD -b uid=u593,ou=people,dc=1,dc=com objectclass=* | grep "ericssonUserAuthenticationScope: target2" || {
+		echo "u593 user has no targets... This wasn't expected"
+		return 3
+	}
+	/usr/bin/ldapsearch -D 'cn=Directory Manager' -w $LDAP_SUPERUSER_PASSWD -b uid=u593,ou=people,dc=1,dc=com objectclass=* | grep "ericssonUserAuthenticationScope: target3" || {
+		echo "u593 user has no targets... This wasn't expected"
+		return 4
+	}
+	# Check user has aliases still
+	/usr/bin/ldapsearch -D 'cn=Directory Manager' -w $LDAP_SUPERUSER_PASSWD -b uid=u593,ou=people,dc=1,dc=com objectclass=* | grep "ericssonUserAuthorizationScope: a593a" && {
+		echo "u593 user has no alias This wasn't expected"
+		return 5
+	}
+	/usr/bin/ldapsearch -D 'cn=Directory Manager' -w $LDAP_SUPERUSER_PASSWD -b uid=u593,ou=people,dc=1,dc=com objectclass=* | grep 'ericssonUserAuthorizationScope: target3:a593b' && {
+		echo "u593 user has no alias. This wasn't expected"
+		return 6
+	}
+	# Check for all console messages, and report all that fail
+	retval=0
+	CONSOLE_OUTPUT_CONTAINS "WARNING : [a593c] does not exist in u593's alias list - ignored." || { echo "Test1: No a593c error msg"; retval=7; }
+	CONSOLE_OUTPUT_CONTAINS "WARNING : [a593NotExist] does not exist in 1.com's alias list - ignored." || { echo "Test2: No a593NotExist error msg"; retval=8; }
+	CONSOLE_OUTPUT_CONTAINS "WARNING : [target2:a593b] does not exist in u593's alias list - ignored." || { echo "Test3: No target2:a593b error msg"; retval=9; }
+	CONSOLE_OUTPUT_CONTAINS "WARNING : [target2:a593a] does not exist in u593's alias list - ignored." || { echo "Test4: No target2:a593a error msg"; retval=10; }
+	CONSOLE_OUTPUT_CONTAINS "ERROR : Special character [%] is not valid in an alias name." || { echo "Test5: No a593%a error msg"; retval=11; }
+	CONSOLE_OUTPUT_CONTAINS "ERROR : Requested user [u593Not] does not exist in domain [1.com]" || { echo "Test6: No u593Not error msg"; retval=12; }
+	CONSOLE_OUTPUT_CONTAINS "illegal option -- e" || { echo "Test7: No invalid option -e error msg"; retval=13; }
+	CONSOLE_OUTPUT_CONTAINS "illegal option -- n" || { echo "Test8: No invalid option -n error msg"; retval=14; }
+	CONSOLE_OUTPUT_CONTAINS "ERROR : Invalid option combination." || { echo "Test9: No invalid target list error msg"; retval=15; }
+	CONSOLE_OUTPUT_CONTAINS "ERROR : Invalid modifier [aliases] for action [remove]." || { echo "Test10: No aliases error msg"; retval=16; }
+	CONSOLE_OUTPUT_CONTAINS "ERROR : checkOptionUsage: Domain [wrong.com] does not exist in LDAP."|| { echo "Test11: No wrong.com error msg"; retval=17; }
+	CONSOLE_OUTPUT_CONTAINS "ERROR : checkOptionUsage: Domain [1om] does not exist in LDAP."|| { echo "Test12: No 1%com error msg"; retval=18; }
+	CONSOLE_OUTPUT_CONTAINS "ERROR : Invalid option combination."|| { echo "Test13: No option combination  error msg"; retval=19; }
+
+	CONSOLE_OUTPUT_CONTAINS "WARNING : [target2:a593b] does not exist in u593's alias list - ignored." || { echo "Test14: No multi colon error msg"; retval=20; }
+	CONSOLE_OUTPUT_CONTAINS "WARNING : [r593c] does not exist in 1.com's alias list - ignored." || { echo "Test15: No r593c error msg"; retval=21; }
+	CONSOLE_OUTPUT_CONTAINS	"ERROR : Invalid option combination." || { echo "Test16: No invalid option error msg"; retval=21; }
+
+
+	return $retval
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_CLEANUP
+#
+# This callback function is only called if the harness execution mode is 'AT_INDEPENDENT'
+# 
+# This callback restores the target system to the state it was in before the TC 
+# was run. It rolls back changes made by callbacks tc_setup() and tc_test()
+# 
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_cleanup() {
+
+
+	CMD='/ericsson/sdee/bin/del_user.sh -d 1.com -n u593 -i 1593 -y'
+	${AT_BIN}/con_ex.bsh -d 593.in.tmp -o 593deluser.exp -c "$CMD" || {
+		echo "Failed to generate /usr/local/bin/expect script, $?"
+		return 5
+	}
+
+	/usr/local/bin/expect 593deluser.exp || {
+		echo "Failed to delete user, error code $?"
+		return 6
+	}
+	
+	CMD='/ericsson/sdee/bin/manage_COM.bsh -r role -d 1.com -R r593a,r593b,r593c -y'
+	${AT_BIN}/con_ex.bsh -d 593.in.tmp -o 593del.exp -c "$CMD" || {
+		echo "Failed to generate /usr/local/bin/expect script, $?"
+		return 7
+	}
+
+	/usr/local/bin/expect 593del.exp || {
+		echo "Failed to delete role, error code $?"
+		return 8
+	}
+
+	
+	
+	rm -f *.exp
+	rm -f *.out
+	rm -f *.in.tmp
+	return 0
+}

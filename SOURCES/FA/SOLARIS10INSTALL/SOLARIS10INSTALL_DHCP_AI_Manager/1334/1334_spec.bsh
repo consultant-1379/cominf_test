@@ -1,0 +1,76 @@
+#!/bin/bash
+
+# TEST CASE SPEC FILE
+# This file is generated/updated using the test framework web interface.
+# Manual updates on test servers are lost when the test package is re-installed.
+#
+# Last modified: Monday 16th of December 2013 9:21:02
+#
+
+# These settings must be in BASH script format, they are sourced by other scripts.
+SPEC_FA_NAME="SOLARIS10INSTALL"
+SPEC_UC_NAME="SOLARIS10INSTALL_DHCP_AI_Manager"
+SPEC_TC_ID=1334
+SPEC_TC_SLOGAN="Adding IPV4 clients to the DHCP server using ai_manager.sh"
+SPEC_TC_TYPE="FT"
+SPEC_TC_POLARITY="positive"
+SPEC_TC_PRIORITY="high"
+SPEC_TC_AUTOMATED=1
+SPEC_TC_DEPENDENT_ONLY=0
+SPEC_TC_TIMEOUT=300
+SPEC_TC_TEST_PASSCODE=0
+SPEC_TC_AUTHOR="xgansre"
+SPEC_TC_AUTOMATOR="xgansre"
+# this parameter is not interpreted by harness
+SPEC_TC_DISABLED=0
+
+# Please do not remove the comment lines below.
+# They are used as section locators by the test harness.
+
+# BEGIN_PRE_CONDITIONS
+#To verify the addition of clients to the DHCP server is successful.
+#Precondition :
+#Infra server is configuredcorrectly for DHCP.IPV4 and IPV6 deamons runnings .
+#
+# END_PRE_CONDITIONS
+
+
+# BEGIN_MANUAL_STEPS
+#Action 1:
+#Add a client to the DHCP server with the following command by changing the parameters as appropriate:
+##/ericsson/ocs/bin/ai_manager.sh -add client - a 10.42.33.2 -h "site1RBS15" -i "RBS15_SITE1" -s 10.0.2.111 âEuro p /WRAN/smrsslave1/AIF/Site1RBS15/summaryFile.xml
+#
+#Action 2
+#Repeat step 1 adding clients where the name is similar to existing clients:
+##/ericsson/ocs/bin/ai_manager.sh -add client âEuro a 10.42.33.3 -h "site1RBS155" -i "RBS155_SITE1" -s 10.0.2.111 âEuro p /WRAN/smrsslave1/AIF/Site1RBS155/summaryFile.xml
+#
+#Action 3
+#Adding a client to the DHCP server with bad/garbage values, negative test:
+##/ericsson/ocs/bin/ai_manager.sh -add client âEuro a 192.168.p.2 -h "site1RBS15" -i "RBS15_SITE1" -s 10.a.2.111 âEuro p /WRAN/smrsslave1/AIF/Site1RBS15/summaryFile.xml
+#Action 4
+#Execute the following command to list the clients:
+##/ericsson/ocs/bin/ai_manager.sh -list hosts
+#
+#Action 5:
+#Verify only successfully added clients are added to aif_hosts file
+##more /ericsson/ocs/etc/aif_hosts
+#
+# END_MANUAL_STEPS
+
+# BEGIN_POST_CONDITIONS
+#Result 1
+#A client should be successfully added to the DHCP server.
+#Result 2
+#The client should not be added to the DHCP server and a proper error message should be displayed.
+#
+#Result 3
+#The client should not be added to the DHCP server.
+#
+#Result 4
+#The command should execute successfully and show all the clients that are successfully added, there should be no instance of any network that was being entered with bad values.
+#
+#Result 5:
+#Only successfully added clients are added to aif_hosts file 
+#
+#
+# END_POST_CONDITIONS

@@ -1,0 +1,76 @@
+#!/bin/bash
+
+# TEST CASE SPEC FILE
+# This file is generated/updated using the test framework web interface.
+# Manual updates on test servers are lost when the test package is re-installed.
+#
+# Last modified: Tuesday 17th of December 2013 9:39:56
+#
+
+# These settings must be in BASH script format, they are sourced by other scripts.
+SPEC_FA_NAME="SOLARIS10UPGRADE"
+SPEC_UC_NAME="SOLARIS10UPGRADE_Installation_Iptool"
+SPEC_TC_ID=1745
+SPEC_TC_SLOGAN="Iptool help syntax "
+SPEC_TC_TYPE="FT"
+SPEC_TC_POLARITY="positive"
+SPEC_TC_PRIORITY="high"
+SPEC_TC_AUTOMATED=1
+SPEC_TC_DEPENDENT_ONLY=0
+SPEC_TC_TIMEOUT=300
+SPEC_TC_TEST_PASSCODE=0
+SPEC_TC_AUTHOR="xlaxain"
+SPEC_TC_AUTOMATOR="xlaxain"
+# this parameter is not interpreted by harness
+SPEC_TC_DISABLED=0
+
+# Please do not remove the comment lines below.
+# They are used as section locators by the test harness.
+
+# BEGIN_PRE_CONDITIONS
+#Path in Mars:- Upgrade/Migration/Installation of Iptool package 
+# END_PRE_CONDITIONS
+
+
+# BEGIN_MANUAL_STEPS
+#Verify the help syntax for iptool.Execute the following:
+#/opt/ERICiptool/bin/iptool
+#
+# END_MANUAL_STEPS
+
+# BEGIN_POST_CONDITIONS
+#The help syntax is displayed successfully.
+#bash-3.2# /opt/ERICiptool/bin/iptool
+#
+#You must provide an IPv6 IP address for this host
+#
+#USAGE: iptool -hostip <ipv6addr> -router <ipv6addr> [-masterservice <ipv6addr> [-admin2 <ipv6addr>] [-cms-vip <ipv6addr>] [-pms-vip <ipv6addr>]] [-verify-only true] [-no-cluster]
+#
+#where:
+#hostip: to be configured as the IPv6 IP address of this host
+#router: to be configured as the IPv6 IP address of the default router for IPv6
+#masterservice: to be configured as the IPv6 IP address of the "masterservice" service for OSS master servers
+#admin2: in the case of an OSS cluster (x86 only) to be configured as the IPv6 IP address of the cluster
+#node this script is NOT running on
+#cms-vip: IPv6 IP address to be used by the cms-vip-v6 alias for CMS c
+#provided the masterservice IP address will be used
+#pms-vip: IPv6 IP address to be used by the pms-vip-v6 alias for PMS c
+#provided the masterservice IP address will be used
+#verify-only: only verify the supplied addresses, do not commit any change
+#no-cluster: do not update the cluster configuration, only update the hos
+#
+#Note: All IPv6 addresses should be provided with following network prefix. This
+#e.g.: 2001:1b70:82a1:5::36/64. If network prefix is not provided the defau
+#
+#Example 1: generic host, enable IPv6 support:
+#
+#iptool -hostip <ipv6addr> -router <ipv6addr>
+#
+#Example 2: OSS master server, non-clustered:
+#
+#iptool -hostip <ipv6addr> -masterservice <ipv6addr> -router <ipv6addr>
+#
+#Example 3: OSS master server, clustered, CMS and PMS VIPs:
+#
+#iptool -hostip <ipv6addr> -admin2 <ipv6addr> -masterservice <ipv6addr> -rout 
+# END_POST_CONDITIONS

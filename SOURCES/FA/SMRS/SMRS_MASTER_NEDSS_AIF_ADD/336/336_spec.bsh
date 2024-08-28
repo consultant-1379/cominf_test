@@ -1,0 +1,54 @@
+#!/bin/bash
+
+# TEST CASE SPEC FILE
+# This file is generated/updated using the test framework web interface.
+# Manual updates on test servers are lost when the test package is re-installed.
+#
+# Last modified: Sunday 31st of March 2013 20:37:23
+#
+
+# These settings must be in BASH script format, they are sourced by other scripts.
+SPEC_FA_NAME="SMRS"
+SPEC_UC_NAME="SMRS_MASTER_PRIMNEDSS_ADD_AIF"
+SPEC_TC_ID=336
+SPEC_TC_SLOGAN="Add WRAN AIF user, autointegration and BI_SMRS_MC restart using configure_smrs"
+SPEC_TC_TYPE="FT"
+SPEC_TC_POLARITY="positive"
+SPEC_TC_PRIORITY="high"
+SPEC_TC_AUTOMATED=1
+SPEC_TC_DEPENDENT_ONLY=0
+SPEC_TC_TIMEOUT=400
+SPEC_TC_TEST_PASSCODE=0
+SPEC_TC_AUTHOR="xkalbha"
+SPEC_TC_AUTOMATOR="xkalbha"
+# this parameter is not interpreted by harness
+SPEC_TC_DISABLED=0
+
+# Please do not remove the comment lines below.
+# They are used as section locators by the test harness.
+
+# BEGIN_PRE_CONDITIONS
+#1. smrs_master exists in /etc/inet/hosts
+#2. POSIX_REMOTE_USER_EXISTS w-sws-nedssv4 smrs_master
+#3. w-sws-nedssv4 exists on primary NEDSS
+#
+# END_PRE_CONDITIONS
+
+
+# BEGIN_MANUAL_STEPS
+#1. As root: configure_smrs add aif to create user aif336, choosing WRAN network type, yes to autoIntegration, yes to restart, valid password, and nedssv4 as the choice
+# END_MANUAL_STEPS
+
+# BEGIN_POST_CONDITIONS
+#a. user aif336 is created belonging to aif group on smrs_master and primary NEDSS only, home directory /WRAN
+#b. group aif is created on OSS master, SMRS master and primary NEDSS
+#c. ssh as the user onto the smrs_master- expect to fail
+#d. ssh as the user onto the primary NEDSS - expect to fail
+#e. sftp as the user onto the smrs_master. Check you can only see the WRAN network
+#f. sftp as the user onto the primary NEDSS. Check you can only see the WRAN network
+#g. /opt/ericsson/arne/bin/export.sh | grep aif336 - check AutoIntegration user exists
+#h. BI_SMRS_MC has been restarted (??? how to check this???)
+#i. prove user can't access the /GRAN and /LRAN areas
+#j. CONSOLE_OUTPUT_CONTAINS "(1) nedssv4"
+#
+# END_POST_CONDITIONS

@@ -1,0 +1,4 @@
+LDAP Directory Manager password: 
+PASSWD
+New local user loginShell ./usr/bin/tcsh.: 
+/usr/bin/lchsh

@@ -1,0 +1,15 @@
+#!/bin/bash
+
+# TEST SUITE SPEC FILE
+# This file is generated/updated using the test framework web interface.
+# Manual updates on test servers are lost when the test package is re-installed.
+#
+# Last modified: Saturday 1st of December 2012 13:39:38
+#
+SPEC_TS_NAME=ERICAXE_REGRESSION_TESTS
+SPEC_TS_ID=39
+SPEC_TS_SLOGAN="ERICaxe regression test suite"
+SPEC_TS_TIMEOUT=300
+SPEC_TS_AUTHOR="eeidle"
+SPEC_TS_INDEPENDENT=1
+SPEC_TS_TC_IDS=(604 507)

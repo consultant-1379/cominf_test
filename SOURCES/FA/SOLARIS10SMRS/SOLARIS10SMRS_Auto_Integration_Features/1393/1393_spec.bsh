@@ -1,0 +1,75 @@
+#!/bin/bash
+
+# TEST CASE SPEC FILE
+# This file is generated/updated using the test framework web interface.
+# Manual updates on test servers are lost when the test package is re-installed.
+#
+# Last modified: Monday 16th of December 2013 10:03:53
+#
+
+# These settings must be in BASH script format, they are sourced by other scripts.
+SPEC_FA_NAME="SOLARIS10SMRS"
+SPEC_UC_NAME="SOLARIS10SMRS_Auto_Integration_Features"
+SPEC_TC_ID=1393
+SPEC_TC_SLOGAN="Verifying User Existance on SMRS master "
+SPEC_TC_TYPE="FT"
+SPEC_TC_POLARITY="positive"
+SPEC_TC_PRIORITY="high"
+SPEC_TC_AUTOMATED=1
+SPEC_TC_DEPENDENT_ONLY=0
+SPEC_TC_TIMEOUT=300
+SPEC_TC_TEST_PASSCODE=0
+SPEC_TC_AUTHOR="xnavema"
+SPEC_TC_AUTOMATOR="xnavema"
+# this parameter is not interpreted by harness
+SPEC_TC_DISABLED=0
+
+# Please do not remove the comment lines below.
+# They are used as section locators by the test harness.
+
+# BEGIN_PRE_CONDITIONS
+#OSS Master Server should be connected to the SMRS master service with Slave Service Available.
+#
+#OSS Master Server should be connected to the SMRS master service with Slave Service Available.
+#
+#<PATH Under "Verification Specification for Cominf Feature Test for 14.0":Bi-directional SMRS Initial Installation/Adding Auto Integration Feature Users>
+# END_PRE_CONDITIONS
+
+
+# BEGIN_MANUAL_STEPS
+#Conditional Test 
+#
+#ssh < IP or hostname of ( SMRS Master)> id < Username>
+#Check that sftp access available to (SMRS Master) with user < username>
+#sftp < username>@< IP or hostname of (SMRS Master)>
+#Enter the password for the user
+#Check that FTP service setup on with the following command
+#/opt/ericsson/nms_cif_cs/etc/unsupported/bin/cstest -s ONRM_CS lt FtpService | grep jakki123
+#check for errors in logs /opt/ericsson/nms_cif_sm/bin/smlog
+#
+# END_MANUAL_STEPS
+
+# BEGIN_POST_CONDITIONS
+#Acceptance Criteria
+#
+#uid=202(jakki123) gid=200(aif)
+#Acceptance Criteria 
+#
+#User should be able to login .
+#Acceptance Criteria
+#
+#SubNetwork=ONRM_ROOT_MO,FtpServer=SMRSSLAVE-LRAN-SMRSSERV,FtpService=jakki123
+#Acceptance Criteria
+#
+#"2011-10-03 16:55:32 atrcx992
+#FDN : AdmHost=masterservice,ManagedComponentSelfManagementStartStop=SelfManagementStartStop,ProcessStartStop=StartStop
+#Add Info : OsgiFwk: Running state from stopped to started
+#Reason: SYSTEM_START
+#Elapsed time: 4025 ms
+#DN: ManagedComponentOsgiFwk=OsgiFwk
+#Type : COM.ERICSSON.NMS.CIF.SSR.RUNNING_STATE_CHANGE
+#Level : coarse
+#Short Desc: The running state has changed.
+#Long Desc: The running state of a component has changed
+#
+# END_POST_CONDITIONS

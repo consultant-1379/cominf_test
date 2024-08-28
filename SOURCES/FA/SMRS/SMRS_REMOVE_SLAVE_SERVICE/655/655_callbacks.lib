@@ -1,0 +1,171 @@
+#!/bin/bash
+#################################################################################
+#
+#
+#       COPYRIGHT (C) ERICSSON RADIO SYSTEMS AB, Sweden
+#
+#       The copyright to the document(s) herein is the property of
+#       Ericsson Radio Systems AB, Sweden.
+#
+#       The document(s) may be used and/or copied only with the written
+#       permission from Ericsson Radio Systems AB or in accordance with
+#       the terms and conditions stipulated in the agreement/contract
+#       under which the document(s) have been supplied.
+#
+#################################################################################
+
+
+# ATCOMINF Test Callback Library
+
+# Revision History
+# <date>	<signum>	<details>
+
+# Complete the callbacks in this library to automate the test case.
+#
+# Callbacks are stateless, it is not possible to set a global variable in one callback 
+# and access it it in another.
+#
+# Callbacks are called by the test harness in the following order:
+#
+# tc_setup() 		# Called only for independent TC execution mode to setup TC
+# tc_precon()		# Conditions that should exist before TC can run
+# tc_test()		# Runs the test for this TC
+# tc_postcon()		# Conditions that should/should not exist after successful TC 
+# tc_cleanup()		# Called only for independent TC execution mode to clenup after TC
+
+# All callbacks must PASS for a TC PASS result
+
+source /etc/opt/ericsson/nms_bismrs_mc/smrs_config
+
+#################################################################################
+#
+# CALLBACK: TC_SETUP
+#
+# This callback function is only called if the harness execution mode is 'AT_INDEPENDENT'
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_setup() {
+
+	return 0
+
+}
+#################################################################################
+
+#################################################################################
+#
+# CALLBACK: TC_PRECON
+#
+# This callback function checks the correct conditions exist to run the TC.
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+ 
+tc_precon() {
+
+	return 0
+
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_TEST
+#
+# This callback function runs the test.
+# The harness compares the return code to the SPEC_TC_TEST_PASSCODE value set in the test spec.
+#
+# Return or exit codes:
+#    SPEC_TC_TEST_PASSCODE 	success
+# != SPEC_TC_TEST_PASSCODE 	failure
+ 
+tc_test() {
+
+	/opt/ericsson/nms_bismrs_mc/bin/delete_smrs_slave.sh -s nedssv4 -o ossmaster
+	
+	/opt/ericsson/nms_bismrs_mc/bin/delete_smrs_slave.sh -s nedssv6 -o ossmaster
+
+	# generate a hash of the delete nedss output for comparison later...
+	#set -o pipefail
+	#/usr/local/bin/expect del_nedss_capture.exp | digest -a md5 > 655.md5 || {
+	#	echo failed to generate md5
+	#	return 1
+	#}
+
+	#digest -a md5 /etc/opt/ericsson/nms_bismrs_mc/smrs_config > smrs_config.md5 || {
+	#	echo failed to generated md5 of /etc/opt/ericsson/nms_bismrs_mc/smrs_config
+	#	return 2
+	#}
+
+	# save current nedss traffic ips for comparison later...
+	echo ${NEDSS_TRAFFIC_IP[@]} | sort > nedss.ips
+
+	# iterate through all the nedss IPs to find one that is related to a slave service
+	# we then try to delete this nedss which should fail
+	i=0
+	for ip in ${NEDSS_TRAFFIC_IP[@]}
+	do
+		echo ${SMRS_SLAVE_SERVICE_NEDSS_IP[@]} | grep $ip > /dev/null && {
+			index=$(/usr/local/bin/expect del_nedss_capture.exp | grep ${NEDSS_TRAFFIC_HOSTNAME[$i]} | grep '(Secondary)' | awk '{print $1}' | sed -e 's#(##g' -e 's#)##g')
+			[ ! -z $index ] && {
+				echo "attempting to delete first secondary nedss found that has slave service: ${NEDSS_TRAFFIC_HOSTNAME[$i]}"
+				echo $index
+				sed s/__INDEX__/$index/g delete_nedss_template > delete_nedss_template.exp
+				/usr/local/bin/expect delete_nedss_template.exp || return 1
+		    }
+		}
+		i=$((i+1))
+	done
+
+	return 0
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_POSTCON
+#
+# This callback function checks expected results.
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_postcon() {
+
+	
+
+	# compare the nedss traffic ips obtained in the test function to the traffic ips now
+	[ "$(echo ${NEDSS_TRAFFIC_IP[@]} | sort)" == "$(cat nedss.ips)" ] || {
+		echo nedss traffic ips do not match
+		return 1
+	}
+
+	return 0
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_CLEANUP
+#
+# This callback function is only called if the harness execution mode is 'AT_INDEPENDENT'
+# 
+# This callback restores the target system to the state it was in before the TC 
+# was run. It rolls back changes made by callbacks tc_setup() and tc_test()
+# 
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_cleanup() {
+
+	return 0
+
+}

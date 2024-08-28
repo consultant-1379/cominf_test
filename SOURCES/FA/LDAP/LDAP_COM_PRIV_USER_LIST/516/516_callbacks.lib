@@ -1,0 +1,492 @@
+#!/bin/bash
+#################################################################################
+#
+#
+#	   COPYRIGHT (C) ERICSSON RADIO SYSTEMS AB, Sweden
+#
+#	   The copyright to the document(s) herein is the property of
+#	   Ericsson Radio Systems AB, Sweden.
+#
+#	   The document(s) may be used and/or copied only with the written
+#	   permission from Ericsson Radio Systems AB or in accordance with
+#	   the terms and conditions stipulated in the agreement/contract
+#	   under which the document(s) have been supplied.
+#
+#################################################################################
+
+
+# ATCOMINF Test Callback Library
+
+# Revision History
+# 21/09/12	xbahzam		Initial test for add role to COM_only user
+
+# Complete the callbacks in this library to automate the test case.
+#
+# Callbacks are stateless, it is not possible to set a global variable in one callback 
+# and access it it in another.
+#
+# Callbacks are called by the test harness in the following order:
+#
+# tc_setup() 		# Called only for independent TC execution mode to setup TC
+# tc_precon()		# Conditions that should exist before TC can run
+# tc_test()		# Runs the test for this TC
+# tc_postcon()		# Conditions that should/should not exist after successful TC 
+# tc_cleanup()		# Called only for independent TC execution mode to clenup after TC
+
+# All callbacks must PASS for a TC PASS result
+
+#################################################################################
+#
+# CALLBACK: TC_SETUP
+#
+# This callback function is only called if the harness execution mode is 'AT_INDEPENDENT'
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_setup() {
+
+
+# Replace PASSWD with the correct credentials or data
+	for ii in *.in; do
+		sed -e "s/^PASSWD$/$LDAP_SUPERUSER_PASSWD/" $ii > $ii.tmp || {
+			echo "Failed to replace LDAP superuser password holder etc in /usr/local/bin/expect input file $ii, rc $?"
+			return 2
+		}
+	done
+
+
+	
+
+#------------------------------------------------------------------------------
+	# Create the nms group if it doesn't already exist
+#------------------------------------------------------------------------------
+
+	/usr/bin/ldapsearch -D 'cn=Directory Manager' -w $LDAP_SUPERUSER_PASSWD -b dc=1,dc=com objectclass=* | grep nms > u516.out || {
+
+		echo "Need to  create nms group"
+		# Create the nms group
+		CMD='/ericsson/sdee/bin/add_group.sh -d 1.com -n nms -y'
+		${AT_BIN}/con_ex.bsh -d 516.in.tmp -o 516nms.exp -c "$CMD" || {
+			echo "Failed to generate /usr/local/bin/expect script, $?"
+			return 3
+		} 
+
+		/usr/local/bin/expect 516nms.exp || { 
+			echo "Failed to create nms group, error code $?"
+			return 4
+		}
+	}
+
+
+#-------------------------------------------------------------------------------
+# Create a test user1: COM_app
+#-------------------------------------------------------------------------------
+
+	CMD='/ericsson/sdee/bin/add_user.sh -t COM_APP -d 1.com -n u516 -i 1516 -C bahram -y'
+	${AT_BIN}/con_ex.bsh -d 516adduser.in.tmp -o 516adduser.exp -c "$CMD" || {
+		echo "Failed to generate /usr/local/bin/expect script, $?"
+		return 1
+	}
+
+	/usr/local/bin/expect 516adduser.exp ||{
+		echo "Failed to create user, error code $?"
+		return 2
+	}
+	
+#-------------------------------------------------------------------------------
+# Create a 2nd test user :COM_app 
+#-------------------------------------------------------------------------------
+
+	CMD='/ericsson/sdee/bin/add_user.sh -t COM_APP -d 1.com -n u516b -i 2516 -C bahram -y'
+	${AT_BIN}/con_ex.bsh -d 516adduser.in.tmp -o 516adduser.exp -c "$CMD" || {
+		echo "Failed to generate /usr/local/bin/expect script, $?"
+		return 7
+	}
+
+	/usr/local/bin/expect 516adduser.exp ||{
+		echo "Failed to create user, error code $?"
+		return 8
+	}
+	
+#-------------------------------------------------------------------------------
+# Create a 3rd test user  : COM_only
+#-------------------------------------------------------------------------------
+
+	CMD='/ericsson/sdee/bin/add_user.sh -t COM_ONLY -d 1.com -n u516c -i 3516 -C bahram -y'
+	${AT_BIN}/con_ex.bsh -d 516adduser.in.tmp -o 516adduser.exp -c "$CMD" || {
+		echo "Failed to generate /usr/local/bin/expect script, $?"
+		return 7
+	}
+
+	/usr/local/bin/expect 516adduser.exp ||{
+		echo "Failed to create user, error code $?"
+		return 81
+	}
+#-------------------------------------------------------------------------------
+# Create a test role
+#-------------------------------------------------------------------------------
+
+	CMD='/ericsson/sdee/bin/manage_COM.bsh -a role -d 1.com -R role516a -y'
+	${AT_BIN}/con_ex.bsh -d 516.in.tmp -o 516addrole.exp -c "$CMD" || {
+		echo "Failed to generate /usr/local/bin/expect script, $?"
+		return 3
+	}
+
+	/usr/local/bin/expect 516addrole.exp || {
+		echo "Failed to create role, error code $?"
+		return 4
+	}
+
+#-------------------------------------------------------------------------------
+# Create a test alias: alias516
+#-------------------------------------------------------------------------------
+
+	CMD='/ericsson/sdee/bin/manage_COM.bsh -a alias -d 1.com -A alias516 -R role516a -y'
+	${AT_BIN}/con_ex.bsh -d 516.in.tmp -o 516alias.exp -c "$CMD" || {
+		echo "Failed to generate /usr/local/bin/expect script, $?"
+		return 91
+	}
+
+	/usr/local/bin/expect 516alias.exp || {
+		echo "Failed to create alias, error code $?"
+		return 101
+	}
+
+
+#-------------------------------------------------------------------------------
+# Create a test target1
+#-------------------------------------------------------------------------------
+
+	CMD='/ericsson/sdee/bin/manage_COM_privs.bsh -a target -d 1.com -u u516 -T target1 -y'
+	${AT_BIN}/con_ex.bsh -d 516.in.tmp -o 516addtarget.exp -c "$CMD" || {
+		echo "Failed to generate /usr/local/bin/expect script, $?"
+		return 5
+	}
+
+	/usr/local/bin/expect 516addtarget.exp || {
+		echo "Failed to create target, error code $?"
+		return 6
+	}
+
+
+#-------------------------------------------------------------------
+# add role with no target to com_app user1
+#-------------------------------------------------------------------
+	CMD='/ericsson/sdee/bin/manage_COM_privs.bsh -a role -d 1.com -u u516 -R role516a -y'
+	${AT_BIN}/con_ex.bsh -d 516.in.tmp -o 516.exp -c "$CMD" || {
+		echo "Failed to generate /usr/local/bin/expect script, $?"
+		return 11
+	}
+
+	/usr/local/bin/expect 516.exp || {
+		echo "Failed to add role to user, error code $?"
+		return 12
+	}
+	
+#-------------------------------------------------------------------
+# add alias with no target to com_app user1
+#-------------------------------------------------------------------
+	CMD='/ericsson/sdee/bin/manage_COM_privs.bsh -a alias -d 1.com -u u516 -A alias516 -y'
+	${AT_BIN}/con_ex.bsh -d 516.in.tmp -o 516.exp -c "$CMD" || {
+		echo "Failed to generate /usr/local/bin/expect script, $?"
+		return 11
+	}
+
+	/usr/local/bin/expect 516.exp || {
+		echo "Failed to add role to user, error code $?"
+		return 12
+	}
+#-------------------------------------------------------------------
+# add role with target2 to com_app user2
+#-------------------------------------------------------------------
+	CMD='/ericsson/sdee/bin/manage_COM_privs.bsh -a role -d 1.com -u u516b -R target2:role516a -y'
+	${AT_BIN}/con_ex.bsh -d 516.in.tmp -o 516.exp -c "$CMD" || {
+		echo "Failed to generate /usr/local/bin/expect script, $?"
+		return 13
+	}
+
+	/usr/local/bin/expect 516.exp || {
+		echo "Failed to add role to user, error code $?"
+		return 14
+	}
+#-------------------------------------------------------------------
+# add alias with target2 to com_app user2
+#-------------------------------------------------------------------
+	CMD='/ericsson/sdee/bin/manage_COM_privs.bsh -a alias -d 1.com -u u516b -A target2:alias516 -y'
+	${AT_BIN}/con_ex.bsh -d 516.in.tmp -o 516.exp -c "$CMD" || {
+		echo "Failed to generate /usr/local/bin/expect script, $?"
+		return 15
+	}
+
+	/usr/local/bin/expect 516.exp || {
+		echo "Failed to add role to user, error code $?"
+		return 16
+	}
+#-------------------------------------------------------------------
+# add role with target2 to com_only user3
+#-------------------------------------------------------------------
+	CMD='/ericsson/sdee/bin/manage_COM_privs.bsh -a role -d 1.com -u u516c -R target2:role516a -y'
+	${AT_BIN}/con_ex.bsh -d 516.in.tmp -o 516.exp -c "$CMD" || {
+		echo "Failed to generate /usr/local/bin/expect script, $?"
+		return 17
+	}
+
+	/usr/local/bin/expect 516.exp || {
+		echo "Failed to add role to user, error code $?"
+		return 18
+	}
+#-------------------------------------------------------------------
+# add alias with target2 to com_only user3
+#-------------------------------------------------------------------
+	CMD='/ericsson/sdee/bin/manage_COM_privs.bsh -a alias -d 1.com -u u516c -A target2:alias516 -y'
+	${AT_BIN}/con_ex.bsh -d 516.in.tmp -o 516.exp -c "$CMD" || {
+		echo "Failed to generate /usr/local/bin/expect script, $?"
+		return 19
+	}
+
+	/usr/local/bin/expect 516.exp || {
+		echo "Failed to add role to user, error code $?"
+		return 20
+	}
+	
+	return 0
+}
+
+#################################################################################
+#
+# CALLBACK: TC_PRECON
+#
+# This callback function checks the correct conditions exist to run the TC.
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+ 
+tc_precon() {
+
+#-------------------------------------------------------------------------------
+#  Check LDAP is running
+#-------------------------------------------------------------------------------
+
+	LDAP_SERVER_UP || {
+		echo "LDAP server not running"
+		return 1
+	}
+
+#-------------------------------------------------------------------------------
+#  Test users are present with expected targets and roles
+#-------------------------------------------------------------------------------
+
+	/usr/bin/ldapsearch -D 'cn=Directory Manager' -w $LDAP_SUPERUSER_PASSWD -b uid=u516,ou=people,dc=1,dc=com objectclass=* > u516.out || {
+		echo "Failed to do LDAP search"
+		return 1
+	}
+	grep 'ericssonUserAuthenticationScope: target1' u516.out || {
+		echo "Failed to find target1 for user u516"
+		echo "output file u516.out BEGIN:"
+		cat u516.out
+		echo output file END
+		return 2
+	}
+
+	grep 'ericssonUserAuthorizationScope: role516a' u516.out || {
+		echo "Failed to find role516a for user u516"
+		echo "output file u516.out BEGIN:"
+		cat u516.out
+		echo output file END
+		return 3
+	}
+	grep 'ericssonUserAuthorizationScope: alias516' u516.out || {
+		echo "Failed to find alias516 for user u516"
+		echo "output file u516.out BEGIN:"
+		cat u516.out
+		echo output file END
+		return 4
+	}
+	
+	/usr/bin/ldapsearch -D 'cn=Directory Manager' -w $LDAP_SUPERUSER_PASSWD -b uid=u516b,ou=people,dc=1,dc=com objectclass=* > u516b.out || {
+		echo "Failed to do LDAP search"
+		return 5
+	}
+	grep 'ericssonUserAuthenticationScope: target2' u516b.out || {
+		echo "Failed to find target2 for user u516b"
+		return 6
+	}
+
+	grep 'ericssonUserAuthorizationScope: target2:role516a' u516b.out || {
+		echo "Failed to find role516a for user u516b"
+		return 7
+	}
+	grep 'ericssonUserAuthorizationScope: target2:alias516' u516b.out || {
+		echo "Failed to find target2:alias516 for user u516b"
+		return 8
+	}
+	
+	/usr/bin/ldapsearch  -D 'cn=Directory Manager' -w $LDAP_SUPERUSER_PASSWD -b uid=u516c,ou=people,dc=1,dc=com objectclass=* > u516c.out || {
+		echo "Failed to do LDAP search"
+		return 9
+	}
+	grep 'ericssonUserAuthenticationScope: target2' u516c.out || {
+		echo "Failed to find target2 for user u516c"
+		return 10
+	}
+
+	grep 'ericssonUserAuthorizationScope: target2:role516a' u516c.out || {
+		echo "Failed to find target2:role516a for user u516c"
+		return 11
+	}
+	grep 'ericssonUserAuthorizationScope: target2:alias516' u516c.out || {
+		echo "Failed to find target2:alias516 for user u516c"
+		return 12
+	}
+
+	return 0
+
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_TEST
+#
+# This callback function runs the test.
+# The harness compares the return code to the SPEC_TC_TEST_PASSCODE value set in the test spec.
+#
+# Return or exit codes:
+#	SPEC_TC_TEST_PASSCODE 	success
+# != SPEC_TC_TEST_PASSCODE 	failure
+ 
+tc_test() {
+
+
+	CMD='/ericsson/sdee/bin/manage_COM_privs.bsh -l -d 1.com -u u516'
+	${AT_BIN}/con_ex.bsh -d 516.in.tmp -o 516o1.exp -c "$CMD" || {
+		echo "Failed to generate /usr/local/bin/expect script, $?"
+		return 1
+	}
+
+	/usr/local/bin/expect 516o1.exp > list_u516.out || {
+		echo "Failed to list user u516, error code $?"
+		return 2
+	}
+	
+	CMD='/ericsson/sdee/bin/manage_COM_privs.bsh -l -d 1.com -u u516b'
+	${AT_BIN}/con_ex.bsh -d 516.in.tmp -o 516o2.exp -c "$CMD" || {
+		echo "Failed to generate /usr/local/bin/expect script, $?"
+		return 3
+	}
+
+	/usr/local/bin/expect 516o2.exp > list_u516b.out || {
+		echo "Failed to list user u516b, error code $?"
+		return 4
+	}
+	
+	#the domain has been dropped intentionally from this command as an implicit test
+	CMD='/ericsson/sdee/bin/manage_COM_privs.bsh -l -u u516c'
+	${AT_BIN}/con_ex.bsh -d 516.in.tmp -o 516o2.exp -c "$CMD" || {
+		echo "Failed to generate /usr/local/bin/expect script, $?"
+		return 5
+	}
+
+	/usr/local/bin/expect 516o2.exp > list_u516c.out && {
+		echo "Failed to list user u516c, error code $?"
+		return 6
+	}
+	return 0
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_POSTCON
+#
+# This callback function checks expected results.
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_postcon() {
+
+	# removing carrigae return from the files  before diff
+	tr -d '\015' < list_u516.out > list_u516N.out
+	tr -d '\015' < list_u516b.out > list_u516bN.out
+	tr -d '\015' < list_u516c.out > list_u516cN.out
+	
+	rc=0 
+
+	diff list_u516N.out list_u516.cmp && { echo list output of user u516 was not as expected; return 1; }
+	
+	diff list_u516bN.out list_u516b.cmp && { echo list output of user u516b was not as expected; rc=2; }
+
+	diff list_u516cN.out list_u516c.cmp && { echo list output of user u516c was not as expected; rc=3; }
+
+	return $rc
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_CLEANUP
+#
+# This callback function is only called if the harness execution mode is 'AT_INDEPENDENT'
+# 
+# This callback restores the target system to the state it was in before the TC 
+# was run. It rolls back changes made by callbacks tc_setup() and tc_test()
+# 
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_cleanup() {
+
+	CMD='/ericsson/sdee/bin/del_user.sh -d 1.com -n u516 -i 1516 -y'
+	${AT_BIN}/con_ex.bsh -d 516.in.tmp -o 516deluser.exp -c "$CMD" || {
+		echo "Failed to generate /usr/local/bin/expect script, $?"
+		return 1
+	}
+
+	/usr/local/bin/expect 516deluser.exp ||{
+		echo "Failed to delete user, error code $?"
+		return 2
+	}
+	
+	CMD='/ericsson/sdee/bin/del_user.sh -d 1.com -n u516b -i 2516 -y'
+	${AT_BIN}/con_ex.bsh -d 516.in.tmp -o 516deluser.exp -c "$CMD" || {
+		echo "Failed to generate /usr/local/bin/expect script, $?"
+		return 3
+	}
+
+	/usr/local/bin/expect 516deluser.exp ||{
+		echo "Failed to delete user, error code $?"
+		return 4
+	}
+	
+	CMD='/ericsson/sdee/bin/del_user.sh -d 1.com -n u516c -i 3516 -y'
+	${AT_BIN}/con_ex.bsh -d 516.in.tmp -o 516deluser.exp -c "$CMD" || {
+		echo "Failed to generate /usr/local/bin/expect script, $?"
+		return 5
+	}
+
+	/usr/local/bin/expect 516deluser.exp ||{
+		echo "Failed to delete user, error code $?"
+		return 6
+	}
+	
+	${AT_BIN}/con_ex.bsh -d 516.in.tmp -o 516_expect.exp -c "/ericsson/sdee/bin/manage_COM.bsh -r role -d 1.com -R role516a -y" 
+        /usr/local/bin/expect 516_expect.exp  || {
+                echo "Could not delete role added to default domain - FAIL"
+                return 7
+        }
+	
+	# Remove temporary files
+	rm -f *.exp
+	rm -f *.out
+	
+	return 0
+}

@@ -1,0 +1,742 @@
+#!/bin/bash
+#
+# Configures a virtual machine for automated network kickstart 
+#
+# Assumptions:  -pre-inirator file has been loaded on MWS  
+# 		-target VM is powered on  
+#		-can SSH login to target VM using root/shroot
+#		-Boot order in BIOS is set to Network, HDD etc
+# 		-the target server is included in the pre-ini file
+#
+#
+#
+# Read in expect functions
+/usr/bin/expect/expect_functions
+#Set some variables
+SCRIPTHOSTS="10.45.202.11
+10.42.35.253
+10.45.62.205"
+MOUNTPOINT="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+MOUNTPOINT=`echo "$MOUNTPOINT" | sed 's/bin$//g'`
+SCRIPTMOUNT=`echo "$MOUNTPOINT" | sed 's/CLOUD\/$//g'`
+SCRIPTMOUNT='/export/scripts/'
+LOCAL_CONFIG_MOUNT='/export/configs/'
+PARENT_BASHPID="$$"
+LOCAL_CONFIG_DIR=$LOCAL_CONFIG_MOUNT/
+SSH="/usr/bin/ssh -o StrictHostKeyChecking=no"
+VCLI_HOSTNAME='atvcli4.athtem.eei.ericsson.se'
+VCLI_HOSTNAME='10.45.202.5'
+VCLI_PASSWORD='Shr00t12!'
+MASTER_SCRIPT=`basename $0`
+LOG_DIRECTORY=/logs
+VCD_API_OUTPUT=""
+ACTUAL_DHCP_SERVER='atdhcpx1'
+ACTUAL_DHCP_SERVER_IP='159.107.173.209'
+ACTUAL_DHCP_SERVER_ROOT_PASS='syr1an'
+UNAME=`uname -i`
+# Test if the place where the script is being run can use getopt properly
+$MOUNTPOINT/test_opts.sh --test=ok
+if [[ $? -ne 0 ]]
+then
+        echo "ERROR: This server isn't compatible with this script, please use a more suitable server to run this script from"
+        echo "ERROR: If in doubt, please contact the CLOUD team."
+        exit 1
+fi
+
+# Colors
+black='\E[30;40m'
+red='\E[31;40m'
+green='\E[32;40m'
+yellow='\E[33;40m'
+blue='\E[34;40m'
+magenta='\E[35;40m'
+cyan='\E[36;40m'
+white='\E[37;40m'
+# Setup the terminal
+echo -e $white
+clear
+
+
+usage() {
+cat << EOF
+
+Usage:  ${G_SCRIPTNAME} [-h] -p <pre-ini file> -f <target profile>
+
+Performs automated network kickstart of target server
+
+-s	hostname
+
+Assumptions:   -pre-inirator file has been loaded on MWS
+               -the target server is included in the pre-ini file
+               -target VM is powered on
+               -can SSH login to target VM using root/shroot
+               -Boot order in BIOS is set to Network, HDD etc
+
+
+EOF
+
+return 0
+
+}
+function add_to_cleanup ()
+{
+        cleanup_file="$1"
+        mkdir -p /tmp/$PARENT_BASHPID/cleanup_list > /dev/null 2>&1
+        touch /tmp/$PARENT_BASHPID/cleanup_list/cleanup.list > /dev/null 2>&1
+        echo "$cleanup_file" >> /tmp/$PARENT_BASHPID/cleanup_list/cleanup.list
+}
+
+cleanupOnExit() {       # Don't call exit here to avoid recursion!
+        local l_exitcode=$?
+        if [ "$l_exitcode" = 1 ]; then
+                echo "** $G_SCRIPTNAME Failed **"
+        fi
+        stty echo 2>/dev/null
+		#add_mws_client_profile 
+}
+
+
+#
+# Function to read client profile
+#
+read_client_profile() {
+	[ -s "$G_TARGET_SERVER_PROFILE_FILE" ] || {
+		echo "Error - target server profile file missing or empty"
+		usage
+		return 1
+	}
+	G_CLIENT_IP_ADDR=$( grep -w CLIENT_IP_ADDR $G_TARGET_SERVER_PROFILE_FILE | awk -F@ '{ print $2 }' )
+	G_CLIENT_HOSTNAME=$( grep -w CLIENT_HOSTNAME $G_TARGET_SERVER_PROFILE_FILE | awk -F@ '{ print $2 }' )
+	G_CLIENT_CONFIGTYPE=$( grep -w CLIENT_INSTALL_PARAMS $G_TARGET_SERVER_PROFILE_FILE | awk -F@ '{ print $NF }' | awk '{ print $NF }' | awk -F= '{print $2}' )
+	[ -z "$G_CLIENT_HOSTNAME" ] || [ -z "$G_CLIENT_IP_ADDR" ] || [ -z "$G_CLIENT_CONFIGTYPE" ] && {
+		echo "Unable to determine target client host name/ip address/config type"
+		return 1
+	}
+	echo "Target client host: $G_CLIENT_HOSTNAME, ip: $G_CLIENT_IP_ADDR"
+	return 0
+}
+
+#
+# remove old install log files
+#
+remove_old_install_logfiles() {
+	[ "$G_CLIENT_CONFIGTYPE" = smrs_slave ] && return 0
+	$G_SSH_SETUPSCRIPT ssh "root@$G_CLIENT_IP_ADDR /bin/rm -f /opt/ericsson/comif_core/log/*" $CI_TEST_SERVER_PASSWD || {
+		echo "Error failed to remove old installation log files"
+		return 1
+	}
+	return 0
+}
+
+#
+# Function to reboot target server
+#
+reboot_client() {
+	local max_tries=3
+	local count=1
+	local sleep_time=10
+	# create reboot script
+	#> /tmp/reboot.bsh
+	#echo "#!/bin/bash" >> /tmp/reboot.bsh
+	#echo "dd if=/dev/zero of=/dev/sda count=1 bs=512" >> /tmp/reboot.bsh
+	#echo "sync" >> /tmp/reboot.bsh
+	#echo "sync" >> /tmp/reboot.bsh
+	#echo "sleep 5" >> /tmp/reboot.bsh
+	#echo "reboot" >> /tmp/reboot.bsh
+	#chmod +x /tmp/reboot.bsh
+	#$G_SSH_SETUPSCRIPT scp "/tmp/reboot.bsh root@$G_CLIENT_IP_ADDR:/tmp" $CI_TEST_SERVER_PASSWD 
+	$G_SSH_SETUPSCRIPT ssh "root@$G_CLIENT_IP_ADDR reboot" $CI_TEST_SERVER_PASSWD 
+	return 0
+			 
+}
+
+#
+# Function to wait until target server goes down
+#
+wait_target_server_down() {
+	local max_tries=10
+	local count=1
+	local sleep_time=10
+	local failed_login_attempts=0
+	echo "Waiting for $G_CLIENT_IP_ADDR to go down..."
+	while [ $count -le $max_tries ]; do
+		timeout 10s $G_SSH_SETUPSCRIPT ssh "root@$G_CLIENT_IP_ADDR ls" $CI_TEST_SERVER_PASSWD > /dev/null 2>&1
+		retcode=$?
+		if [ $retcode -ne 0 ]; then
+			let failed_login_attempts+=1
+			if [ $failed_login_attempts -eq 3 ]; then
+				echo "$G_CLIENT_IP_ADDR appears to be down"
+				return 0
+			fi
+		fi
+		if [ $retcode -ne 124 ]; then
+			sleep $sleep_time
+		fi
+		let count+=1
+	done
+	
+
+}
+
+#
+# Function to remove client profile from MWS
+#
+remove_mws_client_profile() {
+	[ -n "$G_CLIENT_IP_ADDR" ] || return 1
+	if $G_SSH_SETUPSCRIPT ssh "root@$G_MWS_IP /ericsson/jumpstart/bin/manage_dhcp_clients.bsh -a remove -c $G_CLIENT_HOSTNAME -N" $CI_TEST_SERVER_PASSWD > /dev/null 2>&1; then 
+		echo "Removed client profile for $G_CLIENT_HOSTNAME on MWS $G_MWS_IP"
+	else
+		echo "Failed to remove client profile for $G_CLIENT_HOSTNAME"
+		return 1
+	fi
+	return 0
+	
+
+
+}
+
+#
+# function to poll target server until cominf install finishes
+#
+wait_target_server_kickstart_finished() {
+	local max_tries=360
+	local count=1
+	local sleep_time=10
+	local ssh_pid
+	local ssh_count=0
+	local ssh_max_dur=60
+	local cominf_install=cominf_install.bsh
+	local cominf_install_pid
+
+	[ -n "$G_CLIENT_IP_ADDR" ] || return 1
+
+	while [ $count -le $max_tries ]; do
+		echo "Checking kickstart on $G_CLIENT_HOSTNAME is finished, attempt ($count of $max_tries) .."
+		if [ "$G_CLIENT_CONFIGTYPE" = smrs_slave ]; then
+			# if we can ssh and S99local process is NOT running then kickstart is finished
+			if timeout 10s $G_SSH_SETUPSCRIPT ssh "root@$G_CLIENT_IP_ADDR ls" $CI_TEST_SERVER_PASSWD > /dev/null; then
+				if timeout 10s $G_SSH_SETUPSCRIPT ssh "root@$G_CLIENT_IP_ADDR pgrep -f /etc/rc3.d/S99local" $CI_TEST_SERVER_PASSWD > /dev/null 2>&1; then
+					retcode=1
+				else
+					retcode=0
+				fi
+			else
+				retcode=1
+			fi
+		else
+			timeout 10s $G_SSH_SETUPSCRIPT ssh "root@$G_CLIENT_IP_ADDR grep -q '$cominf_install completed' /opt/ericsson/cominf_core/log/${cominf_install}_*.log" $CI_TEST_SERVER_PASSWD > /dev/null 2>&1 
+			retcode=$?
+		fi
+		if [ $retcode -eq 0 ]; then
+			echo "kickstart on $G_CLIENT_HOSTNAME appears to be finished"
+			return 0
+		fi
+		if [ $retcode -ne 124 ]; then
+			sleep 10
+		fi
+		let count+=1
+		
+	done
+	echo "Error - unable to confirm kickstart completed on $G_CLIENT_HOSTNAME" 
+	return 1
+}
+
+#
+# remounts mws shares on target server
+#
+remount_mws_shares() {
+	[ -n "$G_CLIENT_IP_ADDR" ] || return 1
+	echo "for mnt in \$( mount | grep -w $G_MWS_IP | awk '{print \$1}' ); do umount -f \$mnt; done" > /tmp/umount.bsh
+	$G_SSH_SETUPSCRIPT scp "/tmp/umount.bsh root@$G_CLIENT_IP_ADDR:/tmp" $CI_TEST_SERVER_PASSWD || {
+		echo "Warning - failed to copy umount script to $G_CLIENT_HOSTNAME"
+		return 1
+	}
+	$G_SSH_SETUPSCRIPT ssh "root@$G_CLIENT_IP_ADDR bash /tmp/umount.bsh" $CI_TEST_SERVER_PASSWD || {
+		echo "Warning - failed to umount some/all mws file systems" 
+		return 1
+	}
+	# Mount MWS shares to avoid YUM issues
+	echo "Running upgrade_mount.bsh on $G_CLIENT_HOSTNAME"
+	if ! $G_SSH_SETUPSCRIPT ssh "root@$G_CLIENT_IP_ADDR /ericsson/config/upgrade/upgrade_mount.bsh" $CI_TEST_SERVER_PASSWD > /dev/null 2>&1; then
+		echo "upgrade_mount.bsh failed on $G_CLIENT_HOSTNAME"
+		return 1
+	fi
+	return 0
+}
+
+#
+# function to add client profile on MWS
+#
+add_mws_client_profile() {
+	[ -n "$G_CLIENT_IP_ADDR" ] || return 1
+	# copy profile file to mws
+	local prof_file=$( basename $G_TARGET_SERVER_PROFILE_FILE )
+	$G_SSH_SETUPSCRIPT scp "$G_TARGET_SERVER_PROFILE_FILE root@$G_MWS_IP:/var/tmp" > /dev/null 2>&1 || {
+		echo "Error - failed to copy $G_TARGET_SERVER_PROFILE_FILE to MWS $G_MWS_IP"
+		return 1
+	}
+	if $G_SSH_SETUPSCRIPT ssh "root@$G_MWS_IP /ericsson/jumpstart/bin/manage_dhcp_clients.bsh -a add -c $G_CLIENT_HOSTNAME -f /var/tmp/$prof_file -N" ; then 
+		echo "Added client profile for $G_CLIENT_HOSTNAME on MWS $G_MWS_IP"
+	else
+		echo "Failed to add client profile for $G_CLIENT_HOSTNAME"
+		return 1
+	fi
+	echo "Copying pre-ini file to MWS - workaround for pre-ini bug"
+	if ! $G_SSH_SETUPSCRIPT scp "$G_PREINIFILE root@$G_MWS_IP:/JUMP/SOL_MEDIA/${MWS_RHEL_MEDIA_NUMBER}/jumpstart/oss-clients/$G_CLIENT_HOSTNAME/pre-inirator_file" $CI_TEST_SERVER_PASSWD > /dev/null 2>&1; then
+		echo "Failed to copy $G_PREINIFILE to MWS"
+		return 1
+	fi
+	return 0
+
+}
+#
+#Perfrom pre checks before upgrade
+#
+pre_check ()
+{
+
+local OUTPUT=""
+#LDAP requirements
+#mount_scripts_directory $G_HOSTNAME
+#mount_scripts_directory 10.45.201.24
+#$SSH -n $G_HOSTNAME " cat /var/svc/profile/name_service.xml | grep ns_ldap.xml > /dev/null 2>&1" || {
+$G_SSH_SETUPSCRIPT ssh "root@$G_HOSTNAME  cat /var/svc/profile/name_service.xml | grep ns_ldap.xml " $CI_TEST_SERVER_PASSWD || {
+
+	echo " Performing the LDAP requirements"
+	$G_SSH_SETUPSCRIPT ssh "root@$G_HOSTNAME cd /var/svc/profile | rm name_service.xml | ln -s ns_ldap.xml name_service.xml" $CI_TEST_SERVER_PASSWD && {
+
+#		$G_SSH_SETUPSCRIPT ssh "root@$G_HOSTNAME rm name_service.xml" $CI_TEST_SERVER_PASSWD && {
+
+#			$G_SSH_SETUPSCRIPT ssh "root@$G_HOSTNAME ln -s ns_ldap.xml name_service.xml" $CI_TEST_SERVER_PASSWD && {
+			echo "Successfully performed LDAP requirements."
+ #                       }
+  #                }
+         }
+}
+#IDR patches
+$SSH -n $G_OMSERV_om_serv_master_IP "showrev -p | grep IDR > /dev/null 2>&1" && {
+	echo "removing IDR patches"
+
+	$SSH -n $G_OMSERV_om_serv_master_IP "patchrm IDR*> /dev/null 2>&1" && {
+	echo "successfully remove IDR patches"
+
+        }
+}
+#check disk space
+OUTPUT=`$SSH -n $G_OMSERV_om_serv_master_IP "df -h / "|grep -v Filesystem|awk '{print $2}'|sed  "s/G$//"`
+if [[ $? -ne 0 ]]
+        then
+                echo "ERROR: Couldn't find the disk space, see further output below\n" ERROR
+                echo "---------------------------------------------------------\n" ERROR
+                echo "$OUTPUT" ERROR
+                echo "\n---------------------------------------------------------\n" ERROR
+                exit 1
+        else
+                echo "$OUTPUT"
+                if [ "${OUTPUT}" -lt 2 ]; then
+                echo "disk space is less than 2GB. Solaris upgrade cannot be performed."
+                exit 1
+                else
+                echo "disk space is sufficient"
+                fi
+
+fi
+#check /a
+$SSH -qt $G_OMSERV_om_serv_master_IP  "cd /a"  > /dev/null 2>&1 && { echo "/a directory exists , removing the same"
+	$SSH -qt $G_OMSERV_om_serv_master_IP  "rm -rf /a"
+}
+$SSH -qt $G_OMSERV_om_serv_master_IP "cat /a" > /dev/null 2>&1 && { echo "/a file exists , removing the same"
+	$SSH -qt $G_OMSERV_om_serv_master_IP  "rm -rf /a"
+
+}
+echo "Finished precheck"
+return 0
+}
+
+#
+# Post install tasks
+#
+run_post_install_tasks() {
+	[ -n "$G_CLIENT_IP_ADDR" ] || return 1
+	echo "Running post install tasks"
+	echo "Copying pre-ini file to $G_CLIENT_HOSTNAME"
+	if ! $G_SSH_SETUPSCRIPT scp "$G_PREINIFILE root@$G_CLIENT_IP_ADDR:/opt/ericsson/config" $CI_TEST_SERVER_PASSWD > /dev/null 2>&1; then
+		echo "Failed to copy $G_CLIENT_IP_ADDR to $G_CLIENT_HOSTNAME"
+		return 1
+	fi
+	
+
+}
+get_lock ()
+{
+        local lockfile=$1
+        local lock_type=$2
+        local remote_server=$3
+        local timeoutvalue=$4
+        local removeontimeout=$5
+
+        if [[ "$lock_type" == "local" ]]
+        then
+                $MOUNTPOINT/get_lock.sh -f $lockfile -p $PARENT_BASHPID -t $timeoutvalue -r $removeontimeout
+        elif [[ "$lock_type" == "remote" ]]
+        then
+                mount_scripts_directory $remote_server
+                $SSH -qt $remote_server "$MOUNTPOINT/get_lock.sh -f $lockfile -p $PARENT_BASHPID -t $timeoutvalue -r $removeontimeout"
+        fi
+
+        if [[ $? -eq 0 ]]
+        then
+                add_to_cleanup "$lockfile $lock_type $remote_server"
+        else
+                return 1
+        fi
+
+}
+function clear_lock ()
+{
+        local lockfile=$1
+        local lock_type=$2
+        local remote_server=$3
+        if [[ "$lock_type" == "local" ]]
+        then
+                $MOUNTPOINT/clear_lock.sh -f $lockfile -p $PARENT_BASHPID
+        elif [[ "$lock_type" == "remote" ]]
+        then
+                mount_scripts_directory $remote_server
+                $SSH -qt $remote_server "$MOUNTPOINT//clear_lock.sh -f $lockfile -p $PARENT_BASHPID" 2> /dev/null
+        fi
+}
+function get_pingable_host ()
+{
+        local SERVER=$1
+        local SSHUSER=$2
+        local SSHPASS=$3
+        local HOSTS=$4
+        ## Figure out where to mount the scripts from on this server first
+        while read HOSTER
+        do
+                local output=""
+                output=$($EXPECT << EOF
+                        set force_conservative 1
+                        set timeout 300
+
+
+                        spawn ssh -qtn -l $SSHUSER -o StrictHostKeyChecking=no "$SERVER" "ping -c 1 $HOSTER > /dev/null 2>&1"
+
+                        while 1 {
+                        expect {
+                                        "assword:" {
+                                                send "$SSHPASS\r"
+                                        }
+                                        eof {
+                                                catch wait result
+                                                exit [lindex \$result 3]
+                                        }
+                                        timeout {
+                                                send_user "Timed out\n"
+                                                exit 1
+                                        }
+                                }
+                        }
+EOF
+)
+                if [[ $? -eq 0 ]]
+                then
+                        echo "$HOSTER"
+                        return 0
+                fi
+        done < <(echo "$HOSTS")
+
+        message "ERROR: Unable to ping any of the host ips from $SERVER, please check why not, list of host ips below\n" ERROR
+        message "$HOSTS\n" ERROR
+        return 1
+}
+
+function mount_scripts_directory()
+{
+        local SSHTEST=""
+        local SERVER=$1
+        local ACTION=""
+        local SSHUSER=$3
+        local SSHPASS=$4
+
+        if [[ "$SSHUSER" == "" ]]
+        then
+                SSHUSER="root"
+        fi
+        if [[ "$SSHPASS" == "" ]]
+        then
+                SSHPASS="shroot"
+        fi
+
+        if [[ "$2" == "noexit" ]]
+        then
+                ACTION="return 1"
+        else
+                ACTION="exit 1"
+        fi
+       # echo "INFO: Pinging $SERVER"
+        ping -c 2 $SERVER >> /dev/null 2>&1
+        if [ $? -eq 0 ]; then
+           # echo "INFO: $SERVER is alive"
+                setup_passwordless_ssh $SERVER $SSHUSER $SSHPASS
+            if [ $? -ne 0 ]; then
+                $ACTION
+            #else
+            #    echo "INFO: $SERVER trusts me"
+            fi
+        else
+            message "ERROR: $SERVER is not alive\n" ERROR
+                $ACTION
+        fi
+        #echo "INFO: Checking mountpoints for $SERVER"
+        #$SSH -qtn $SERVER "umount $SCRIPTMOUNT" > /dev/null 2>&1
+
+        local ATTEMPT=1
+        while [[ $ATTEMPT -le 60 ]]
+        do
+                local SCRIPTHOST=""
+                SCRIPTHOST=`get_pingable_host $SERVER $SSHUSER $SSHPASS "$SCRIPTHOSTS"`
+                if [[ $? -ne 0 ]]
+                then
+                        echo "$SCRIPTHOST"
+                        return 1
+                fi
+                $SSH -qtn -l $SSHUSER $SERVER "mkdir -p $SCRIPTMOUNT" > /dev/null 2>&1
+                $SSH -qtn -l $SSHUSER $SERVER "mount -o vers=3 $SCRIPTHOST:$SCRIPTMOUNT $SCRIPTMOUNT" > /dev/null 2>&1
+
+
+                SSHTEST=$($EXPECT - <<EOF
+set force_conservative 1
+set prompt ".*(%|#|\\$|>):? $"
+set timeout 300
+spawn $SSH -qtn -l $SSHUSER $SERVER "ls $SCRIPTMOUNT/CLOUD/bin/" 2>/dev/null
+
+while {"1" == "1"} {
+        expect {
+        timeout {
+                exit 1
+        }
+        eof {
+                catch wait result
+                exit [lindex \$result 3]
+        }
+
+        }
+EOF
+)
+                #SSHTEST=`$SSH -qtn $SERVER "ls $SCRIPTMOUNT/CLOUD/bin/" 2>/dev/null`
+                echo "$SSHTEST" | grep "master.sh" > /dev/null 2>&1
+                if [ $? -eq 0 ] ;then
+                        break
+                elif [[ "$2" == "noexit" ]]
+                then
+                        echo "INFO: $SERVER Cannot find scripts on $SCRIPTHOST but not retrying"
+                        return 0
+                else
+                        message "ERROR: $SERVER Cannot find scripts on $SCRIPTHOST\n" WARNING
+                        if [[ $ATTEMPT -ne 60 ]]
+                        then
+                                message "ERROR: Trying again in 10 seconds...\n" WARNING
+                                sleep 10
+                        else
+                                $ACTION
+                                message "ERROR: $SERVER Couldn't find scripts on $SCRIPTHOST\n" ERROR
+                        fi
+                fi
+                let ATTEMPT=ATTEMPT+1
+        done
+        #$SSH -qtn $SERVER "touch $MOUNTPOINT/touchtest.$$" > /dev/null 2>&1
+
+        #SSHTEST=`$SSH -qtn $SERVER "/bin/ls $MOUNTPOINT | grep touchtest.$$" 2>&1`
+        #echo $SSHTEST | grep touchtest.$$ >> /dev/null 2>&1
+        #if [ $? -eq 0 ];then
+            #echo "INFO: $SERVER has write access to $MOUNTPOINT"
+        #    $SSH -qtn $SERVER "rm $MOUNTPOINT/touchtest.$$" > /dev/null
+        #else
+         #   echo "WARNING: $SERVER cannot write to $MOUNTPOINT"
+        #fi
+}
+
+function setup_passwordless_ssh()
+{
+
+        local SERVER=$1
+        local SSHUSER=$2
+        local SSHPASS=$3
+
+        if [[ "$SSHUSER" == "" ]]
+        then
+                SSHUSER="root"
+        fi
+        if [[ "$SSHPASS" == "" ]]
+        then
+                SSHPASS="shroot"
+        fi
+#echo -n "Checking passwordless ssh to $SERVER: "
+ssh -qtn -l $SSHUSER -o StrictHostKeyChecking=no -o PasswordAuthentication=no -o NumberOfPasswordPrompts=0 "$SERVER" ls > /dev/null 2>&1
+if [ $? -eq 0 ]
+then
+        #echo "OK"
+        return 0
+fi
+        message "INFO: Setting up passwordless ssh to $SERVER\n" INFO
+        KNOWN_HOSTS_LOCK="/tmp/.known_hosts_lock"
+        get_lock $KNOWN_HOSTS_LOCK local na 600 yes
+        cat $HOME/.ssh/known_hosts | grep -v "^$SERVER," | grep -v "^$SERVER " > $HOME/.ssh/known_hosts.temp
+        mv $HOME/.ssh/known_hosts.temp $HOME/.ssh/known_hosts
+        clear_lock $KNOWN_HOSTS_LOCK local na
+
+        if [[ ! -f $HOME/.ssh/id_rsa ]]
+        then
+                ssh-keygen -t rsa -f $HOME/.ssh/id_rsa -P "" >/dev/null 2>&1
+        fi
+        local SCRIPTHOST=""
+        SCRIPTHOST=`get_pingable_host $SERVER $SSHUSER $SSHPASS "$SCRIPTHOSTS"`
+        if [[ $? -ne 0 ]]
+        then
+                echo "$SCRIPTHOST"
+                return 1
+        fi
+local COMMAND1="umount $SCRIPTMOUNT > /dev/null 2>&1;mkdir -p $MOUNTPOINT > /dev/null 2>&1;mount -o vers=3 $SCRIPTHOST:$SCRIPTMOUNT $SCRIPTMOUNT"
+local COMMAND2="$MOUNTPOINT/bin/setup_passwordless_ssh.sh '`cat $HOME/.ssh/id_rsa.pub`'"
+local output=$($EXPECT << EOF
+set force_conservative 1
+set timeout 300
+
+
+spawn ssh -qtn -l $SSHUSER -o StrictHostKeyChecking=no "$SERVER" "$COMMAND1;$COMMAND2"
+
+while 1 {
+expect {
+        "password:" {
+                send "$SSHPASS\r"
+        }
+        eof {
+                break
+        }
+        timeout {
+                send_user "Timed out\n"
+                exit 1
+        }
+}
+}
+EOF
+)
+sleep 2
+#ssh -qtn -o PasswordAuthentication=no -o NumberOfPasswordPrompts=0 "$SERVER" < /dev/null > /dev/null 2>&1
+ssh -qtn -l $SSHUSER -o StrictHostKeyChecking=no -o PasswordAuthentication=no -o NumberOfPasswordPrompts=0 "$SERVER" ls > /dev/null 2>&1
+if [ $? -eq 0 ]
+then
+        #echo "Passwordless ssh is working towards $SERVER"
+        return 0
+else
+        message "Failed to setup passwordless ssh towards $SERVER\n" ERROR
+        message "$output\n" ERROR
+        return 1
+fi
+
+}
+
+function message ()
+{
+
+        local MESSAGE="$1"
+        local TYPE=$2
+
+        COLOR=$white
+        if [[ "$TYPE" == "ERROR" ]]
+        then
+                COLOR=$red
+        fi
+        if [[ "$TYPE" == "LINE" ]]
+        then
+                COLOR=$magenta
+        fi
+        if [[ "$TYPE" == "WARNING" ]]
+        then
+                COLOR=$yellow
+        fi
+        if [[ "$TYPE" == "SUMMARY" ]]
+        then
+                COLOR=$green
+        fi
+        if [[ "$TYPE" == "SCRIPT" ]]
+        then
+                COLOR=$cyan
+        fi
+        if [[ `echo "$MESSAGE" | egrep "^INFO:|^ERROR:|^WARNING:"` ]]
+        then
+                local FORMATTED_DATE="`date | awk '{print $2 "_" $3}'`"
+                local FORMATTED_TIME="`date | awk '{print $4}'`"
+                MESSAGE="[$FORMATTED_DATE $FORMATTED_TIME] $MESSAGE"
+        fi
+        echo -en $COLOR
+        echo -en "$MESSAGE"
+        echo -en $white
+
+}
+
+
+# MAIN
+G_SCRIPTDIR=$(cd $(/usr/bin/dirname $0); pwd)
+G_SCRIPTNAME=$(/bin/basename $0)
+G_SSH_SETUPSCRIPT=$G_SCRIPTDIR/ssh_setup.sh
+#G_MWS_IP=10.45.201.54
+G_MWS_IP=10.42.33.76
+LDAP_DM_PASSWD=shroot12
+CI_TEST_SERVER_PASSWD=shroot
+MWS_RHEL_MEDIA_NUMBER=1
+MOUNTPOINT="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+
+trap 'cleanupOnExit' EXIT
+
+while getopts ":hs:" opt
+        do
+        case ${opt} in
+                h)      # Print help and exit OK
+                        usage
+                        exit 0
+                ;;
+                s)      # hostname
+                        G_HOSTNAME="$OPTARG"
+                ;;
+
+    
+        
+                *)      # Print usage and exit error
+                        usage
+                        exit 1
+                ;;
+        esac
+done
+#read_client_profile || exit 1
+
+#add_mws_client_profile || exit 1
+
+#remove_old_install_logfiles || exit 1
+
+pre_check || exit 1
+
+live_upgrade || exit 1
+
+post_upgrade || exit 1
+
+reboot_client || exit 1
+
+wait_target_server_down || exit 1
+
+sleep 180 
+
+#remove_mws_client_profile || exit 1
+
+#wait_target_server_kickstart_finished || exit 1
+
+small_upgrade || exit 1
+
+#remount_mws_shares || exit 1
+
+#run_post_install_tasks || exit
+
+
+exit 0

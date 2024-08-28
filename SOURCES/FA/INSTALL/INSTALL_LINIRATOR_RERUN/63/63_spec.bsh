@@ -1,0 +1,47 @@
+#!/bin/bash
+
+# TEST CASE SPEC FILE
+# This file is generated/updated using the test framework web interface.
+# Manual updates on test servers are lost when the test package is re-installed.
+#
+# Last modified: Sunday 31st of March 2013 20:37:23
+#
+
+# These settings must be in BASH script format, they are sourced by other scripts.
+SPEC_FA_NAME="INSTALL"
+SPEC_UC_NAME="INSTALL_LINIRATOR_RERUN"
+SPEC_TC_ID=63
+SPEC_TC_SLOGAN="Inirator on secondary - valid answers check questions asked"
+SPEC_TC_TYPE="FT"
+SPEC_TC_POLARITY="positive"
+SPEC_TC_PRIORITY="high"
+SPEC_TC_AUTOMATED=0
+SPEC_TC_DEPENDENT_ONLY=0
+SPEC_TC_TIMEOUT=300
+SPEC_TC_TEST_PASSCODE=0
+SPEC_TC_AUTHOR="xamamcg"
+SPEC_TC_AUTOMATOR="xbahzam"
+# this parameter is not interpreted by harness
+SPEC_TC_DISABLED=0
+
+# Please do not remove the comment lines below.
+# They are used as section locators by the test harness.
+
+# BEGIN_PRE_CONDITIONS
+#1. RHEL_INSTALLED
+#
+# END_PRE_CONDITIONS
+
+
+# BEGIN_MANUAL_STEPS
+#1. Run inirator on secondary, choose: standard deployment, and enter valid values for all questions. For DHCP choose Y, and Y for DHCP IPv6. Expect to get same questions as on primary EXCEPT that it will ask for details of O&M Services Primary instead of O&M Services Secondary. When asked to confirm values send Ctrl C (�03)
+#2. Run inirator again on secondary, choose standard, but for DHCP choose n, expect to get same questions except there will be no questions for whether want DHCP IPv6, and no question for IPv6 DHCP address and subnet.
+#When sked to confirm values send Ctrl C (�03)
+#3. Run inirator again same as 1) but for DHCP choose y, and then n when asked if want DHCP IPv6. Expect to get same questions as for 1st case, but no questions on IPv6 address or subnet.
+#When asked to confirm values send Ctrl C (�03) 
+# END_MANUAL_STEPS
+
+# BEGIN_POST_CONDITIONS
+#1. ! CONSOLE_OUTPUT_CONTAINS "error"
+#2. ! CONSOLE_OUTPUT_CONTAINS "Not a valid"
+# END_POST_CONDITIONS

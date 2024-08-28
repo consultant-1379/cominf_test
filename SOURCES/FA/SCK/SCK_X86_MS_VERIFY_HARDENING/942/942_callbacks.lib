@@ -1,0 +1,685 @@
+#!/bin/bash
+#################################################################################
+#
+#
+#       COPYRIGHT (C) ERICSSON RADIO SYSTEMS AB, Sweden
+#
+#       The copyright to the document(s) herein is the property of
+#       Ericsson Radio Systems AB, Sweden.
+#
+#       The document(s) may be used and/or copied only with the written
+#       permission from Ericsson Radio Systems AB or in accordance with
+#       the terms and conditions stipulated in the agreement/contract
+#       under which the document(s) have been supplied.
+#
+#################################################################################
+#SOURCE ENVIRONMENT FILE for GLOBAL variables
+. ${AT_ROOT}/*.env
+
+# ATCOMINF Test Callback Library
+
+# Revision History
+# <date>	<signum>	<details>
+
+# Complete the callbacks in this library to automate the test case.
+#
+# Callbacks are stateless, it is not possible to set a global variable in one callback 
+# and access it it in another.
+#
+# Callbacks are called by the test harness in the following order:
+#
+# tc_setup() 		# Called only for independent TC execution mode to setup TC
+# tc_precon()		# Conditions that should exist before TC can run
+# tc_test()		# Runs the test for this TC
+# tc_postcon()		# Conditions that should/should not exist after successful TC 
+# tc_cleanup()		# Called only for independent TC execution mode to cleanup after TC
+
+# All callbacks must PASS for a TC PASS result
+
+#################################################################################
+#
+# CALLBACK: TC_SETUP
+#
+# This callback function is only called if the harness execution mode is 'AT_INDEPENDENT'
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_setup() {
+
+	# Coded to fail in case TC_AUTOMATED=1 before automation completed
+	# Change return code as required
+
+	return 0
+
+}
+#################################################################################
+
+#################################################################################
+#
+# CALLBACK: TC_PRECON
+#
+# This callback function checks the correct conditions exist to run the TC.
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+ 
+tc_precon() {
+
+	# Coded to fail in case TC_AUTOMATED=1 before automation completed
+	# Change return code as required
+#IsIIorUpgradeSuccessful
+##VALUE=$?
+#echo "++++++++++++++++++++++++++++++++++++++Value=$VALUE+++++++++++++++++++++++++"
+
+#if [ "$VALUE" -eq "1" ]; then
+#   return 0
+#else
+#   return 1
+#fi
+return 0
+
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_TEST
+#
+# This callback function runs the test.
+# The harness compares the return code to the SPEC_TC_TEST_PASSCODE value set in the test spec.
+#
+# Return or exit codes:
+#    SPEC_TC_TEST_PASSCODE 	success
+# != SPEC_TC_TEST_PASSCODE 	failure
+ 
+tc_test() {
+
+	# Coded to fail in case TC_AUTOMATED=1 before automation complete
+	# Change return code as required
+
+echo "Admin1 server is :$CI_ADMIN1_HOSTNAME"
+echo "Admin2 server is :$CI_ADMIN2_HOSTNAME"
+echo "BASH DIR:$G_BASH_DIR"
+admin1=$CI_ADMIN1_HOSTNAME
+admin2=$CI_ADMIN2_HOSTNAME
+
+$EXPECT << EOF
+spawn scp -oUserKnownHostsFile=/dev/null -ostricthostkeychecking=no $G_BASH_DIR/jass2.sh root@$admin1.athtem.eei.ericsson.se:/var/tmp
+set timeout 10
+#exp_internal 1
+while 1 {
+        expect {
+                "Are you sure you want to continue connecting" {
+                        send "yes\r"}
+		"Password:" {
+                        send "shroot\r"
+                        break}
+                timeout {
+                        puts "warning: timed out"
+                        exit 1}
+                }
+        }
+#expect "#"
+spawn scp -oUserKnownHostsFile=/dev/null -ostricthostkeychecking=no $G_BASH_DIR/jass2.sh root@$admin2.athtem.eei.ericsson.se:/var/tmp
+set timeout 10
+#exp_internal 1
+while 1 {
+        expect {
+                "Are you sure you want to continue connecting" {
+                        send "yes\r"}
+		"Password:" {
+                        send "shroot\r"
+                        break}
+                timeout {
+                        puts "warning: timed out"
+                        exit 2}
+
+                }
+        }
+expect "#"
+exit 0
+expect closed
+EOF
+
+ret1=$?
+
+if [ $ret1 -eq 1 ]
+then
+        echo "jass2.sh not copied to ${admin1}"
+	return 1
+elif [ $ret1 -eq 2 ]
+then
+        echo "jass2.sh not copied to ${admin2}"
+	return 1
+fi
+
+$EXPECT << EOF
+spawn ssh root@${CI_MWS_HOSTNAME}
+set timeout 10
+#exp_internal 1
+while 1 {
+        expect {
+                "Are you sure you want to continue connecting" {
+                        send "yes\r"}
+                "Password:" {
+                        send "shroot12\r"
+                        break}
+                }
+                break
+        }
+expect "#"
+send -- "bash\r"
+expect "#"
+set timeout 10
+send -- "scp -oUserKnownHostsFile=/dev/null -ostricthostkeychecking=no /var/tmp/JASScustm.pkg root@${admin1}.athtem.eei.ericsson.se:/var/tmp/\r"
+while 1 {
+        expect {
+                "Are you sure you want to continue connecting" {
+                        send "yes\r"}
+                "Password:" {
+                        send "shroot\r"
+                        break }
+                timeout {
+                        puts "warning: timed out"
+                        exit 1}
+        }
+}
+expect "scp:" {
+puts "ERROR: JASScustm.pkg could not be copied  to ${admin1}, hence exiting......"
+exit 1
+}
+expect "#"
+set timeout 10
+send -- "scp -oUserKnownHostsFile=/dev/null -ostricthostkeychecking=no /var/tmp/JASScustm.pkg root@${admin2}.athtem.eei.ericsson.se:/var/tmp/\r"
+while 1 {
+        expect {
+                "Are you sure you want to continue connecting" {
+                        send "yes\r"}
+                "Password:" {
+                        send "shroot\r"
+                        break }
+                timeout {
+                        puts "warning: timed out"
+                        exit 2}
+                }
+        }
+expect "scp:" {
+puts "ERROR: JASScustm.pkg could not be copied  to ${admin2}, hence exiting......"
+exit 2
+}
+expect "#"
+exit 0
+expect closed
+EOF
+
+ret1=$?
+
+if [ $ret1 -eq 1 ]
+then
+        echo "Jasscustm.pkg not copied to ${admin1}"
+	return 1
+elif [ $ret1 -eq 2 ]
+then
+        echo "Jasscustm.pkg not copied to ${admin2}"
+	return 1
+fi
+
+
+$EXPECT << EOF
+spawn ssh -oUserKnownHostsFile=/dev/null -ostricthostkeychecking=no  root@$admin1.athtem.eei.ericsson.se
+set timeout 180
+#exp_internal 1
+while 1 {
+        expect {
+                "Are you sure you want to continue connecting" {
+                        send "yes\r"}
+                "Password:" {
+                        send "shroot\r"
+                        break}
+                }
+        }
+expect "#"
+send -- "bash\r"
+expect " #"
+send -- "/var/tmp/jass2.sh\r"
+#sleep 600
+expect " #"
+send "exit\r"
+exit 0
+expect closed
+EOF
+
+
+
+
+$EXPECT << EOF
+spawn ssh -oUserKnownHostsFile=/dev/null -ostricthostkeychecking=no root@$admin2.athtem.eei.ericsson.se
+set timeout 180
+#exp_internal 1
+while 1 {
+        expect {
+                "Are you sure you want to continue connecting" {
+                        send "yes\r"}
+                "Password:" {
+                        send "shroot\r"
+                        break}
+                }
+        }
+expect "#"
+send -- "bash\r"
+expect " #"
+send -- "/var/tmp/jass2.sh\r"
+#sleep 600
+expect " #"
+send "exit\r"
+exit 0
+expect closed
+EOF
+
+$EXPECT << EOF
+spawn ssh -oUserKnownHostsFile=/dev/null -ostricthostkeychecking=no root@$admin1.athtem.eei.ericsson.se
+#exp_internal 1
+while 1 {
+        expect {
+                "Are you sure you want to continue connecting" {
+                        send "yes\r"}
+                "Password:" {
+                        send "shroot\r"
+                        break}
+                }
+        }
+expect "#"
+send -- "bash\r"
+expect " #"
+send -- "/opt/SUNWjass/bin/eric-hardening-apply.sh\r"
+set timeout 60
+while 1 {
+        expect {
+                 "Are you sure that you want to continue" {
+                        send "yes\r"
+                        break}
+                timeout {
+                        puts "warning: timed out"
+                        break}
+                }
+        }
+expect " #"
+send "exit\r"
+exit 0
+expect closed
+EOF
+
+if [ $? -eq 0 ]
+then
+        echo "sucessfully executed the script /opt/SUNWjass/bin/eric-hardening-apply.sh "
+else
+        echo "Error found in the script /opt/SUNWjass/bin/eric-hardening-apply.sh"
+	return 1
+fi
+
+$EXPECT << EOF
+spawn ssh -oUserKnownHostsFile=/dev/null -ostricthostkeychecking=no root@$admin2.athtem.eei.ericsson.se
+#exp_internal 1
+while 1 {
+        expect {
+                "Are you sure you want to continue connecting" {
+                        send "yes\r"}
+                "Password:" {
+                        send "shroot\r"
+                        break}
+        }
+}
+expect "#"
+send -- "bash\r"
+expect " #"
+send -- "/opt/SUNWjass/bin/eric-hardening-apply.sh\r"
+set timeout 60
+while 1 {
+        expect {
+                 "Are you sure that you want to continue" {
+                        send "yes\r"
+                        break}
+                timeout {
+                        puts "warning: timed out"
+                        break}
+                }
+        }
+expect " #"
+send "exit\r"
+exit 0
+expect closed
+EOF
+if [ $? -eq 0 ]
+then
+        echo "sucessfully executed the script /opt/SUNWjass/bin/eric-hardening-apply.sh "
+else
+        echo "Error found in the script /opt/SUNWjass/bin/eric-hardening-apply.sh"
+	return 1
+fi
+
+>jass1_log
+>jass2_log
+
+$EXPECT << EOF
+log_file jass1_log
+spawn ssh -oUserKnownHostsFile=/dev/null -ostricthostkeychecking=no root@$admin1.athtem.eei.ericsson.se
+set timeout 20
+#exp_internal 1
+while 1 {
+        expect {
+                "Are you sure you want to continue connecting" {
+                        send "yes\r"}
+                "Password:" {
+                        send "shroot\r"
+                        }
+            "New Password:" {
+                        send "shroot\r"
+                        }
+                "Re-enter new Password:" {
+                        send "shroot\r"
+			break
+                }
+		timeout {
+                        puts "warning: timed out"
+			break
+			}
+        }
+}
+expect "#"
+send -- "bash\r"
+expect " #"
+send -- "hatool\r"
+expect "Enter selection"
+send "q\r"
+expect " #"
+send "exit\r"
+exit 0
+expect closed
+EOF
+
+first_entry=$(cat jass1_log |grep Stop |awk '{print $2}')
+
+$EXPECT << EOF
+log_file jass2_log
+spawn ssh -oUserKnownHostsFile=/dev/null -ostricthostkeychecking=no root@$admin1.athtem.eei.ericsson.se
+#exp_internal 1
+while 1 {
+        expect {
+                "Are you sure you want to continue connecting" {
+                        send "yes\r"}
+                "Password:" {
+                        send "shroot\r"
+			break
+                        }
+                }
+}
+expect "#"
+send -- "bash\r"
+expect " #"
+send -- "hatool\r"
+expect "Enter selection"
+send "${first_entry}\r"
+expect "Enter selection"
+send "q\r"
+expect "Enter selection"
+send "q\r"
+expect " #"
+send "exit\r"
+exit 0
+expect closed
+EOF
+
+second_entry=$(cat jass2_log |grep "Reboot Cluster" |awk '{print $1}')
+
+$EXPECT << EOF
+log_file jass1_log
+spawn ssh -oUserKnownHostsFile=/dev/null -ostricthostkeychecking=no root@$admin1.athtem.eei.ericsson.se
+#exp_internal 1
+while 1 {
+        expect {
+                "Are you sure you want to continue connecting" {
+                        send "yes\r"}
+                "Password:" {
+                        send "shroot\r"
+			break
+                        }
+                }
+        }
+expect "#"
+send -- "bash\r"
+expect " #"
+send -- "hatool\r"
+expect "Enter selection"
+send "${first_entry}\r"
+expect "Enter selection"
+send "${second_entry}\r"
+while 1 {
+        expect {
+                "Password:" {
+                        send "shroot\r"
+                        }
+                "New Password:" {
+                        send "shroot\r"
+                        }
+                "Re-enter new Password:" {
+                        send "shroot\r"
+                        }
+                "Do you really want to Reboot now" {
+                        send "y\r"
+                        break}
+                }
+        }
+sleep 600
+exit 0
+expect closed
+EOF
+>admin1_log
+>admin2_log
+
+for var in $admin1 $admin2
+do
+
+$EXPECT << EOF
+spawn telnet  ${var}.athtem.eei.ericsson.se
+while 1 {
+        expect {
+                "login:" {
+                        send "root\r"}
+                "Password:" {
+                        send "shroot\r"
+                        break}
+                }
+        }
+expect "#"
+send -- "bash\r"
+expect " #"
+send "exit\r"
+exit 0
+expect closed
+EOF
+
+if [ $? -eq 0 ]
+then
+        echo "sucessfully logging $var "
+else
+        echo "failed to login $var"
+fi
+
+done
+
+$EXPECT << EOF
+log_file admin1_log
+spawn ssh -oUserKnownHostsFile=/dev/null -ostricthostkeychecking=no root@${admin1}.athtem.eei.ericsson.se
+set timeout 250
+#exp_internal 1
+while 1 {
+        expect {
+                "Password:" {
+                        send "shroot\r"
+			break}
+                }
+		"Connection refused" {
+			sleep 60}
+		}
+expect "#"
+send "exit\r"
+exit 0
+expect closed
+EOF
+
+$EXPECT << EOF
+log_file admin2_log
+spawn ssh -oUserKnownHostsFile=/dev/null -ostricthostkeychecking=no root@${admin2}.athtem.eei.ericsson.se
+set timeout 250
+#exp_internal 1
+while 1 {
+        expect {
+                "Password:" {
+                        send "shroot\r"
+			break
+			}
+		"Connection refused" {
+			sleep 60}
+		}
+        }
+expect "#"
+send "exit\r"
+exit 0
+expect closed
+EOF
+
+screen_shot=$(cat admin1_log | grep "This system is for the use of authorized users only")
+if [ $? -eq 0 ]
+then
+        screen_shot=0
+else
+        screen_shot=1
+fi
+
+#new_pwd=$(cat admin1_log | grep "New Password")
+#if [ $? -eq 0 ]
+#then
+#        new_pwd=0
+#else
+#        new_pwd=1
+#fi
+
+#re_enter_pwd=$(cat admin1_log | grep "Re-enter new Password")
+#if [ $? -eq 0 ]
+#then
+#        re_enter_pwd=0
+#else
+#        re_enter_pwd=1
+#fi
+
+#if [ $screen_shot -eq 0 ] && [ $new_pwd -eq 0 ] && [ $re_enter_pwd -eq 0 ]
+#then
+#        echo "Sucessfully launched the node hardening security screen and changed the pwd in $admin1"
+#	flag1=0
+if [ $screen_shot -eq 0 ]
+then
+        echo "Sucessfully launched the node hardening security screen in $admin1"
+	flag1=0
+else
+        echo "node hardening security screen is not initiated in $admin1"
+	flag1=1
+fi
+
+screen_shot=$(cat admin2_log | grep "This system is for the use of authorized users only")
+if [ $? -eq 0 ]
+then
+        screen_shot=0
+else
+        screen_shot=1
+fi
+
+#new_pwd=$(cat admin2_log | grep "New Password")
+#if [ $? -eq 0 ]
+#then
+#        new_pwd=0
+#else
+#        new_pwd=1
+#fi
+
+#re_enter_pwd=$(cat admin2_log | grep "Re-enter new Password")
+#if [ $? -eq 0 ]
+#then
+#        re_enter_pwd=0
+#else
+#        re_enter_pwd=1
+#fi
+
+#if [ $screen_shot -eq 0 ] && [ $new_pwd -eq 0 ] && [ $re_enter_pwd -eq 0 ]
+#then
+#        echo "Sucessfully launched the node hardening security screen and changed the pwd in $admin2"
+#	flag=0
+if [ $screen_shot -eq 0 ]
+then
+        echo "Sucessfully launched the node hardening security screen in $admin2"
+	flag=0
+else
+        echo "node hardening security screen is not initiated in $admin2"
+	flag=1
+fi
+
+if [ $flag -eq 0 ] && [ $flag1 -eq 0 ]
+then
+	return 0
+else
+	return 1
+fi
+
+
+echo "Scripts Execution completes"
+
+
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_POSTCON
+#
+# This callback function checks expected results.
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_postcon() {
+
+	# Coded to fail in case TC_AUTOMATED=1 before automation complete.
+	# Change return code as required
+
+	return 0
+
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_CLEANUP
+#
+# This callback function is only called if the harness execution mode is 'AT_INDEPENDENT'
+# 
+# This callback restores the target system to the state it was in before the TC 
+# was run. It rolls back changes made by callbacks tc_setup() and tc_test()
+# 
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_cleanup() {
+
+	# Coded to fail in case TC_AUTOMATED=1 before automation complete
+	# Change return code as required
+
+	return 0
+
+}

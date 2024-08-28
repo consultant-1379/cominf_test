@@ -1,0 +1,546 @@
+#!/bin/bash
+#################################################################################
+#
+#
+#       COPYRIGHT (C) ERICSSON RADIO SYSTEMS AB, Sweden
+#
+#       The copyright to the document(s) herein is the property of
+#       Ericsson Radio Systems AB, Sweden.
+#
+#       The document(s) may be used and/or copied only with the written
+#       permission from Ericsson Radio Systems AB or in accordance with
+#       the terms and conditions stipulated in the agreement/contract
+#       under which the document(s) have been supplied.
+#
+#################################################################################
+
+
+# ATCOMINF Test Callback Library
+
+# Revision History
+# 15-08-12 	xkalbha		Initial version
+
+# Complete the callbacks in this library to automate the test case.
+#
+# Callbacks are stateless, it is not possible to set a global variable in one callback 
+# and access it it in another.
+#
+# Callbacks are called by the test harness in the following order:
+#
+# tc_setup() 		# Called only for independent TC execution mode to setup TC
+# tc_precon()		# Conditions that should exist before TC can run
+# tc_test()		# Runs the test for this TC
+# tc_postcon()		# Conditions that should/should not exist after successful TC 
+# tc_cleanup()		# Called only for independent TC execution mode to clenup after TC
+
+# All callbacks must PASS for a TC PASS result
+DEPLOYMENT_TYPE=NON_BLADE
+#################################################################################
+#
+# CALLBACK: TC_SETUP
+#
+# This callback function is only called if the harness execution mode is 'AT_INDEPENDENT'
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_setup() {
+
+	svcadm enable smrs_nfs
+	return 0
+
+}
+#################################################################################
+
+#################################################################################
+#
+# CALLBACK: TC_PRECON
+#
+# This callback function checks the correct conditions exist to run the TC.
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+ 
+tc_precon() {
+
+	#  Check have SMRS hosts ip file for this OSS maser
+	name=`hostname`
+	filename="smrs.hosts.ip.$name"
+	[ $DEPLOYMENT_TYPE == NON_BLADE ] && filename="smrs.hosts.ip_non_blade.$name"
+	[ -r $filename ] || { echo "  SMRS hosts ip file $filename does not exist"; return 2; }
+	#Copy to smrs.hosts.ip file
+	cp $filename "smrs.hosts.ip"
+
+	nedss_ip=$(awk 'NR==2' smrs.hosts.ip)
+
+	# updating config file with correct ip and mount names for the current environment
+	sed -e "s/^SMRS_SLAVE_NEDSS_IP=.*$/SMRS_SLAVE_NEDSS_IP=${nedss_ip}/" \
+		smrs_slave_config.valid > smrs_slave_config.valid.tmp
+	numlines=$(cat smrs.hosts.ip | wc -l)
+	if [ $numlines -gt 3 ]; then
+		host_gran=$(awk 'NR==4' smrs.hosts.ip)
+		host_wran=$(awk 'NR==5' smrs.hosts.ip)
+		host_lran=$(awk 'NR==6' smrs.hosts.ip)
+		host_core=$(awk 'NR==7' smrs.hosts.ip)
+
+		# updating config file with correct ip and mount names for the current environment
+		sed -e "s,^SMRS_SLAVE_GRAN_NAS_SHARE_NAME=.*$,SMRS_SLAVE_GRAN_NAS_SHARE_NAME=${host_gran}," \
+			-e "s,^SMRS_SLAVE_WRAN_NAS_SHARE_NAME=.*$,SMRS_SLAVE_WRAN_NAS_SHARE_NAME=${host_wran}," \
+			-e "s,^SMRS_SLAVE_LRAN_NAS_SHARE_NAME=.*$,SMRS_SLAVE_LRAN_NAS_SHARE_NAME=${host_lran}," \
+			-e "s,^SMRS_SLAVE_CORE_NAS_SHARE_NAME=.*$,SMRS_SLAVE_CORE_NAS_SHARE_NAME=${host_core}," \
+			smrs_slave_config.valid.tmp > smrs_slave_config.valid2
+	else
+		# Do not want any NAS lines
+		grep -v "NAS_SHARE_NAME" smrs_slave_config.valid.tmp > smrs_slave_config.valid2
+		echo "# Specify following if using OM_SERVICES" >> smrs_slave_config.valid2
+	fi
+
+	return 0
+
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_TEST
+#
+# This callback function runs the test.
+# The harness compares the return code to the SPEC_TC_TEST_PASSCODE value set in the test spec.
+#
+# Return or exit codes:
+#    SPEC_TC_TEST_PASSCODE 	success
+# != SPEC_TC_TEST_PASSCODE 	failure
+ 
+tc_test() {
+		echo "TC_TEST Starting $(date)"
+
+        cmd='/opt/ericsson/nms_bismrs_mc/bin/configure_smrs.sh add slave_service -f smrs_slave_config.valid2'
+
+        ${AT_BIN}/con_ex.bsh -d 218.in -o 218.exp -c "${cmd}"
+        retval=$?
+        [ $retval -ne 0 ] && { echo Failed to create expect script $retval; return 2; }
+
+        /usr/local/bin/expect 218.exp
+
+	[ $? -eq 0 ] || { echo "running main command  to add all network types GRAN, WRAN, LRAN  and CORE on NEDSS returned non-zero value while SMRS Master had all of these network types present"; return 1; }
+
+	echo "TC_TEST ending $(date)"
+	return 0 
+
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_POSTCON
+#
+# This callback function checks expected results.
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_postcon() {
+
+	echo "TC_POSTCON Starting $(date)"
+	# getting the smrs slave services name from the config file
+	sl_serv_name=$(awk -F= '/^SMRS_SLAVE_SERVICE_NAME/ {print $2}' smrs_slave_config.valid2)
+	
+
+	# OM primary IP Address for ssh
+	OM_PRIMARY_IP=$(grep "smrs_master" /etc/inet/hosts | awk '{print $1}')
+
+	# NEDSS IP address for ssh 
+	NEDSS_IP=$(awk -F= '/^SMRS_SLAVE_NEDSS_IP/ {print $2}' smrs_slave_config.valid2)
+
+
+	# 1&2  The Error/warnings in the log files can be ignored! 
+
+	# 3. checking all mounts
+	# checking all mounts on OSS Master
+	
+	# wait for mounts to be created
+	sleep 120
+
+	
+
+	mount > mount_oss.data
+	[ $? -eq 0	] || { echo " running mount command on OSS Master failed"; return 34; }
+
+	grep "/GRAN/$sl_serv_name" mount_oss.data >/dev/null 2>&1
+	[ $? -eq 0      ] || { echo " /GRAN/$sl_serv_name mount check on OSS Master failed"; return 34; }	
+
+
+	grep "/WRAN/$sl_serv_name" mount_oss.data >/dev/null 2>&1
+	[ $? -eq 0      ] || { echo " /WRAN/$sl_serv_name mount check on OSS Master failed"; return 34; }	
+
+
+	grep "/LRAN/$sl_serv_name" mount_oss.data >/dev/null 2>&1
+	[ $? -eq 0      ] || { echo " /LRAN/$sl_serv_name mount check on OSS Master failed"; return 34; }	
+
+
+	grep "/CORE/$sl_serv_name" mount_oss.data >/dev/null 2>&1
+	[ $? -eq 0      ] || { echo " /CORE/$sl_serv_name mount check on OSS Master failed"; return 34; }	
+
+	# checking all mounts on SMRS Master 
+	ssh  smrs_master mount > mount.ompri.data
+	[ $? -eq 0      ] || { echo " running mount command on SMRS Master failed"; return 34; }
+
+        grep "/GRAN/$sl_serv_name" mount.ompri.data >/dev/null 2>&1
+        [ $? -eq 0      ] || { echo " /GRAN/$sl_serv_name mount check on SMRS Master failed"; return 34; }
+
+
+        grep "/WRAN/$sl_serv_name" mount.ompri.data >/dev/null 2>&1
+        [ $? -eq 0      ] || { echo " /WRAN/$sl_serv_name mount check on SMRS Master failed"; return 34; }
+
+
+        grep "/LRAN/$sl_serv_name" mount.ompri.data >/dev/null 2>&1
+        [ $? -eq 0      ] || { echo " /LRAN/$sl_serv_name mount check on SMRS Master failed"; return 34; }
+
+
+        grep "/CORE/$sl_serv_name" mount.ompri.data >/dev/null 2>&1
+        [ $? -eq 0      ] || { echo " /CORE/$sl_serv_name mount check on SMRS Master failed"; return 34; }
+
+	
+
+
+	# checking all mounts on NEDSS 
+	ssh  smrs_master ssh ${NEDSS_IP} mount > mount.nedss.data
+	[ $? -eq 0      ] || { echo " running mount command on NEDSS failed"; return 34; }
+
+        grep "/GRAN/$sl_serv_name" mount.nedss.data >/dev/null 2>&1
+        [ $? -eq 0      ] || { echo " /GRAN/$sl_serv_name mount check on NEDSS failed"; return 34; }
+
+
+        grep "/WRAN/$sl_serv_name" mount.nedss.data >/dev/null 2>&1
+        [ $? -eq 0      ] || { echo " /WRAN/$sl_serv_name mount check on NEDSS failed"; return 34; }
+
+
+        grep "/LRAN/$sl_serv_name" mount.nedss.data >/dev/null 2>&1
+        [ $? -eq 0      ] || { echo " /LRAN/$sl_serv_name mount check on NEDSS failed"; return 34; }
+
+
+        grep "/CORE/$sl_serv_name" mount.nedss.data >/dev/null 2>&1
+        [ $? -eq 0      ] || { echo " /CORE/$sl_serv_name mount check on NEDSS failed"; return 34; }
+
+
+
+	# 5. check if /etc/vfstab has slave service filesystems on OM Primary
+	ssh smrs_master cat /etc/vfstab > ompri.vfstab
+	[ $? -eq 0      ] || { echo " running  cat /etc/vfstab command on OM Primary failed"; return 5; }	
+
+        grep "/GRAN/$sl_serv_name" ompri.vfstab >/dev/null 2>&1
+        [ $? -eq 0      ] || { echo " /GRAN/$sl_serv_name was not found in vfstab on om primary"; return 5; }
+
+
+        grep "/WRAN/$sl_serv_name" ompri.vfstab >/dev/null 2>&1
+        [ $? -eq 0      ] || { echo " /WRAN/$sl_serv_name was not found in vfstab on om primary"; return 5; }
+
+
+        grep "/LRAN/$sl_serv_name" ompri.vfstab >/dev/null 2>&1
+        [ $? -eq 0      ] || { echo " /LRAN/$sl_serv_name was not found in vfstab on om primary"; return 5; }
+
+
+        grep "/CORE/$sl_serv_name" ompri.vfstab >/dev/null 2>&1
+        [ $? -eq 0      ] || { echo " /CORE/$sl_serv_name was not found in vfstab on om primary"; return 5; }
+
+
+	# 6. check if /etc/mnttab has slave service filesystems on OSS Master
+        cat /etc/mnttab > oss.mnttab
+        [ $? -eq 0      ] || { echo " running  cat /etc/mnttab command on OSS Master failed"; return 6; }
+
+        grep "/GRAN/$sl_serv_name" oss.mnttab >/dev/null 2>&1
+        [ $? -eq 0      ] || { echo " /GRAN/$sl_serv_name was not found in mnttab on oss master"; return 6; }
+
+
+        grep "/WRAN/$sl_serv_name" oss.mnttab >/dev/null 2>&1
+        [ $? -eq 0      ] || { echo " /WRAN/$sl_serv_name was not found in mnttab on oss master"; return 6; }
+
+
+        grep "/LRAN/$sl_serv_name" oss.mnttab >/dev/null 2>&1
+        [ $? -eq 0      ] || { echo " /LRAN/$sl_serv_name was not found in mnttab on oss master"; return 6; }
+
+
+        grep "/CORE/$sl_serv_name" oss.mnttab >/dev/null 2>&1
+        [ $? -eq 0      ] || { echo " /CORE/$sl_serv_name was not found in mnttab on oss master"; return 6; }
+
+
+	# 7. check if /etc/vfstab has slave service filesystems on NEDSS
+        ssh smrs_master ssh ${NEDSS_IP} cat /etc/vfstab > nedss.vfstab
+        [ $? -eq 0      ] || { echo " running  cat /etc/vfstab command on NEDSS failed"; return 7; }
+
+        grep "/GRAN/$sl_serv_name" nedss.vfstab >/dev/null 2>&1
+        [ $? -eq 0      ] || { echo " /GRAN/$sl_serv_name was not found in vfstab on nedss"; return 7; }
+
+
+        grep "/WRAN/$sl_serv_name" nedss.vfstab >/dev/null 2>&1
+        [ $? -eq 0      ] || { echo " /WRAN/$sl_serv_name was not found in vfstab on nedss"; return 7; }
+
+
+        grep "/LRAN/$sl_serv_name" nedss.vfstab >/dev/null 2>&1
+        [ $? -eq 0      ] || { echo " /LRAN/$sl_serv_name was not found in vfstab on nedss"; return 7; }
+
+
+        grep "/CORE/$sl_serv_name" nedss.vfstab >/dev/null 2>&1
+        [ $? -eq 0      ] || { echo " /CORE/$sl_serv_name was not found in vfstab on nedss"; return 7; }
+
+
+
+	# 8.  check if FTP services are created for all smrs slave service users
+
+	/opt/ericsson/nms_cif_cs/etc/unsupported/bin/cstest -s ONRM_CS -ns masterservice lt FtpService > cstest.data
+	[ $? -eq 0 ] || { echo "running command cstest failed"; return 8; }
+
+	grep "backup-$sl_serv_name" cstest.data >/dev/null 2>&1
+	[ $? -eq 0 ] || { echo " FtpService=backup-$sl_serv_name was not found after running cstest command"; return 8; }
+
+
+	grep "cmdown-$sl_serv_name" cstest.data >/dev/null 2>&1
+	[ $? -eq 0 ] || { echo " FtpService=cmdown-$sl_serv_name was not found  after running cstest command"; return 8; }
+
+
+	grep "cmup-$sl_serv_name" cstest.data >/dev/null 2>&1
+	[ $? -eq 0 ] || { echo " FtpService=cmup-$sl_serv_name was not found  after running cstest command"; return 8; }
+
+	grep "keystore-$sl_serv_name" cstest.data >/dev/null 2>&1
+	[ $? -eq 0 ] || { echo " FtpService=keystore-$sl_serv_name was not found  after running cstest command"; return 8; }
+
+	grep "pmup-$sl_serv_name" cstest.data >/dev/null 2>&1
+	[ $? -eq 0 ] || { echo " FtpService=pmup-$sl_serv_name was not found  after running cstest command"; return 8; }
+
+	grep "swstore-$sl_serv_name" cstest.data >/dev/null 2>&1
+	[ $? -eq 0 ] || { echo " FtpService=swstore-$sl_serv_name was not found  after running cstest command"; return 8; }
+
+	grep "corepmu-$sl_serv_name" cstest.data >/dev/null 2>&1
+	[ $? -eq 0 ] || { echo " FtpService=corepmu-$sl_serv_name was not found  after running cstest command"; return 8; }
+
+	grep "l-back-$sl_serv_name" cstest.data >/dev/null 2>&1
+	[ $? -eq 0 ] || { echo " FtpService=l-back-$sl_serv_name was not found  after running cstest command"; return 8; }
+
+	grep "l-key-$sl_serv_name" cstest.data >/dev/null 2>&1
+	[ $? -eq 0 ] || { echo " FtpService=l-key-$sl_serv_name was not found  after running cstest command"; return 8; }
+
+	grep "l-sws-$sl_serv_name" cstest.data >/dev/null 2>&1
+	[ $? -eq 0 ] || { echo " FtpService=l-sws-$sl_serv_name was not found  after running cstest command"; return 8; }
+
+	grep "w-back-$sl_serv_name" cstest.data >/dev/null 2>&1
+	[ $? -eq 0 ] || { echo " FtpService=w-back-$sl_serv_name was not found  after running cstest command"; return 8; }
+
+	grep "w-key-$sl_serv_name" cstest.data >/dev/null 2>&1
+	[ $? -eq 0 ] || { echo " FtpService=w-key-$sl_serv_name was not found  after running cstest command"; return 8; }
+
+	grep "w-sws-$sl_serv_name" cstest.data >/dev/null 2>&1
+	[ $? -eq 0 ] || { echo " FtpService=w-sws-$sl_serv_name was not found  after running cstest command"; return 8; }
+	
+
+	# 9. check if SMRS_MC is online 
+	/opt/ericsson/nms_cif_sm/bin/smtool -l BI_SMRS_MC
+	[ $? -eq 0 ] || { echo "smtool command to check if BI_SMRC_MC is online failed "; return 9; } 
+
+	sleep 7
+	CONSOLE_OUTPUT_CONTAINS "BI_SMRS_MC  started" 
+	[ $? -eq 0 ] || { echo "output did not contain the message: BI_SMRS_MC  started"; return 9; }
+
+	# 10. checking if the smrs slave users exist on OSS Master, OM Primary, and NEDSS
+
+	# checking users on OSS Master
+	cat /etc/passwd	> users.oss
+	[ $? -eq 0 ] || { echo  " cat /etc/passwd > users.oss command on OSS Master failed"; return 10; }
+
+        grep "backup-$sl_serv_name" users.oss >/dev/null 2>&1
+        [ $? -eq 0 ] || { echo "User backup-$sl_serv_name  was not found on OSS Master"; return 10; }
+
+
+        grep "cmdown-$sl_serv_name" users.oss >/dev/null 2>&1
+        [ $? -eq 0 ] || { echo "User cmdown-$sl_serv_name was not found on OSS Master"; return 10; }
+
+
+        grep "cmup-$sl_serv_name" users.oss >/dev/null 2>&1
+        [ $? -eq 0 ] || { echo "User cmup-$sl_serv_name was not found on OSS Master"; return 10; }
+
+        grep "keystore-$sl_serv_name" users.oss >/dev/null 2>&1
+        [ $? -eq 0 ] || { echo "User keystore-$sl_serv_name was not found on OSS Master"; return 10; }
+
+        grep "pmup-$sl_serv_name" users.oss >/dev/null 2>&1
+        [ $? -eq 0 ] || { echo "User pmup-$sl_serv_name was not found on OSS Master"; return 10; }
+
+        grep "swstore-$sl_serv_name" users.oss >/dev/null 2>&1
+        [ $? -eq 0 ] || { echo "User swstore-$sl_serv_name was not found on OSS Master"; return 10; }
+
+        grep "corepmu-$sl_serv_name" users.oss >/dev/null 2>&1
+        [ $? -eq 0 ] || { echo "User corepmu-$sl_serv_name was not found on OSS Master"; return 10; }
+
+        grep "l-back-$sl_serv_name" users.oss >/dev/null 2>&1
+        [ $? -eq 0 ] || { echo "User l-back-$sl_serv_name was not found on OSS Master"; return 10; }
+
+        grep "l-key-$sl_serv_name" users.oss >/dev/null 2>&1
+        [ $? -eq 0 ] || { echo "User l-key-$sl_serv_name was not found on OSS Master"; return 10; }
+
+        grep "l-sws-$sl_serv_name" users.oss >/dev/null 2>&1
+        [ $? -eq 0 ] || { echo "User l-sws-$sl_serv_name was not found on OSS Master"; return 10; }
+
+        grep "w-back-$sl_serv_name" users.oss >/dev/null 2>&1
+        [ $? -eq 0 ] || { echo "User w-back-$sl_serv_name was not found on OSS Master"; return 10; }
+
+        grep "w-key-$sl_serv_name" users.oss >/dev/null 2>&1
+        [ $? -eq 0 ] || { echo "User w-key-$sl_serv_name was not found on OSS Master"; return 10; }
+
+        grep "w-sws-$sl_serv_name" users.oss >/dev/null 2>&1
+        [ $? -eq 0 ] || { echo "User w-sws-$sl_serv_name was not found on OSS Master"; return 10; }
+
+
+        # checking users on OM Primary
+        ssh smrs_master cat /etc/passwd > users.ompri
+        [ $? -eq 0 ] || { echo  " cat /etc/passwd > users.ompri command on OM Primary failed"; return 10; }
+
+        grep "backup-$sl_serv_name" users.ompri >/dev/null 2>&1
+        [ $? -eq 0 ] || { echo "User backup-$sl_serv_name  was not found on OM Primary"; return 10; }
+
+
+        grep "cmdown-$sl_serv_name" users.ompri >/dev/null 2>&1
+        [ $? -eq 0 ] || { echo "User cmdown-$sl_serv_name was not found on OM Primary"; return 10; }
+
+
+        grep "cmup-$sl_serv_name" users.ompri >/dev/null 2>&1
+        [ $? -eq 0 ] || { echo "User cmup-$sl_serv_name was not found on OM Primary"; return 10; }
+
+        grep "keystore-$sl_serv_name" users.ompri >/dev/null 2>&1
+        [ $? -eq 0 ] || { echo "User keystore-$sl_serv_name was not found on OM Primary"; return 10; }
+
+        grep "pmup-$sl_serv_name" users.ompri >/dev/null 2>&1
+        [ $? -eq 0 ] || { echo "User pmup-$sl_serv_name was not found on OM Primary"; return 10; }
+
+        grep "swstore-$sl_serv_name" users.ompri >/dev/null 2>&1
+        [ $? -eq 0 ] || { echo "User swstore-$sl_serv_name was not found on OM Primary"; return 10; }
+
+        grep "corepmu-$sl_serv_name" users.ompri >/dev/null 2>&1
+        [ $? -eq 0 ] || { echo "User corepmu-$sl_serv_name was not found on OM Primary"; return 10; }
+
+        grep "l-back-$sl_serv_name" users.ompri >/dev/null 2>&1
+        [ $? -eq 0 ] || { echo "User l-back-$sl_serv_name was not found on OM Primary"; return 10; }
+
+        grep "l-key-$sl_serv_name" users.ompri >/dev/null 2>&1
+        [ $? -eq 0 ] || { echo "User l-key-$sl_serv_name was not found on OM Primary"; return 10; }
+
+        grep "l-sws-$sl_serv_name" users.ompri >/dev/null 2>&1
+        [ $? -eq 0 ] || { echo "User l-sws-$sl_serv_name was not found on OM Primary"; return 10; }
+
+        grep "w-back-$sl_serv_name" users.ompri >/dev/null 2>&1
+        [ $? -eq 0 ] || { echo "User w-back-$sl_serv_name was not found on OM Primary"; return 10; }
+
+        grep "w-key-$sl_serv_name" users.ompri >/dev/null 2>&1
+        [ $? -eq 0 ] || { echo "User w-key-$sl_serv_name was not found on OM Primary"; return 10; }
+
+        grep "w-sws-$sl_serv_name" users.ompri >/dev/null 2>&1
+        [ $? -eq 0 ] || { echo "User w-sws-$sl_serv_name was not found on OM Primary"; return 10; }
+
+ 
+
+        # checking users on NEDSS
+        ssh smrs_master ssh ${NEDSS_IP} cat /etc/passwd > users.nedss
+        [ $? -eq 0 ] || { echo  " cat /etc/passwd > users.nedss command on NEDSS failed"; return 10; }
+
+        grep "backup-$sl_serv_name" users.nedss >/dev/null 2>&1
+        [ $? -eq 0 ] || { echo "User backup-$sl_serv_name  was not found on NEDSS"; return 10; }
+
+
+        grep "cmdown-$sl_serv_name" users.nedss >/dev/null 2>&1
+        [ $? -eq 0 ] || { echo "User cmdown-$sl_serv_name was not found on NEDSS"; return 10; }
+
+
+        grep "cmup-$sl_serv_name" users.nedss >/dev/null 2>&1
+        [ $? -eq 0 ] || { echo "User cmup-$sl_serv_name was not found on NEDSS"; return 10; }
+
+        grep "keystore-$sl_serv_name" users.nedss >/dev/null 2>&1
+        [ $? -eq 0 ] || { echo "User keystore-$sl_serv_name was not found on NEDSS"; return 10; }
+
+        grep "pmup-$sl_serv_name" users.nedss >/dev/null 2>&1
+        [ $? -eq 0 ] || { echo "User pmup-$sl_serv_name was not found on NEDSS"; return 10; }
+
+        grep "swstore-$sl_serv_name" users.nedss >/dev/null 2>&1
+        [ $? -eq 0 ] || { echo "User swstore-$sl_serv_name was not found on NEDSS"; return 10; }
+
+        grep "corepmu-$sl_serv_name" users.nedss >/dev/null 2>&1
+        [ $? -eq 0 ] || { echo "User corepmu-$sl_serv_name was not found on NEDSS"; return 10; }
+
+        grep "l-back-$sl_serv_name" users.nedss >/dev/null 2>&1
+        [ $? -eq 0 ] || { echo "User l-back-$sl_serv_name was not found on NEDSS"; return 10; }
+
+        grep "l-key-$sl_serv_name" users.nedss >/dev/null 2>&1
+        [ $? -eq 0 ] || { echo "User l-key-$sl_serv_name was not found on NEDSS"; return 10; }
+
+        grep "l-sws-$sl_serv_name" users.nedss >/dev/null 2>&1
+        [ $? -eq 0 ] || { echo "User l-sws-$sl_serv_name was not found on NEDSS"; return 10; }
+
+        grep "w-back-$sl_serv_name" users.nedss >/dev/null 2>&1
+        [ $? -eq 0 ] || { echo "User w-back-$sl_serv_name was not found on NEDSS"; return 10; }
+
+        grep "w-key-$sl_serv_name" users.nedss >/dev/null 2>&1
+        [ $? -eq 0 ] || { echo "User w-key-$sl_serv_name was not found on NEDSS"; return 10; }
+
+        grep "w-sws-$sl_serv_name" users.nedss >/dev/null 2>&1
+        [ $? -eq 0 ] || { echo "User w-sws-$sl_serv_name was not found on NEDSS"; return 10; }
+
+
+	# 11. Checking xml files for SMRS slave FTP services
+	ls /var/opt/ericsson/arne/FTPServices/FTPService* > xml.files
+        
+	grep "FTPServiceCORE_$sl_serv_name" xml.files >/dev/null 2>&1
+        [ $? -eq 0 ] || { echo "FTPServiceCORE_$sl_serv_name was not found in /var/opt/ericsson/arne/FTPServices/"; return 11; }
+
+	grep "FTPServiceGRAN_$sl_serv_name" xml.files >/dev/null 2>&1
+        [ $? -eq 0 ] || { echo "FTPServiceGRAN_$sl_serv_name was not found in /var/opt/ericsson/arne/FTPServices/"; return 11; }
+
+	grep "FTPServiceWRAN_$sl_serv_name" xml.files >/dev/null 2>&1
+        [ $? -eq 0 ] || { echo "FTPServiceWRAN_$sl_serv_name was not found in /var/opt/ericsson/arne/FTPServices/"; return 11; }
+
+	grep "FTPServiceLRAN_$sl_serv_name" xml.files >/dev/null 2>&1
+        [ $? -eq 0 ] || { echo "FTPServiceLRAN_$sl_serv_name was not found in /var/opt/ericsson/arne/FTPServices/"; return 11; }
+
+	# 12. smtool action checking for smrs slave service name
+	/opt/ericsson/nms_cif_sm/bin/smtool action BI_SMRS_MC printCache file /tmp/action.file
+	[ $? -eq 0 ] || { echo "smtool action command failed"; return 12; } 
+
+	cat /tmp/action.file  | grep $sl_serv_name >/dev/null 2>&1
+	[ $? -eq 0 ] || { echo " SMRS Slave service name was not found in the smtool action command output"; return 12; }
+
+	# 13. checking SFTP on NEDSS
+	password=$(awk 'NR==2' 218.in)
+
+	
+        CHECK_SFTP ${NEDSS_IP} GRAN,WRAN,LRAN,CORE $password $sl_serv_name
+        [ $? -eq 0 ] || { echo "SFTP test for SMRS slave service users on NEDSS failed, CHECK_SFTP returned $?"; return 13; }
+
+	
+
+	
+
+	return 0
+
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_CLEANUP
+#
+# This callback function is only called if the harness execution mode is 'AT_INDEPENDENT'
+# 
+# This callback restores the target system to the state it was in before the TC 
+# was run. It rolls back changes made by callbacks tc_setup() and tc_test()
+# 
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_cleanup() {
+
+	# cleanup is carried out in the suite
+	return 0
+
+}

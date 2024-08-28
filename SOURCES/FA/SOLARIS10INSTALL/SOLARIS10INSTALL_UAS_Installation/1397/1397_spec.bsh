@@ -1,0 +1,70 @@
+#!/bin/bash
+
+# TEST CASE SPEC FILE
+# This file is generated/updated using the test framework web interface.
+# Manual updates on test servers are lost when the test package is re-installed.
+#
+# Last modified: Monday 16th of December 2013 10:10:28
+#
+
+# These settings must be in BASH script format, they are sourced by other scripts.
+SPEC_FA_NAME="SOLARIS10INSTALL"
+SPEC_UC_NAME="SOLARIS10INSTALL_UAS_Installation"
+SPEC_TC_ID=1397
+SPEC_TC_SLOGAN="CR 144/109 18 FCP 130 5239- Firefox _update "
+SPEC_TC_TYPE="FT"
+SPEC_TC_POLARITY="positive"
+SPEC_TC_PRIORITY="high"
+SPEC_TC_AUTOMATED=0
+SPEC_TC_DEPENDENT_ONLY=0
+SPEC_TC_TIMEOUT=300
+SPEC_TC_TEST_PASSCODE=0
+SPEC_TC_AUTHOR="xnavsur"
+SPEC_TC_AUTOMATOR="xnavsur"
+# this parameter is not interpreted by harness
+SPEC_TC_DISABLED=0
+
+# Please do not remove the comment lines below.
+# They are used as section locators by the test harness.
+
+# BEGIN_PRE_CONDITIONS
+#<path under "Verification Specification for Cominf Feature Test for 14.0 ":
+#Initial Installation/UAS Installation 
+#>  
+# END_PRE_CONDITIONS
+
+
+# BEGIN_MANUAL_STEPS
+#
+#ACTION 1:
+#Check the firefox version in 14.1.6 UAS in initial install/upgrade environments.
+#
+#./opt/firefox/bin/firefox -v
+#
+#ACTION 2:
+#Check the launch of firefox in GUI on all initial/upgrade environments of UAS.
+#
+#/opt/firefox/bin/firefox
+#
+#ACTION 3:
+#After launch of 14.1.6 UAS, check the version of UAS in firefox window(GUI).
+#
+#Click Help --> About Firefox
+#
+#
+#
+#
+#
+#
+# END_MANUAL_STEPS
+
+# BEGIN_POST_CONDITIONS
+#RESULT 1:
+#Version in UAS should be updated to 17.0.7 .
+#
+#RESULT 2:
+#Firefox should be successfully launched on UAS.
+#
+#RESULT 3:
+#Version should be 17.0.7 in the GUI launched firefox tab 
+# END_POST_CONDITIONS

@@ -1,0 +1,66 @@
+Enter Deployment type: (standard) \\\[standard\\\] 
+standard
+Enter IP address of the NTP Source:
+1.1.1.1
+Do you want to setup DHCP on this server? (y n)
+y
+Enter password for BSIM user bsim:
+password
+Confirm password for BSIM user bsim:
+password
+Do you want to setup DHCP for IPv6 on this server? (y n)
+y
+IPv6 address for
+0001::
+IPv6 subnet for
+2001:db8::/48
+Enter DNS Domain Name <e.g. dns.companyname.com>:
+x.com
+Enter the host name of the O&M Services Primary:
+ab
+Enter the IP address of the O&M Services Primary:
+1.1.1.1
+Enter IPv6 address of the O&M Services Primary:
+2001:1b70:82a1:b:0:3008:35:1
+Enter the installation type (inst_type) of the O&M Services Primary:
+cominf
+Enter root password of the O&M Services Primary:
+password
+Confirm root password of the O&M Services Primary:
+password
+Enter LDAP Directory Manager DN:
+cn=Directory Manager
+Enter LDAP Directory Manager DN password
+12345678
+Confirm LDAP Directory Manager DN password
+12345678
+Enter password for LDAP replication user repladm:
+12345678
+Confirm password for LDAP replication user repladm:
+12345678
+Enter password for LDAP user ldapadm:
+12345678
+Confirm password for LDAP user ldapadm:
+12345678
+Enter number of LDAP domains to be configured (max=8):
+1
+Enter LDAP Domain Name #1:
+a.com
+Enter a unique name (lowercase) for the masterservice of the OSS RC system using 
+myhost
+Enter IP address for the masterservice of the OSS RC system using
+1.1.1.1
+Enter password for "cn=mssync,dc=a,dc=com":
+12345678
+Confirm password for "cn=mssync,dc=a,dc=com":
+12345678
+Enter password for "cn=msadmin,dc=a,dc=com":
+12345678
+Confirm password for "cn=msadmin,dc=a,dc=com":
+12345678
+Enter password for "cn=proxyagent,ou=profile,dc=a,dc=com":
+12345678
+Confirm password for "cn=proxyagent,ou=profile,dc=a,dc=com":
+12345678
+Is this correct? ( y n )
+\003

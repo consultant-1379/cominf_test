@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="utf-8" />
+		<?php 
+			#include_once "../inc/globals.inc";
+			#include_once "../inc/utils.inc";
+			#include 'header.php'; 
+				$cloned_repo_path = $WEBSITE['REPO_PATH'];
+				$git = "/usr/bin/git";
+				$gitlog = "/var/log/gitlog";
+		?>	
+		<title>Update Missing Environment Variables</title>
+		<link rel="stylesheet" type="text/css" href="../css/styles.css" />
+		<script type="text/javascript" src="js/atnfdlib.js" defer></script>
+	</head>
+	<body>
+	<?php  
+	?>	
+		<form name="Update_Environment_File" action="<?php echo $Edit_Environment_File_action; ?>" method="post">
+	<fieldset>
+		<legend>Environment File</legend>
+		<p><label>Specify path to environment file : <input type="text" name="ENV_FILE_PATH" id="ENV_FILE_PATH" value="<?php echo $ENV_FILE_PATH ?>" size="100"
+		required/></label></p>
+		<p><label>Specify environment file name: <input type="text" name="ENV_FILE_NAME" id="ENV_FILE_NAME" value="<?php echo $ENV_FILE_NAME ?>" size="35" 
+		required/></label></p>
+		
+		<input type="button" id="edit_file" value="Save as" onclick='alert("function saveAsNewEnvFileName() not defined yet")' >
+		<!-- function saveAsNewEnvFileName(document.Edit_Environment_File.ENV_FILE_PATH,document.Edit_Environment_File.ENV_FILE_NAME)" not defined yet -->
+	</fieldset>
+	</body>
+</html>

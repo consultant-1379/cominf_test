@@ -1,0 +1,42 @@
+set timeout 40
+
+trap {
+	if [catch {wait -i -1} output] return
+	if {[lindex $output [expr [llength $output] -1]] != 0 } {
+		exit [lindex $output [expr [llength $output] -1]]
+	}
+} SIGCHLD
+
+spawn -noecho /ericsson/sdee/bin/prepReplication.sh
+
+expect {
+	"LDAP Directory Manager password" {
+	} default {
+		exit 1
+	}
+}
+sleep 0.15
+send -- "ldappass\r"
+expect {
+	"Enter option number" {
+	} default {
+		exit 2
+	}
+}
+sleep 0.15
+send -- "6\r"
+expect {
+	"Do you want return to the main menu" {
+	} default {
+		exit 3
+	}
+}
+sleep 0.15
+send -- "n\r"
+
+set timeout 300
+expect {
+    EOF {}
+    timeout { exit 99 }
+}
+sleep 2

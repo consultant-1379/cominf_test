@@ -1,0 +1,8 @@
+LDAP Directory Manager password:
+PASSWD
+User name:
+test1
+Group name:
+testgrp
+Add local user .test1. to local group .testgrp. in domain
+Yes

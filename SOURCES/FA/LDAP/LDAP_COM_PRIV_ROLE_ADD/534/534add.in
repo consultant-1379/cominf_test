@@ -1,0 +1,10 @@
+LDAP Directory Manager password
+PASSWD
+Enter user name:
+u534a
+Enter COM role names to add as a comma separated list:
+target1:r534a, target2:r534b
+Enter COM role names to add as a comma separated list:
+target1:r534a,target2:r534b
+Please confirm that you want to proceed with requested actions
+Yes

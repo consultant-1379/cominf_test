@@ -1,0 +1,67 @@
+#!/bin/bash
+
+# TEST CASE SPEC FILE
+# This file is generated/updated using the test framework web interface.
+# Manual updates on test servers are lost when the test package is re-installed.
+#
+# Last modified: Tuesday 17th of December 2013 5:09:14
+#
+
+# These settings must be in BASH script format, they are sourced by other scripts.
+SPEC_FA_NAME="SOLARIS10SMRS"
+SPEC_UC_NAME="SOLARIS10SMRS_Post_Upgrade_Migration"
+SPEC_TC_ID=1608
+SPEC_TC_SLOGAN="Post Upgrade/Migration Steps "
+SPEC_TC_TYPE="FT"
+SPEC_TC_POLARITY="positive"
+SPEC_TC_PRIORITY="high"
+SPEC_TC_AUTOMATED=0
+SPEC_TC_DEPENDENT_ONLY=0
+SPEC_TC_TIMEOUT=300
+SPEC_TC_TEST_PASSCODE=0
+SPEC_TC_AUTHOR="xnavsur"
+SPEC_TC_AUTOMATOR="xnavsur"
+# this parameter is not interpreted by harness
+SPEC_TC_DISABLED=0
+
+# Please do not remove the comment lines below.
+# They are used as section locators by the test harness.
+
+# BEGIN_PRE_CONDITIONS
+#<path under "Verification Specification for Cominf Feature Test for 14.0 ":
+#Bi-directional SMRS Upgrade/Migration/Post Upgrade/Migration Steps  
+#>
+#Pre-Condition:  
+#After successfully upgrade ,check the permissions are correct on the SMRS file systems. 105 65-0580/02136
+#
+# END_PRE_CONDITIONS
+
+
+# BEGIN_MANUAL_STEPS
+#Configure-smrs.sh script should not show any errors.
+#
+# END_MANUAL_STEPS
+
+# BEGIN_POST_CONDITIONS
+#Run the below command to ensure all permissions are correct on the SMRS file systems.
+## /opt/Ericsson/nms_bismrs_mc/bin/log/repair.sh
+#And check the log repair.sh_log_<date> for errors and warnings.
+#Example output:
+#root@atrcxb988> more repair.sh_log_20111121111818
+#2011-11-21 11:18:18 INFO Running repair.sh on atrcxb988.
+#2011-11-21 11:18:18 INFO All messages will be logged to /var/opt/ericsson/log/repair.sh_log_20111121111818
+#2011-11-21 11:18:19 INFO Copying required files from to smrs_master.
+#2011-11-21 11:18:21 INFO Running repair.sh on smrs_master.
+#Warning: Permanently added '10.45.201.15' (RSA) to the list of known hosts.
+#INFO Checking SMRS on atclvm161.
+#INFO Checking SMRS permissions
+#INFO Permissions changed on /GRAN/CommonPersistent/BackupCM/LANSwitch
+#INFO Copying required files to NEDSS 10.45.201.18.
+#INFO Running repair.sh on 10.45.201.18.
+#INFO Checking SMRS on atclvm164.
+#INFO Copying required files to NEDSS 10.45.201.19.
+#INFO Running repair.sh on 10.45.201.19.
+#INFO Checking SMRS on atclvm165.
+#2011-11-21 11:18:29 INFO Copying config file from to smrs_master.
+#2011-11-21 11:18:30 INFO SMRS repair complete. 
+# END_POST_CONDITIONS

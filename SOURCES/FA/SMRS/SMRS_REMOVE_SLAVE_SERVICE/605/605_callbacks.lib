@@ -1,0 +1,228 @@
+#!/bin/bash
+#################################################################################
+#
+#
+#       COPYRIGHT (C) ERICSSON RADIO SYSTEMS AB, Sweden
+#
+#       The copyright to the document(s) herein is the property of
+#       Ericsson Radio Systems AB, Sweden.
+#
+#       The document(s) may be used and/or copied only with the written
+#       permission from Ericsson Radio Systems AB or in accordance with
+#       the terms and conditions stipulated in the agreement/contract
+#       under which the document(s) have been supplied.
+#
+#################################################################################
+
+
+# ATCOMINF Test Callback Library
+
+# Revision History
+# <date>	<signum>	<details>
+
+# Complete the callbacks in this library to automate the test case.
+#
+# Callbacks are stateless, it is not possible to set a global variable in one callback 
+# and access it it in another.
+#
+# Callbacks are called by the test harness in the following order:
+#
+# tc_setup() 		# Called only for independent TC execution mode to setup TC
+# tc_precon()		# Conditions that should exist before TC can run
+# tc_test()		# Runs the test for this TC
+# tc_postcon()		# Conditions that should/should not exist after successful TC 
+# tc_cleanup()		# Called only for independent TC execution mode to clenup after TC
+
+# All callbacks must PASS for a TC PASS result
+
+source /etc/opt/ericsson/nms_bismrs_mc/bismrs.properties
+
+#################################################################################
+#
+# CALLBACK: TC_SETUP
+#
+# This callback function is only called if the harness execution mode is 'AT_INDEPENDENT'
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_setup() {
+
+	
+	return 0
+
+}
+#################################################################################
+
+#################################################################################
+#
+# CALLBACK: TC_PRECON
+#
+# This callback function checks the correct conditions exist to run the TC.
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+ 
+tc_precon() {
+
+	
+
+
+	
+	
+	return 0
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_TEST
+#
+# This callback function runs the test.
+# The harness compares the return code to the SPEC_TC_TEST_PASSCODE value set in the test spec.
+#
+# Return or exit codes:
+#    SPEC_TC_TEST_PASSCODE 	success
+# != SPEC_TC_TEST_PASSCODE 	failure
+ 
+tc_test() {
+
+	# from TC 603 we are expecting nedssv4 to be the only slave service left 
+
+	# checking if any aif users are associated with the slave
+	# if there is, delete them
+	while echo 2 | /opt/ericsson/nms_bismrs_mc/bin/configure_smrs.sh delete slave_service | grep "should be removed" > /dev/null
+	do
+		users=$(echo 2 | /opt/ericsson/nms_bismrs_mc/bin/configure_smrs.sh delete slave_service | grep "should be removed" | awk '{print $5}' | sed 's/,/ /g')
+		
+		for user in $users
+		do
+					# Use here document to generate input file
+# ----- START HERE DOCUMENT -----
+	cat > ${filePrefix}.in << EOF || { echo "ERROR: failed to make expect template file ${filePrefix}.in" ; return 1; }
+What is the name for this user?
+$user
+Would you like to remove autoIntegration FtpService for that user
+yes
+Are you sure you want to delete this user
+yes
+EOF
+# ----- END HERE DOCUMENT -----
+
+	# Generate expect script from input file
+	COMMAND_STRING="/opt/ericsson/nms_bismrs_mc/bin/del_aif.sh -a $user -f"
+
+	${AT_BIN}/con_ex.bsh -d ${filePrefix}.in -o ${filePrefix}.exp -c "$COMMAND_STRING" -r || {
+		echo "ERROR: Could not create input file ${filePrefix}.in"
+		return 1
+	}
+
+	echo "INFO: testing $COMMAND_STRING"
+	/usr/local/bin/expect ${filePrefix}.exp > /dev/null 2>&1 || {
+		echo failed to delete aif user: $user
+		return 1
+	}
+		done
+	done
+
+    ${AT_BIN}/con_ex.bsh -d delete_smrs_slave.in -o expect.exp -c "/opt/ericsson/nms_bismrs_mc/bin/configure_smrs.sh delete slave_service"
+	/usr/local/bin/expect expect.exp && {
+		return 0
+	}
+	return 1
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_POSTCON
+#
+# This callback function checks expected results.
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_postcon() {
+
+	source /etc/opt/ericsson/nms_bismrs_mc/smrs_config
+	
+	i=0
+	#for slave_service_name in ${SMRS_SLAVE_SERVICE_NAME[@]}
+	for slave_service_name in common
+	do
+		#echo $slave_service_name: ${SMRS_SLAVE_SERVICE_ENABLED_NETWORKS[$i]}
+
+		services=''
+		echo ${SMRS_SLAVE_SERVICE_ENABLED_NETWORKS[$i]} | grep GRAN > /dev/null && services=$(echo $services; echo ${G_SMRS_SLAVE_GRAN_FTPSERVICES[@]})
+		echo ${SMRS_SLAVE_SERVICE_ENABLED_NETWORKS[$i]} | grep WRAN > /dev/null && services=$(echo $services; echo ${G_SMRS_SLAVE_WRAN_FTPSERVICES[@]})
+		echo ${SMRS_SLAVE_SERVICE_ENABLED_NETWORKS[$i]} | grep LRAN > /dev/null && services=$(echo $services; echo ${G_SMRS_SLAVE_LRAN_FTPSERVICES[@]})
+
+		for service in ${services[@]}
+		do
+			user=$(echo $service | sed "s/%slave_service_name%/$slave_service_name/g")
+
+			for ip in ${SMRS_SLAVE_SERVICE_NEDSS_IP[@]}
+			do
+				ssh -o "BatchMode=yes" smrs_master "ssh -o 'BatchMode=yes' $ip id $user " && {
+					echo $user exists on $ip
+					return 1
+				}
+			done
+
+			ssh -o "BatchMode=yes" smrs_master id $user && {
+				echo $user exists on smrs_master
+				return 1
+			}
+		done
+		i=$(($i+1))
+	done
+
+	sleep 40 # need to wait for the NFS services
+	
+	mount | grep /var/opt/ericsson/smrsstore/.*/nedssv4 > /dev/null && {
+		return 1
+	}
+	
+	[ -z $SMRS_SLAVE_SERVICE_NAME ] && return 0
+
+    echo ${SMRS_SLAVE_SERVICE_NAME[@]} | grep -w nedssv4 && {
+		echo failed to remove slave service
+		return 1
+	}
+
+	#shane - need to rework this since the addition of the LV stuff
+	#[ $(grep -c SMRS_SLAVE_ /etc/opt/ericsson/nms_bismrs_mc/smrs_config) -eq 15 ] || {
+	#	echo incorect number of smrs slave entries in smrs_config
+	#	return 1
+	#}
+
+	return 0
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_CLEANUP
+#
+# This callback function is only called if the harness execution mode is 'AT_INDEPENDENT'
+# 
+# This callback restores the target system to the state it was in before the TC 
+# was run. It rolls back changes made by callbacks tc_setup() and tc_test()
+# 
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_cleanup() {
+
+	
+
+	return 0
+
+}

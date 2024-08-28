@@ -1,0 +1,59 @@
+#!/bin/bash
+
+# TEST CASE SPEC FILE
+# This file is generated/updated using the test framework web interface.
+# Manual updates on test servers are lost when the test package is re-installed.
+#
+# Last modified: Sunday 31st of March 2013 20:37:24
+#
+
+# These settings must be in BASH script format, they are sourced by other scripts.
+SPEC_FA_NAME="TEMP"
+SPEC_UC_NAME="TEMP_IN_PROGRESS"
+SPEC_TC_ID=606
+SPEC_TC_SLOGAN="Verify that all packages are installed successfully on Admin 1 using ist_run"
+SPEC_TC_TYPE="UNIT"
+SPEC_TC_POLARITY="positive"
+SPEC_TC_PRIORITY="high"
+SPEC_TC_AUTOMATED=1
+SPEC_TC_DEPENDENT_ONLY=0
+SPEC_TC_TIMEOUT=300
+SPEC_TC_TEST_PASSCODE=0
+SPEC_TC_AUTHOR="eedebas"
+SPEC_TC_AUTOMATOR="eedebas"
+# this parameter is not interpreted by harness
+SPEC_TC_DISABLED=0
+
+# Please do not remove the comment lines below.
+# They are used as section locators by the test harness.
+
+# BEGIN_PRE_CONDITIONS
+#Two Blade servers are required for OSS x86 Cluster
+#
+#Oss is running on Admin1
+#
+# END_PRE_CONDITIONS
+
+
+# BEGIN_MANUAL_STEPS
+#1.ist_run
+# Select 1 for Execute (Install/Upgrade)`
+#
+#    Please enter selection: 1
+#Verify Output is as expected as inidicated below:
+#
+#"Option execute selected.  All requested applications will be cist installed or upgraded
+#------------------------------------------------------------------------------
+#    EXECUTE
+#------------------------------------------------------------------------------
+#Nothing identified for execution. Nothing more to do."
+#
+#
+#Return an error if output contains the following.
+#"This session consists of:"
+#
+# END_MANUAL_STEPS
+
+# BEGIN_POST_CONDITIONS
+#None, not changing state of system.
+# END_POST_CONDITIONS

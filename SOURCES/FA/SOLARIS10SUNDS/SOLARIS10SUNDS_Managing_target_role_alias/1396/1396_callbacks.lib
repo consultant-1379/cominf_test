@@ -1,0 +1,350 @@
+#!/bin/bash
+#################################################################################
+#
+#
+#       COPYRIGHT (C) ERICSSON RADIO SYSTEMS AB, Sweden
+#
+#       The copyright to the document(s) herein is the property of
+#       Ericsson Radio Systems AB, Sweden.
+#
+#       The document(s) may be used and/or copied only with the written
+#       permission from Ericsson Radio Systems AB or in accordance with
+#       the terms and conditions stipulated in the agreement/contract
+#       under which the document(s) have been supplied.
+#
+#################################################################################
+
+
+# ATCOMINF Test Callback Library
+
+# Revision History
+# <date>	<signum>	<details>
+
+# Complete the callbacks in this library to automate the test case.
+#
+# Callbacks are stateless, it is not possible to set a global variable in one callback 
+# and access it it in another.
+#
+# Callbacks are called by the test harness in the following order:
+#
+# tc_setup() 		# Called only for independent TC execution mode to setup TC
+# tc_precon()		# Conditions that should exist before TC can run
+# tc_test()		# Runs the test for this TC
+# tc_postcon()		# Conditions that should/should not exist after successful TC 
+# tc_cleanup()		# Called only for independent TC execution mode to cleanup after TC
+
+# All callbacks must PASS for a TC PASS result
+
+#################################################################################
+#
+# CALLBACK: TC_SETUP
+#
+# This callback function is only called if the harness execution mode is 'AT_INDEPENDENT'
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+. ${AT_LIB}/tst_LDAP.lib
+LDAP_DOMAIN=$(grep "LDAP_DOMAIN" /ericsson/config/config.ini | awk -F"=" '{print $2}')
+tuser=t139601
+
+tc_setup() {
+
+        LDAP_USER_EXISTS $LDAP_DOMAIN $tuser && {
+                echo "Deleting user $tuser"
+                LDAP_DELETE_USER $LDAP_DOMAIN $tuser || {
+                        echo "Error while deleting user $tuser"
+                        return 1
+                        }
+        }
+
+        return 0
+}
+
+#################################################################################
+
+#################################################################################
+#
+# CALLBACK: TC_PRECON
+#
+# This callback function checks the correct conditions exist to run the TC.
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_precon() {
+
+        templates=`ls *.tmpl 2>/dev/null | wc -l`
+        if [ ${templates} -eq 0 ] ; then
+                echo "There are no templates to process"
+                return 1
+        fi
+
+        LDAP_SERVER_UP || {
+                echo "LDAP server is not runningi: $?"
+                return 1
+        }
+
+        LDAP_DOMAIN_EXISTS $LDAP_DOMAIN || {
+                echo "$LDAP_DOMAIN does not exist"
+                return 1
+        }
+
+        return 0
+}
+ 
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_TEST
+#
+# This callback function runs the test.
+# The harness compares the return code to the SPEC_TC_TEST_PASSCODE value set in the test spec.
+#
+# Return or exit codes:
+#    SPEC_TC_TEST_PASSCODE 	success
+# != SPEC_TC_TEST_PASSCODE 	failure
+ 
+tc_test() {
+
+	# Creating OSS ONLY user
+
+        templ=1396-01.tmpl
+        expfile=1396-01.exp
+        infile=1396-01.in
+        sed -e "s/^PPPPPPPP/${LDAP_SUPERUSER_PASSWD}/" < ${templ} > ${infile}
+        ${AT_BIN}/con_ex.bsh -d ${infile} -o ${expfile} -c "/ericsson/sdee/bin/add_user.sh -n t139601 -s 2000 -e 3000 -d vts.com  " || {
+                        echo "Could not create $expfile from $infile  : retval $?"
+                        }
+        echo "######################################################"
+        echo "Creating OSS ONLY user"
+        echo "######################################################"
+        /usr/local/bin/expect  ${expfile} >/dev/null || {
+                        echo "Creation of OSS user: retval $?"
+                        }
+						
+		# Creating 2 roles
+		
+		templ=1396-02.tmpl
+        expfile=1396-02.exp
+        infile=1396-02.in
+        sed -e "s/^PPPPPPPP/${LDAP_SUPERUSER_PASSWD}/" < ${templ} > ${infile}
+		
+		${AT_BIN}/con_ex.bsh -d ${infile} -o ${expfile} -c "/ericsson/sdee/bin/manage_COM.bsh -a role -R role13961,role13962,role13963,role13964 -d vts.com " || {
+                        echo "Could not create $expfile from $infile  : retval $?"
+                        }
+                        echo "######################################################"
+                        echo "Creating Roles "
+                        echo "######################################################"
+                        /usr/local/bin/expect  ${expfile} >/dev/null || {
+                        echo "Creating Roles : retval $?"
+                                                
+                        }
+	# Creating 2 aliases
+	${AT_BIN}/con_ex.bsh -d ${infile} -o ${expfile} -c "/ericsson/sdee/bin/manage_COM.bsh -a alias -A alias13961 -R role13963,role13964 -d vts.com " || {
+                        echo "Could not create $expfile from $infile  : retval $?"
+                        }
+                        echo "######################################################"
+                        echo "Creating Alias alias13961 "
+                        echo "######################################################"
+                        /usr/local/bin/expect  ${expfile} >/dev/null || {
+                        echo "Creating Alias alias13961 : retval $?"
+                                                
+                        }
+	# Assigning 2 roles to user t139601
+		
+		templ=1396-03.tmpl
+        expfile=1396-03.exp
+        infile=1396-03.in
+        sed -e "s/^PPPPPPPP/${LDAP_SUPERUSER_PASSWD}/" < ${templ} > ${infile}
+
+        ${AT_BIN}/con_ex.bsh -d ${infile} -o ${expfile} -c "/ericsson/sdee/bin/manage_COM_privs.bsh -a role -f import_action1 -d vts.com" || {
+                        echo "Could not create $expfile from $infile  : retval $?"
+                        }
+                        echo "######################################################"
+                        echo "Assigning Roles to user $tuser "
+                        echo "######################################################"
+                        /usr/local/bin/expect  ${expfile} >/dev/null || {
+                        echo "Assigning Roles : retval $?"
+                        return 1
+                        }
+	# Assigning tqld alias to user t139601
+	${AT_BIN}/con_ex.bsh -d ${infile} -o ${expfile} -c "/ericsson/sdee/bin/manage_COM_privs.bsh -a alias -f import_action2 -d vts.com" || {
+                        echo "Could not create $expfile from $infile  : retval $?"
+                        }
+                        echo "######################################################"
+                        echo "Assigning TQLD Alias to user $tuser "
+                        echo "######################################################"
+                        /usr/local/bin/expect  ${expfile} >/dev/null || {
+                        echo "Assigning TQLD Alias: retval $?"
+                        return 1
+                        }
+	# Assign target to user
+	${AT_BIN}/con_ex.bsh -d ${infile} -o ${expfile} -c "/ericsson/sdee/bin/manage_COM_privs.bsh -a target  -f import_action3 -d vts.com" || {
+                        echo "Could not create $expfile from $infile  : retval $?"
+                        }
+                        echo "######################################################"
+                        echo "Assigning Target target139602  to user $tuser "
+                        echo "######################################################"
+                        /usr/local/bin/expect  ${expfile} >/dev/null || {
+                        echo "Assigning Target target139602 : retval $?"
+                        return 1
+                        }
+	# Removing freestanding roles from user t139601
+		
+		templ=1396-04.tmpl
+        expfile=1396-04.exp
+        infile=1396-04.in
+        sed -e "s/^PPPPPPPP/${LDAP_SUPERUSER_PASSWD}/" < ${templ} > ${infile}
+
+        ${AT_BIN}/con_ex.bsh -d ${infile} -o ${expfile} -c "/ericsson/sdee/bin/manage_COM_privs.bsh -r role -f import_action4 -d vts.com" || {
+                        echo "Could not create $expfile from $infile  : retval $?"
+                        }
+                        echo "######################################################"
+                        echo "Removing Freestanding Roles from user $tuser "
+                        echo "######################################################"
+                        /usr/local/bin/expect  ${expfile} >/dev/null || {
+                        echo "Removing Freestanding Roles : retval $?"
+                        return 1
+                        }
+	# Removing tqld alias from user t139601
+		
+		${AT_BIN}/con_ex.bsh -d ${infile} -o ${expfile} -c "/ericsson/sdee/bin/manage_COM_privs.bsh -r alias -f import_action5 -d vts.com" || {
+                        echo "Could not create $expfile from $infile  : retval $?"
+                        }
+                        echo "######################################################"
+                        echo "Removing TQLD Alias from $tuser "
+                        echo "######################################################"
+                        /usr/local/bin/expect  ${expfile} >/dev/null || {
+                        echo "Removing TQLD Alias : retval $?"
+                        return 1
+                        }
+
+	# Remove target from user
+		
+		${AT_BIN}/con_ex.bsh -d ${infile} -o ${expfile} -c "/ericsson/sdee/bin/manage_COM_privs.bsh -r target -f import_action6 -d vts.com" || {
+                        echo "Could not create $expfile from $infile  : retval $?"
+                        }
+                        echo "######################################################"
+                        echo "Removing Target from user $tuser "
+                        echo "######################################################"
+                        /usr/local/bin/expect  ${expfile} >/dev/null || {
+                        echo "Removing Target target139602 : retval $?"
+                        return 1
+                        }
+	return 0
+
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_POSTCON
+#
+# This callback function checks expected results.
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_postcon() {
+
+	# Removing the last target from user 
+	
+		ssh ossmaster "id -a $tuser" | grep "609" > /dev/null
+		comgroupa=$?		
+		
+		templ=1396-04.tmpl
+        	expfile=1396-04.exp
+        	infile=1396-04.in
+        	sed -e "s/^PPPPPPPP/${LDAP_SUPERUSER_PASSWD}/" < ${templ} > ${infile}
+
+                ${AT_BIN}/con_ex.bsh -d ${infile} -o ${expfile} -c "/ericsson/sdee/bin/manage_COM_privs.bsh -r target -f import_action7 -d vts.com" || {
+                        echo "Could not create $expfile from $infile  : retval $?"
+                        }
+                        echo "######################################################"
+                        echo "Removing Last Target from user $tuser "
+                        echo "######################################################"
+                        /usr/local/bin/expect  ${expfile} >/dev/null || {
+                        echo "Removing Last Target target139601 : retval $?"
+                        return 1
+                        }
+		ssh ossmaster "id -a $tuser" | grep "609" > /dev/null
+		comgroupb=$?
+		[ $comgroupa -eq $comgroupb ] && {
+			return 1
+		}
+
+	return 0
+
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_CLEANUP
+#
+# This callback function is only called if the harness execution mode is 'AT_INDEPENDENT'
+# 
+# This callback restores the target system to the state it was in before the TC 
+# was run. It rolls back changes made by callbacks tc_setup() and tc_test()
+# 
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_cleanup() {
+	
+	# Deleting 2 aliases
+		
+		templ=1396-02.tmpl
+        expfile=1396-02.exp
+        infile=1396-02.in
+        sed -e "s/^PPPPPPPP/${LDAP_SUPERUSER_PASSWD}/" < ${templ} > ${infile}
+		
+		${AT_BIN}/con_ex.bsh -d ${infile} -o ${expfile} -c "/ericsson/sdee/bin/manage_COM.bsh -r alias -A alias13961 -d vts.com " || {
+                        echo "Could not create $expfile from $infile  : retval $?"
+                        }
+                        echo "######################################################"
+                        echo "Deleting Alias alias13961 "
+                        echo "######################################################"
+                        /usr/local/bin/expect  ${expfile} >/dev/null || {
+                        echo "Deleting Alias alias13961 : retval $?"
+                        return 1                       
+                        }
+	# Deleting 2 roles 
+	
+	${AT_BIN}/con_ex.bsh -d ${infile} -o ${expfile} -c "/ericsson/sdee/bin/manage_COM.bsh -r role -R role13961,role13962,role13963,role13964 -d vts.com " || {
+                        echo "Could not create $expfile from $infile  : retval $?"
+                        }
+                        echo "######################################################"
+                        echo "Deleting Roles "
+                        echo "######################################################"
+                        /usr/local/bin/expect  ${expfile} >/dev/null || {
+                        echo "Deleting Roles : retval $?"
+                                                
+                        }
+	rm -f *.in *.exp || {
+                echo "Problems removing temporary files"
+                return 1
+        }
+    if ! LDAP_SERVER_UP ; then
+        echo "LDAP server is not running"
+    fi
+    
+    LDAP_USER_EXISTS $LDAP_DOMAIN $tuser && {
+        echo "Deleting user $tuser"
+		LDAP_DELETE_USER $LDAP_DOMAIN $tuser || {
+            echo "Error while deleting user $tuser"
+            return 1
+        }
+    }
+	
+	return 0
+}

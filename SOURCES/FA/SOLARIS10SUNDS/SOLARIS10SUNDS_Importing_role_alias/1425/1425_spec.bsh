@@ -1,0 +1,102 @@
+#!/bin/bash
+
+# TEST CASE SPEC FILE
+# This file is generated/updated using the test framework web interface.
+# Manual updates on test servers are lost when the test package is re-installed.
+#
+# Last modified: Monday 16th of December 2013 10:44:46
+#
+
+# These settings must be in BASH script format, they are sourced by other scripts.
+SPEC_FA_NAME="SOLARIS10SUNDS"
+SPEC_UC_NAME="SOLARIS10SUNDS_Importing_role_alias"
+SPEC_TC_ID=1425
+SPEC_TC_SLOGAN="Negative: Importing roles "
+SPEC_TC_TYPE="FT"
+SPEC_TC_POLARITY="positive"
+SPEC_TC_PRIORITY="high"
+SPEC_TC_AUTOMATED=1
+SPEC_TC_DEPENDENT_ONLY=0
+SPEC_TC_TIMEOUT=300
+SPEC_TC_TEST_PASSCODE=0
+SPEC_TC_AUTHOR="xvinkat"
+SPEC_TC_AUTOMATOR="xvinkat"
+# this parameter is not interpreted by harness
+SPEC_TC_DISABLED=0
+
+# Please do not remove the comment lines below.
+# They are used as section locators by the test harness.
+
+# BEGIN_PRE_CONDITIONS
+#<path to the testcase>
+#
+#
+#SUN-DS/COM LDAP - User Management for 
+#COM-Enabled Nodes/Management of role/role alias/proxy agents
+#/Importing role/rolealias using COM import file    
+# END_PRE_CONDITIONS
+
+
+# BEGIN_MANUAL_STEPS
+#1. Include multiple DOMAIN lines in the node export file and validate the export file as
+##/ericsson/sdee/bin/manage_COM.bsh -a import -d <LDAP_domain> -f <path_to_node_export_file> -v
+#
+#2. Don't specify the domain name in the node export file and validate it
+##/ericsson/sdee/bin/manage_COM.bsh -a import -d <LDAP_domain> -f <path_to_node_export_file> -v
+#
+#3.Validate the node export file without DOMAIN line in the file.
+#
+#4.Validate the node export file with only DOMAIN line in the file.
+#
+#5.Specify the different domain names on command line and in the node export file and validate it.
+#
+#6. Try to import the export file in COM branch with out domain name on the command line
+##/ericsson/sdee/bin/manage_COM.bsh -a import -f <path_to_node_export_file>
+#
+#7.Include multiple ROLE lines in the node export file and validate the export file as
+##/ericsson/sdee/bin/manage_COM.bsh -a import -d <LDAP_domain> -f <path_to_node_export_file> -v
+#
+#8.Don't specify the role names in the node export file and validate it
+##/ericsson/sdee/bin/manage_COM.bsh -a import -d <LDAP_domain> -f <path_to_node_export_file> -v
+#
+#9.Include blank lines in the node export file and validate it as 
+##/ericsson/sdee/bin/manage_COM.bsh -a import -d <LDAP_domain> -f <path_to_node_export_file> -v
+#
+#10. Include the lines which starts with other than DOAMIN,ROLE,ALIAS and validate it.
+#
+#11.Specify duplicate role names in the node export file and validate it.
+#
+#12.Specify the role names in the node export file which exists as an alias name in the COM branch and validate it.
+#
+# END_MANUAL_STEPS
+
+# BEGIN_POST_CONDITIONS
+#1.Validation should be failed and should report the error the user.
+#
+#2.Validation should be failed and should report the error the user.
+#
+#3.Validation should be failed and should report the error the user.
+#
+#4.Validation should be failed and should report the error the user.
+#
+#5.Validation should be failed and should report the error the user.
+#
+#6.Script should show the usage.
+#
+#7.Validation should be failed and should report the error the user.
+#
+#8.Validation should be failed and should report the error the user.
+#
+#9.Validation should be failed and should report the error the user.
+#
+#10.Validation should be failed and should report the error the user.
+#
+#11.Validation should be failed and should report the error to the user.
+#
+#12.Validation should be failed and should report the error to the user.
+#
+#
+#
+#
+#
+# END_POST_CONDITIONS

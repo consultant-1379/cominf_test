@@ -1,0 +1,3 @@
+01^/ericsson/sdee/bin/add_user.sh -t COM_ONLY -d vts.com -n t116801^Unable to create user t116801
+02^/ericsson/sdee/bin/add_user.sh -t COM_APP -n t116802 -d vts.com^Unable to create user t116802
+03^/ericsson/sdee/bin/add_user.sh  -d vts.com -n t116803 -s 3000 -e 4000^Unable to create user t116803 

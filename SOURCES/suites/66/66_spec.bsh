@@ -1,0 +1,15 @@
+#!/bin/bash
+
+# TEST SUITE SPEC FILE
+# This file is generated/updated using the test framework web interface.
+# Manual updates on test servers are lost when the test package is re-installed.
+#
+# Last modified: Monday 24th of June 2013 11:29:23
+#
+SPEC_TS_NAME=failed1
+SPEC_TS_ID=66
+SPEC_TS_SLOGAN="X86 failed post install"
+SPEC_TS_TIMEOUT=4500
+SPEC_TS_AUTHOR="xshisan"
+SPEC_TS_INDEPENDENT=1
+SPEC_TS_TC_IDS=(783 754 762 759 723 724 760 761 788 750 752 656)

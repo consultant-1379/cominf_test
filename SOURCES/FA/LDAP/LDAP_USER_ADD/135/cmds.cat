@@ -1,0 +1,15 @@
+01^/ericsson/sdee/bin/add_user.sh^Unable to create user t13501
+02^/ericsson/sdee/bin/add_user.sh -n t13502^Unable to create user t13502
+03^/ericsson/sdee/bin/add_user.sh -n t13503 -s 1100^Unable to create user t13503 with ID >=3000
+04^/ericsson/sdee/bin/add_user.sh -n t13504 -s 1200 -e 1249^Unable to create user t13504 with ID >=1200 and <=1249
+05^/ericsson/sdee/bin/add_user.sh -n t13505 -s 1250 -e 1299 -C \"Test user t13505\"^Unable to create user t13505 with comment
+06^/ericsson/sdee/bin/add_user.sh -n t13506 -s 1300 -e 1349 -C \"Test user t13506\" -c appl_adm -y^Unable to create user t13506 with category appl_adm
+07^/ericsson/sdee/bin/add_user.sh -n t13507 -s 1350 -e 1399 -C \"Test user t13507\" -c appl_adm -y^Unable to create user t13507 with category appl_adm and no prompt
+08^/ericsson/sdee/bin/add_user.sh -n t13508 -s 1400 -e 1449 -C \"Test user t13508\" -c ass_ope -y^Unable to create user t13508 with category ass_ope
+09^/ericsson/sdee/bin/add_user.sh -n t13509 -s 1450 -e 1499 -C \"Test user t13509\" -c nw_ope -y^Unable to create user t13509 with category nw_ope
+10^/ericsson/sdee/bin/add_user.sh -n t13510 -s 1500 -e 1549 -C \"Test user t13510\" -c ope -y^Unable to create user t13510 with category ope
+11^/ericsson/sdee/bin/add_user.sh -n t13511 -s 1550 -e 1599 -C \"Test user t13511\" -c sys_adm -y^Unable to create user t13511 with category sys_adm
+12^/ericsson/sdee/bin/add_user.sh -n t13512 -s 1600 -e 1649 -C \"Test user t13512\" -c custom -y^Unable to create user t13512 with category custom
+13^/ericsson/sdee/bin/add_user.sh -n t13513 -i 1650 -C \"Test user t13513\" -c sys_adm -y^Unable to create user t13513 with category sys_adm
+14^/ericsson/sdee/bin/add_user.sh -t COM_ONLY^Unable to create user t13514
+15^/ericsson/sdee/bin/add_user.sh -t COM_APP^Unable to create user t13515

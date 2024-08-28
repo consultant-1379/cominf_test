@@ -1,0 +1,45 @@
+#!/bin/bash
+
+# TEST CASE SPEC FILE
+# This file is generated/updated using the test framework web interface.
+# Manual updates on test servers are lost when the test package is re-installed.
+#
+# Last modified: Monday 16th of December 2013 7:32:21
+#
+
+# These settings must be in BASH script format, they are sourced by other scripts.
+SPEC_FA_NAME="SOLARIS10COMPACTOSS"
+SPEC_UC_NAME="SOLARIS10COMPACTOSS_Initial_Installation"
+SPEC_TC_ID=1229
+SPEC_TC_SLOGAN="Install UAS "
+SPEC_TC_TYPE="FT"
+SPEC_TC_POLARITY="positive"
+SPEC_TC_PRIORITY="high"
+SPEC_TC_AUTOMATED=0
+SPEC_TC_DEPENDENT_ONLY=0
+SPEC_TC_TIMEOUT=300
+SPEC_TC_TEST_PASSCODE=0
+SPEC_TC_AUTHOR="xsripin"
+SPEC_TC_AUTOMATOR="xsripin"
+# this parameter is not interpreted by harness
+SPEC_TC_DISABLED=0
+
+# Please do not remove the comment lines below.
+# They are used as section locators by the test harness.
+
+# BEGIN_PRE_CONDITIONS
+#<path under "Verification Specification for Cominf Feature Test for 14.0 ":
+#Compact OSS/Initial Installation 
+#>  
+#
+#
+# END_PRE_CONDITIONS
+
+
+# BEGIN_MANUAL_STEPS
+#Verify the document procedure for the installation and configuration of a virtual O&M Services Server. A parameter to install a Single O&M Infra should be available in the initrator 
+# END_MANUAL_STEPS
+
+# BEGIN_POST_CONDITIONS
+#Successful installation and configuration of a virtual O&M Services Server. 
+# END_POST_CONDITIONS

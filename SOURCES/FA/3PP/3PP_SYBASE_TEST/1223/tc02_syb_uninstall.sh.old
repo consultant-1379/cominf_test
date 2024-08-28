@@ -1,0 +1,321 @@
+#!/bin/ksh
+
+#--------------------------------------------------------------------------
+# Ericsson AB    SCRIPT
+#--------------------------------------------------------------------------
+#
+# (c) Ericsson AB 2007 - All rights reserved.
+# 
+# The copyright to the computer program(s) herein is the property
+# of Ericsson AB, Sweden. The programs may be used and/or copied
+# only with the written permission from Ericsson AB or
+# in accordance with the terms and conditions stipulated in the
+# agreement/contract under which the program(s) have been supplied.
+# 
+#------ History ----------------------------------------------------------- 
+# Rev   Date    Prepared        Description
+#
+# PA1   070925  XRSOLFR         A generic script that uninstalls a package
+# PA2   071123  XRSOLFR         Added reinstallation of packages
+# PA3   071127  XRSOLFR         Remove : after d input parameter.
+# PA4	071128	XRSOLFR		Corrected PKG_TMP
+#--------------------------------------------------------------------------
+#
+#   Description: Uninstallation test
+#
+#   Arguments  : Check for following arguments:
+#					-d = debug
+#					-p = pkg path
+#                                       -a   ERIC pkg path
+#                                       -f   EXTR pkg path
+#                                       -b   ERIC pkg filename
+#                                       -g   EXTR pkg filename
+#					-e = uninstall ERIC
+#					-k = a colon separated list with files and directories that are removed when ERIC is uninstalled
+#					-x = uninstall EXTR
+#					-y = a colon separated list with files and directories that are removed when EXTR is uninstalled
+#
+
+# Init --------------------------------------------
+
+# Get the name of our product from the framework
+echo "[INPUT:PRODUCT]"
+read PROD
+
+# Default package filenames
+ERIC_PKG="ERIC${PROD}"
+EXTR_PKG="EXTR${PROD}"
+
+# Default package locations
+ERIC_PATH="/tmp/3pp_pkgs"
+EXTR_PATH="/tmp/3pp_pkgs"
+
+# Default package filenames
+ERIC_FILE="${ERIC_PKG}.pkg"
+EXTR_FILE="${EXTR_PKG}.pkg"
+
+ADM_FILE=/ericsson/core/etc/default.adm
+TPP_RUN="/ericsson/core/bin/3pp_run"
+
+#inc library
+if [ ${PROD} = "syb" ]; then
+. /ericsson/syb/lib/syb_libsvc.sh
+fi
+
+UNINSTALL_ERIC=0
+UNINSTALL_EXTR=0
+RETURN_STATUS=0
+
+# Read input options
+while getopts "dp:a:f:b:g:ek:xy:" option
+do
+    case $option in
+		d) DEBUG=1;;
+		p) PKG_PATH=${OPTARG}
+		EXTR_PATH=${PKG_PATH}
+       	 	ERIC_PATH=${PKG_PATH}
+		;;
+		a) ERIC_PATH=${OPTARG};;
+		b) ERIC_FILE=${OPTARG};;
+		f) EXTR_PATH=${OPTARG};;
+		g) EXTR_FILE=${OPTARG};;
+		e) UNINSTALL_ERIC=1;;
+		k) ERIC_PATHS=`echo $OPTARG | sed -e "s/:/ /g"`;;
+		x) UNINSTALL_EXTR=1;;
+		y) EXTR_PATHS=`echo $OPTARG | sed -e "s/:/ /g"`;;
+   esac
+done
+
+if [ "$DEBUG" ]; then
+    set -x
+fi
+
+# Mandatory information ---------------------------
+echo "[OUTPUT:TESTCASENAME:tc2_${PROD}]"
+echo "[OUTPUT:TESTCASEDESCRIPTION:Uninstallation test]"
+echo "[OUTPUT:SCRIPTVERSION:PA4]"
+# -------------------------------------------------
+
+# Checks that a file/directory does not exist -----
+check_filedir ()
+{
+	if [ -a "${1}" ]; then
+		RETURN_STATUS=1 #Failed, file/directory still exists
+		if [ -f "${1}" ]; then
+			# It's a file
+			echo "File $1 still exists!"
+			RETURN_STATUS_REASON="${RETURN_STATUS_REASON}File $1 still exists! "
+		else
+			# It's a directory
+			echo "Directory $1 still exists!"
+			RETURN_STATUS_REASON="${RETURN_STATUS_REASON}Directory $1 still exists! "
+		fi
+	fi	
+}
+
+#
+remove_pkg ()
+{
+	pkgrm -n -a $ADM_FILE "$1"
+	if [[ $? -eq 0 ]]; then
+		# Succeeded
+		echo "Package $1 uninstalled!"
+		# Check that the files/dirs does not exist
+		for foo in $2; do
+			check_filedir "$foo"
+		done
+	else
+		# Failed
+		echo "Failed to uninstall package $1!"
+		RETURN_STATUS=1 #Failed, unable to uninstall
+		RETURN_STATUS_REASON:="${RETURN_STATUS_REASON}Failed to uninstall $1. "
+	fi
+}
+
+# Verify input arguments --------------------------
+verifyinput ()
+{
+        echo "Checking for ${ERIC_PATH}/${ERIC_FILE}"
+        # Verify input
+        if [ -f "${ERIC_PATH}/${ERIC_FILE}" ];then
+                INSTALL_ERIC=1
+                echo "Found file!"
+        fi
+
+        echo "Checking for ${EXTR_PATH}/${EXTR_FILE}"
+        if [ -f "${EXTR_PATH}/${EXTR_FILE}" ];then
+                INSTALL_EXTR=1
+                echo "Found file!"
+        fi
+
+        if [[ $INSTALL_ERIC -eq 0 && $INSTALL_EXTR -eq 0 ]]; then
+                RETURN_STATUS=7 #Failed, can not execute
+                RETURN_STATUS_REASON="Did not find packages to reinstall, test aborted"
+                echo [OUTPUT:REASON:$RETURN_STATUS_REASON]
+                exit $RETURN_STATUS
+        fi
+}
+# -------------------------------------------------
+
+# Copy the packages to install to temp location----
+copypkgs ()
+{
+        if [ $UNINSTALL_ERIC -eq 1 ]; then
+                # Copy ERIC pkg to a tmp location
+                cp ${ERIC_PATH}/${ERIC_FILE} ${PKG_TMP}
+                if [ ! $? -eq 0 ]; then
+                        RETURN_STATUS=7 #Failed, can not execute
+                        RETURN_STATUS_REASON="Could not copy ERIC package, test aborted"
+                        rm -rf ${PKG_TMP}
+                        echo "[OUTPUT:REASON:$RETURN_STATUS_REASON]"
+                        exit $RETURN_STATUS
+                fi
+        fi
+        if [ $UNINSTALL_EXTR -eq 1 ]; then
+                # Copy EXTR pkg to a tmp location
+                cp ${EXTR_PATH}/${EXTR_FILE} ${PKG_TMP}
+                if [ ! $? -eq 0 ]; then
+                        RETURN_STATUS=7 #Failed, can not execute
+                        RETURN_STATUS_REASON="Could not copy EXTR package, test aborted"
+                        rm -rf ${PKG_TMP}
+                        echo "[OUTPUT:REASON:$RETURN_STATUS_REASON]"
+                        exit $RETURN_STATUS
+		##Fix for 7z as 3pp_run fails to extract these. Can be removed when 3pp_run is ok.
+		else
+                        _grep=/usr/xpg4/bin/grep
+                        echo ${EXTR_FILE} | ${_grep} -q 7z
+                        if [ $? -eq 0 ]; then  ##Extract the p7zip file.
+                                cd ${PKG_TMP}
+                                /usr/bin/p7zip -d ${EXTR_FILE}
+                       		if [ ! $? -eq 0 ]; then 
+                                	RETURN_STATUS=7 #Failed, can not execute
+                               	 	RETURN_STATUS_REASON="Could not extract EXTR package (7z), test aborted"
+                                	rm -rf ${PKG_TMP}
+                                	echo "[OUTPUT:REASON:$RETURN_STATUS_REASON]"
+                                	exit $RETURN_STATUS
+				fi
+                        fi
+ 
+                fi
+        fi
+}
+# -------------------------------------------------
+
+# Install a package(s) in $PKG_TMP-----------------
+install ()
+{
+        # (remove and) install pkgs with 3PP_RUN
+        echo "Installing pkg(s) with 3pp_run..."
+        $TPP_RUN -i $PKG_TMP
+        if [ $? -eq 0 ]; then
+                echo "Done installing with 3pp_run"
+        else
+                RETURN_STATUS=1 # 3PP_RUN Failed
+                RETURN_STATUS_REASON="$RETURN_STATUS_REASON, 3pp_run failed"
+                rm -rf ${PKG_TMP}
+                echo "[OUTPUT:REASON:$RETURN_STATUS_REASON]"
+                exit $RETURN_STATUS
+        fi
+}
+# -------------------------------------------------
+
+# Check if package $1 is installed, return 1 if not
+checkpkg()
+{
+        pkginfo $1 > /dev/null 2>&1
+        if [ ! $? -eq 0 ]; then
+                return 1
+        fi
+}
+# -------------------------------------------------
+
+# Displays the version of the package -------------
+display_version ()
+{
+        INDEX=0
+        while [ $INDEX -le ${#VARIABLE[*]} ]; do
+                if [[ "$2" = "${VARIABLE[INDEX]}" ]]; then
+                        if [ "${VALUE[INDEX]}" = "" ] ; then
+                                echo "[OUTPUT:VERSION:$1:?]"
+                        else
+                                echo "[OUTPUT:VERSION:$1:${VALUE[INDEX]}]"
+                        fi
+                        break
+                fi
+                ((INDEX += 1))
+        done
+}
+# -------------------------------------------------
+
+# MAIN --------------------------------------------
+
+if [ ${PROD} = "syb" ]; then
+        svc_offline
+        RESULT=$?
+        if [ $RESULT -ne 0 ]; then
+                RETURN_STATUS_REASON="${RETURN_STATUS_REASON}Sybase SMF services cannot be disabled"
+                echo "[OUTPUT:REASON:$RETURN_STATUS_REASON]"
+                exit 1
+        fi
+fi
+
+verifyinput
+
+# create pkg tmp location
+PKG_TMP=/tmp/3pp.$$
+mkdir -p ${PKG_TMP}
+
+copypkgs
+
+# Remove ERIC package if selected
+if [[ $UNINSTALL_ERIC -eq 1 ]]; then
+	remove_pkg "$ERIC_PKG" "${ERIC_PATHS}"
+fi
+
+# Remove EXTR package if selected
+if [[ $UNINSTALL_EXTR -eq 1 ]]; then
+	remove_pkg "$EXTR_PKG" "${EXTR_PATHS}"
+fi
+
+# Reinstall pkgs
+install  
+
+#Check installed pkgs
+if [ $UNINSTALL_ERIC -eq 1 ]; then
+        checkpkg ${ERIC_PKG}
+        if [ $? -eq 0 ]; then
+                echo "[OUTPUT:COMMENT:ERIC pkg reinstalled OK]"
+        else
+                RETURN_STATUS=1
+                RETURN_STATUS_REASON="ERIC pkg not reinstalled $RETURN_STATUS_REASON"
+        fi
+fi
+
+if [ $UNINSTALL_EXTR -eq 1 ]; then
+        checkpkg ${EXTR_PKG}
+        if [ $? -eq 0 ]; then
+                echo "[OUTPUT:COMMENT:EXTR pkg reinstalled OK]"
+        else
+                RETURN_STATUS=1
+                RETURN_STATUS_REASON="EXTR pkg not reinstalled $RETURN_STATUS_REASON"
+        fi
+fi
+
+rm -rf $PKG_TMP
+
+if [ ${PROD} = "syb" ]; then
+        svc_online
+        RESULT=$?
+        if [ $RESULT -ne 0 ]; then
+                RETURN_STATUS=2
+                RETURN_STATUS_REASON="${RETURN_STATUS_REASON}Sybase SMF services cannot be enabled"
+        fi
+fi
+
+
+# Return status and reason ------------------------
+if [ "$RETURN_STATUS_REASON" ]; then
+  echo "[OUTPUT:REASON:$RETURN_STATUS_REASON]"
+fi
+
+exit $RETURN_STATUS

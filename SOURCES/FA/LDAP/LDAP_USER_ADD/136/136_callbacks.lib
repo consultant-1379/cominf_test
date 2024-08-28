@@ -1,0 +1,313 @@
+#!/bin/bash
+#################################################################################
+#
+#
+#       COPYRIGHT (C) ERICSSON RADIO SYSTEMS AB, Sweden
+#
+#       The copyright to the document(s) herein is the property of
+#       Ericsson Radio Systems AB, Sweden.
+#
+#       The document(s) may be used and/or copied only with the written
+#       permission from Ericsson Radio Systems AB or in accordance with
+#       the terms and conditions stipulated in the agreement/contract
+#       under which the document(s) have been supplied.
+#
+#################################################################################
+
+
+# ATCOMINF Test Callback Library
+
+# Revision History
+# 31/07/12	ecoophi		Added extra checks in pre_con. Added /usr/local/bin/expect script to recover nms group
+# 13/08/12	ecoophi		Added tc_test tests
+# 14/08/12	ecoophi		Added extra logging to clarify test output
+# 15/08/12	ecoophi		Added multi domain processing
+# 21/08/12	ecoophi		Added STUB variable to ensure continued testing
+
+# Complete the callbacks in this library to automate the test case.
+#
+# Callbacks are stateless, it is not possible to set a global variable in one callback 
+# and access it it in another.
+#
+# Callbacks are called by the test harness in the following order:
+#
+# tc_setup() 		# Called only for independent TC execution mode to setup TC
+# tc_precon()		# Conditions that should exist before TC can run
+# tc_test()		# Runs the test for this TC
+# tc_postcon()		# Conditions that should/should not exist after successful TC 
+# tc_cleanup()		# Called only for independent TC execution mode to clenup after TC
+
+# All callbacks must PASS for a TC PASS result
+
+PFILE=/ericsson/config/build/params.cfg
+LDAP_BIN=/ericsson/sdee/bin
+
+CONFIG_INI=/ericsson/config/config.ini
+TEST_COMMANDS=cmds.cat
+DOMAIN_COMMANDS=cmds.dom
+CONEX=${AT_BIN}/con_ex.bsh
+#################################################################################
+#
+# CALLBACK: TC_SETUP
+#
+# This callback function is only called if the harness execution mode is 'AT_INDEPENDENT'
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_setup() {
+
+	return 0
+
+}
+#################################################################################
+
+#################################################################################
+#
+# CALLBACK: TC_PRECON
+#
+# This callback function checks the correct conditions exist to run the TC.
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+ 
+tc_precon() {
+
+	# If there are no template files exit
+	templates=`ls *.tmpl 2>/dev/null | wc -l`
+	if [ ${templates} -eq 0 ] ; then
+		echo "There are no templates to process"
+		return 1
+	fi
+
+	# Get the machine parameters
+	if [ ! -f ${PFILE} ]; then
+		echo "Parameter file is missing"
+		return 1
+	fi
+	. ${PFILE}
+
+	# Is the machine type correct
+	if [ "${inst_type}" = "securityca" ]; then
+		echo "Wrong installation type (securityca)"
+		return 1
+	fi
+
+	if [ "${config}" != "om_serv_master" -a "${config}" != "om_serv_slave" ]; then
+		echo "This is not an O&M services machine"
+		return 1
+	fi
+
+	
+
+	# Check for config.ini
+	if [ ! -s ${CONFIG_INI} ] ; then
+		echo "${CONFIG_INI} not found. "
+		return 1
+	fi
+
+	
+
+	
+	LDAP_SERVER_UP || {
+		echo "LDAP is not running: $?"
+		return 1
+		}
+
+	
+	return 0
+
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_TEST
+#
+# This callback function runs the test.
+# The harness compares the return code to the SPEC_TC_TEST_PASSCODE value set in the test spec.
+#
+# Return or exit codes:
+#    SPEC_TC_TEST_PASSCODE 	success
+# != SPEC_TC_TEST_PASSCODE 	failure
+ 
+tc_test() {
+
+
+
+	# Get the LDAP Manager Password
+	#export LDAP_SUPERUSER_PASSWD=`grep LDAP_SUPERUSER_PASSWD ${CONFIG_INI} | awk -F= '{print $2}'`
+echo ${LDAP_SUPERUSER_PASSWD}
+
+	# Check that domains areset up on this machine
+	DOMAINNUM=`cat ${CONFIG_INI} | grep -c "^LDAP_DOMAIN_NAME"`
+	if [ ${DOMAINNUM} -eq 0 ]; then
+		echo "No domains set up"
+		return 1
+	fi
+
+	# Get a list of DOMAINS
+	DOMAINS=`cat ${CONFIG_INI} | grep "LDAP_DOMAIN_NAME" | awk -F= '{print $2}'`
+
+	DOM2=""
+	[[ ${DOMAINNUM} -gt 1 ]] && {
+		DOM2="`echo ${DOMAINS} | awk '{print $2}'`"
+	}
+
+	# Check that the nms group exists. This should exist in each domain.
+        DOM1="ou=group,dc=`echo ${DOMAINS} | awk '{print $1}'| sed -e "s/\./,dc=/g"`"
+	/usr/bin/ldapsearch -D "cn=Directory Manager" -w ${LDAP_SUPERUSER_PASSWD} -b ${DOM1} "objectclass=*" | grep -w nms > /dev/null 2>&1
+	[[ $? -ne 0 ]] && {
+		# Restore the nms group - allow to continue if it already exists
+		cat tmpl.ldap_recover_nms | sed -e "s/PPPPPPPP/${LDAP_SUPERUSER_PASSWD}/g" > ldap_recover_nms.exp
+		if /usr/local/bin/expect ldap_recover_nms.exp &> ldap_recover_nms.tmp ; then
+			cat ldap_recover_nms.tmp
+			echo "LDAP group nms recovered"
+		else
+			cat ldap_recover_nms.tmp
+ 			if grep -i "already exists in domain" ldap_recover_nms.tmp ; then
+				echo "Accept error - nms already exists so continue..."
+			else
+				echo "Unable to recover nms group"
+				return 1
+			fi
+		fi
+	}
+
+        # Create a user to test against below
+        cat tmpl.create_test_user | sed -e "s/PPPPPPPP/${LDAP_SUPERUSER_PASSWD}/g" > create_test_user.exp
+        /usr/local/bin/expect create_test_user.exp || {
+                echo "Unable to create test user"
+                return 1
+        }
+        echo "Test user test9999 created"
+
+
+	while read tlin; do
+		OIFS=$IFS
+		IFS="^"
+		# field 0=test number, 1=command, 2=error message
+		tflds=($tlin)
+		IFS=$OIFS
+		tpref=136-${tflds[0]}
+		templ=${tpref}.tmpl
+		[ -f $templ ] || {
+		echo "Cannot find template file $templ for ${tpref} test"
+		continue
+		}
+		expfile="${tpref}.exp"
+		infile="${tpref}.in"
+		sed -e "s/^PPPPPPPP/${LDAP_SUPERUSER_PASSWD}/" < ${templ} > ${infile}
+		${CONEX} -d ${infile} -o ${expfile} -c "${tflds[1]}" || {
+			echo "Could not create $expfile from $infile to run ${tflds[1]} : retval $?"
+			continue
+			}
+
+		echo "######################################################"
+		echo "TEST - ${tflds[0]}"
+		echo "Running - ${tflds[1]}"
+		echo "######################################################"
+
+		# Run the test
+		/usr/local/bin/expect ${expfile} || {
+			echo "${tflds[2]}: retval $?"
+			continue
+			}
+	done < ${TEST_COMMANDS}
+
+	# Single test to add to a second domin if existing
+	if [ -n ${DOM2} ]; then
+	        while read tlin; do
+	                OIFS=$IFS
+			IFS="^"
+			# field 0=test number, 1=command, 2=error message
+			tflds=($tlin)
+			IFS=$OIFS
+			tpref=135-${tflds[0]}
+			templ=${tpref}.tmpl
+			[ -f $templ ] || {
+				echo "Cannot find template file $templ for ${tpref} test"
+				continue
+				}
+			expfile="${tpref}.exp"
+			infile="${tpref}.in"
+                        tflds[1]=`echo ${tflds[1]} | sed -e "s/DDDDDDDD/${DOM2}/g"`
+			sed -e "s/^PPPPPPPP/${LDAP_SUPERUSER_PASSWD}/" < ${templ} > ${infile}
+			${CONEX} -d ${infile} -o ${expfile} -c "${tflds[1]}" || {
+	                        echo "Could not create $expfile from $infile to run ${tflds[1]} : retval $?"
+				continue
+				}
+
+			echo "######################################################"
+			echo "TEST - ${tflds[0]}"
+			echo "Running - ${tflds[1]}"
+			echo "######################################################"
+
+			# Run the test
+			/usr/local/bin/expect ${expfile} || {
+				echo "${tflds[2]}: retval $?"
+				continue
+				}
+		done < ${DOMAIN_COMMANDS}
+
+	fi
+
+	return 0
+
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_POSTCON
+#
+# This callback function checks expected results.
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_postcon() {
+
+	return 0
+
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_CLEANUP
+#
+# This callback function is only called if the harness execution mode is 'AT_INDEPENDENT'
+# 
+# This callback restores the target system to the state it was in before the TC 
+# was run. It rolls back changes made by callbacks tc_setup() and tc_test()
+# 
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_cleanup() {
+
+	rm -f *.in *.exp *.tmp || {
+		"Problems removing temporary files"
+				return 1
+		}
+
+        
+        # Exit here to allow analysis
+        if ! LDAP_SERVER_UP ; then
+                echo "LDAP is not running"
+        fi
+
+	
+
+
+	return 0
+
+}

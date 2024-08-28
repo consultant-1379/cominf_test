@@ -1,0 +1,77 @@
+#!/bin/bash
+
+# TEST CASE SPEC FILE
+# This file is generated/updated using the test framework web interface.
+# Manual updates on test servers are lost when the test package is re-installed.
+#
+# Last modified: Sunday 31st of March 2013 20:37:24
+#
+
+# These settings must be in BASH script format, they are sourced by other scripts.
+SPEC_FA_NAME="SCK"
+SPEC_UC_NAME="SCK_X86_MS_VERIFY_DISKGROUP_CONFIGURATION"
+SPEC_TC_ID=754
+SPEC_TC_SLOGAN="Verify that vxfencing diskgroups are defined "
+SPEC_TC_TYPE="UNIT"
+SPEC_TC_POLARITY="positive"
+SPEC_TC_PRIORITY="high"
+SPEC_TC_AUTOMATED=1
+SPEC_TC_DEPENDENT_ONLY=0
+SPEC_TC_TIMEOUT=300
+SPEC_TC_TEST_PASSCODE=0
+SPEC_TC_AUTHOR="eeisssn"
+SPEC_TC_AUTOMATOR="eeisssn"
+# this parameter is not interpreted by harness
+SPEC_TC_DISABLED=0
+
+# Please do not remove the comment lines below.
+# They are used as section locators by the test harness.
+
+# BEGIN_PRE_CONDITIONS
+#none
+# END_PRE_CONDITIONS
+
+
+# BEGIN_MANUAL_STEPS
+#ensure 2 vxfen diskgroups exist each with 3 luns
+#vxdisk -o alldgs list
+#DEVICE       TYPE            DISK         GROUP        STATUS
+#c0t5006016044604B47d0s2 auto:sliced     disk2        ossdg        online
+#c0t5006016044604B47d1s2 auto:sliced     -            (sybasedg)   online
+#c0t5006016044604B47d2s2 auto:sliced     disk2mirr    ossdg        online
+#c0t5006016044604B47d3s2 auto:sliced     -            (sybasedg)   online
+#c0t5006016044604B47d4s2 auto:sliced     -            (vxfendg1)   online
+#c0t5006016044604B47d5s2 auto:sliced     -            (vxfendg1)   online
+#c0t5006016044604B47d6s2 auto:sliced     -            (vxfendg1)   online
+#c0t5006016044604B47d7s2 auto:sliced     -            (vxfendg2)   online
+#c0t5006016044604B47d8s2 auto:sliced     -            (vxfendg2)   online
+#c0t5006016044604B47d9s2 auto:sliced     -            (vxfendg2)   online
+#c2t0d0s2     auto:SVM        -            -            SVM
+#c2t1d0s2     auto:SVM        -            -            SVM
+#
+#
+#vxfenconfig -l
+#
+#check that node 0 and node 1 are "running"
+# vxfenadm -d
+#
+#I/O Fencing Cluster Information:
+#================================
+#
+# Fencing Protocol Version: 201
+# Fencing Mode: SCSI3
+# Fencing SCSI3 Disk Policy: raw
+# Cluster Members:
+#
+#        * 0 (atrcxb1133)
+#          1 (atrcxb1134)
+#
+# RFSM State Information:
+#        node   0 in state  8 (running)
+#        node   1 in state  8 (running)
+#
+# END_MANUAL_STEPS
+
+# BEGIN_POST_CONDITIONS
+#none
+# END_POST_CONDITIONS

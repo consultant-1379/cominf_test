@@ -1,0 +1,15 @@
+#!/bin/bash
+
+# TEST SUITE SPEC FILE
+# This file is generated/updated using the test framework web interface.
+# Manual updates on test servers are lost when the test package is re-installed.
+#
+# Last modified: Friday 27th of September 2013 10:48:34
+#
+SPEC_TS_NAME=SMRS_INSTALL
+SPEC_TS_ID=6
+SPEC_TS_SLOGAN="Sets up SMRS master and NEDSS"
+SPEC_TS_TIMEOUT=300
+SPEC_TS_AUTHOR="xkalbha"
+SPEC_TS_INDEPENDENT=0
+SPEC_TS_TC_IDS=(161 217 186 91 190 214 137 151 158 159 160 180 212 318 307 140 185 189 218 165 222 223 221 228 229 320 329 327 336 400 401 227 402 321 317 403 405 406 407 408 415 420 421 422 423 424 425)

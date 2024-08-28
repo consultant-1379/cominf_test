@@ -1,0 +1,49 @@
+# Config file for DATADISK_LOCATION-generic_nas but no NAS1_IP
+#
+# allowed values for DEPLOYMENT_TYPE are blade, non-blade.
+DEPLOYMENT_TYPE=non-blade
+ 
+# An alias for the OSS Admin server e.g. "oss1"; must be 9 characters or less.
+# This used mainly for naming of SMO FtpServices
+OSS_ALIAS=oss1
+ 
+# Primary IP of SMRS Master server
+SMRS_MASTER_IP=192.168.0.4
+ 
+# the retention period in seconds for unprocessed PM files on the SMRS Master server
+#
+SMRS_MASTER_PM_RETENTION=86400
+ 
+#
+# For OSS on blade, HA-CS OSS and HA-RS OSS the following two parameters need to be specified.
+#OSS_NODE2=<host name 2>
+#OSS_NODE2_IP=<ip addr>
+ 
+# If deployment type is blade and SFS is being used, the SMRS sysid of the
+# filesystems created on the SFS needs to be specified here. Refer to
+# Cominf II document for more details.
+SMRS_NAS_SYSID=smrsxkalbha
+ 
+# specify which network types to enable.
+OSS_SUPPORT_GRAN=yes
+OSS_SUPPORT_CORE=yes
+OSS_SUPPORT_WRAN=yes
+OSS_SUPPORT_LRAN=yes
+ 
+# GRAN, CORE SMO usernames
+OSS_GRAN_SMO_FTPSERVICE=gransmo
+OSS_CORE_SMO_FTPSERVICE=coresmo
+ 
+# use the NTP server from this OSS on the SMRS Master server
+USE_OSS_NTP=yes
+ 
+# Create SMO FtpServices in ONRM. Recommended to say 'yes' here.
+PERFORM_ARNEIMPORTS=yes
+ 
+# Specify the following commands if you are not using SFS NAS. For test only.
+#NAS1_IP=10.45.29.8
+#NAS2_IP=
+GRAN_COMMON_NAS_SHARE_NAME=/vx/smrsxkalbha-gran_common
+WRAN_COMMON_NAS_SHARE_NAME=/vx/smrsxkalbha-wran_common
+LRAN_COMMON_NAS_SHARE_NAME=/vx/smrsxkalbha-lran_common
+CORE_COMMON_NAS_SHARE_NAME=/vx/smrsxkalbha-core_common

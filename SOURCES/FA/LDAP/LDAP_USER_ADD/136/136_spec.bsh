@@ -1,0 +1,56 @@
+#!/bin/bash
+
+# TEST CASE SPEC FILE
+# This file is generated/updated using the test framework web interface.
+# Manual updates on test servers are lost when the test package is re-installed.
+#
+# Last modified: Friday 31st of May 2013 10:10:07
+#
+
+# These settings must be in BASH script format, they are sourced by other scripts.
+SPEC_FA_NAME="LDAP"
+SPEC_UC_NAME="LDAP_USER_ADD"
+SPEC_TC_ID=136
+SPEC_TC_SLOGAN="Negative tests on manage_user.bsh -a"
+SPEC_TC_TYPE="FT"
+SPEC_TC_POLARITY="negative"
+SPEC_TC_PRIORITY="high"
+SPEC_TC_AUTOMATED=1
+SPEC_TC_DEPENDENT_ONLY=0
+SPEC_TC_TIMEOUT=600
+SPEC_TC_TEST_PASSCODE=0
+SPEC_TC_AUTHOR="ecoophi"
+SPEC_TC_AUTOMATOR="ecoophi"
+# this parameter is not interpreted by harness
+SPEC_TC_DISABLED=0
+
+# Please do not remove the comment lines below.
+# They are used as section locators by the test harness.
+
+# BEGIN_PRE_CONDITIONS
+#inst_type not security
+#config is om_serv_master or om_serv_slave
+#OpenDJ RPM installed
+#Inirator has run (/opt/ericsson/config/config.ini exists)
+#LDAP configured (/opt/ericsson/config/instance.settings exists)
+#manage_user.bsh perms r-xr-x--- root ldapadm
+#Backup /opt/opendj before commencing
+# END_PRE_CONDITIONS
+
+
+# BEGIN_MANUAL_STEPS
+#-a -d with invalid input: Error for non-existent domain testdom
+#-a -d globaldomain should fail as no migration has taken place
+#-a -s 1500 -e 1400 should fail - end less than start
+#-a -s 800 -e 1500 should fail - start less than 1000
+#-a -s 1000 -e 75000 should fail - end greater than 59999
+#-a -i 800 should fail - UID is less than 1000
+#-a -i 61000 should fail - UID is greater than 59999
+#-a com_only -c sys_adm should fail - -c only available with oss_only user
+#-a oss_only -c testcat should fail - incorrect category
+#
+# END_MANUAL_STEPS
+
+# BEGIN_POST_CONDITIONS
+#Restore /opt/opendj 
+# END_POST_CONDITIONS

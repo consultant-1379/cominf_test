@@ -1,0 +1,170 @@
+#!/bin/bash
+#################################################################################
+#
+#
+#       COPYRIGHT (C) ERICSSON RADIO SYSTEMS AB, Sweden
+#
+#       The copyright to the document(s) herein is the property of
+#       Ericsson Radio Systems AB, Sweden.
+#
+#       The document(s) may be used and/or copied only with the written
+#       permission from Ericsson Radio Systems AB or in accordance with
+#       the terms and conditions stipulated in the agreement/contract
+#       under which the document(s) have been supplied.
+#
+#################################################################################
+
+
+# ATCOMINF Test Callback Library
+
+# Revision History
+# <date>	<signum>	<details>
+
+# Complete the callbacks in this library to automate the test case.
+#
+# Callbacks are stateless, it is not possible to set a global variable in one callback 
+# and access it it in another.
+#
+# Callbacks are called by the test harness in the following order:
+#
+# tc_setup() 		# Called only for independent TC execution mode to setup TC
+# tc_precon()		# Conditions that should exist before TC can run
+# tc_test()		# Runs the test for this TC
+# tc_postcon()		# Conditions that should/should not exist after successful TC 
+# tc_cleanup()		# Called only for independent TC execution mode to cleanup after TC
+
+# All callbacks must PASS for a TC PASS result
+
+#################################################################################
+#
+# CALLBACK: TC_SETUP
+#
+# This callback function is only called if the harness execution mode is 'AT_INDEPENDENT'
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+
+pkginfo ERICodj 2> /dev/null
+ret=$?
+if [[ $ret -eq 0 ]]; then
+        PATH_ADDUSER=/ericsson/opendj/bin/add_user.sh
+        PATH_DELUSER=/ericsson/opendj/bin/del_user.sh
+else
+        PATH_ADDUSER=/ericsson/sdee/bin/add_user.sh
+        PATH_DELUSER=/ericsson/sdee/bin/del_user.sh
+fi
+
+
+tc_setup() {
+
+
+	return 0
+
+}
+#################################################################################
+
+#################################################################################
+#
+# CALLBACK: TC_PRECON
+#
+# This callback function checks the correct conditions exist to run the TC.
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+ 
+tc_precon() {
+
+             ${AT_BIN}/con_ex.bsh -d 1359add.in -o 1359add.exp -c "${PATH_ADDUSER}"
+        /usr/local/bin/expect 1359add.exp || {
+                echo "Error while running script add_user.sh in master"
+                return 1
+        }
+
+	return 0
+
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_TEST
+#
+# This callback function runs the test.
+# The harness compares the return code to the SPEC_TC_TEST_PASSCODE value set in the test spec.
+#
+# Return or exit codes:
+#    SPEC_TC_TEST_PASSCODE 	success
+# != SPEC_TC_TEST_PASSCODE 	failure
+ 
+tc_test() {
+
+           ssh uas1 '
+         ${AT_BIN}/con_ex.bsh -d 1359test.in -o 1359test.exp -c "ssh u1359@uas1 OEX"
+         scp 1352test.exp root@uas1:/var/tmp
+        /usr/local/bin/expect /var/tmp/1352test.exp || {
+                echo "OEX is not opened "
+         }
+            echo "$?"
+         if [ `$?` -eq 0 ] ; then
+          echo "OEX app was able to access"
+           return 1
+         fi
+                  '
+
+	return 0
+
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_POSTCON
+#
+# This callback function checks expected results.
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_postcon() {
+
+
+	return 0
+
+
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_CLEANUP
+#
+# This callback function is only called if the harness execution mode is 'AT_INDEPENDENT'
+# 
+# This callback restores the target system to the state it was in before the TC 
+# was run. It rolls back changes made by callbacks tc_setup() and tc_test()
+# 
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_cleanup() {
+
+           ${AT_BIN}/con_ex.bsh -d 1359del.in -o 1359del.exp -c "${PATH_DELUSER}"
+        /usr/local/bin/expect 1359del.exp || {
+                echo "Error while running script del_user.sh in master"
+                return 1
+        }
+           rm /soumya/cominf_test/SOURCES/FA/SOLARIS10INSTALL/SOLARIS10INSTALL_UAS_Installation/1359/1359add.exp
+           rm /soumya/cominf_test/SOURCES/FA/SOLARIS10INSTALL/SOLARIS10INSTALL_UAS_Installation/1359/1359del.exp
+           rm /soumya/cominf_test/SOURCES/FA/SOLARIS10INSTALL/SOLARIS10INSTALL_UAS_Installation/1359/1359test.exp
+      return 0
+
+
+}

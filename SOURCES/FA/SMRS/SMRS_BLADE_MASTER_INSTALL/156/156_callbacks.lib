@@ -1,0 +1,251 @@
+#!/bin/bash
+#################################################################################
+#
+#
+#       COPYRIGHT (C) ERICSSON RADIO SYSTEMS AB, Sweden
+#
+#       The copyright to the document(s) herein is the property of
+#       Ericsson Radio Systems AB, Sweden.
+#
+#       The document(s) may be used and/or copied only with the written
+#       permission from Ericsson Radio Systems AB or in accordance with
+#       the terms and conditions stipulated in the agreement/contract
+#       under which the document(s) have been supplied.
+#
+#################################################################################
+
+
+# ATCOMINF Test Callback Library
+
+# Revision History
+# 20/07/12	xkalbha		Testing of no CORE
+
+# Complete the callbacks in this library to automate the test case.
+#
+# Callbacks are stateless, it is not possible to set a global variable in one callback 
+# and access it it in another.
+#
+# Callbacks are called by the test harness in the following order:
+#
+# tc_setup() 		# Called only for independent TC execution mode to setup TC
+# tc_precon()		# Conditions that should exist before TC can run
+# tc_test()		# Runs the test for this TC
+# tc_postcon()		# Conditions that should/should not exist after successful TC 
+# tc_cleanup()		# Called only for independent TC execution mode to clenup after TC
+
+# All callbacks must PASS for a TC PASS result
+
+#################################################################################
+#
+# CALLBACK: TC_SETUP
+#
+# This callback function is only called if the harness execution mode is 'AT_INDEPENDENT'
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_setup() {
+	#PREPARE_SMRS
+	return $?
+
+}
+#################################################################################
+
+#################################################################################
+#
+# CALLBACK: TC_PRECON
+#
+# This callback function checks the correct conditions exist to run the TC.
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+ 
+tc_precon() {
+
+	TEST_SOLARIS || { echo "Not Solaris"; return 1; }
+	# Check that have smrs_user_config file for this box
+	name=`hostname`
+	filename="smrs_user_config.$name"
+	[ -r $filename ] || { echo "SMRS config $filename does not exist"; return 2; }
+
+	return 0
+
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_TEST
+#
+# This callback function runs the test.
+# The harness compares the return code to the SPEC_TC_TEST_PASSCODE value set in the test spec.
+#
+# Return or exit codes:
+#    SPEC_TC_TEST_PASSCODE 	success
+# != SPEC_TC_TEST_PASSCODE 	failure
+ 
+tc_test() {
+
+	${AT_BIN}/con_ex.bsh -d add_smrs.in -o expect.exp -c "ssh omsrvm mkdir /export/GRAN/nedssv4 "
+	/usr/local/bin/expect expect.exp  
+	
+	${AT_BIN}/con_ex.bsh -d add_smrs.in -o expect.exp -c "ssh omsrvm mkdir /export/CORE/nedssv4"
+	/usr/local/bin/expect expect.exp  
+	
+	${AT_BIN}/con_ex.bsh -d add_smrs.in -o expect.exp -c "ssh omsrvm mkdir /export/LRAN/nedssv4"
+	/usr/local/bin/expect expect.exp 
+	svcadm enable smrs_nfs
+	
+	# Mark the bismrs_events.log so know if errors occur
+	LOG_MARK_STATUS /var/opt/ericsson/log/bismrs_events.log 1
+
+	name=`hostname`
+	filename="smrs_user_config.$name"
+	cp $filename smrs_user_config
+	#echo "Config file using is: "
+	#cat $filename
+
+	#Run add smrs master directly
+	/opt/ericsson/nms_bismrs_mc/bin/add_smrs_master.sh -a add -f smrs_user_config -p shroot -r shroot123
+	retval=$?
+	[ $retval -ne 0 ] && { echo "add_smrs_master failed $retval"; return 3; }
+
+	# Check for errors
+	LOG_SEARCH_FROM_MARK /var/opt/ericsson/log/bismrs_events.log error 1
+	retval=$?
+	[ $retval -eq 0 ] && { echo "error found in bismrs_events.log $retval"; return 4; }
+	[ $retval -ne 1 ] && { echo "Search failed in bismrs_events.log $retval"; return 4; }
+	LOG_SEARCH_FROM_MARK /var/opt/ericsson/log/bismrs_events.log warning 1
+	retval=$?
+	[ $retval -eq 0 ] && { echo "warning found in bismrs_events.log $retval"; return 5; }
+	[ $retval -ne 1 ] && { echo "Search failed in bismrs_events.log $retval"; return 5; }
+
+	return 0
+
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_POSTCON
+#
+# This callback function checks expected results.
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_postcon() {
+
+	name=`hostname`
+	# Test smrs_nfs service is enabled on the OSS master
+	SERVICE_ENABLED smrs_nfs || { echo "SMRS_NFS not enabled $?"; return 1; }
+
+	
+
+	# Test filesystems on the OSS Master - this box under /var/opt/ericsson//var/opt/ericsson/smrsstore/
+	# The OSS only mounts the filesystems for network types that are enabled, so
+	# expect no CORE
+	CHECK_MOUNT_EXISTS /var/opt/ericsson/smrsstore/GRAN || { echo "GRAN mount not on OSS master $?"; return 2; }
+	CHECK_MOUNT_EXISTS /var/opt/ericsson/smrsstore/LRAN || { echo "LRAN mount not on OSS master $?"; return 3; }
+	CHECK_MOUNT_EXISTS /var/opt/ericsson/smrsstore/WRAN || { echo "WRAN mount not on OSS master $?"; return 4; }
+	#CHECK_MOUNT_EXISTS /var/opt/ericsson/smrsstore/CORE && { echo "CORE mount on OSS master $?"; return 5; }
+
+	# Check cat /etc/mnttab | grep /var/opt/ericsson/smrsstore/
+	numSmrsMounts=$(grep /var/opt/ericsson/smrsstore/ /etc/mnttab | wc -l)
+	# Assign back to self to remove leading tabs
+	numSmrsMounts=$(echo $numSmrsMounts)
+	[ "$numSmrsMounts" -lt 3 ] && { echo "Incorrect number of local /var/opt/ericsson/smrsstore/ mounts $numSmrsMounts"; return 6; }
+
+	# Check /etc/mnttab for GRAN
+	numGranMounts=$(grep '/var/opt/ericsson/smrsstore/GRAN' /etc/mnttab | wc -l)
+	numGranMounts=$(echo $numGranMounts)
+	[ "$numGranMounts" -lt 1 ] && { echo "Incorrect number of local gran mounts $numGranMounts"; return 7; }
+
+	# Check /etc/mnttab for LRAN
+	numLranMounts=$(grep '/var/opt/ericsson/smrsstore/LRAN' /etc/mnttab | wc -l)
+	numLranMounts=$(echo $numLranMounts)
+	[ "$numLranMounts" -lt 1 ] && { echo "Incorrect number of local lran mounts $numLranMounts"; return 8; }
+
+	# Check /etc/mnttab for WRAN
+	numWranMounts=$(grep '/var/opt/ericsson/smrsstore/WRAN' /etc/mnttab | wc -l)
+	numWranMounts=$(echo $numWranMounts)
+	[ "$numWranMounts" -lt 1 ] && { echo "Incorrect number of local wran mounts $numWranMounts"; return 9; }
+
+	# Check /etc/mnttab for CORE
+	numCoreMounts=$(grep 'CORE' /etc/mnttab | wc -l)
+	numCoreMounts=$(echo $numCoreMounts)
+	[ "$numCoreMounts" -lt 0 ] && { echo "Incorrect number of local core mounts $numCoreMounts"; return 10; }
+
+	# Test filesystems are mounted on the O&M primary
+	# The OM primary always mounts all 4 filesystems regardless of network types
+	# enabled
+    PRIMIP=`grep ^SMRS_MASTER_IP smrs_user_config 2> /dev/null | awk -F= '{print $2}'`
+	
+	
+
+	# Check filesystems on remote box have been added to /etc/vfstab
+	cmd='grep /export/GRAN /etc/vfstab'
+	ssh smrs_master "$cmd" || { echo "GRAN mount not in /etc/vfstab $?"; return 15; }
+
+	cmd='grep /export/LRAN /etc/vfstab'
+	ssh smrs_master "$cmd" || { echo "LRAN mount not in /etc/vfstab $?"; return 16; }
+
+	cmd='grep /export/WRAN /etc/vfstab'
+	ssh smrs_master "$cmd" || { echo "WRAN mount not in /etc/vfstab $?"; return 17; }
+
+	
+
+
+	
+	# Check FTP Services
+	CHECK_SMO_FTP_SERVICE_MASTER oss1 y y y n || return $?
+
+	# Check directory structure of SMRS filesystems
+	
+
+	# Check crontab for stn_cleanup setup
+    ssh smrs_master crontab -l | grep -i stn_cleanup.sh
+	retval=$?
+	[ $retval -ne 0 ] && { echo "No crontab entry for stn_cleanup $retval"; return 70; }
+
+	
+	##ssh smrs_master "cat /etc/passwd | grep coresmo"  && { echo "coresmo exist on OM primary"; return 72; }
+	return 0
+
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_CLEANUP
+#
+# This callback function is only called if the harness execution mode is 'AT_INDEPENDENT'
+# 
+# This callback restores the target system to the state it was in before the TC 
+# was run. It rolls back changes made by callbacks tc_setup() and tc_test()
+# 
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_cleanup() {
+
+	# Cleanup the system so nolonger a SMRS master
+
+
+    PRIMIP=`grep ^SMRS_MASTER_IP smrs_user_config 2> /dev/null | awk -F= '{print $2}'`
+	#CLEANUP_SMRS  smrs_master oss1 y y y n
+	retval=$?
+
+	# Remove temporary files
+	rm -f smrs_user_config
+	rm -f 156.exp
+	return $retval
+
+}

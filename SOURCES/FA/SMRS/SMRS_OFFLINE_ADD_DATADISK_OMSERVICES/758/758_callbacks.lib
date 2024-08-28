@@ -1,0 +1,192 @@
+#!/bin/bash
+#################################################################################
+#
+#
+#	   COPYRIGHT (C) ERICSSON RADIO SYSTEMS AB, Sweden
+#
+#	   The copyright to the document(s) herein is the property of
+#	   Ericsson Radio Systems AB, Sweden.
+#
+#	   The document(s) may be used and/or copied only with the written
+#	   permission from Ericsson Radio Systems AB or in accordance with
+#	   the terms and conditions stipulated in the agreement/contract
+#	   under which the document(s) have been supplied.
+#
+#################################################################################
+
+
+# ATCOMINF Test Callback Library
+
+# Revision History
+# 09/11/12	xkalbha		Initial version 
+
+# Complete the callbacks in this library to automate the test case.
+#
+# Callbacks are stateless, it is not possible to set a global variable in one callback 
+# and access it it in another.
+#
+# Callbacks are called by the test harness in the following order:
+#
+# tc_setup() 		# Called only for independent TC execution mode to setup TC
+# tc_precon()		# Conditions that should exist before TC can run
+# tc_test()		# Runs the test for this TC
+# tc_postcon()		# Conditions that should/should not exist after successful TC 
+# tc_cleanup()		# Called only for independent TC execution mode to clenup after TC
+
+# All callbacks must PASS for a TC PASS result
+
+#extract the IP address of offline SMRS Master
+OFFL_ip=`grep ^OFFLINE_SMRS_MASTER_TRAFFIC_PIP offline_smrs_master_config.$(hostname) 2> /dev/null | awk -F= '{print $2}'`
+PRIM_ip=`grep ^ONLINE_SMRS_MASTER_TRAFFIC_PIP offline_smrs_master_config.$(hostname) 2> /dev/null | awk -F= '{print $2}'`
+
+#################################################################################
+#
+# CALLBACK: TC_SETUP
+#
+# This callback function is only called if the harness execution mode is 'AT_INDEPENDENT'
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_setup() {
+
+	return 0
+
+}
+#################################################################################
+
+#################################################################################
+#
+# CALLBACK: TC_PRECON
+#
+# This callback function checks the correct conditions exist to run the TC.
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+ 
+tc_precon() {
+
+	TEST_SOLARIS || { echo "Not Solaris"; return 1; }
+
+	filename="offline_smrs_master_config.$(hostname)"
+	[ -r $filename ] || { echo "Offline SMRS config $filename does not exist"; return 1; }
+
+	cp $filename offline_smrs_master_config
+
+	[ -z $OFFL_ip ] && { echo "OFFLINE_SMRS_MASTER_TRAFFIC_PIP not found in config file $filename "; return 2; }
+	
+	rc=0
+
+	echo "Check that file /export/WRAN/ is mapped to a local device not a nfs share on $OFFL_ip"
+	ssh $OFFL_ip 'mount  | grep "/dev/mapper/smrspool-wran_common on /export/WRAN type ext4 (rw)" ' || {
+		echo "/export/WRAN/ is mapped to a local device on $OFFL_ip, Test FAILED "
+		rc=3
+		}
+
+	echo "Check that cron job to run ha_sync.sh exists on offline SMRS master $OFFL_ip"
+	ssh $OFFL_ip 'crontab -l|fgrep "15,45 * * * * /ericsson/smrs/bin/ha_sync.sh" ' || {
+		echo "cron job to run ha_sync.sh does not exist on offline SMRS master $OFFL_ip,Test FAILED "
+		rc=4
+		}
+
+	echo "Creating file /export/WRAN/CommonPersistent/configuration/data.file on online SMRS Master $PRIM_ip"
+	ssh $PRIM_ip 'touch /export/WRAN/CommonPersistent/configuration/data.file' || {
+		echo "Creating file /export/WRAN/CommonPersistent/configuration/data.file FAILED on $PRIM_ip"
+		rc=5
+		}
+
+	echo "Check that file /export/WRAN/CommonPersistent/configuration/data.file does not currently exist on offline SMRS Master $OFFL_ip"
+	ssh $OFFL_ip 'ls /export/WRAN/CommonPersistent/configuration/data.file' && {
+		echo "File /export/WRAN/CommonPersistent/configuration/data.file already exist on $OFFL_ip, Test FAILED "
+		rc=6
+		}
+
+	return $rc
+
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_TEST
+#
+# This callback function runs the test.
+# The harness compares the return code to the SPEC_TC_TEST_PASSCODE value set in the test spec.
+#
+# Return or exit codes:
+#	SPEC_TC_TEST_PASSCODE 	success
+# != SPEC_TC_TEST_PASSCODE 	failure
+ 
+tc_test() {
+
+	ssh $OFFL_ip '/ericsson/smrs/bin/ha_sync.sh'
+
+	retval=$?
+	[ $retval -ne 0 ] && { echo "running ha_sync.sh failed $retval, where 0 expected"; return 1; }
+
+	return 0
+
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_POSTCON
+#
+# This callback function checks expected results.
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_postcon() {
+
+	rc=0
+
+	echo "Check that file /export/WRAN/CommonPersistent/configuration/data.file has now been copied to offline SMRS Master $OFFL_ip"
+	ssh $OFFL_ip 'ls /export/WRAN/CommonPersistent/configuration/data.file' || {
+		echo "File /export/WRAN/CommonPersistent/configuration/data.file was not copied to offline SMRS master $OFFL_ip, Test FAILED "
+		rc=1
+		}
+
+	echo "Removing file /export/WRAN/CommonPersistent/configuration/data.file on offline SMRS master $OFFL_ip"
+	ssh $OFFL_ip 'rm -rf /export/WRAN/CommonPersistent/configuration/data.file' || {
+		echo "Cleaning up file /export/WRAN/CommonPersistent/configuration/data.file failed on offline SMRS master $OFFL_ip, Test FAILED "
+		rc=2
+		}
+
+	echo "Removing file /export/WRAN/CommonPersistent/configuration/data.file on online SMRS master $PRIM_ip"
+	ssh $OFFL_ip 'rm -rf /export/WRAN/CommonPersistent/configuration/data.file' || {
+		echo "Cleaning up file /export/WRAN/CommonPersistent/configuration/data.file failed on online SMRS master $PRIM_ip, Test FAILED "
+		rc=3
+		}
+
+	
+	return $rc
+
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_CLEANUP
+#
+# This callback function is only called if the harness execution mode is 'AT_INDEPENDENT'
+# 
+# This callback restores the target system to the state it was in before the TC 
+# was run. It rolls back changes made by callbacks tc_setup() and tc_test()
+# 
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_cleanup() {
+
+	return 0
+
+}

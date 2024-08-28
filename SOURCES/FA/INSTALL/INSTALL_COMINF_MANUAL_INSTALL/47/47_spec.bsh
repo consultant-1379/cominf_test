@@ -1,0 +1,42 @@
+#!/bin/bash
+
+# TEST CASE SPEC FILE
+# This file is generated/updated using the test framework web interface.
+# Manual updates on test servers are lost when the test package is re-installed.
+#
+# Last modified: Sunday 31st of March 2013 20:37:23
+#
+
+# These settings must be in BASH script format, they are sourced by other scripts.
+SPEC_FA_NAME="INSTALL"
+SPEC_UC_NAME="INSTALL_COMINF_MANUAL_INSTALL"
+SPEC_TC_ID=47
+SPEC_TC_SLOGAN="Attempt basic install on OA&M secondary"
+SPEC_TC_TYPE="FT"
+SPEC_TC_POLARITY="positive"
+SPEC_TC_PRIORITY="high"
+SPEC_TC_AUTOMATED=0
+SPEC_TC_DEPENDENT_ONLY=0
+SPEC_TC_TIMEOUT=300
+SPEC_TC_TEST_PASSCODE=0
+SPEC_TC_AUTHOR="xamamcg"
+SPEC_TC_AUTOMATOR="xamamcg"
+# this parameter is not interpreted by harness
+SPEC_TC_DISABLED=0
+
+# Please do not remove the comment lines below.
+# They are used as section locators by the test harness.
+
+# BEGIN_PRE_CONDITIONS
+#1. Configure server as cominf and om_serv_slave
+# END_PRE_CONDITIONS
+
+
+# BEGIN_MANUAL_STEPS
+#1. When linirator runs choose basic deployment type
+#2. When linirator states its invalid, configure standard deployment type
+# END_MANUAL_STEPS
+
+# BEGIN_POST_CONDITIONS
+#1. CONSOLE_OUTPUT_CONTAINS 
+# END_POST_CONDITIONS

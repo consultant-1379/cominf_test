@@ -1,0 +1,8 @@
+Password
+shroot12
+sftp>
+cd /JUMP/pre_inirator
+sftp>
+mget test.xml
+Fetching
+quit

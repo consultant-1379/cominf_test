@@ -1,0 +1,104 @@
+#!/bin/bash
+
+# TEST CASE SPEC FILE
+# This file is generated/updated using the test framework web interface.
+# Manual updates on test servers are lost when the test package is re-installed.
+#
+# Last modified: Friday 11th of October 2013 6:50:16
+#
+
+# These settings must be in BASH script format, they are sourced by other scripts.
+SPEC_FA_NAME="MULTIOSS"
+SPEC_UC_NAME="MULTIOSS_LDAP"
+SPEC_TC_ID=1010
+SPEC_TC_SLOGAN="Verify that the added groups are successfully migrated to GD as part of its local domain migration"
+SPEC_TC_TYPE="FT"
+SPEC_TC_POLARITY="positive"
+SPEC_TC_PRIORITY="high"
+SPEC_TC_AUTOMATED=1
+SPEC_TC_DEPENDENT_ONLY=0
+SPEC_TC_TIMEOUT=300
+SPEC_TC_TEST_PASSCODE=0
+SPEC_TC_AUTHOR="xsougha"
+SPEC_TC_AUTOMATOR="xsougha"
+# this parameter is not interpreted by harness
+SPEC_TC_DISABLED=0
+
+# Please do not remove the comment lines below.
+# They are used as section locators by the test harness.
+
+# BEGIN_PRE_CONDITIONS
+#(1) Presence of isolated domains(isol_1.com and isol_3.com) on oss1 and oss2
+#(2) Presence of groups in the isolated domains
+#
+# END_PRE_CONDITIONS
+
+
+# BEGIN_MANUAL_STEPS
+#(1) Execute the below steps on isol_1.com and isol_3.com:
+#bash-3.00# ./migrate_domain.bsh -d ireland1.com
+#Using LDAP domain settings file [/ericsson/sdee/ldap_domain_settings/ireland1.com.default_domain]
+#LDAP domain: [ireland1.com]
+#LDAP Directory Manager DN: [cn=directory manager]
+#LDAP Directory Manager password:
+#OSS-RC masterservice: [atrcxb989]
+#The selected domain [ireland1.com] is an isolated domain not using the GD.
+#STAGE 1: Checking for user conflicts ... no user conflicts exist.
+#STAGE 1: Checking for group conflicts ... no group conflicts exist.
+#
+#STAGE 2: User exclusion file [/ericsson/sdee/GDmig/ireland1.com/migrate/exclude_users] does not exist or is empty.
+#STAGE 2: Group exclusion file [/ericsson/sdee/GDmig/ireland1.com/migrate/exclude_groups] does not exist or is empty.
+#A user or group exclusion file contains account names (one per line) that are not promoted to the GD during the domain migration.
+#
+#Continue to migrate domain [ireland1.com] (y/n)? [y] y
+#
+#STAGE 2: [ireland1.com]; Running USER migration ...
+#STAGE 2: [nmsadm, 308]; NO MATCH; Included; Preparing user [nmsadm] for migration to the GD ... OK
+#STAGE 2: [akramg1, 1000]; NO MATCH; Included; Preparing user [akramg1] for migration to the GD ... OK
+#STAGE 2: Adding [2] unmatched users to the GD ... OK
+#STAGE 2: Removing [2] migrated users from local domain [ireland1.com] ... OK
+#STAGE 2: Disabling LDAP logins for account "nmsadm" ... OK
+#STAGE 2: [ireland1.com]; USER migration complete: OK
+#
+#STAGE 2: [ireland1.com]; Running GROUP migration ...
+#STAGE 2: [tgrp4, 1003]; NO MATCH; Included; Preparing group [tgrp4] for migration to the GD ... OK
+#STAGE 2: [tgrp5, 1004]; NO MATCH; Included; Preparing group [tgrp5] for migration to the GD ... OK
+#STAGE 2: [tgrp6, 1005]; NO MATCH; Included; Preparing group [tgrp6] for migration to the GD ... OK
+#STAGE 2: [tgrp7, 1006]; NO MATCH; Included; Preparing group [tgrp7] for migration to the GD ... OK
+#STAGE 2: [tgrp8, 1007]; NO MATCH; Included; Preparing group [tgrp8] for migration to the GD ... OK
+#STAGE 2: [tgrp9, 1008]; NO MATCH; Included; Preparing group [tgrp9] for migration to the GD ... OK
+#STAGE 2: [tgrp10, 1009]; NO MATCH; Included; Preparing group [tgrp10] for migration to the GD ... OK
+#STAGE 2: [tgrp11, 1010]; NO MATCH; Included; Preparing group [tgrp11] for migration to the GD ... OK
+#STAGE 2: [tgrp12, 1011]; NO MATCH; Included; Preparing group [tgrp12] for migration to the GD ... OK
+#STAGE 2: [tgrp13, 1012]; NO MATCH; Included; Preparing group [tgrp13] for migration to the GD ... OK
+#STAGE 2: [tgrp14, 1013]; NO MATCH; Included; Preparing group [tgrp14] for migration to the GD ... OK
+#STAGE 2: [tgrp15, 1014]; NO MATCH; Included; Preparing group [tgrp15] for migration to the GD ... OK
+#STAGE 2: [tgrp16, 1015]; NO MATCH; Included; Preparing group [tgrp16] for migration to the GD ... OK
+#STAGE 2: [tgrp17, 1016]; NO MATCH; Included; Preparing group [tgrp17] for migration to the GD ... OK
+#STAGE 2: [tgrp18, 1017]; NO MATCH; Included; Preparing group [tgrp18] for migration to the GD ... OK
+#STAGE 2: [tgrp19, 1018]; NO MATCH; Included; Preparing group [tgrp19] for migration to the GD ... OK
+#STAGE 2: [G1001, 1001]; NO MATCH; Included; Preparing group [G1001] for migration to the GD ... OK
+#STAGE 2: [G1002, 1002]; NO MATCH; Included; Preparing group [G1002] for migration to the GD ... OK
+#STAGE 2: [sybase, 202]; NO MATCH; Included; Preparing group [sybase] for migration to the GD ... OK
+#STAGE 2: [fmaadm, 246]; NO MATCH; Included; Preparing group [fmaadm] for migration to the GD ... OK
+#STAGE 2: [sacpp, 241]; NO MATCH; Included; Preparing group [sacpp] for migration to the GD ... OK
+#STAGE 2: [nms, 205]; NO MATCH; Included; Preparing group [nms] for migration to the GD ... OK
+#STAGE 2: [OSSRC, 1020]; NO MATCH; Included; Preparing group [OSSRC] for migration to the GD ... OK
+#STAGE 2: [FM, 3045]; NO MATCH; Included; Preparing group [FM] for migration to the GD ... OK
+#STAGE 2: Adding [24] unmatched groups to the GD ... OK
+#STAGE 2: Removing [24] migrated groups from local domain [ireland1.com] ... OK
+#STAGE 2: Disabling LDAP logins for account "nmsadm" ... OK
+#STAGE 2: [ireland1.com]; GROUP migration complete: OK
+#
+#STAGE 3: Enabling read access to GD for domain [ireland1.com] ... OK
+#STAGE 3: Allowing LDAP clients of domain [ireland1.com] to follow GD referrals ... OK
+#STAGE 3: Creating GD referrals in domain [ireland1.com] ... OK
+#
+#[ireland1.com] domain migration completed: OK
+#
+#SUMMARY:
+# END_MANUAL_STEPS
+
+# BEGIN_POST_CONDITIONS
+#None
+# END_POST_CONDITIONS

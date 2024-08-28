@@ -1,0 +1,73 @@
+#!/bin/bash
+
+# TEST CASE SPEC FILE
+# This file is generated/updated using the test framework web interface.
+# Manual updates on test servers are lost when the test package is re-installed.
+#
+# Last modified: Monday 16th of December 2013 7:29:09
+#
+
+# These settings must be in BASH script format, they are sourced by other scripts.
+SPEC_FA_NAME="SOLARIS10SMRS"
+SPEC_UC_NAME="SOLARIS10SMRS_Initial_Installation"
+SPEC_TC_ID=1223
+SPEC_TC_SLOGAN="Verify Handling Of File Systems for NESS/NEDSS in Multiple "
+SPEC_TC_TYPE="FT"
+SPEC_TC_POLARITY="positive"
+SPEC_TC_PRIORITY="high"
+SPEC_TC_AUTOMATED=1
+SPEC_TC_DEPENDENT_ONLY=0
+SPEC_TC_TIMEOUT=300
+SPEC_TC_TEST_PASSCODE=0
+SPEC_TC_AUTHOR="xnavema"
+SPEC_TC_AUTOMATOR="xnavema"
+# this parameter is not interpreted by harness
+SPEC_TC_DISABLED=0
+
+# Please do not remove the comment lines below.
+# They are used as section locators by the test harness.
+
+# BEGIN_PRE_CONDITIONS
+#<none>
+#<PATH Under "Verification Specification for Cominf Feature Test for 14.0":Bi-directional SMRS Initial Installation/Server Installation>
+# END_PRE_CONDITIONS
+
+
+# BEGIN_MANUAL_STEPS
+#
+#To verify that aliases are used on the ONRM_CS and on the NESS/NEDSS for definition of file systems and FTP Services. Tests requirement 105 65-0580/01273
+#Configuration
+#
+#Two (2) servers with the same architecture(e.g. both blade or both non blade). One SMRS Master(NESS) server. One NEDSS.
+#Conditional Test
+#
+#Connect one server to SMRS Master(NESS). When prompted with whether or not to perform ARNE imports, choose yes.
+#
+# END_MANUAL_STEPS
+
+# BEGIN_POST_CONDITIONS
+#Acceptance Criteria
+#
+#FTP services will be created on the OSS Server with the following format:
+#SubNetwork=ONRM_ROOT_MO,FtpServer=SMRSMASTER-oss1,FtpService=SMRSMASTERoss1
+#SubNetwork=ONRM_ROOT_MO,FtpServer=SMRSMASTERCORE-oss1,FtpService=SMRSMASTERCOREoss1
+#SubNetwork=ONRM_ROOT_MO,FtpServer=SMRSMASTERLRAN-oss1,FtpService=l-smobackup-oss1
+#SubNetwork=ONRM_ROOT_MO,FtpServer=SMRSMASTERLRAN-oss1,FtpService=l-smokeystore-oss1
+#SubNetwork=ONRM_ROOT_MO,FtpServer=SMRSMASTERLRAN-oss1,FtpService=l-smoswstore-oss1
+#SubNetwork=ONRM_ROOT_MO,FtpServer=SMRSMASTERWRAN-oss1,FtpService=smo-backup-oss1
+#SubNetwork=ONRM_ROOT_MO,FtpServer=SMRSMASTERWRAN-oss1,FtpService=smo-keystore-oss1
+#SubNetwork=ONRM_ROOT_MO,FtpServer=SMRSMASTERWRAN-oss1,FtpService=smo-swstore-oss1
+#
+#Connect second server to SMRS Master(NESS). When prompted with whether or not to perform ARNE imports, choose yes.
+#Acceptance Criteria
+#
+#FTP services will be created on the second OSS Server with the following format:
+#SubNetwork=ONRM_ROOT_MO,FtpServer=SMRSMASTER-oss2,FtpService=SMRSMASTERoss2
+#SubNetwork=ONRM_ROOT_MO,FtpServer=SMRSMASTERCORE-oss2,FtpService=SMRSMASTERCOREoss2
+#SubNetwork=ONRM_ROOT_MO,FtpServer=SMRSMASTERLRAN-oss2,FtpService=l-smobackup-oss2
+#SubNetwork=ONRM_ROOT_MO,FtpServer=SMRSMASTERLRAN-oss2,FtpService=l-smokeystore-oss2
+#SubNetwork=ONRM_ROOT_MO,FtpServer=SMRSMASTERLRAN-oss2,FtpService=l-smoswstore-oss2
+#SubNetwork=ONRM_ROOT_MO,FtpServer=SMRSMASTERWRAN-oss2,FtpService=smo-backup-oss2
+#SubNetwork=ONRM_ROOT_MO,FtpServer=SMRSMASTERWRAN-oss2,FtpService=smo-keystore-oss2
+#SubNetwork=ONRM_ROOT_MO,FtpServer=SMRSMASTERWRAN-oss2,FtpService=smo-swstore-oss2 
+# END_POST_CONDITIONS

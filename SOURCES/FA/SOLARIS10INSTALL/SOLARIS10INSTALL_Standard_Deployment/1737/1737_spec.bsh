@@ -1,0 +1,101 @@
+#!/bin/bash
+
+# TEST CASE SPEC FILE
+# This file is generated/updated using the test framework web interface.
+# Manual updates on test servers are lost when the test package is re-installed.
+#
+# Last modified: Tuesday 17th of December 2013 7:29:33
+#
+
+# These settings must be in BASH script format, they are sourced by other scripts.
+SPEC_FA_NAME="SOLARIS10INSTALL"
+SPEC_UC_NAME="SOLARIS10INSTALL_Standard_Deployment"
+SPEC_TC_ID=1737
+SPEC_TC_SLOGAN="Verify \'config.ini\' file contents based on Interface configuration, IPv4 configured, IPv6 not configured "
+SPEC_TC_TYPE="FT"
+SPEC_TC_POLARITY="positive"
+SPEC_TC_PRIORITY="high"
+SPEC_TC_AUTOMATED=0
+SPEC_TC_DEPENDENT_ONLY=0
+SPEC_TC_TIMEOUT=300
+SPEC_TC_TEST_PASSCODE=0
+SPEC_TC_AUTHOR="xgansre"
+SPEC_TC_AUTOMATOR="xgansre"
+# this parameter is not interpreted by harness
+SPEC_TC_DISABLED=0
+
+# Please do not remove the comment lines below.
+# They are used as section locators by the test harness.
+
+# BEGIN_PRE_CONDITIONS
+#Verify the correct information is written to the /ericsson/config/config.ini file based on the information entered at the inirator stage of the server configuration and on the interface configured for the server.
+#For this test case IPv4 Interface is configured. IPv6 Interface is not configured.
+#
+#Precondition: 
+#Master server,'om_serv_master' successfully configured with COMInf media.
+#IPv4 server interface configured.
+#IPv6 server interface NOT configured
+#
+#
+# END_PRE_CONDITIONS
+
+
+# BEGIN_MANUAL_STEPS
+#Action 1:
+#Execute the following script to launch the Inirator.
+#/ericsson/ocs/bin/conf_cominf_serv.sh 
+#
+#Action 2: 
+#Enter the Server details as requested by the Inirator.
+#
+#When requested to setup DHCP on the server. Answer 'y'
+#
+#Do you want to setup DHCP on this Machine (y/n) ? y
+#
+#Verify the /ericsson/ocs/bin/conf_cominf_serv.sh script executes successfully.
+#
+#Action 3: 
+#Verify the contents of the /ericsson/config/config.ini file.
+#Verify the IPv4 and IPv6 entries contain the correct information as follows:
+#
+#INFRA_IP=<IPv4 address>
+#SUBNET=<IPv4 subnet address>
+#SUBNET6=N/A
+#INFRA_IP6=N/A
+#DHCP_CONF=yes
+#DHCP6_CONF=N/A
+#
+#Action 4: 
+#Execute the script /ericsson/ocs/bin/setup_isc_dhcp.sh
+#
+#Action 5: 
+#Verify the contents of the logfile, /ericsson/ocs/log/setup_isc_dhcp_<timestamp>.log
+#
+#Verify the correct information relating to the ISC DHCP setup is written to the logfile.
+#Verify an Error written to the logfile relating to the IPv6 interface not configured for the server. See sample error below.
+#
+#'ERROR Problem starting ISC-DHCP6 Server. Check interface configuration'
+#
+#
+# END_MANUAL_STEPS
+
+# BEGIN_POST_CONDITIONS
+#Result 1:
+#The Inirator panel is listed.
+#
+#Result 2:
+#The Inirator information is correctly entered.
+#Enter 'y' for DHCP setup question.
+#The /ericsson/ocs/bin/conf_cominf_serv.sh script executes successfully.
+#
+#Result 3:
+#The /ericsson/config/config.ini file contains the correct information.
+#
+#Result 4:
+#The script execute successfully.
+#
+#Result 5:
+#The information in the logfile is correct.
+#The error relating to the IPv6 Interface is correctly logged.
+# 
+# END_POST_CONDITIONS

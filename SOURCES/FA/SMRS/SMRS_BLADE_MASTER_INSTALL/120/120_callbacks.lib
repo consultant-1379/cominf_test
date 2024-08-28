@@ -1,0 +1,173 @@
+#!/bin/bash
+#################################################################################
+#
+#
+#       COPYRIGHT (C) ERICSSON RADIO SYSTEMS AB, Sweden
+#
+#       The copyright to the document(s) herein is the property of
+#       Ericsson Radio Systems AB, Sweden.
+#
+#       The document(s) may be used and/or copied only with the written
+#       permission from Ericsson Radio Systems AB or in accordance with
+#       the terms and conditions stipulated in the agreement/contract
+#       under which the document(s) have been supplied.
+#
+#################################################################################
+
+
+# ATCOMINF Test Callback Library
+
+# Revision History
+# 13/07/12	xkalbha		Initial version testing with invalid values
+
+# Complete the callbacks in this library to automate the test case.
+#
+# Callbacks are stateless, it is not possible to set a global variable in one callback 
+# and access it it in another.
+#
+# Callbacks are called by the test harness in the following order:
+#
+# tc_setup() 		# Called only for independent TC execution mode to setup TC
+# tc_precon()		# Conditions that should exist before TC can run
+# tc_test()		# Runs the test for this TC
+# tc_postcon()		# Conditions that should/should not exist after successful TC 
+# tc_cleanup()		# Called only for independent TC execution mode to clenup after TC
+
+# All callbacks must PASS for a TC PASS result
+
+#################################################################################
+#
+# CALLBACK: TC_SETUP
+#
+# This callback function is only called if the harness execution mode is 'AT_INDEPENDENT'
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_setup() {
+	#PREPARE_SMRS
+	
+	return 0
+
+}
+NUM_CFG_FILES=2
+#################################################################################
+
+#################################################################################
+#
+# CALLBACK: TC_PRECON
+#
+# This callback function checks the correct conditions exist to run the TC.
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+ 
+tc_precon() {
+
+	TEST_SOLARIS || { echo "Not Solaris"; return 1; }
+
+    # Check that there is a file primIP.<hostname> file for this OSS master
+	name=`hostname`
+	primfile="../../primIP."${name}
+	[ -r ${primfile} ] || { echo "No $primfile found"; return 2; }
+	IP=$(cat $primfile)
+
+	for i in $(eval echo {1..$NUM_CFG_FILES})
+	do
+		filename="smrs_user_config$i.$name"
+		inputfile="smrs_user_config$i"
+		#echo "Config file using is: $filename"
+		# Create a file called $filename which is created by taking $inputfile
+		# and replacing the SMRS_MASTER_IP value with the value that is in
+		#primIP.<hostname>
+		sed "s/^SMRS_MASTER_IP=.*$/SMRS_MASTER_IP=${IP}/" $inputfile > $filename || { echo "Failed to create $filename $?"; return 3; }
+	done
+	return 0
+
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_TEST
+#
+# This callback function runs the test.
+# The harness compares the return code to the SPEC_TC_TEST_PASSCODE value set in the test spec.
+#
+# Return or exit codes:
+#    SPEC_TC_TEST_PASSCODE 	success
+# != SPEC_TC_TEST_PASSCODE 	failure
+ 
+tc_test() {
+
+	name=`hostname`
+	for i in $(eval echo {1..$NUM_CFG_FILES})
+	do
+		filename="smrs_user_config$i.$name"
+		#echo "Config file using is: $filename"
+
+		# Add the smrs master
+		/opt/ericsson/nms_bismrs_mc/bin/add_smrs_master.sh -a add -f $filename -p shroot -r shroot123
+
+		retval=$?
+		[ $retval -eq 0 ] && { echo "Unexpected success on configure smrs"; return 2; }
+	done
+
+	return 0
+
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_POSTCON
+#
+# This callback function checks expected results.
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_postcon() {
+
+	CONSOLE_OUTPUT_CONTAINS "ERROR Wrong deployment type" || { echo "No DEPLOYMENT_TYPE invalid error in log"; return 1; }
+	CONSOLE_OUTPUT_CONTAINS "ERROR DEPLOYMENT_TYPE must be specified in config file" || { echo "No missing DEPLOYMENT_TYPE error in log"; return 2; }
+	
+	return 0
+
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_CLEANUP
+#
+# This callback function is only called if the harness execution mode is 'AT_INDEPENDENT'
+# 
+# This callback restores the target system to the state it was in before the TC 
+# was run. It rolls back changes made by callbacks tc_setup() and tc_test()
+# 
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_cleanup() {
+	name=`hostname`
+	for i in $(eval echo {1..$NUM_CFG_FILES})
+	do
+		filename="smrs_user_config$i.$name"
+		rm -f $filename
+	done
+	grep smrs_master /etc/inet/hosts
+	#if [ $? -eq 0 ]; then
+		# Looks like created a smrs_master when shouldn't, but clean up
+		##CLEANUP_SMRS  smrs_master oss1 y y y y
+	#fi
+	return 0
+
+}

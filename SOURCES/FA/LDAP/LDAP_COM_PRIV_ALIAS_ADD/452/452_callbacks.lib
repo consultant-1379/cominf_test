@@ -1,0 +1,287 @@
+#!/bin/bash
+#################################################################################
+#
+#
+#	   COPYRIGHT (C) ERICSSON RADIO SYSTEMS AB, Sweden
+#
+#	   The copyright to the document(s) herein is the property of
+#	   Ericsson Radio Systems AB, Sweden.
+#
+#	   The document(s) may be used and/or copied only with the written
+#	   permission from Ericsson Radio Systems AB or in accordance with
+#	   the terms and conditions stipulated in the agreement/contract
+#	   under which the document(s) have been supplied.
+#
+#################################################################################
+
+
+# ATCOMINF Test Callback Library
+
+# Revision History
+# 20/09/13	xkalbha		Initial test for add alias to COM_app user
+
+# Complete the callbacks in this library to automate the test case.
+#
+# Callbacks are stateless, it is not possible to set a global variable in one callback 
+# and access it it in another.
+#
+# Callbacks are called by the test harness in the following order:
+#
+# tc_setup() 		# Called only for independent TC execution mode to setup TC
+# tc_precon()		# Conditions that should exist before TC can run
+# tc_test()		# Runs the test for this TC
+# tc_postcon()		# Conditions that should/should not exist after successful TC 
+# tc_cleanup()		# Called only for independent TC execution mode to clenup after TC
+
+# All callbacks must PASS for a TC PASS result
+
+#################################################################################
+#
+# CALLBACK: TC_SETUP
+#
+# This callback function is only called if the harness execution mode is 'AT_INDEPENDENT'
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+LDAP_DOMAIN=vts.com
+LDAP_DOMAIN_RAW=vts.com
+tc_setup() {
+
+	
+		# Replace PASSWD with the correct credentials
+	for ii in *.in; do
+		sed "s/^PASSWD$/$LDAP_SUPERUSER_PASSWD/" $ii > $ii.tmp
+	done
+	
+	
+		
+
+        #LDAP Server Check
+        #-----------------
+
+        /usr/bin/ldapsearch -D "cn=directory manager"  -w $LDAP_SUPERUSER_PASSWD -s base -b "" "objectclass=*" namingcontexts > tmp.txt 2>/dev/null
+        grep "namingcontexts: $LDAP_DOMAIN" tmp.txt > /dev/null && { echo "Failed, $?"; return 1; }
+
+
+        #Check for user bhavana
+        #-----------------------
+		
+		LDAP_DOMAIN=$(LDAP_GET_DOMAIN_DN_FORMAT $LDAP_DOMAIN_RAW)
+        /usr/bin/ldapsearch -D "cn=directory manager" -w $LDAP_SUPERUSER_PASSWD -b "uid=bhavana,ou=people,$LDAP_DOMAIN" "objectclass=*" > user.txt 2>/dev/null
+        grep "uid: bhavana" user.txt > /dev/null && { echo "User bhavana found!!! deleting the user"; 
+		CMD='/ericsson/sdee/bin/del_user.sh -d vts.com -n bhavana -y'
+        ${AT_BIN}/con_ex.bsh -d 436user.in.tmp -o 436user.exp -c "$CMD" || { echo "Failed to generate the expect script, $?"; }
+        /usr/local/bin/expect 436user.exp  || { echo "Failed to delete user bhavana, $?"; return 1; }
+		}
+
+        
+
+        #Adding a COM_APP user named bhavana
+        #------------------------------------
+
+        CMD="/ericsson/sdee/bin/add_user.sh -t COM_APP -d $LDAP_DOMAIN_RAW -i 1050 -n bhavana -y"
+        ${AT_BIN}/con_ex.bsh -d 436add.in.tmp -o 436add.exp -c "$CMD" || { echo "Failed to generate the expect script, $?"; }
+        /usr/local/bin/expect 436add.exp  ||
+
+        { echo "Failed to create user bhavana, $?"; return 1; }
+
+        #----------------------------------------------------------------------
+
+        CMD='/ericsson/sdee/bin/manage_COM.bsh -l role'
+        ${AT_BIN}/con_ex.bsh -d 436role.in.tmp -o 436role.exp -c "$CMD" || { echo "Failed to generate the /usr/local/bin/expect file, $?"; }
+        /usr/local/bin/expect 436role.exp > role.txt ||
+        { echo "Failed to list roles, $?"; return 2; }
+
+        grep "role436a" role.txt 
+        CMD="/ericsson/sdee/bin/manage_COM.bsh -r role -d $LDAP_DOMAIN_RAW -R role436a -y"
+        ${AT_BIN}/con_ex.bsh -d 436role.in.tmp -o 436role.exp -c "$CMD" || { echo "Failed to generate the /usr/local/bin/expect file, $?"; }
+        /usr/local/bin/expect 436role.exp > /dev/null
+
+        grep "role436b" role.txt 
+        CMD="/ericsson/sdee/bin/manage_COM.bsh -r role -d $LDAP_DOMAIN_RAW -R role436b -y"
+        ${AT_BIN}/con_ex.bsh -d 436role.in.tmp -o 436role.exp -c "$CMD" || { echo "Failed to generate the /usr/local/bin/expect file, $?"; }
+        /usr/local/bin/expect 436role.exp 
+
+        grep "role436c" role.txt > /dev/null
+        CMD="/ericsson/sdee/bin/manage_COM.bsh -r role -d $LDAP_DOMAIN_RAW -R role436c -y"
+        ${AT_BIN}/con_ex.bsh -d 436role.in.tmp -o 436role.exp -c "$CMD" || { echo "Failed to generate the /usr/local/bin/expect file, $?"; }
+        /usr/local/bin/expect 436role.exp 
+
+
+        #Adding roles role436a, role436b and role436c
+        #--------------------------------------------
+
+        CMD="/ericsson/sdee/bin/manage_COM.bsh -a role -d $LDAP_DOMAIN_RAW -R role436a,role436b,role436c -y"
+        ${AT_BIN}/con_ex.bsh -d 436role.in.tmp -o 436role.exp -c "$CMD" || { echo "Failed to generate the /usr/local/bin/expect file, $?"; }
+        /usr/local/bin/expect 436role.exp  ||
+        { echo "Failed to create roles, $?"; return 3; }
+
+
+        #Check alias alias436a, alias436b and alias436c exists, if yes deleting it.
+        #----------------------------------------------------------------------
+
+        CMD='/ericsson/sdee/bin/manage_COM.bsh -l alias'
+        ${AT_BIN}/con_ex.bsh -d 436role.in.tmp -o 436role.exp -c "$CMD" || { echo "Failed to generate the /usr/local/bin/expect file, $?"; }
+        /usr/local/bin/expect 436role.exp > alias.txt ||
+        { echo "Failed to list alias, $?"; return 4; }
+
+        grep "alias436a" alias.txt 
+        CMD="/ericsson/sdee/bin/manage_COM.bsh -r alias -d $LDAP_DOMAIN_RAW -A alias436a -y"
+        ${AT_BIN}/con_ex.bsh -d 436role.in.tmp -o 436role.exp -c "$CMD" || { echo "Failed to generate the /usr/local/bin/expect file, $?"; }
+        /usr/local/bin/expect 436role.exp > /dev/null
+
+        grep "alias436b" alias.txt 
+        CMD="/ericsson/sdee/bin/manage_COM.bsh -r alias -d $LDAP_DOMAIN_RAW -A alias436b -y"
+        ${AT_BIN}/con_ex.bsh -d 436role.in.tmp -o 436role.exp -c "$CMD" || { echo "Failed to generate the /usr/local/bin/expect file, $?"; }
+        /usr/local/bin/expect 436role.exp > /dev/null
+
+        grep "alias436c" alias.txt 
+        CMD="/ericsson/sdee/bin/manage_COM.bsh -r alias -d $LDAP_DOMAIN_RAW -A alias436c -y"
+        ${AT_BIN}/con_ex.bsh -d 436role.in.tmp -o 436role.exp -c "$CMD" || { echo "Failed to generate the /usr/local/bin/expect file, $?"; }
+        /usr/local/bin/expect 436role.exp > /dev/null
+
+
+        #Adding alias alias436a, alias436b and alias436c
+        #--------------------------------------------
+
+        CMD="/ericsson/sdee/bin/manage_COM.bsh -a alias -d $LDAP_DOMAIN_RAW -A alias436a -R role436a -y"
+        ${AT_BIN}/con_ex.bsh -d 436role.in.tmp -o 436role.exp -c "$CMD" || { echo "Failed to generate the /usr/local/bin/expect file, $?"; }
+        /usr/local/bin/expect 436role.exp  ||
+        { echo "Failed to create alias436a, $?"; return 5; }
+
+        CMD="/ericsson/sdee/bin/manage_COM.bsh -a alias -d $LDAP_DOMAIN_RAW -A alias436b -R role436b -y"
+        ${AT_BIN}/con_ex.bsh -d 436role.in.tmp -o 436role.exp -c "$CMD" || { echo "Failed to generate the /usr/local/bin/expect file, $?"; }
+        /usr/local/bin/expect 436role.exp  ||
+        { echo "Failed to create alias436b, $?"; return 6; }
+
+
+        CMD="/ericsson/sdee/bin/manage_COM.bsh -a alias -d $LDAP_DOMAIN_RAW -A alias436c -R role436c -y"
+        ${AT_BIN}/con_ex.bsh -d 436role.in.tmp -o 436role.exp -c "$CMD" || { echo "Failed to generate the /usr/local/bin/expect file, $?"; }
+        /usr/local/bin/expect 436role.exp  ||
+        { echo "Failed to create alias436c, $?"; return 7; }
+
+
+	return 0
+}
+#################################################################################
+
+#################################################################################
+#
+# CALLBACK: TC_PRECON
+#
+# This callback function checks the correct conditions exist to run the TC.
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+ 
+tc_precon() {
+
+	return 0
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_TEST
+#
+# This callback function runs the test.
+# The harness compares the return code to the SPEC_TC_TEST_PASSCODE value set in the test spec.
+#
+# Return or exit codes:
+#	SPEC_TC_TEST_PASSCODE 	success
+# != SPEC_TC_TEST_PASSCODE 	failure
+ 
+tc_test() {
+
+	
+	LDAP_DOMAIN=$(LDAP_GET_DOMAIN_DN_FORMAT $LDAP_DOMAIN_RAW)
+
+        #Assinging a user to the alias
+        #-----------------------------
+
+        CMD="/ericsson/sdee/bin/manage_COM_privs.bsh -a alias -d $LDAP_DOMAIN_RAW -u bhavana -A alias436a,alias436b,alias436c"
+        ${AT_BIN}/con_ex.bsh -d alias.in.tmp -o alias.exp -c "$CMD" || { echo "Failed to generate the /usr/local/bin/expect file, $?"; }
+        /usr/local/bin/expect alias.exp  ||
+        { echo "Failed to create alias for the user, $?"; return 8; }
+
+	return 0
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_POSTCON
+#
+# This callback function checks expected results.
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_postcon() {
+
+	LDAP_DOMAIN=$(LDAP_GET_DOMAIN_DN_FORMAT $LDAP_DOMAIN_RAW)
+
+        /usr/bin/ldapsearch -D "cn=directory manager" -w $LDAP_SUPERUSER_PASSWD -b "uid=bhavana,ou=people,$LDAP_DOMAIN" "objectclass=*" | grep  "alias436a" ||
+        { echo "ERROR!!! alias436a not found"; return 9; }
+
+        /usr/bin/ldapsearch -D "cn=directory manager" -w $LDAP_SUPERUSER_PASSWD -b "uid=bhavana,ou=people,$LDAP_DOMAIN" "objectclass=*" | grep "alias436b"  ||
+        { echo "ERROR!!! alias436b not found"; return 9; }
+
+        /usr/bin/ldapsearch -D "cn=directory manager" -w $LDAP_SUPERUSER_PASSWD -b "uid=bhavana,ou=people,$LDAP_DOMAIN" "objectclass=*" | grep "alias436c" ||
+        { echo "ERROR!!! alias436c not found"; return 9; }
+
+	return 0
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_CLEANUP
+#
+# This callback function is only called if the harness execution mode is 'AT_INDEPENDENT'
+# 
+# This callback restores the target system to the state it was in before the TC 
+# was run. It rolls back changes made by callbacks tc_setup() and tc_test()
+# 
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_cleanup() {
+
+	 LDAP_DOMAIN=$(LDAP_GET_DOMAIN_DN_FORMAT $LDAP_DOMAIN_RAW)
+
+
+        CMD='/ericsson/sdee/bin/del_user.sh -d vts.com -n bhavana -y'
+        ${AT_BIN}/con_ex.bsh -d 436user.in.tmp -o 436user.exp -c "$CMD" || { echo "Failed to delete the user, $?"; }
+        /usr/local/bin/expect 436user.exp  ||
+        { echo "Failed to delete the user, $?"; return 10; }
+
+        CMD="/ericsson/sdee/bin/manage_COM.bsh -r role -d $LDAP_DOMAIN_RAW -R role436a -y"
+        ${AT_BIN}/con_ex.bsh -d 436role.in.tmp -o 436role.exp -c "$CMD" || { echo "Failed to generate the /usr/local/bin/expect file, $?"; }
+        /usr/local/bin/expect 436role.exp  ||
+        { echo "Failed to delete the role436a"; return 11; }
+
+        CMD="/ericsson/sdee/bin/manage_COM.bsh -r role -d $LDAP_DOMAIN_RAW -R role436b -y"
+        ${AT_BIN}/con_ex.bsh -d 436role.in.tmp -o 436role.exp -c "$CMD" || { echo "Failed to generate the /usr/local/bin/expect file, $?"; }
+        /usr/local/bin/expect 436role.exp ||
+        { echo "Failed to delete the role436b"; return 12; }
+
+        CMD="/ericsson/sdee/bin/manage_COM.bsh -r role -d $LDAP_DOMAIN_RAW -R role436c -y"
+        ${AT_BIN}/con_ex.bsh -d 436role.in.tmp -o 436role.exp -c "$CMD" || { echo "Failed to generate the /usr/local/bin/expect file, $?"; }
+        /usr/local/bin/expect 436role.exp  ||
+        { echo "Failed to delete the role436c"; return 13; }
+
+
+        rm *.txt
+        rm *.exp
+	
+	return 0
+}

@@ -1,0 +1,215 @@
+#!/bin/bash
+#################################################################################
+#
+#
+#       COPYRIGHT (C) ERICSSON RADIO SYSTEMS AB, Sweden
+#
+#       The copyright to the document(s) herein is the property of
+#       Ericsson Radio Systems AB, Sweden.
+#
+#       The document(s) may be used and/or copied only with the written
+#       permission from Ericsson Radio Systems AB or in accordance with
+#       the terms and conditions stipulated in the agreement/contract
+#       under which the document(s) have been supplied.
+#
+#################################################################################
+
+
+WORKFILE="/tmp/tcid291.tmp"
+# ATCOMINF Test Callback Library
+
+# Revision History
+# <date>	<signum>	<details>
+
+# Complete the callbacks in this library to automate the test case.
+#
+# Callbacks are stateless, it is not possible to set a global variable in one callback 
+# and access it it in another.
+#
+# Callbacks are called by the test harness in the following order:
+#
+# tc_setup() 		# Called only for independent TC execution mode to setup TC
+# tc_precon()		# Conditions that should exist before TC can run
+# tc_test()		# Runs the test for this TC
+# tc_postcon()		# Conditions that should/should not exist after successful TC 
+# tc_cleanup()		# Called only for independent TC execution mode to clenup after TC
+
+# All callbacks must PASS for a TC PASS result
+
+#################################################################################
+#
+# CALLBACK: TC_SETUP
+#
+# This callback function is only called if the harness execution mode is 'AT_INDEPENDENT'
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_setup() {
+
+
+
+
+
+    
+
+
+	# Replace PASSWD with the correct credentials
+	for ii in *.in; do
+		sed "s/^PASSWD$/$LDAP_SUPERUSER_PASSWD/" $ii > $ii.tmp
+	done
+
+#-------------------------------------------------------------------------------
+#  Create test user ensuring it is not excluded so it'll be moved to global
+#  domain after migration
+#-------------------------------------------------------------------------------
+
+	for a in 1 2; do
+		echo "Creating test user in $a.com"
+		${AT_BIN}/con_ex.bsh -d 291_user.in.tmp -o 291_user.exp -c "/ericsson/sdee/bin/add_user.bsh -d $a.com -n test1 -i 5200" -r
+		/usr/local/bin/expect 291_user.exp || {
+			echo "Test user was not created in $a.com, error code $?"
+			return 1
+		}
+	done
+
+#-------------------------------------------------------------------------------
+#  migrate domain
+#-------------------------------------------------------------------------------
+
+	${AT_BIN}/con_ex.bsh -d 291_migrate.in.tmp -o 291_expect.exp -c "/ericsson/sdee/bin/migrate_domain.bsh -d 1.com" -r
+	/usr/local/bin/expect 291_expect.exp
+	rc=$?
+	[ $rc -eq 0 ] || {
+		echo "Migration of empty test domain returned error code $rc"
+		return 1
+	}
+
+}
+#################################################################################
+
+#################################################################################
+#
+# CALLBACK: TC_PRECON
+#
+# This callback function checks the correct conditions exist to run the TC.
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+ 
+tc_precon() {
+
+
+
+	LDAP_SERVER_UP || {
+		echo "LDAP server not running"
+		return 1
+	}
+
+#-------------------------------------------------------------------------------
+#  Test user is present in globaldomain
+#-------------------------------------------------------------------------------
+
+		echo "checking test1 in globaldomain"
+		/usr/bin/ldapsearch -D 'cn=Directory Manager' -w $LDAP_SUPERUSER_PASSWD -b ou=people,dc=globaldomain '(objectclass=posixAccount)' | grep "uidNumber: 5200" || {
+			echo "test1 user not present in globaldomain ... This wasn't expected"
+			return 1
+		}
+
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_TEST
+#
+# This callback function runs the test.
+# The harness compares the return code to the SPEC_TC_TEST_PASSCODE value set in the test spec.
+#
+# Return or exit codes:
+#    SPEC_TC_TEST_PASSCODE 	success
+# != SPEC_TC_TEST_PASSCODE 	failure
+ 
+tc_test() {
+
+
+
+>$WORKFILE
+#-------------------------------------------------------------------------------
+#  Attempt to remove user with -d -L from the referral domain
+#-------------------------------------------------------------------------------
+
+	echo "Deleting test user"
+	${AT_BIN}/con_ex.bsh -d 291_delete_user.in.tmp -o 291_delete_user.exp -c "/ericsson/sdee/bin/del_user.sh -d 1.com -L -n test1 -y" -r
+	/usr/local/bin/expect 291_delete_user.exp > $WORKFILE
+	rc=$?
+	[ $rc -eq 1 ] && grep "ERROR : The local user \[test1\] does not exist in domain \[1.com\]" $WORKFILE && {
+		echo "Test user was not deleted, error code $rc as expected"
+		return 0
+	}
+
+	[ $rc -ne 1 ] && {
+		echo "Deletion resulted in $rc. This wasn't expected"
+		cat $WORKFILE
+		return 1
+	}
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_POSTCON
+#
+# This callback function checks expected results.
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_postcon() {
+
+#-------------------------------------------------------------------------------
+#  Test user still present in globaldomain
+#-------------------------------------------------------------------------------
+
+		echo "checking test1 in globaldomain"
+		/usr/bin/ldapsearch -D 'cn=Directory Manager' -w $LDAP_SUPERUSER_PASSWD -b ou=people,dc=globaldomain '(objectclass=posixAccount)' | grep "uidNumber: 5200" || {
+			echo "test1 user not present in globaldomain ... This wasn't expected"
+			return 1
+		}
+	for a in 1 2; do
+   		echo "checking test1 in $a.com"
+    	/usr/bin/ldapsearch -D 'cn=Directory Manager' -w $LDAP_SUPERUSER_PASSWD -b ou=people,dc=$a,dc=com '(objectclass=posixAccount)' || {
+        	echo "test1 user not present in $a.com ... This wasn't expected"
+        	return 1
+        	}
+	done
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_CLEANUP
+#
+# This callback function is only called if the harness execution mode is 'AT_INDEPENDENT'
+# 
+# This callback restores the target system to the state it was in before the TC 
+# was run. It rolls back changes made by callbacks tc_setup() and tc_test()
+# 
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_cleanup() {
+
+
+
+    
+    
+	rm $WORKFILE
+}

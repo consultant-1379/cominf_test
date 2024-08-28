@@ -1,0 +1,50 @@
+#!/bin/bash
+
+# TEST CASE SPEC FILE
+# This file is generated/updated using the test framework web interface.
+# Manual updates on test servers are lost when the test package is re-installed.
+#
+# Last modified: Friday 27th of September 2013 10:25:52
+#
+
+# These settings must be in BASH script format, they are sourced by other scripts.
+SPEC_FA_NAME="MULTIOSS"
+SPEC_UC_NAME="MULTIOSS_LDAP"
+SPEC_TC_ID=964
+SPEC_TC_SLOGAN="Verify that it is possible to run \"set_default_ldap_domain.sh\" on a domain which has not been set to default domain yet"
+SPEC_TC_TYPE="FT"
+SPEC_TC_POLARITY="positive"
+SPEC_TC_PRIORITY="high"
+SPEC_TC_AUTOMATED=1
+SPEC_TC_DEPENDENT_ONLY=0
+SPEC_TC_TIMEOUT=300
+SPEC_TC_TEST_PASSCODE=0
+SPEC_TC_AUTHOR="xsougha"
+SPEC_TC_AUTOMATOR="xsougha"
+# this parameter is not interpreted by harness
+SPEC_TC_DISABLED=0
+
+# Please do not remove the comment lines below.
+# They are used as section locators by the test harness.
+
+# BEGIN_PRE_CONDITIONS
+#Create a LDAP domain on OSS_Master2.
+#Don't set the created domain as default LDAP domain.
+# END_PRE_CONDITIONS
+
+
+# BEGIN_MANUAL_STEPS
+#Set the created LDAP domain as default LDAP domain as given in the example below:
+#
+#(1) /ericsson/sdee/bin/set_default_ldap_domain.sh
+#LDAP Directory Manager DN [cn=directory manager]:
+#LDAP Directory Manager password:
+#The current default domain is [ireland1.com].
+#New default LDAP domain <e.g. ldap.companyname.com> [1.com]:
+#Continue to set the default domain to [1.com] (y/n)? [y]
+#LDAP domain [1.com] is now the default domain for the LDAP administration scripts. 
+# END_MANUAL_STEPS
+
+# BEGIN_POST_CONDITIONS
+#The omain gets successfully set as the default domain
+# END_POST_CONDITIONS

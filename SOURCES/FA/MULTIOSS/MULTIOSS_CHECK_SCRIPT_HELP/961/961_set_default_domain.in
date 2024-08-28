@@ -1,0 +1,8 @@
+LDAP Directory Manager DN
+ldappass
+LDAP Directory Manager password
+ldappass
+The current default domain is
+vts.com
+New default LDAP domain
+globaldomain

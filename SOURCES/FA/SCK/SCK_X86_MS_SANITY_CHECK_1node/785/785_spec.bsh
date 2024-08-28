@@ -1,0 +1,47 @@
+#!/bin/bash
+
+# TEST CASE SPEC FILE
+# This file is generated/updated using the test framework web interface.
+# Manual updates on test servers are lost when the test package is re-installed.
+#
+# Last modified: Sunday 31st of March 2013 20:37:24
+#
+
+# These settings must be in BASH script format, they are sourced by other scripts.
+SPEC_FA_NAME="SCK"
+SPEC_UC_NAME="SCK_X86_MS_SANITY_CHECK_1node"
+SPEC_TC_ID=785
+SPEC_TC_SLOGAN="X86 - Check SVC status"
+SPEC_TC_TYPE="FT"
+SPEC_TC_POLARITY="positive"
+SPEC_TC_PRIORITY="high"
+SPEC_TC_AUTOMATED=1
+SPEC_TC_DEPENDENT_ONLY=0
+SPEC_TC_TIMEOUT=300
+SPEC_TC_TEST_PASSCODE=0
+SPEC_TC_AUTHOR="ebatric"
+SPEC_TC_AUTOMATOR="ebatric"
+# this parameter is not interpreted by harness
+SPEC_TC_DISABLED=0
+
+# Please do not remove the comment lines below.
+# They are used as section locators by the test harness.
+
+# BEGIN_PRE_CONDITIONS
+#Server has started
+# END_PRE_CONDITIONS
+
+
+# BEGIN_MANUAL_STEPS
+#Verify that server is at mult-user milestone and ssr is started.
+#svcs svc:/milestone/multi-user-server
+#svcs svc:/ericsson/eric_3pp/eric_3pp_milestone:default
+#svcs svc:/ericsson/ossrc/ssr:default
+#
+#Verify that no services are in maintenance state
+#svcs -a | grep maintenance
+# END_MANUAL_STEPS
+
+# BEGIN_POST_CONDITIONS
+#na
+# END_POST_CONDITIONS

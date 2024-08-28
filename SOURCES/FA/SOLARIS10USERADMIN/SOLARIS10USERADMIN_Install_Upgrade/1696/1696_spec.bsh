@@ -1,0 +1,82 @@
+#!/bin/bash
+
+# TEST CASE SPEC FILE
+# This file is generated/updated using the test framework web interface.
+# Manual updates on test servers are lost when the test package is re-installed.
+#
+# Last modified: Tuesday 17th of December 2013 6:53:55
+#
+
+# These settings must be in BASH script format, they are sourced by other scripts.
+SPEC_FA_NAME="SOLARIS10USERADMIN"
+SPEC_UC_NAME="SOLARIS10USERADMIN_Install_Upgrade"
+SPEC_TC_ID=1696
+SPEC_TC_SLOGAN="Adding OSS_ONLY users in bulk with -f option "
+SPEC_TC_TYPE="FT"
+SPEC_TC_POLARITY="positive"
+SPEC_TC_PRIORITY="high"
+SPEC_TC_AUTOMATED=1
+SPEC_TC_DEPENDENT_ONLY=0
+SPEC_TC_TIMEOUT=300
+SPEC_TC_TEST_PASSCODE=0
+SPEC_TC_AUTHOR="xvinkat"
+SPEC_TC_AUTOMATOR="xvinkat"
+# this parameter is not interpreted by harness
+SPEC_TC_DISABLED=0
+
+# Please do not remove the comment lines below.
+# They are used as section locators by the test harness.
+
+# BEGIN_PRE_CONDITIONS
+#<path to the testcase>
+#
+#User Administration/Initial Install/Upgrade User Administration Test Cases 
+# END_PRE_CONDITIONS
+
+
+# BEGIN_MANUAL_STEPS
+#1.Add user with user_name and password.
+#
+#/ericsson/sdee/bin/add_user.sh -d ldap274.com -f /var/tmp/test12
+#
+#Example:-
+#pri100:OSS_ONLY::ass_ope::eric@1234
+#
+#2. Add 10 users of any USER_TYPE in file. 
+#
+#/ericsson/sdee/bin/add_user.sh -d ldap274.com -f /var/tmp/test12Example:-
+#primary1:OSS_ONLY::ass_ope::eric@1234
+#primary2:OSS_ONLY::ass_ope::eric@1234
+#primary3:OSS_ONLY::ass_ope::eric@1234
+#primary4:OSS_ONLY::ass_ope::eric@1234
+#primary5:OSS_ONLY::ass_ope::eric@1234
+#primary6:OSS_ONLY::ass_ope::eric@1234
+#primary7:OSS_ONLY::ass_ope::eric@1234
+#primary8:OSS_ONLY::ass_ope::eric@1234
+#primary9:OSS_ONLY::ass_ope::eric@1234
+#primary0:OSS_ONLY::ass_ope::eric@1234
+#
+#3.Add user without giving uid and USER_TYPE.
+#
+#Example:-
+#primary3:OSS_ONLY::ass_ope::eric@1234
+#
+#primary1:::ass_ope::eric@1234
+#
+#4.Add oss_only users with fields less than mandatory fields.
+#
+#/ericsson/sdee/bin/add_user.sh -d ldap274.com -f /var/tmp/test12
+#Example:-
+#primary3:OSS_ONLY:eric@1234
+#
+# END_MANUAL_STEPS
+
+# BEGIN_POST_CONDITIONS
+#1.User should be added as OSS_ONLY user
+#
+#2.Users should be added successfully
+#
+#3.User should be added succesfully with uid as least available uid, and USER_TYPE as OSS_ONLY
+#
+#4. User should not be added.Error should be displayed that number of fields should be 6.
+# END_POST_CONDITIONS

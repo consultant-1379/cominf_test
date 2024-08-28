@@ -1,0 +1,502 @@
+#!/bin/ksh
+#--------------------------------------------------------------------------
+# Ericsson AB    SCRIPT
+#--------------------------------------------------------------------------
+#
+# (c) Ericsson AB 2007 - All rights reserved.
+# 
+# The copyright to the computer program(s) herein is the property
+# of Ericsson AB, Sweden. The programs may be used and/or copied
+# only with the written permission from Ericsson AB or
+# in accordance with the terms and conditions stipulated in the
+# agreement/contract under which the program(s) have been supplied.
+# 
+#------ History ----------------------------------------------------------- 
+# Rev	Date		Prepared		Description
+#
+# PA1	080604		XRSNIAN			First Version
+#--------------------------------------------------------------------------
+#
+#   Name			: TC1
+#
+#   Description	: Verify PKGINFO content, similar to install.sh without the pkg instal part.
+#
+#   Arguments		: Check for following arguments:
+#					-d = debug
+#					-n = NAME ERIC - the name for ERIC<prod> to compare against pkginfo
+#					-m = NAME EXTR - the name for EXTR<prod> to compare against pkginfo
+#					-e = DESC ERIC - the description for ERIC<prod> to compare against pkginfo
+#					-k = DESC EXTR - the description for EXTR<prod> to compare against pkginfo
+#					-s = VSTOCK ERIC - the vstock for ERIC<prod> to compare against pkginfo (without Rev. A in the end)
+#					-v = VSTOCK EXTR - the vstock for EXTR<prod> to compare against pkginfo (without Rev. A in the end)
+#					-t = test case name
+#
+
+# Init --------------------------------------------
+
+# Get the name of our product from the framework
+echo "[INPUT:PRODUCT]"
+PROD=syb
+
+# Default package names
+ERIC_PKG="ERIC${PROD}"
+EXTR_PKG="EXTR${PROD}"
+
+# Variables 
+ERIC_PKGINFO="/var/sadm/pkg/${ERIC_PKG}/pkginfo"
+EXTR_PKGINFO="/var/sadm/pkg/${EXTR_PKG}/pkginfo"
+#TPP_RUN="/ericsson/core/bin/3pp_run"
+
+# Default package locations
+#ERIC_PATH="/tmp/3pp_pkgs"
+#EXTR_PATH="/tmp/3pp_pkgs"
+
+# Default package filenames
+ERIC_FILE="${ERIC_PKG}.pkg"
+EXTR_FILE="${EXTR_PKG}.pkg"
+
+
+BASEDIR="/"
+CATEGORY="application*,ericsson,eric3pp"
+# MAXINST="1"
+STATUS="completely installed"
+
+
+#INSTALL=0
+#INSTALL_ERIC=0
+#INSTALL_EXTR=0
+#VERIFY=0
+VERIFY_ERIC=0
+VERIFY_EXTR=0
+RETURN_STATUS=0
+
+
+# Read input options
+while getopts "p:da:b:f:g:n:m:e:k:s:v:" option
+do
+    case $option in
+        p) PKG_PATH=${OPTARG}
+           EXTR_PATH=${PKG_PATH}
+           ERIC_PATH=${PKG_PATH}
+            ;;
+        d) DEBUG=1;;
+        a) ERIC_PATH=${OPTARG};;
+        b) ERIC_FILE=${OPTARG};;
+        f) EXTR_PATH=${OPTARG};;
+        g) EXTR_FILE=${OPTARG};;
+        n) ERIC_NAME=${OPTARG};;
+        m) EXTR_NAME=${OPTARG};;
+        e) ERIC_DESC=${OPTARG};;
+        k) EXTR_DESC=${OPTARG};;
+        s) ERIC_VSTOCK=${OPTARG};;
+        v) EXTR_VSTOCK=${OPTARG};;
+	t) TESTCASE_NAME=${OPTARG};;
+   esac
+done
+
+if [ $DEBUG ]; then
+    set -x
+fi
+# -------------------------------------------------
+
+
+# Mandatory information ---------------------------
+echo "[OUTPUT:TESTCASENAME:${TESTCASE_NAME}]"
+echo "[OUTPUT:TESTCASEDESCRIPTION:Installation test]"
+echo "[OUTPUT:SCRIPTVERSION:PA8]"
+# -------------------------------------------------
+
+
+# Do the test -------------------------------------
+#
+# 1. Install the packages
+# 2. Verify the installation of the package, check if STATUS of the package is completely installed
+# 3. Verify the name (NAME), version (VSTOCK),  BASEDIR, description (DESC), category (CATEGORY) and MAXINST(=1)
+# -------------------------------------------------
+
+
+# Verify input arguments --------------------------
+#verifyinput ()
+#{
+#	echo "Checking for ${ERIC_PATH}/${ERIC_FILE}"
+#	# Verify input
+#	if [ -f "${ERIC_PATH}/${ERIC_FILE}" ];then
+#		INSTALL_ERIC=1
+#		echo "Found file!"
+#	fi
+#
+#	echo "Checking for ${EXTR_PATH}/${EXTR_FILE}"
+#	if [ -f "${EXTR_PATH}/${EXTR_FILE}" ];then
+#		INSTALL_EXTR=1
+#		echo "Found file!"
+#	fi
+#
+#	if [[ $INSTALL_ERIC -eq 0 && $INSTALL_EXTR -eq 0 ]]; then
+#		RETURN_STATUS=7 #Failed, can not execute
+#		RETURN_STATUS_REASON="Did not find packages to install, test aborted"
+#		echo [OUTPUT:REASON:$RETURN_STATUS_REASON]
+#		exit $RETURN_STATUS
+#	fi
+#}
+# -------------------------------------------------
+
+# Copy the packages to install to temp location----
+#copypkgs () 
+#{
+#	if [ $INSTALL_ERIC -eq 1 ]; then
+#		# Copy ERIC pkg to a tmp location
+#		cp ${ERIC_PATH}/${ERIC_FILE} ${PKG_TMP}
+#		if [ ! $? -eq 0 ]; then
+#			RETURN_STATUS=7 #Failed, can not execute
+#			RETURN_STATUS_REASON="Could not copy ERIC package, test aborted"
+#			rm -rf ${PKG_TMP}
+#			echo "[OUTPUT:REASON:$RETURN_STATUS_REASON]"
+#			exit $RETURN_STATUS
+#		fi
+#	fi
+#	if [ $INSTALL_EXTR -eq 1 ]; then
+#		# Copy EXTR pkg to a tmp location
+#		cp ${EXTR_PATH}/${EXTR_FILE} ${PKG_TMP}
+#		if [ ! $? -eq 0 ]; then
+#			RETURN_STATUS=7 #Failed, can not execute
+#			RETURN_STATUS_REASON="Could not copy EXTR package, test aborted"
+#			rm -rf ${PKG_TMP}
+#			echo "[OUTPUT:REASON:$RETURN_STATUS_REASON]"
+#			exit $RETURN_STATUS
+#		fi
+#	fi
+#}
+# -------------------------------------------------
+
+# Change version info in pkginfo file--------------
+#changeversion ()
+#{
+#	if [[ $INSTALL_ERIC -eq 1 && -f "$ERIC_PKGINFO" ]]; then
+#		# Change ERIC pkg version to fool 3pp_run
+#		# Backup first
+#		echo "ERIC pkg installed, changing pkg version in info file"
+#		cp $ERIC_PKGINFO /tmp/eric_${PROD}_pkginfo.backup.$$ > /dev/null 2>&1
+#		cat $ERIC_PKGINFO | sed 's/^VERSION=R.*/VERSION=R1A00/' > /tmp/eric_${PROD}_pkginfo.$$
+#		if [ $? -eq 0 ]; then
+#			mv /tmp/eric_${PROD}_pkginfo.$$ $ERIC_PKGINFO
+#		else
+#			RETURN_STATUS=7 #Failed, can not execute
+#			RETURN_STATUS_REASON="Could not change ERIC pkg version, test aborted"
+#			rm -rf ${PKG_TMP}
+#			echo "[OUTPUT:REASON:$RETURN_STATUS_REASON]"
+#			exit $RETURN_STATUS
+#		fi
+#	else
+#		echo "ERIC pkg not installed"
+#	fi
+#
+#	if [[ $INSTALL_EXTR -eq 1 && -f "$EXTR_PKGINFO" ]]; then
+#		# Change EXTR pkg version to fool 3pp_run
+#		# Backup first
+#		echo "EXTR pkg installed, changing pkg version in info file"
+#		cp $EXTR_PKGINFO /tmp/extr_${PROD}_pkginfo.backup.$$
+#		cat $EXTR_PKGINFO | sed 's/^VERSION=R.*/VERSION=R1A00/' > /tmp/extr_${PROD}_pkginfo.$$
+#		if [ $? -eq 0 ]; then
+#			mv /tmp/extr_${PROD}_pkginfo.$$ $EXTR_PKGINFO
+#		else
+#			RETURN_STATUS=7 #Failed, can not execute
+#			RETURN_STATUS_REASON="Could not change EXTR pkg version, test aborted"
+#			rm -rf ${PKG_TMP}
+#			echo "[OUTPUT:REASON:$RETURN_STATUS_REASON]"
+#			exit $RETURN_STATUS
+#		fi
+#	else
+#		echo "EXTR pkg not installed"
+#	fi
+#} 
+## -------------------------------------------------
+ 
+# Install a package(s) in $PKG_TMP-----------------
+#install ()
+#{
+#	# (remove and) install pkgs with 3PP_RUN
+#	echo "Installing pkg(s) with 3pp_run..."
+#	$TPP_RUN -i $PKG_TMP
+#	if [ $? -eq 0 ]; then
+#		echo "Done installing with 3pp_run"
+#		RETURN_STATUS=0
+#	else
+#		RETURN_STATUS=1 # 3PP_RUN Failed
+#		RETURN_STATUS_REASON="3pp_run failed"
+#		rm -rf ${PKG_TMP}
+#		echo "[OUTPUT:REASON:$RETURN_STATUS_REASON]"
+#		exit $RETURN_STATUS
+#	fi
+#}
+# -------------------------------------------------
+
+# Check if package $1 is installed, return 1 if not
+checkpkg()
+{
+	pkginfo $1 > /dev/null 2>&1
+	if [ ! $? -eq 0 ]; then
+		return 1
+	fi
+}
+# -------------------------------------------------  
+
+# Output package $1 version to the framework------------------
+pkgversion ()
+{
+	VERSION=`pkginfo -l $1 2>/dev/null | sed '/^ *VERSION: */!d; s///;q'`
+ 
+	if [ "$VERSION" = "" ] ; then
+		VERSION="?"
+	fi
+	echo "[OUTPUT:VERSION:$1:$VERSION]"
+}
+# -------------------------------------------------
+
+
+# Compares two variables --------------------------
+compare_variable ()
+{
+	if [[ "$1" != "$2" ]]; then
+		RETURN_STATUS_REASON=${RETURN_STATUS_REASON}${3}
+		RETURN_STATUS=${4}
+	fi		
+}
+# -------------------------------------------------
+
+
+# Compares two variables --------------------------
+compare_variables ()
+{
+	if [[ "$2" != $1 ]]; then
+		echo "$3 Expected: $1 Got: $2"
+		RETURN_STATUS_REASON="${RETURN_STATUS_REASON}${3}, received \"${2}\", expected \"${1}\""
+		RETURN_STATUS=${4}
+	fi		
+}
+# -------------------------------------------------
+
+
+# Checks the value of a variable against the one found
+# in pkginfo --------------------------------------
+check_variable ()
+{
+	FOUND=0
+	INDEX=0
+	while [ $INDEX -le ${#VARIABLE[*]} ]; do
+		if [[ "$1" = "${VARIABLE[INDEX]}" ]]; then
+			compare_variables "$2" "${VALUE[INDEX]}" "$3" $4
+			FOUND=1
+			break
+		fi
+		((INDEX += 1))
+	done
+
+	if [[ $FOUND = 0 ]]; then
+		RETURN_STATUS_REASON="${RETURN_STATUS_REASON}${3} missing field \"${1}\""
+		RETURN_STATUS=${4}
+		echo "$3 Missing field $1"
+	fi
+}
+# -------------------------------------------------
+
+
+# Checks that the package information is correct---
+# Parameters	1) Package name
+#		2) NAME
+#		3) DESC
+#		4) VSTOCK
+#
+check_pkginfo ()
+{
+	# Build variable "table" by using the data from pkginfo -l
+	# Since ksh's for(each) takes a list where the items are separated
+	# by whitespace we let awk replace the whitespaces with semicolons.
+	# This way we can return whole rows instead of words.
+	# We then change the semicolons back to whitespace when we store the
+	# variables in our table (consisting of the arrays VARIABLE and VALUE).
+
+	INDEX=0
+	for foo in `pkginfo -l $1 2>/dev/null | \
+	awk '
+			/:/ {
+				message = $1
+				for(i=2;i<=NF;i++){
+					message=message$i
+					if(i<NF){message=message";"}
+					else{ print message; message=""}
+				}
+			}'`; do
+		VARIABLE[$INDEX]=${foo%%:*}
+		VALUE[$INDEX]=`echo ${foo#*:} | sed -e 's/;/ /g'`
+		# Cut the last part of VSTOCK when it shows up
+		if [[ ${VARIABLE[INDEX]} = "VSTOCK" ]]; then
+			VALUE[$INDEX]=${VALUE[INDEX]% Rev*}
+		fi
+		((INDEX += 1))
+	done
+
+	# If the variable table is empty, then pkginfo must have failed
+	if [[ ${#VARIABLE[*]} = 0 ]]; then
+		RETURN_STATUS=1
+		RETURN_STATUS_REASON=${RETURN_STATUS_REASON}"pkginfo failed for package $1"
+		return
+	fi
+
+
+	#2.	Verify the installation of the package, check if status of the package is completely installed
+	check_variable "STATUS" "${STATUS}" "${1}: Package is not completely installed" 1
+
+	# If package is not completely installed, then there's no idea to verify the rest of pkginfo
+	if [ RETURN_STATUS -gt 0 ]; then
+		return
+	fi
+
+	#3.	Verify the name, version (VSTOCK),  BASEDIR, description, category and MAXINST(=1) of the package
+	
+	# The static ones are already initialized.
+	# That is BASEDIR, CATEGORY (and MAXINST)
+	check_variable "BASEDIR" "${BASEDIR}" "${1}: pkginfo BASEDIR is incorrect" 2
+	check_variable "CATEGORY" "${CATEGORY}" "${1}: pkginfo CATEGORY is incorrect" 2
+	
+	# The rest are given as parameters to the script.
+	# That is NAME, VSTOCK and DESC
+	# WE ONLY CHECK THESE THREE IF THEY ARE GIVEN AS PARAMETERS
+
+	if [ "$2" ]; then
+		check_variable "NAME" "${2}" "${1}: pkginfo NAME is incorrect" 2
+	fi
+
+	if [ "$3" ]; then
+		check_variable "DESC" "${3}" "${1}: pkginfo DESC is incorrect" 2
+	fi
+
+	if [ "$4" ]; then
+		check_variable "VSTOCK" "${4}" "${1}: pkginfo VSTOCK is incorrect" 2
+	fi
+	
+	# Echo the pkgversion to the framework
+	display_version $1 "VERSION"
+}
+# -------------------------------------------------
+
+# Displays the version of the package -------------
+display_version ()
+{
+	INDEX=0
+	while [ $INDEX -le ${#VARIABLE[*]} ]; do
+		if [[ "$2" = "${VARIABLE[INDEX]}" ]]; then
+			if [ "${VALUE[INDEX]}" = "" ] ; then
+				echo "[OUTPUT:VERSION:$1:?]"
+  			else
+				echo "[OUTPUT:VERSION:$1:${VALUE[INDEX]}]"
+			fi
+			break
+		fi
+		((INDEX += 1))
+	done
+}
+# -------------------------------------------------
+
+# Clean the lists before next call to check_pkginfo
+clean_lists ()
+{
+	INDEX=0
+	while [[ $INDEX -lt ${#VALUE[*]} ]]; do
+		VALUE[$INDEX]=""
+		VARIABLE[$INDEX]=""
+		((INDEX += 1))
+	done
+}
+# -------------------------------------------------
+
+
+
+
+
+# MAIN --------------------------------------------
+
+
+#verifyinput
+#	
+## create pkg tmp location
+#PKG_TMP=/tmp/3pp.$$
+#mkdir -p ${PKG_TMP}
+#
+#copypkgs
+#
+#changeversion
+
+## Do the install
+#if [[ $INSTALL_ERIC -eq 1 || $INSTALL_EXTR -eq 1 ]]; then
+#	install
+#else #Should not happen
+#	RETURN_STATUS=1
+#	RETURN_STATUS_REASON="Nothing to install"
+#	rm -rf ${PKG_TMP}
+#	echo "[OUTPUT:REASON:$RETURN_STATUS_REASON]"
+#	exit $RETURN_STATUS
+#fi
+#	
+##Check installed pkgs
+#if [ $INSTALL_ERIC -eq 1 ]; then
+#	checkpkg ${ERIC_PKG}
+#	if [ $? -eq 0 ]; then
+#		echo "[OUTPUT:COMMENT:ERIC pkg installed OK]"
+#		VERIFY_ERIC=1
+#	else
+#		RETURN_STATUS=1
+#		RETURN_STATUS_REASON="ERIC pkg not installed"
+#	fi
+#fi
+#   	 
+#if [ $INSTALL_EXTR -eq 1 ]; then
+#	checkpkg ${EXTR_PKG}
+#	if [ $? -eq 0 ]; then
+#		echo "[OUTPUT:COMMENT:EXTR pkg installed OK]"
+#		VERIFY_EXTR=1
+#	else
+#		RETURN_STATUS=1
+#		RETURN_STATUS_REASON="EXTR pkg not installed $RETURN_STATUS_REASON"
+#	fi
+#fi
+#
+#
+checkpkg ${ERIC_PKG}
+if [ $? -eq 0 ]; then
+    VERIFY_ERIC=1 
+#else
+#        RETURN_STATUS=1
+#        RETURN_STATUS_REASON="ERIC pkg not installed"
+fi
+checkpkg ${EXTR_PKG}
+if [ $? -eq 0 ]; then
+   VERIFY_EXTR=1 
+#else
+#        RETURN_STATUS=1
+#        RETURN_STATUS_REASON="EXTR pkg not installed $RETURN_STATUS_REASON"
+fi
+#2.	Verify the installation of the package, check if status of the package is completely installed
+#3.	Verify the name (NAME), version (VSTOCK),  BASEDIR, description (DESC), category (CATEGORY) and MAXINST(=1)
+# 	of the package
+
+if [[ $RETURN_STATUS -eq 0 ]]; then
+	if [[ $VERIFY_ERIC -eq 1 ]]; then
+		check_pkginfo $ERIC_PKG "$ERIC_NAME" "$ERIC_DESC" "$ERIC_VSTOCK" "$ERIC_REV"
+	fi
+
+	if [[ $VERIFY_EXTR -eq 1 ]]; then
+		clean_lists
+		check_pkginfo $EXTR_PKG "$EXTR_NAME" "$EXTR_DESC" "$EXTR_VSTOCK" "$EXTR_REV"
+	fi
+fi
+
+
+       
+# Return status and reason ------------------------
+if [ "$RETURN_STATUS_REASON" ]; then
+  echo "[OUTPUT:REASON:$RETURN_STATUS_REASON]"
+fi
+
+rm -rf $PKG_TMP
+exit $RETURN_STATUS
+# -------------------------------------------------

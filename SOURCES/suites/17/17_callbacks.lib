@@ -1,0 +1,175 @@
+#!/bin/bash
+#################################################################################
+#
+#
+#       COPYRIGHT (C) ERICSSON RADIO SYSTEMS AB, Sweden
+#
+#       The copyright to the document(s) herein is the property of
+#       Ericsson Radio Systems AB, Sweden.
+#
+#       The document(s) may be used and/or copied only with the written
+#       permission from Ericsson Radio Systems AB or in accordance with
+#       the terms and conditions stipulated in the agreement/contract
+#       under which the document(s) have been supplied.
+#
+#################################################################################
+
+
+# ATCOMINF Test Suite Callback Library
+
+# Revision History
+# <date>	<signum>	<details>
+
+# Complete the callbacks in this library if required to setup/cleanup before/after 
+# running suite test cases.
+#
+# Callbacks are stateless, it is not possible to set a global variable in one callback
+# and access it it in another.
+#
+# Callbacks are called by the test harness in the following order:
+#
+# ts_setup()
+# ts_cleanup()
+
+echo "Going to source ${AT_LIB}/tst_cominf.lib"
+. ${AT_LIB}/tst_cominf.lib
+echo "Going to source ${AT_LIB}/tst_LDAP.lib"
+. ${AT_LIB}/tst_LDAP.lib
+
+#################################################################################
+#
+# CALLBACK: TS_SETUP
+# 
+# Called before the first test case in the suite is run
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+ts_setup() {
+#-------------------------------------------------------------------------------
+#  Setup environment variables
+#-------------------------------------------------------------------------------
+export STUB=true
+export g_PASSWORD=password
+export BIND_TOKEN=${LDAP_SUPERUSER_PASSWD}
+
+#-------------------------------------------------------------------------------
+#  Back up OpenDJ's config
+#-------------------------------------------------------------------------------
+
+    # Save OpenDJ's config
+    echo "saving opendj's config ..."
+    LDAP_SAVE_CONFIG || {
+        echo "LDAP_SAVE_CONFIG failed, returned $?"
+        return 1
+    }
+
+
+#-------------------------------------------------------------------------------
+#  Clear out migration directory
+#-------------------------------------------------------------------------------
+rm -rf /opt/ericsson/cominf_ldap/GDmig/*
+
+
+#-------------------------------------------------------------------------------
+#  Create environment
+#-------------------------------------------------------------------------------
+
+	# Can't assume that LDAP DB's are always empty, so create a temporary user in each DB to ensure that they are not
+	/opt/opendj/bin/ldapmodify -D cn=Directory\ Manager -w ${LDAP_SUPERUSER_PASSWD} -a -f temp_user.ldif || {
+		echo "creating temporary user failed. error $?"
+		return 1
+	}
+
+
+	echo "importing globaldomain data"
+	${AT_BIN}/con_ex.bsh -d 17_clear.in -o 17_expect.exp -c "/opt/ericsson/cominf_ldap/bin/migrate_ldap.bsh -i -m -d globaldomain -f globaldomain.ldif -y" -r
+	expect 17_expect.exp
+	rc=$?
+	[ $rc -eq 0 ] || {
+		echo "import of globaldomain data returned error code $rc"
+		return 1
+	}
+
+	echo "importing 1.com data"
+	${AT_BIN}/con_ex.bsh -d 17_clear.in -o 17_expect.exp -c "/opt/ericsson/cominf_ldap/bin/migrate_ldap.bsh -i -m -d 1.com -f 1.com.ldif -y" -r
+	expect 17_expect.exp
+	rc=$?
+	[ $rc -eq 0 ] || {
+		echo "import of 1.com data returned error code $rc"
+		return 1
+	}
+
+	echo "importing 2.com data"
+	${AT_BIN}/con_ex.bsh -d 17_clear.in -o 17_expect.exp -c "/opt/ericsson/cominf_ldap/bin/migrate_ldap.bsh -i -m -d 2.com -f 2.com.ldif -y" -r
+	expect 17_expect.exp
+	rc=$?
+	[ $rc -eq 0 ] || {
+		echo "import of 2.com data returned error code $rc"
+		return 1
+	}
+
+	rm -rf /opt/ericsson/cominf_ldap/GDmig/2.com
+
+	${AT_BIN}/con_ex.bsh -d 17_user.in -o 17_expect.exp -c "/opt/ericsson/cominf_ldap/bin/manage_user.bsh -a -u usr2excl -i 1000 -d 2.com -y" -r
+	expect 17_expect.exp
+	rc=$?
+	[ $rc -eq 0 ] || {
+		echo "creation of usr2excl user in 2.com failed. error $?"
+		return 1
+	}
+
+	${AT_BIN}/con_ex.bsh -d 17_user.in -o 17_expect.exp -c "/opt/ericsson/cominf_ldap/bin/manage_user.bsh -a -u matched -i 8877 -d globaldomain -y" -r
+	expect 17_expect.exp
+	rc=$?
+	[ $rc -eq 0 ] || {
+		echo "creation of matched user in globaldomain failed. error $?"
+		return 1
+	}
+
+	${AT_BIN}/con_ex.bsh -d 17_user.in -o 17_expect.exp -c "/opt/ericsson/cominf_ldap/bin/manage_user.bsh -a -u matched -i 8877 -d 2.com -y" -r
+	expect 17_expect.exp
+	rc=$?
+	[ $rc -eq 0 ] || {
+		echo "creation of matched user in 2.com failed. error $?"
+		return 1
+	}
+
+
+	/opt/opendj/bin/ldapmodify -D cn=Directory\ Manager -w ${LDAP_SUPERUSER_PASSWD} -f newruby.ldif || {
+		echo "renaming of ruby in 2.com failed. error $?"
+		return 1
+	}
+
+	/opt/opendj/bin/ldapmodify -D cn=Directory\ Manager -w ${LDAP_SUPERUSER_PASSWD} -f newjack.ldif || {
+		echo "renaming of jack in 2.com failed. error $?"
+		return 1
+	}
+
+	return 0
+}
+#################################################################################
+
+#################################################################################
+#
+# CALLBACK: TS_CLEANUP
+#
+# Called after the last test case in the suite has run
+# 
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+ts_cleanup() {
+#-------------------------------------------------------------------------------
+#  Restore OpenDJ's config
+#-------------------------------------------------------------------------------
+	rm -rf /opt/ericsson/cominf_ldap/GDmig/*
+	# Restore OpenDJ's config
+	LDAP_RESTORE_CONFIG || {
+		echo "LDAP_RESTORE_CONFIG failed, returned $?"
+		return 1
+	}
+	return 0
+}

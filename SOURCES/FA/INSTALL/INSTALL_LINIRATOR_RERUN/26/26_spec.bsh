@@ -1,0 +1,76 @@
+#!/bin/bash
+
+# TEST CASE SPEC FILE
+# This file is generated/updated using the test framework web interface.
+# Manual updates on test servers are lost when the test package is re-installed.
+#
+# Last modified: Sunday 31st of March 2013 20:37:23
+#
+
+# These settings must be in BASH script format, they are sourced by other scripts.
+SPEC_FA_NAME="INSTALL"
+SPEC_UC_NAME="INSTALL_LINIRATOR_RERUN"
+SPEC_TC_ID=26
+SPEC_TC_SLOGAN="Linirator, invalid values for DHCP"
+SPEC_TC_TYPE="FT"
+SPEC_TC_POLARITY="negative"
+SPEC_TC_PRIORITY="low"
+SPEC_TC_AUTOMATED=0
+SPEC_TC_DEPENDENT_ONLY=0
+SPEC_TC_TIMEOUT=300
+SPEC_TC_TEST_PASSCODE=0
+SPEC_TC_AUTHOR="xamamcg"
+SPEC_TC_AUTOMATOR="xamamcg"
+# this parameter is not interpreted by harness
+SPEC_TC_DISABLED=0
+
+# Please do not remove the comment lines below.
+# They are used as section locators by the test harness.
+
+# BEGIN_PRE_CONDITIONS
+#1/ TEST_REDHAT
+#2/ POSIX_USER_EXISTS ldapadm
+#
+# END_PRE_CONDITIONS
+
+
+# BEGIN_MANUAL_STEPS
+#1/ cp config.ini config.orig
+#2/ iptables -L > iptables.orig
+#3. Run linirator script and answer questions as follows
+#a. Return for deployment type  
+#b. Return for whether want NTP
+#c. Return for NTP IP Address
+#d. F to DHCP
+#e. y to DHCP
+#f. answer T to IPV6 for DHCP
+#g. answer Y to IPV6 for DHCP
+#h. enter 1.1.1.1 for DHCP IPv6 address
+#i. enter 0001:0001:0001:0001:0001:0001:0001:0001:0001 for DHCP IPv6 address
+#j. enter 0001:ABCG:0001:0001:0001:0001:0001:0001 for DHCP IPv6 address
+#k. enter 0001:0001:0001:0001:::
+#l. enter 0001:0001:0001:256.1.1.1 
+#l. enter 1:1:1:255.00001.1.1
+#n. enter 1:1:1:1.1.1
+#o. enter 1:1:1:1.1.1.1.1
+#p. enter 1:1:1:1.1.1.0d
+#q. enter valid value for DHCP IPv6 address
+#r. enter valid value for DHCP IPv6 subnet
+#TBD old inirator had no validation on subnet!
+#s. enter Ctrl C on next question
+#
+# END_MANUAL_STEPS
+
+# BEGIN_POST_CONDITIONS
+#2. iptables -L | diff - iptables.orig
+#3. CONSOLE_OUTPUT_CONTAINS 'Not a valid address "1.1.1.1"
+#4. CONSOLE_OUTPUT_CONTAINS Not a valid address "0001:0001:0001:0001:0001:0001:0001:0001:0001"
+#5. CONSOLE_OUTPUT_CONTAINS Not a valid address "0001:ABCG:0001:0001:0001:0001:0001:0001"
+#6. CONSOLE_OUTPUT_CONTAINS Not a valid address "0001:0001:0001:0001:::"
+#7. CONSOLE_OUTPUT_CONTAINS Not a valid address "0001:0001:0001:256.1.1.1"
+#8. CONSOLE_OUTPUT_CONTAINS Not a valid address "1:1:1:255.00001.1.1"
+#9. CONSOLE_OUTPUT_CONTAINS Not a valid address "1:1:1:1.1.1]
+#"
+#10. CONSOLE_OUTPUT_CONTAINS Not a valid address "1:1:1:1.1.1.1.1"
+#11. CONSOLE_OUTPUT_CONTAINS Not a valid address "1:1:1:1.1.1.0d"
+# END_POST_CONDITIONS

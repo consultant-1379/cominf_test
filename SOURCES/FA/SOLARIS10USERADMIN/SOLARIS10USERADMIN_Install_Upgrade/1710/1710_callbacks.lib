@@ -1,0 +1,282 @@
+#!/bin/bash
+#################################################################################
+#
+#
+#       COPYRIGHT (C) ERICSSON RADIO SYSTEMS AB, Sween
+#
+#       The copyright to the document(s) herein is the property of
+#       Ericsson Radio Systems AB, Sweden.
+#
+#       The document(s) may be used and/or copied only with the written
+#       permission from Ericsson Radio Systems AB or in accordance with
+#       the terms and conditions stipulated in the agreement/contract
+#       under which the document(s) have been supplied.
+#
+#################################################################################
+
+
+# ATCOMINF Test Callback Library
+
+# Revision History
+# <date>	xsougha		First Version		
+
+# Complete the callbacks in this library to automate the test case.
+#
+# Callbacks are stateless, it is not possible to set a global variable in one callback 
+# and access it it in another.
+#
+# Callbacks are called by the test harness in the following order:
+#
+# tc_setup() 		# Called only for independent TC execution mode to setup TC
+# tc_precon()		# Conditions that should exist before TC can run
+# tc_test()		# Runs the test for this TC
+# tc_postcon()		# Conditions that should/should not exist after successful TC 
+# tc_cleanup()		# Called only for independent TC execution mode to cleanup after TC
+
+# All callbacks must PASS for a TC PASS result
+
+#################################################################################
+#
+# CALLBACK: TC_SETUP
+#
+# This callback function is only called if the harness execution mode is 'AT_INDEPENDENT'
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+pkginfo ERICodj 2> /dev/null
+ret=$?
+if [[ $ret -eq 0 ]]; then
+		PATH_ADDUSER=/ericsson/opendj/bin/add_user.sh
+		PATH_DELUSER=/ericsson/opendj/bin/del_user.sh
+  	 	PATH_ADDGROUP=/ericsson/opendj/bin/add_group.sh
+		PATH_DELGROUP=/ericsson/opendj/bin/del_group.sh
+		PATH_ADD_USRtoGRP=/ericsson/opendj/bin/add_user_to_group.sh
+		PATH_DEL_USRtoGRP=/ericsson/opendj/bin/del_user_from_group.sh
+else
+		PATH_ADDUSER=/ericsson/sdee/bin/add_user.sh
+		PATH_DELUSER=/ericsson/sdee/bin/del_user.sh
+       		PATH_ADDGROUP=/ericsson/sdee/bin/add_group.sh
+		PATH_DELGROUP=/ericsson/sdee/bin/del_group.sh
+		PATH_ADD_USRtoGRP=/ericsson/sdee/bin/add_user_to_group.sh
+		PATH_DEL_USRtoGRP=/ericsson/sdee/bin/del_user_from_group.sh	 
+fi
+
+tc_setup() {
+	return 0
+}
+#################################################################################
+
+#################################################################################
+#
+# CALLBACK: TC_PRECON
+#
+# This callback function checks the correct conditions exist to run the TC.
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+ 
+tc_precon() {
+	return 0
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_TEST
+#
+# This callback function runs the test.
+# The harness compares the return code to the SPEC_TC_TEST_PASSCODE value set in the test spec.
+#
+# Return or exit codes:
+#    SPEC_TC_TEST_PASSCODE 	success
+# != SPEC_TC_TEST_PASSCODE 	failure
+ 
+tc_test() {
+	# Adding user u1710_1
+        ${AT_BIN}/con_ex.bsh -d 1710_add_user_u1710_1.in -o 1710_add_user_u1710_1.exp -c "${PATH_ADDUSER}"
+        /usr/local/bin/expect 1710_add_user_u1710_1.exp
+        CONSOLE_OUTPUT_CONTAINS "OK: Account created" || {
+                echo "Failed to add new user u1710_1"
+                return 1
+        }
+
+	# Adding user u1710_11
+        ${AT_BIN}/con_ex.bsh -d 1710_add_user_u1710_11.in -o 1710_add_user_u1710_11.exp -c "${PATH_ADDUSER} -d vts.com"
+        /usr/local/bin/expect 1710_add_user_u1710_11.exp
+        CONSOLE_OUTPUT_CONTAINS "OK: Account created" || {
+                echo "Failed to add new user u1710_11"
+                return 1
+        }
+ 
+	# Adding group g17101
+        ${AT_BIN}/con_ex.bsh -d 1710_add_group_g1710_1.in -o 1710_add_group_g1710_1.exp -c "${PATH_ADDGROUP}"
+        /usr/local/bin/expect 1710_add_group_g1710_1.exp
+        CONSOLE_OUTPUT_CONTAINS "Adding new local group" || {
+                echo "Failed to add new group g17101"
+                return 1
+        }
+
+	# Adding group g171011
+        ${AT_BIN}/con_ex.bsh -d 1710_add_group_g1710_11.in -o 1710_add_group_g1710_11.exp -c "${PATH_ADDGROUP} -d vts.com"
+        /usr/local/bin/expect 1710_add_group_g1710_11.exp
+        CONSOLE_OUTPUT_CONTAINS "Adding new local group" || {
+                echo "Failed to add new group g171011"
+                return 1
+        }
+
+	# Adding user u1710_1 to group g17101
+        ${AT_BIN}/con_ex.bsh -d 1710_add_user_u1710_1_to_group_g17101.in -o 1710_add_user_u1710_1_to_group_g17101.exp -c "${PATH_ADD_USRtoGRP}"
+        /usr/local/bin/expect 1710_add_user_u1710_1_to_group_g17101.exp
+        CONSOLE_OUTPUT_CONTAINS "INFO: Local user [u1710_1] Type [OSS_ONLY] Domain [vts.com]: Added to local group [g17101]." || {
+                echo "Failed to add user u1710_1 to group g17101"
+                return 1
+        }
+
+	# Adding user u1710_11 to group g171011
+        ${AT_BIN}/con_ex.bsh -d 1710_add_user_u1710_11_to_group_g171011.in -o 1710_add_user_u1710_11_to_group_g171011.exp -c "${PATH_ADD_USRtoGRP} -d vts.com"
+        /usr/local/bin/expect 1710_add_user_u1710_11_to_group_g171011.exp
+        CONSOLE_OUTPUT_CONTAINS "INFO: Local user [u1710_11] Type [OSS_ONLY] Domain [vts.com]: Added to local group [g171011]." || {
+                echo "Failed to add user u1710_11 to group g171011"
+                return 1
+        }
+
+	return 0
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_POSTCON
+#
+# This callback function checks expected results.
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_postcon() {
+	# Performing ldapsearch of user u1710_1 under group g17101
+	ldapsearch -D "cn=directory manager" -w ldappass -b "cn=g17101,ou=group,dc=vts,dc=com" "objectclass=*" | grep "u1710_1" || {
+		echo "Failed to find user u1710_1 under group g17101"
+		return 1
+	}
+
+	# Performing ldapsearch of user u1710_11 under group g171011
+        ldapsearch -D "cn=directory manager" -w ldappass -b "cn=g171011,ou=group,dc=vts,dc=com" "objectclass=*" | grep "u1710_11" || {
+                echo "Failed to find user u1710_11 under group g171011"
+                return 1
+        }
+
+	# Deleting user u1710_1 from group g17101
+	${AT_BIN}/con_ex.bsh -d 1710_del_user_u1710_1_from_group_g17101.in -o 1710_del_user_u1710_1_from_group_g17101.exp -c "${PATH_DEL_USRtoGRP}"
+        /usr/local/bin/expect 1710_del_user_u1710_1_from_group_g17101.exp
+        CONSOLE_OUTPUT_CONTAINS "INFO: Local user [u1710_1] Type [OSS_ONLY] Domain [vts.com]: Deleted from local group [g17101]." || {
+                echo "Failed to verify deletion of user u1710_1 from group g17101"
+                return 1
+        }
+
+        # Performing ldapsearch of user u1710_1 under group g17101
+        ldapsearch -D "cn=directory manager" -w ldappass -b "cn=g17101,ou=group,dc=vts,dc=com" "objectclass=*" | grep "u1710_1" && {
+                echo "Failed to verify removal of user u1710_1 from group g17101"
+                return 1
+        }
+
+        # Deleting user u1710_11 from group g171011
+        ${AT_BIN}/con_ex.bsh -d 1710_del_user_u1710_11_from_group_g171011.in -o 1710_del_user_u1710_11_from_group_g171011.exp -c "${PATH_DEL_USRtoGRP} -d vts.com" 
+        /usr/local/bin/expect 1710_del_user_u1710_11_from_group_g171011.exp
+        CONSOLE_OUTPUT_CONTAINS "INFO: Local user [u1710_11] Type [OSS_ONLY] Domain [vts.com]: Deleted from local group [g171011]." || {
+                echo "Failed to verify deletion of user u1710_11 from group g171011"
+                return 1
+        }
+
+        # Performing ldapsearch of group g171011
+        ldapsearch -D "cn=directory manager" -w ldappass -b "cn=g171011,ou=group,dc=vts,dc=com" "objectclass=*" | grep "u1710_11" && {
+                echo "Failed to verify removal of user u1710_11 from group g171011"
+                return 1
+        }
+ 
+	return 0
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_CLEANUP
+#
+# This callback function is only called if the harness execution mode is 'AT_INDEPENDENT'
+# 
+# This callback restores the target system to the state it was in before the TC 
+# was run. It rolls back changes made by callbacks tc_setup() and tc_test()
+# 
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_cleanup() {
+	# Deleting user u1710_1
+        ${AT_BIN}/con_ex.bsh -d 1710_del_user_u1710_1.in -o 1710_del_user_u1710_1.exp -c "${PATH_DELUSER}"
+        /usr/local/bin/expect 1710_del_user_u1710_1.exp
+        CONSOLE_OUTPUT_CONTAINS "OK: Account deleted" || {
+                echo "Failed to delete user u1710_1"
+                return 1
+        }
+
+        # Verifying whether user u1710_1 got successfully deleted
+        ldapsearch -D "cn=directory manager" -w ldappass -b "cn=u1710_1,ou=people,dc=vts,dc=com" "objectclass=*" && {
+                echo "Failed to delete user u1710_1"
+                return 1
+        }
+
+	# Deleting user u1710_11
+        ${AT_BIN}/con_ex.bsh -d 1710_del_user_u1710_11.in -o 1710_del_user_u1710_11.exp -c "${PATH_DELUSER} -d vts.com"
+        /usr/local/bin/expect 1710_del_user_u1710_11.exp
+        CONSOLE_OUTPUT_CONTAINS "OK: Account deleted" || {
+                echo "Failed to delete user u1710_11"
+                return 1
+        }
+
+        # Verifying whether user u1710_11 got successfully deleted
+        ldapsearch -D "cn=directory manager" -w ldappass -b "cn=u1710_11,ou=people,dc=vts,dc=com" "objectclass=*" && {
+                echo "Failed to delete user u1710_11"
+                return 1
+        }
+
+        # Deleting group g17101
+        ${AT_BIN}/con_ex.bsh -d 1710_del_group_g1710_1.in -o 1710_del_group_g1710_1.exp -c "${PATH_DELGROUP}"
+        /usr/local/bin/expect 1710_del_group_g1710_1.exp
+        CONSOLE_OUTPUT_CONTAINS "Deleting local group" || {
+                echo "Failed to delete group g17101"
+                return 1
+        }
+
+        # Verifying whether group g17101 got successfully deleted
+        ldapsearch -D "cn=directory manager" -w ldappass -b "cn=g17101,ou=group,dc=vts,dc=com" "objectclass=*" && {
+                echo "Failed to delete group g17101"
+                return 1
+        }
+
+        # Deleting group g171011
+        ${AT_BIN}/con_ex.bsh -d 1710_del_group_g1710_11.in -o 1710_del_group_g1710_11.exp -c "${PATH_DELGROUP} -d vts.com"
+        /usr/local/bin/expect 1710_del_group_g1710_11.exp
+        CONSOLE_OUTPUT_CONTAINS "Deleting local group" || {
+                echo "Failed to delete group g171011"
+                return 1
+        }
+
+        # Verifying whether group g171011 got successfully deleted
+        ldapsearch -D "cn=directory manager" -w ldappass -b "cn=g171011,ou=group,dc=vts,dc=com" "objectclass=*" && {
+                echo "Failed to delete group g171011"
+                return 1
+        }
+
+	# Removing any temporary files
+	rm -rf *.exp
+
+	return 0
+}

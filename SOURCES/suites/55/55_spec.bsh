@@ -1,0 +1,15 @@
+#!/bin/bash
+
+# TEST SUITE SPEC FILE
+# This file is generated/updated using the test framework web interface.
+# Manual updates on test servers are lost when the test package is re-installed.
+#
+# Last modified: Tuesday 28th of May 2013 10:46:03
+#
+SPEC_TS_NAME=X86_MS_POSTINSTALL_ADD_ADMIN1
+SPEC_TS_ID=55
+SPEC_TS_SLOGAN="SCK_X86_MS_POSTINSTALL_ADD_ADMIN1"
+SPEC_TS_TIMEOUT=4500
+SPEC_TS_AUTHOR="xshisan"
+SPEC_TS_INDEPENDENT=0
+SPEC_TS_TC_IDS=(641 642 689 637 643 690 672 686 674 687 688)

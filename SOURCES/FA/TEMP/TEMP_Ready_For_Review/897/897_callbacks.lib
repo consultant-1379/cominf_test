@@ -1,0 +1,312 @@
+#!/bin/bash
+#################################################################################
+#
+#
+#       COPYRIGHT (C) ERICSSON RADIO SYSTEMS AB, Sweden
+#
+#       The copyright to the document(s) herein is the property of
+#       Ericsson Radio Systems AB, Sweden.
+#
+#       The document(s) may be used and/or copied only with the written
+#       permission from Ericsson Radio Systems AB or in accordance with
+#       the terms and conditions stipulated in the agreement/contract
+#       under which the document(s) have been supplied.
+#
+#################################################################################
+
+
+# ATCOMINF Test Callback Library
+
+# Revision History
+# <date>	<signum>	<details>
+
+# Complete the callbacks in this library to automate the test case.
+#
+# Callbacks are stateless, it is not possible to set a global variable in one callback 
+# and access it it in another.
+#
+# Callbacks are called by the test harness in the following order:
+#
+# tc_setup() 		# Called only for independent TC execution mode to setup TC
+# tc_precon()		# Conditions that should exist before TC can run
+# tc_test()		# Runs the test for this TC
+# tc_postcon()		# Conditions that should/should not exist after successful TC 
+# tc_cleanup()		# Called only for independent TC execution mode to cleanup after TC
+
+# All callbacks must PASS for a TC PASS result
+
+#################################################################################
+#
+# CALLBACK: TC_SETUP
+#
+# This callback function is only called if the harness execution mode is 'AT_INDEPENDENT'
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_setup() {
+
+	# Coded to fail in case TC_AUTOMATED=1 before automation completed
+	# Change return code as required
+
+	return 0
+
+}
+#################################################################################
+
+#################################################################################
+#
+# CALLBACK: TC_PRECON
+#
+# This callback function checks the correct conditions exist to run the TC.
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+ 
+tc_precon() {
+
+	# Coded to fail in case TC_AUTOMATED=1 before automation completed
+	# Change return code as required
+
+IsIIorUpgradeSuccessful
+VALUE=$?
+echo
+"++++++++++++++++++++++++++++++++++++++Value=$VALUE+++++++++++++++++++++++++"
+
+if [ "$VALUE" -eq "1" -o "$VALUE" -eq "2" ]; then
+   return 0
+else
+   return 1
+fi
+
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_TEST
+#
+# This callback function runs the test.
+# The harness compares the return code to the SPEC_TC_TEST_PASSCODE value set in the test spec.
+#
+# Return or exit codes:
+#    SPEC_TC_TEST_PASSCODE 	success
+# != SPEC_TC_TEST_PASSCODE 	failure
+ 
+tc_test() {
+
+	# Coded to fail in case TC_AUTOMATED=1 before automation complete
+	# Change return code as required
+
+CURRENT_NW_SIZE=$(more /ericsson/config/.network_size)
+echo "$CURRENT_NW_SIZE" > /tmp/CNSize_current
+CURRENT_NW_FILE=$(cat /tmp/CNSize_current)
+echo "CURRENT_NW_FILE is : "
+echo "$CURRENT_NW_FILE"
+
+CORE_SIZE_OLD=$(cat /tmp/CNSize_current | grep core_net_size |awk -F"="'{print $2}')
+GSM_SIZE_OLD=$(cat /tmp/CNSize_current | grep gsm_net_size |awk -F"="'{print $2}')
+WRAN_SIZE_OLD=$(cat /tmp/CNSize_current | grep wran_net_size |awk -F"="'{print $2}')
+RNC_SIZE_OLD=$(cat /tmp/CNSize_current | grep number_rnc_count |awk-F"=" '{print $2}')
+LTE_SIZE_OLD=$(cat /tmp/CNSize_current | grep lte_net_size |awk -F"="'{print $2}')
+TOTAL_NW_SIZE_OLD=$(cat /tmp/CNSize_current | grep total_net_size |awk-F"=" '{print $2}')
+
+#Changing the NW configuration as below
+INCREMENT1=2
+INCREMENT_RNC=1
+CORE_SIZE_NEW1=`expr $CORE_SIZE_OLD + $INCREMENT`
+GSM_SIZE_NEW1=`expr $GSM_SIZE_OLD + $INCREMENT`
+WRAN_SIZE_NEW1=`expr $WRAN_SIZE_OLD + $INCREMENT`
+RNC_SIZE_NEW1=`expr $RNC_SIZE_OLD + $INCREMENT_RNC`
+LTE_SIZE_NEW1=`expr $LTE_SIZE_OLD + $INCREMENT`
+
+echo "The New NW size will be changed as below: "
+
+echo "CORE_SIZE_NEW1 : $CORE_SIZE_NEW1"
+echo "GSM_SIZE_NEW1  : $GSM_SIZE_NEW1"
+echo "WRAN_SIZE_NEW1 : $WRAN_SIZE_NEW1"
+echo "RNC_SIZE_NEW1  : $RNC_SIZE_NEW1"
+echo "LTE_SIZE_NEW1  : $LTE_SIZE_NEW1"
+
+echo "Expanding Databases to their Final Sizes"
+
+echo "Current HASTATUS is as below:"
+HASTATUS=`/opt/VRTS/bin/hastatus -sum`
+echo "$HASTATUS"
+
+if [ -e "/tmp/config_ossrc_server.lck" ];then
+rm /tmp/config_ossrc_server.lck
+fi
+
+getAdmin1Hostname $*
+#RESULT=atrcxb1376
+Sybase1_ONLINE=`hagrp -display Sybase1 -attribute State | grep ONLINE |awk '{print $3}'`
+if [ $RESULT == $Sybase1_ONLINE ]; then
+echo "Both Oss and Sybase1 are online on $RESULT"
+else
+Sybase1_OFFLINE=`hagrp -display Sybase1 -attribute State | grep OFFLINE | awk '{print $3}'`
+echo "Oss is online on $RESULT and Sybase1 is online on $Sybase1_ONLINE hence switching Sybase1 to $RESULT"
+hagrp -switch Sybase1 -to $Sybase1_OFFLINE
+sleep 100
+Timeout=0
+while [ $Timeout -le 100 ]
+do
+Sybase1_ONLINE=`hagrp -display Sybase1 -attribute State | grep ONLINE |awk '{print $3}'`
+if [ $RESULT == $Sybase1_ONLINE ]; then
+echo "Now Both Oss and Sybase1 are online on $RESULT"
+echo "$HASTATUS"
+break
+else
+echo "Oss and Sybase1 are not yet online on $RESULT"
+fi
+(( Timeout++ ))
+sleep $Timeout
+done
+fi
+
+Expand_DB_Default="/opt/ericsson/sck/bin/config_ossrc_server -a -G 0 -L 0 -U 0 -F"
+EXPECT=/usr/local/bin/expect 
+$EXPECT <<EOF1
+log_file /var/tmp/Expand_DB_Default
+spawn $Expand_DB_Default
+set timeout 800
+expect closed
+EOF1
+
+grep "Free space not available. Contact NAS administrator" /var/tmp/Expand_DB_Default 1>/dev/null 2>/dev/null
+if [ "$?" -eq "0" ]; then
+echo "***Free space not available. Contact NAS administrator***"
+rm /var/tmp/Expand_DB_Default
+exit 1
+fi
+
+grep "This server does not have enough disk space to implement the requested configuration." /var/tmp/Expand_DB_Default 1>/dev/null 2>/dev/null
+if [ "$?" -eq "0" ]; then
+echo "***This server does not have enough disk space to implement the requested configuration.***"
+rm /var/tmp/Expand_DB_Default
+exit 2
+fi
+rm /var/tmp/Expand_DB_Default
+
+if [ -e "/tmp/config_ossrc_server.lck" ];then
+rm /tmp/config_ossrc_server.lck
+fi
+
+echo "Now running config_ossrc_server to reconfigure"
+Expand_DB_New="/opt/ericsson/sck/bin/config_ossrc_server -a -G $GSM_SIZE_NEW1 -L $LTE_SIZE_NEW1 -U $WRAN_SIZE_NEW1 -C $CORE_SIZE_NEW1 -H $RNC_SIZE_NEW1 -F"
+EXPECT=/usr/local/bin/expect
+$EXPECT <<EOF2
+log_file /var/tmp/Expand_DB_New
+spawn $Expand_DB_New
+set timeout 800
+expect closed
+EOF2
+
+grep "Free space not available. Contact NAS administrator" /var/tmp/Expand_DB_New 1>/dev/null 2>/dev/null
+if [ "$?" -eq "0" ]; then
+echo "***Free space not available. Contact NAS administrator***"
+rm /var/tmp/Expand_DB_New
+return 1
+fi
+
+grep "This server does not have enough disk space to implement the requested configuration." /var/tmp/Expand_DB_New 1>/dev/null 2>/dev/null
+if [ "$?" -eq "0" ]; then
+echo "***This server does not have enough disk space to implement the requested configuration.***"
+rm /var/tmp/Expand_DB_New
+return 1
+fi
+rm /var/tmp/Expand_DB_New
+
+echo "OLD_NW_FILE is : "
+echo "$CURRENT_NW_FILE"
+
+New_NW_SIZE=$(more /ericsson/config/.network_size)
+echo "$New_NW_SIZE" > /tmp/CNSize_New
+New_NW_FILE=$(cat /tmp/CNSize_New)
+echo "New_NW_FILE is : "
+echo "$New_NW_FILE"
+
+return 0
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_POSTCON
+#
+# This callback function checks expected results.
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_postcon() {
+
+	# Coded to fail in case TC_AUTOMATED=1 before automation complete.
+	# Change return code as required
+
+	return 0
+
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_CLEANUP
+#
+# This callback function is only called if the harness execution mode is 'AT_INDEPENDENT'
+# 
+# This callback restores the target system to the state it was in before the TC 
+# was run. It rolls back changes made by callbacks tc_setup() and tc_test()
+# 
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_cleanup() {
+
+	# Coded to fail in case TC_AUTOMATED=1 before automation complete
+	# Change return code as required
+getAdmin1Hostname $*
+HASTATUS=`/opt/VRTS/bin/hastatus -sum`
+echo "Performing cleanup"
+echo "$HASTATUS"
+Sybase1_ONLINE=`hagrp -display Sybase1 -attribute State | grep ONLINE | awk '{print $3}'`
+Sybase1_OFFLINE=`hagrp -display Sybase1 -attribute State | grep OFFLINE | awk '{print $3}'`
+if [ $RESULT == $Sybase1_ONLINE ]; then
+echo "Both Oss and Sybase1 are online on $RESULT hence switching back
+Sybase1 to $Sybase1_OFFLINE"
+hagrp -switch Sybase1 -to $Sybase1_OFFLINE
+sleep 60
+echo "HASTATUS post Sybase switchover is:"
+HASTATUS=`/opt/VRTS/bin/hastatus -sum`
+echo "$HASTATUS"
+Timeout=0
+while [ $Timeout -le 100 ]
+do
+Sybase1_ONLINE=`hagrp -display Sybase1 -attribute State | grep ONLINE |
+awk '{print $3}'`
+if [ $Sybase1_ONLINE == $Sybase1_OFFLINE ]; then
+echo "Now Oss is online on $RESULT and Sybase1 is online on $Sybase1_ONLINE"
+return 0
+break
+else
+echo "Oss and Sybase1 are still online on $RESULT"
+fi
+(( Timeout++ ))
+sleep 5
+done
+else
+echo "Oss is online on $RESULT and Sybase1 is online on $Sybase1_ONLINE hence no cleanup is required"
+return 0
+fi
+echo "Post Cleanup HASTATUS is as below:"
+HASTATUS=`/opt/VRTS/bin/hastatus -sum`
+echo "$HASTATUS"
+
+}

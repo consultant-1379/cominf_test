@@ -1,0 +1,37 @@
+set timeout 20
+
+spawn -noecho /ericsson/sdee/bin/manage_group.bsh -a -g nms
+/usr/local/bin/expect {
+	"LDAP Directory Manager password:" {
+	} timeout {
+		exit 1
+	}
+}
+sleep 0.15
+send "PPPPPPPP\r"
+/usr/local/bin/expect {
+	"Recover system group \\\[nms\\\]" {
+	} timeout {
+		exit 2
+	}
+}
+sleep 0.15
+send "Yes\r"
+/usr/local/bin/expect {
+	"INFO : Recovering LDAP entry for system group \\\[nms\\\]" {
+	} timeout {
+		exit 3
+	}
+}
+sleep 0.15
+send "\r"
+
+trap {
+	if [catch {wait -i -1} output] return
+	if {[lindex $output 3] != 0 } {
+		exit [lindex $output 3]
+	}
+} SIGCHLD
+
+set timeout 300
+/usr/local/bin/expect EOF

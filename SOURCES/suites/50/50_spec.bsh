@@ -1,0 +1,15 @@
+#!/bin/bash
+
+# TEST SUITE SPEC FILE
+# This file is generated/updated using the test framework web interface.
+# Manual updates on test servers are lost when the test package is re-installed.
+#
+# Last modified: Friday 25th of January 2013 16:36:23
+#
+SPEC_TS_NAME=DDC_Setup_enviornment_correct
+SPEC_TS_ID=50
+SPEC_TS_SLOGAN="Checks to see if the correct enviornment is set up on server for DDC"
+SPEC_TS_TIMEOUT=300
+SPEC_TS_AUTHOR="ejennco"
+SPEC_TS_INDEPENDENT=0
+SPEC_TS_TC_IDS=(656 858)

@@ -1,0 +1,6 @@
+01^/ericsson/sdee/bin/add_user.sh -t COM_APP -d vts.com^Unable to create user t116201
+02^/ericsson/sdee/bin/add_user.sh -t COM_APP -n t116202 -d vts.com^Unable to create user t116202
+03^/ericsson/sdee/bin/add_user.sh -t COM_APP -d vts.com -n t116203 -s 3000^Unable to create user t116203 with ID >=3000
+04^/ericsson/sdee/bin/add_user.sh -t COM_APP -d vts.com -n t116204 -s 1200 -e 1249^Unable to create user t116204 with ID >=1200 and <=1249
+05^/ericsson/sdee/bin/add_user.sh -t COM_APP -d vts.com -n t116205 -s 1200 -e 1249 -C "comment"^Unable to create user t116205 with given comment
+06^/ericsson/sdee/bin/add_user.sh -t COM_APP -d vts.com -n t116206 -i 1750 -C "Test user t116206"^Unable to create user t116206 with id 1650

@@ -1,0 +1,76 @@
+#!/bin/bash
+
+# TEST CASE SPEC FILE
+# This file is generated/updated using the test framework web interface.
+# Manual updates on test servers are lost when the test package is re-installed.
+#
+# Last modified: Tuesday 17th of December 2013 5:31:57
+#
+
+# These settings must be in BASH script format, they are sourced by other scripts.
+SPEC_FA_NAME="SOLARIS10SUNDS"
+SPEC_UC_NAME="SOLARIS10SUNDS_PICO_Auto_Integration_Support"
+SPEC_TC_ID=1661
+SPEC_TC_SLOGAN="Add \"bsimuser\" using COM_APP LDAP user template "
+SPEC_TC_TYPE="FT"
+SPEC_TC_POLARITY="positive"
+SPEC_TC_PRIORITY="high"
+SPEC_TC_AUTOMATED=0
+SPEC_TC_DEPENDENT_ONLY=0
+SPEC_TC_TIMEOUT=300
+SPEC_TC_TEST_PASSCODE=0
+SPEC_TC_AUTHOR="xvinkat"
+SPEC_TC_AUTOMATOR="xvinkat"
+# this parameter is not interpreted by harness
+SPEC_TC_DISABLED=0
+
+# Please do not remove the comment lines below.
+# They are used as section locators by the test harness.
+
+# BEGIN_PRE_CONDITIONS
+#<path to the testcase>
+#
+#SUN-DS/COM LDAP - User Management for 
+#COM-Enabled Nodes/PICO Auto integration support      
+# END_PRE_CONDITIONS
+
+
+# BEGIN_MANUAL_STEPS
+#1.Add “bsimuser” as below
+#
+#ldapadd -D "cn=directory manager" -w <password>
+#dn: uid=bsimuser,ou=people,dc=<ldap_domain_DN>
+#objectClass: top
+#objectClass: account
+#objectClass: shadowAccount
+#objectClass: posixAccount
+#objectClass: ericssonUserAuthentication
+#objectClass: ericssonUserAuthorization
+#uid: bsimuser
+#uidNumber: 274
+#userPassword: {SSHA}dmychrGjR+C/87sa5okjKGpltC+hGGZOgnHPTw==
+#gidNumber: 609
+#homeDirectory:
+#loginShell: /dev/null
+#cn: bsimuser
+#description: COM_APP user
+#
+#<Crtl-D>
+#
+#adding new entry uid=bsimuser,ou=people,dc=<ldap_domain_DN>
+#<Crtl-D>
+#
+#2.Try to add “bsimuder” to the local “nms” group using add_user_to_group.sh script.
+#
+#3.Try to add “bsimuder” to the local OSS LDAP groups using add_user_to_group.sh script.
+#
+# END_MANUAL_STEPS
+
+# BEGIN_POST_CONDITIONS
+#1.“bsimuser” is added successfully.
+#
+#2.“bsimuser” should be added to “nms” group successfully.
+#
+#3.“bsimuser” should not be added to he local OSS LDAP groups 
+#
+# END_POST_CONDITIONS

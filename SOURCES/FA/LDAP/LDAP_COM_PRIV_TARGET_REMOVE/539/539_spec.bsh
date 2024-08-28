@@ -1,0 +1,56 @@
+#!/bin/bash
+
+# TEST CASE SPEC FILE
+# This file is generated/updated using the test framework web interface.
+# Manual updates on test servers are lost when the test package is re-installed.
+#
+# Last modified: Friday 31st of May 2013 9:53:05
+#
+
+# These settings must be in BASH script format, they are sourced by other scripts.
+SPEC_FA_NAME="LDAP"
+SPEC_UC_NAME="LDAP_COM_PRIV_TARGET_REMOVE"
+SPEC_TC_ID=539
+SPEC_TC_SLOGAN="Delete target with invalid options"
+SPEC_TC_TYPE="FT"
+SPEC_TC_POLARITY="negative"
+SPEC_TC_PRIORITY="low"
+SPEC_TC_AUTOMATED=1
+SPEC_TC_DEPENDENT_ONLY=0
+SPEC_TC_TIMEOUT=300
+SPEC_TC_TEST_PASSCODE=0
+SPEC_TC_AUTHOR="xamamcg"
+SPEC_TC_AUTOMATOR="xamamcg"
+# this parameter is not interpreted by harness
+SPEC_TC_DISABLED=0
+
+# Please do not remove the comment lines below.
+# They are used as section locators by the test harness.
+
+# BEGIN_PRE_CONDITIONS
+#1. user u539 exists
+#2. role r539 exists
+#3. user u539 has target1
+# END_PRE_CONDITIONS
+
+
+# BEGIN_MANUAL_STEPS
+#1. !manage_COM_privs.bsh -r target -u u539 -T target2 -y
+#2. !manage_COM_privs.bsh -r targets -u u539 -T target1 -y
+#3. !manage_COM_privs.bsh -r target -u u539 -T target1 -n
+#4. !manage_COM_privs.bsh -r target -u u539 -T target1 -y -e
+#5. !manage_COM_privs.bsh -r target -u u539 -T target1 -d wrong.com -y
+#6. !manage_COM_privs.bsh -r target -u uNOTExist -T target1 - y
+#7. !manage_COM_privs.bsh -r target -u u539 -R r539 -y
+#
+# END_MANUAL_STEPS
+
+# BEGIN_POST_CONDITIONS
+#1. CONSOLE_OUTPUT_COUNT "Usage" 4
+#2. CONSOLE_OUTPUT_CONTAINS "ERROR : Target [target2] is not assigned to this user" 
+#3. CONSOLE_OUTPUT_CONTAINS "ERROR : Invalid modifier [targets] for action [remove]" 
+#4. CONSOLE_OUTPUT_CONTAINS "illegal option -- n" 
+#5. CONSOLE_OUTPUT_CONTAINS "illegal option -- e" 6. CONSOLE_OUTPUT_CONTAINS "Domain [wrong.com] does not exist" 7. CONSOLE_OUTPUT_CONTAINS "Requested user [uNOTExist] does not exist in domain" 
+#8.CONSOLE_OUTPUT_CONTAINS "Invalid option combination" 
+#
+# END_POST_CONDITIONS

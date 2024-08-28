@@ -1,0 +1,16 @@
+LDAP Directory Manager password:
+ldapadmin
+New local group name:
+g986REF1
+Continue to create account for local group
+n
+New local group name:
+g987RF33
+Start of gidNumber search range
+11300
+End of gidNumber search range
+12000
+New local group gidNumber
+11300
+Continue to create local group
+y

@@ -1,0 +1,46 @@
+#!/bin/bash
+
+# TEST CASE SPEC FILE
+# This file is generated/updated using the test framework web interface.
+# Manual updates on test servers are lost when the test package is re-installed.
+#
+# Last modified: Monday 16th of December 2013 8:58:14
+#
+
+# These settings must be in BASH script format, they are sourced by other scripts.
+SPEC_FA_NAME="SOLARIS10SMRS"
+SPEC_UC_NAME="SOLARIS10SMRS_Initial_Installation"
+SPEC_TC_ID=1293
+SPEC_TC_SLOGAN="WTMPX File Rotation on the SMRS MASTER on initial install"
+SPEC_TC_TYPE="FT"
+SPEC_TC_POLARITY="positive"
+SPEC_TC_PRIORITY="high"
+SPEC_TC_AUTOMATED=1
+SPEC_TC_DEPENDENT_ONLY=0
+SPEC_TC_TIMEOUT=300
+SPEC_TC_TEST_PASSCODE=0
+SPEC_TC_AUTHOR="xnavema"
+SPEC_TC_AUTOMATOR="xnavema"
+# this parameter is not interpreted by harness
+SPEC_TC_DISABLED=0
+
+# Please do not remove the comment lines below.
+# They are used as section locators by the test harness.
+
+# BEGIN_PRE_CONDITIONS
+#<PATH Under "Verification Specification for Cominf Feature Test for 14.0":Bi-directional SMRS Initial Installation/Server Installation>
+#<none>
+# END_PRE_CONDITIONS
+
+
+# BEGIN_MANUAL_STEPS
+#The /var/adm/wtmpx file on Solaris is not rotated by the OS and resides on the root disk for OSS-RC servers. On an SMRS server this file can become quite large due to the large number of SSH connections from nodes, particularly SIUs/STNs. 
+#An automated log rotation should be provided to handle deletion of old logs to avoid potential issues where the root disk may become full due to the size of the wtmpx file.
+#
+# END_MANUAL_STEPS
+
+# BEGIN_POST_CONDITIONS
+#There should be log file exist /var/adm/wtmpx 
+#The log shall be rotated once a week and the logs for 3 previous weeks shall be left on the server.
+#There must be an entry in the cronjob related to WTMPX
+# END_POST_CONDITIONS

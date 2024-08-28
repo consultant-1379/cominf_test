@@ -1,0 +1,62 @@
+#!/bin/bash
+
+# TEST CASE SPEC FILE
+# This file is generated/updated using the test framework web interface.
+# Manual updates on test servers are lost when the test package is re-installed.
+#
+# Last modified: Sunday 31st of March 2013 20:37:23
+#
+
+# These settings must be in BASH script format, they are sourced by other scripts.
+SPEC_FA_NAME="INSTALL"
+SPEC_UC_NAME="INSTALL_LINIRATOR_RERUN"
+SPEC_TC_ID=64
+SPEC_TC_SLOGAN="Re-run inirator on secondary and check has validation"
+SPEC_TC_TYPE="FT"
+SPEC_TC_POLARITY="positive"
+SPEC_TC_PRIORITY="high"
+SPEC_TC_AUTOMATED=0
+SPEC_TC_DEPENDENT_ONLY=0
+SPEC_TC_TIMEOUT=300
+SPEC_TC_TEST_PASSCODE=0
+SPEC_TC_AUTHOR="xamamcg"
+SPEC_TC_AUTOMATOR="xbahzam"
+# this parameter is not interpreted by harness
+SPEC_TC_DISABLED=0
+
+# Please do not remove the comment lines below.
+# They are used as section locators by the test harness.
+
+# BEGIN_PRE_CONDITIONS
+#1. RHEL_INSTALLED
+# END_PRE_CONDITIONS
+
+
+# BEGIN_MANUAL_STEPS
+#1. Run inirator and for each question answer an invalid value, and then when re-asked enter a valid value.
+#e.g.
+#a. NTP 1.1.1.1.1 then 1.1.1.1
+#b. DHCP required, F then y
+#c. DHCP IPv6 required, T then y
+#d. IPv6 address, 001::: then 001::
+#e. IPv6 subnet, rubbish, then 001::
+#f. DNS domain name, .??? then x.com
+#g. hostname of primary, 1234, then a1
+#h. LDAP Directory Manager DN, cn=1 then cn=DirMgr
+#i. 123456 for DN password, then 12345678 
+#j. 123456789 for confirm DN password, then 12345678 when asked to re-enter and confirm
+#k. As above 2 points but for repladm password
+#l. As above 2 points but for ldapadm password
+#m. 0 for number of domains, then 1
+#n. a for LDAP domain
+#o. 1hello for masterservice host, then hello
+#p. 1.1.1.1.1 for masterservice IP, then 1.1.1.1
+#q. As i,j but for mssync password
+#r. As i,j but for masadmin password
+#s. As i,j but for proxyagent password
+#t. Ctrl C for Is this correct?
+# END_MANUAL_STEPS
+
+# BEGIN_POST_CONDITIONS
+#1. CONSOLE_OUTPUT_CONTAINS error message for each error condition
+# END_POST_CONDITIONS

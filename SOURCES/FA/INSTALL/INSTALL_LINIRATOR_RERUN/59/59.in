@@ -1,0 +1,164 @@
+Enter Deployment type: (basic standard)
+STANDARD
+Enter Deployment type: (basic standard)
+
+Enter IP address of the NTP Source:
+255.256.1.1
+Enter IP address of the NTP Source:
+
+Do you want to setup DHCP on this server? (y n)
+a
+Do you want to setup DHCP on this server? (y n)
+
+Enter password for BSIM user bsim:
+1
+Enter password for BSIM user bsim:
+
+Confirm password for BSIM user bsim:
+1
+Enter password for BSIM user bsim:
+
+Confirm password for BSIM user bsim:
+
+Do you want to setup DHCP for IPv6 on this server? (y n)
+a
+Do you want to setup DHCP for IPv6 on this server? (y n)
+
+IPv6 address for
+AGH::
+IPv6 address for
+
+IPv6 subnet for
+AGH::
+IPv6 subnet for
+
+Enter DNS Domain Name <e.g. dns.companyname.com>:
+A-
+Enter DNS Domain Name <e.g. dns.companyname.com>:
+
+Enter the host name of the O&M Services Secondary:
+A-
+Enter the host name of the O&M Services Secondary:
+
+Enter the IP address of the O&M Services Secondary:
+1.1.1
+Enter the IP address of the O&M Services Secondary:
+
+Enter IPv6 address of the O&M Services Secondary:
+foobar
+Enter IPv6 address of the O&M Services Secondary:
+
+Enter the installation type (inst_type) of the O&M Services Secondary: (cominf security) 
+slave
+Enter the installation type (inst_type) of the O&M Services Secondary: (cominf security) 
+
+Enter root password of the O&M Services Secondary:
+
+Confirm root password of the O&M Services Secondary:
+1
+Enter root password of the O&M Services Secondary:
+
+Confirm root password of the O&M Services Secondary:
+
+Enter LDAP Directory Manager DN:
+abc=def
+Enter LDAP Directory Manager DN:
+
+LDAP Directory Manager DN password
+1
+LDAP Directory Manager DN password
+
+Confirm LDAP Directory Manager DN password:
+1
+LDAP Directory Manager DN password
+
+Confirm LDAP Directory Manager DN password:
+
+Enter password for LDAP replication user repladm:
+1
+Enter password for LDAP replication user repladm:
+
+Confirm password for LDAP replication user repladm:
+1
+Enter password for LDAP replication user repladm:
+
+Confirm password for LDAP replication user repladm:
+
+Enter password for LDAP user ldapadm:
+1
+Enter password for LDAP user ldapadm:
+
+Confirm password for LDAP user ldapadm:
+1
+Enter password for LDAP user ldapadm:
+
+Confirm password for LDAP user ldapadm:
+
+Enter number of LDAP domains to be configured (max=8):
+9
+Enter number of LDAP domains to be configured (max=8):
+
+Enter LDAP Domain Name #1:
+a-
+Enter LDAP Domain Name #1:
+
+Enter a unique name (lowercase) for the masterservice of the OSS RC system using
+123
+Enter a unique name (lowercase) for the masterservice of the OSS RC system using
+
+Enter IP address for the masterservice of the OSS RC system using 
+1.1.1.1.1
+Enter IP address for the masterservice of the OSS RC system using 
+
+Enter password for "cn=mssync,
+1
+Enter password for "cn=mssync,
+
+Confirm password for "cn=mssync,
+1
+Enter password for "cn=mssync,
+
+Confirm password for "cn=mssync,
+
+Enter password for "cn=msadmin,
+1
+Enter password for "cn=msadmin,
+
+Confirm password for "cn=msadmin,
+1
+Enter password for "cn=msadmin,
+
+Confirm password for "cn=msadmin,
+
+Enter password for "cn=proxyagent,
+1
+Enter password for "cn=proxyagent,
+
+Confirm password for "cn=proxyagent,
+1
+Enter password for "cn=proxyagent,
+
+Confirm password for "cn=proxyagent,
+
+Enter LDAP Domain Name #2:
+
+Enter a unique name (lowercase) for the masterservice of the OSS RC system using
+
+Enter IP address for the masterservice of the OSS RC system using 
+
+Enter password for "cn=mssync,
+
+Confirm password for "cn=mssync,
+
+Enter password for "cn=msadmin,
+
+Confirm password for "cn=msadmin,
+
+Enter password for "cn=proxyagent,
+
+Confirm password for "cn=proxyagent,
+
+Is this correct? 
+a 
+Is this correct? 
+ 

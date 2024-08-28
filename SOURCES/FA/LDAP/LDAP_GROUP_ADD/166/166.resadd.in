@@ -1,0 +1,10 @@
+LDAP Directory Manager password:
+PASSWD
+Start of gidNumber search range*
+
+End of gidNumber search range*
+
+New local group gidNumber*
+$GID
+Continue to create local group*
+y

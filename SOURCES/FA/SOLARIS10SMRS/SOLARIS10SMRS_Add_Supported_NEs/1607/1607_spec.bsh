@@ -1,0 +1,74 @@
+#!/bin/bash
+
+# TEST CASE SPEC FILE
+# This file is generated/updated using the test framework web interface.
+# Manual updates on test servers are lost when the test package is re-installed.
+#
+# Last modified: Tuesday 17th of December 2013 5:08:08
+#
+
+# These settings must be in BASH script format, they are sourced by other scripts.
+SPEC_FA_NAME="SOLARIS10SMRS"
+SPEC_UC_NAME="SOLARIS10SMRS_Add_Supported_NEs"
+SPEC_TC_ID=1607
+SPEC_TC_SLOGAN="Add WRAN RBS Nodes "
+SPEC_TC_TYPE="FT"
+SPEC_TC_POLARITY="positive"
+SPEC_TC_PRIORITY="high"
+SPEC_TC_AUTOMATED=0
+SPEC_TC_DEPENDENT_ONLY=0
+SPEC_TC_TIMEOUT=300
+SPEC_TC_TEST_PASSCODE=0
+SPEC_TC_AUTHOR="xnavema"
+SPEC_TC_AUTOMATOR="xnavema"
+# this parameter is not interpreted by harness
+SPEC_TC_DISABLED=0
+
+# Please do not remove the comment lines below.
+# They are used as section locators by the test harness.
+
+# BEGIN_PRE_CONDITIONS
+#Precondition
+#
+#FTP Service backup association is required for the creation of WRAN_RBSnode directories under WRAN
+#AIF user should be updated in the templet
+#
+# END_PRE_CONDITIONS
+
+
+# BEGIN_MANUAL_STEPS
+#Add WRAN_RBS nodes in ARNE. Check the directories are created for each WRAN_RBS node
+#added on SMRS master and slave/s
+#105 65-0580/01350- Creation of datastrips on
+#Conditional Test
+#
+#/opt/ericsson/arne/bin/import.sh -import -i_nau -f < WRAN RBS File Name>
+#
+# END_MANUAL_STEPS
+
+# BEGIN_POST_CONDITIONS
+#Acceptance Criteria
+#
+#OSS Master
+#/var/opt/ericsson/smrsstore/WRAN/< slavename>/Wran RBS node
+#/var/opt/ericsson/smrsstore/WRAN/< slavename>/Wran RBS node/NePersistent
+#/var/opt/ericsson/smrsstore/WRAN/< slavename>//Wran RBS node/NePersistentup
+#/var/opt/ericsson/smrsstore/WRAN/< slavename>//Wran RBS node/NePersistentdown
+#/var/opt/ericsson/smrsstore/WRAN/< slavename>//Wran RBS node/NePersistent/PM
+#SMRS Master
+#/export/WRAN< slavename>/< Wran RBS node File>
+#/export/WRAN< slavename>/< Wran RBS node File>/NePersistent
+#/export/WRAN< slavename>/< Wran RBS node File>/NePersistentup
+#/export/WRAN< slavename>/< Wran RBS node File>/NePersistentdown
+#/export/WRAN< slavename>/< Wran RBS node File>/NePersistentup/PM
+#SMRS slave
+#/export/WRAN< slavename>/< Wran EBS node Fil File>
+#/export/WRAN< slavename>/< Wran EBS node Fil>/NePersistent
+#/export/WRAN< slavename>/< Wran EBS node Fil>/NePersistentup
+#/export/WRAN< slavename>/< Wran EBS node Fil>/NePersistentdown
+#/export/WRAN< slavename>/< Wran EBS node Fil>/NePersistentup/PM
+#master
+#uid=nmsadm, gid=nms
+#SMRS servers:
+#uid=smrsuser, gid=nms?? 
+# END_POST_CONDITIONS

@@ -1,0 +1,194 @@
+Enter Deployment type: (basic standard) \\\[standard\\\] 
+standard
+Enter IP address of the NTP Source:
+1.1.1.1
+Do you want to setup DHCP on this server? (y n)
+y
+Enter password for BSIM user bsim:
+password
+Confirm password for BSIM user bsim:
+password
+Do you want to setup DHCP for IPv6 on this server? (y n)
+y
+IPv6 address for
+0001::
+IPv6 subnet for
+2001:1b70:82a1::/64
+Enter DNS Domain Name <e.g. dns.companyname.com>:
+x.com
+Enter the host name of the O&M Services Secondary:
+ab
+Enter the IP address of the O&M Services Secondary:
+1.1.1.1
+Enter IPv6 address of the O&M Services Secondary:
+2001:1b70:82a1:b:0:3008:36:1
+Enter the installation type (inst_type) of the O&M Services Secondary:
+cominf
+Enter root password of the O&M Services Secondary:
+password
+Confirm root password of the O&M Services Secondary:
+password
+Enter LDAP Directory Manager DN:
+cn=Directory Manager
+Enter LDAP Directory Manager DN password
+12345678
+Confirm LDAP Directory Manager DN password
+12345678
+Enter password for LDAP replication user repladm:
+12345678
+Confirm password for LDAP replication user repladm:
+12345678
+Enter password for LDAP user ldapadm:
+12345678
+Confirm password for LDAP user ldapadm:
+12345678
+Enter number of LDAP domains to be configured (max=8):
+8
+Enter LDAP Domain Name #1:
+a1.com
+Enter a unique name (lowercase) for the masterservice of the OSS RC system using
+myhost
+Enter IP address for the masterservice of the OSS RC system using
+1.1.1.1
+Enter password for "cn=mssync,dc=a1,dc=com":
+12345678
+Confirm password for "cn=mssync,dc=a1,dc=com":
+12345678
+Enter password for "cn=msadmin,dc=a1,dc=com":
+12345678
+Confirm password for "cn=msadmin,dc=a1,dc=com":
+12345678
+Enter password for "cn=proxyagent,ou=profile,dc=a1,dc=com":
+12345678
+Confirm password for "cn=proxyagent,ou=profile,dc=a1,dc=com":
+12345678
+Enter LDAP Domain Name #2:
+a1.com
+Enter LDAP Domain Name #2:
+a2.com
+Enter a unique name (lowercase) for the masterservice of the OSS RC system using 
+myhost2
+Enter IP address for the masterservice of the OSS RC system using
+1.1.1.1
+Enter password for "cn=mssync,dc=a2,dc=com":
+12345678
+Confirm password for "cn=mssync,dc=a2,dc=com":
+12345678
+Enter password for "cn=msadmin,dc=a2,dc=com":
+12345678
+Confirm password for "cn=msadmin,dc=a2,dc=com":
+12345678
+Enter password for "cn=proxyagent,ou=profile,dc=a2,dc=com":
+12345678
+Confirm password for "cn=proxyagent,ou=profile,dc=a2,dc=com":
+12345678
+Enter LDAP Domain Name #3:
+a3.com
+Enter a unique name (lowercase) for the masterservice of the OSS RC system using
+myhost3
+Enter IP address for the masterservice of the OSS RC system using
+1.1.1.1
+Enter password for "cn=mssync,dc=a3,dc=com":
+12345678
+Confirm password for "cn=mssync,dc=a3,dc=com":
+12345678
+Enter password for "cn=msadmin,dc=a3,dc=com":
+12345678
+Confirm password for "cn=msadmin,dc=a3,dc=com":
+12345678
+Enter password for "cn=proxyagent,ou=profile,dc=a3,dc=com":
+12345678
+Confirm password for "cn=proxyagent,ou=profile,dc=a3,dc=com":
+12345678
+Enter LDAP Domain Name #4:
+a4.com
+Enter a unique name (lowercase) for the masterservice of the OSS RC system using
+myhost4
+Enter IP address for the masterservice of the OSS RC system using
+1.1.1.1
+Enter password for "cn=mssync,dc=a4,dc=com":
+12345678
+Confirm password for "cn=mssync,dc=a4,dc=com":
+12345678
+Enter password for "cn=msadmin,dc=a4,dc=com":
+12345678
+Confirm password for "cn=msadmin,dc=a4,dc=com":
+12345678
+Enter password for "cn=proxyagent,ou=profile,dc=a4,dc=com":
+12345678
+Confirm password for "cn=proxyagent,ou=profile,dc=a4,dc=com":
+12345678
+Enter LDAP Domain Name #5
+a5.com
+Enter a unique name (lowercase) for the masterservice of the OSS RC system using
+myhost5
+Enter IP address for the masterservice of the OSS RC system using
+1.1.1.1
+Enter password for "cn=mssync,dc=a5,dc=com":
+12345678
+Confirm password for "cn=mssync,dc=a5,dc=com":
+12345678
+Enter password for "cn=msadmin,dc=a5,dc=com":
+12345678
+Confirm password for "cn=msadmin,dc=a5,dc=com":
+12345678
+Enter password for "cn=proxyagent,ou=profile,dc=a5,dc=com":
+12345678
+Confirm password for "cn=proxyagent,ou=profile,dc=a5,dc=com":
+12345678
+Enter LDAP Domain Name #6:
+a6.com
+Enter a unique name (lowercase) for the masterservice of the OSS RC system using
+myhost6
+Enter IP address for the masterservice of the OSS RC system using
+1.1.1.1
+Enter password for "cn=mssync,dc=a6,dc=com":
+12345678
+Confirm password for "cn=mssync,dc=a6,dc=com":
+12345678
+Enter password for "cn=msadmin,dc=a6,dc=com":
+12345678
+Confirm password for "cn=msadmin,dc=a6,dc=com":
+12345678
+Enter password for "cn=proxyagent,ou=profile,dc=a6,dc=com":
+12345678
+Confirm password for "cn=proxyagent,ou=profile,dc=a6,dc=com":
+12345678
+Enter LDAP Domain Name #7:
+a7.com
+Enter a unique name (lowercase) for the masterservice of the OSS RC system using
+myhost7
+Enter IP address for the masterservice of the OSS RC system using
+1.1.1.1
+Enter password for "cn=mssync,dc=a7,dc=com":
+12345678
+Confirm password for "cn=mssync,dc=a7,dc=com":
+12345678
+Enter password for "cn=msadmin,dc=a7,dc=com":
+12345678
+Confirm password for "cn=msadmin,dc=a7,dc=com":
+12345678
+Enter password for "cn=proxyagent,ou=profile,dc=a7,dc=com":
+12345678
+Confirm password for "cn=proxyagent,ou=profile,dc=a7,dc=com":
+12345678
+Enter LDAP Domain Name #8:
+a8.com
+Enter a unique name (lowercase) for the masterservice of the OSS RC system using
+myhost8
+Enter IP address for the masterservice of the OSS RC system using
+1.1.1.1
+Enter password for "cn=mssync,dc=a8,dc=com":
+12345678
+Confirm password for "cn=mssync,dc=a8,dc=com":
+12345678
+Enter password for "cn=msadmin,dc=a8,dc=com":
+12345678
+Confirm password for "cn=msadmin,dc=a8,dc=com":
+12345678
+Enter password for "cn=proxyagent,ou=profile,dc=a8,dc=com":
+12345678
+Confirm password for "cn=proxyagent,ou=profile,dc=a8,dc=com":
+12345678
+Is this correct? ( y n )
+\003

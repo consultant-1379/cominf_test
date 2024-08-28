@@ -1,0 +1,44 @@
+#!/bin/bash
+
+# TEST CASE SPEC FILE
+# This file is generated/updated using the test framework web interface.
+# Manual updates on test servers are lost when the test package is re-installed.
+#
+# Last modified: Tuesday 14th of May 2013 10:35:19
+#
+
+# These settings must be in BASH script format, they are sourced by other scripts.
+SPEC_FA_NAME="LDAP"
+SPEC_UC_NAME="LDAP_COM_PRIV_TARGET_REMOVE"
+SPEC_TC_ID=525
+SPEC_TC_SLOGAN="Remove non-last target in case insensitive way on a com_app user"
+SPEC_TC_TYPE="FT"
+SPEC_TC_POLARITY="positive"
+SPEC_TC_PRIORITY="high"
+SPEC_TC_AUTOMATED=1
+SPEC_TC_DEPENDENT_ONLY=0
+SPEC_TC_TIMEOUT=300
+SPEC_TC_TEST_PASSCODE=0
+SPEC_TC_AUTHOR="xamamcg"
+SPEC_TC_AUTOMATOR="xamamcg"
+# this parameter is not interpreted by harness
+SPEC_TC_DISABLED=0
+
+# Please do not remove the comment lines below.
+# They are used as section locators by the test harness.
+
+# BEGIN_PRE_CONDITIONS
+#1. User u525 exists in 1.com of type com_app
+#2. User u525 has targets target1 
+#3. Role r525 and r525b exists
+#4. User u525 has role r525b added on target target2
+# END_PRE_CONDITIONS
+
+
+# BEGIN_MANUAL_STEPS
+#1. manage_COM_privs.bsh -r target -u u525 -T TARGET2 -d 1.com -y
+# END_MANUAL_STEPS
+
+# BEGIN_POST_CONDITIONS
+#1. list user -u u525 -d 1.com shows that user has target1 only and role r525
+# END_POST_CONDITIONS

@@ -1,0 +1,15 @@
+#!/bin/bash
+
+# TEST SUITE SPEC FILE
+# This file is generated/updated using the test framework web interface.
+# Manual updates on test servers are lost when the test package is re-installed.
+#
+# Last modified: Tuesday 18th of June 2013 11:43:34
+#
+SPEC_TS_NAME=xramharTS2
+SPEC_TS_ID=53
+SPEC_TS_SLOGAN="test"
+SPEC_TS_TIMEOUT=300
+SPEC_TS_AUTHOR="xramhar"
+SPEC_TS_INDEPENDENT=0
+SPEC_TS_TC_IDS=(945)

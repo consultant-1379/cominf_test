@@ -1,0 +1,15 @@
+#!/bin/bash
+
+# TEST SUITE SPEC FILE
+# This file is generated/updated using the test framework web interface.
+# Manual updates on test servers are lost when the test package is re-installed.
+#
+# Last modified: Friday 4th of October 2013 5:36:57
+#
+SPEC_TS_NAME=File_System_Check_Expansion
+SPEC_TS_ID=59
+SPEC_TS_SLOGAN="Check file system sizes for post install"
+SPEC_TS_TIMEOUT=300
+SPEC_TS_AUTHOR="xnatsha"
+SPEC_TS_INDEPENDENT=0
+SPEC_TS_TC_IDS=(642 925 927)

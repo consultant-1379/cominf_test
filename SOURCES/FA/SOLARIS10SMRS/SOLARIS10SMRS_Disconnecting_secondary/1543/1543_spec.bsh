@@ -1,0 +1,54 @@
+#!/bin/bash
+
+# TEST CASE SPEC FILE
+# This file is generated/updated using the test framework web interface.
+# Manual updates on test servers are lost when the test package is re-installed.
+#
+# Last modified: Monday 16th of December 2013 11:51:27
+#
+
+# These settings must be in BASH script format, they are sourced by other scripts.
+SPEC_FA_NAME="SOLARIS10SMRS"
+SPEC_UC_NAME="SOLARIS10SMRS_Disconnecting_secondary"
+SPEC_TC_ID=1543
+SPEC_TC_SLOGAN="Verify By Logging into deleted "
+SPEC_TC_TYPE="FT"
+SPEC_TC_POLARITY="positive"
+SPEC_TC_PRIORITY="high"
+SPEC_TC_AUTOMATED=0
+SPEC_TC_DEPENDENT_ONLY=0
+SPEC_TC_TIMEOUT=300
+SPEC_TC_TEST_PASSCODE=0
+SPEC_TC_AUTHOR="xsougha"
+SPEC_TC_AUTOMATOR="xsougha"
+# this parameter is not interpreted by harness
+SPEC_TC_DISABLED=0
+
+# Please do not remove the comment lines below.
+# They are used as section locators by the test harness.
+
+# BEGIN_PRE_CONDITIONS
+#OSS Master server should be disconnected from SMRS Master
+#
+#<Path under "Verification Specification for Cominf Feature Test for 14.0":
+#
+#Dismantling Bi-directional SMRS/Disconnecting secondary and 3rd from SMRS 
+#>
+# END_PRE_CONDITIONS
+
+
+# BEGIN_MANUAL_STEPS
+#Try logging in to NESS from with FTP users after deleting Secondary or 3rd .
+#
+#sftp < username>@IP smrs Master
+#
+# END_MANUAL_STEPS
+
+# BEGIN_POST_CONDITIONS
+#you should not be able to login to
+#check smrs_nfs should be disabled after deleting the SMRS service
+#svcs smrs_nfs on
+#disabled 12:58:53 svc:/ericsson/smrs/smrs_nfs:default
+#cat /etc/mnttab | grep zfs on
+#no NFS mounts should be mounted on the server. 
+# END_POST_CONDITIONS

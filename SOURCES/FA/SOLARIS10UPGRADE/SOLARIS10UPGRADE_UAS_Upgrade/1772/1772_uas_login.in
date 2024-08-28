@@ -1,0 +1,8 @@
+Password
+shroot
+#
+scp -o StrictHostKeyChecking=no /var/tmp/counter /var/tmp/masterkey /ericsson/ocs/etc/libpam_eric_sso.so /ericsson/ocs/etc/counter.template /ericsson/ocs/etc/masterkey.template /usr/lib/security/libpam_eric_sso.so root@omsrvm:/var/tmp/files/
+Password
+shroot
+#
+exit

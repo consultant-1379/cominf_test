@@ -1,0 +1,221 @@
+#!/bin/bash
+#################################################################################
+#
+#
+#       COPYRIGHT (C) ERICSSON RADIO SYSTEMS AB, Sweden
+#
+#       The copyright to the document(s) herein is the property of
+#       Ericsson Radio Systems AB, Sweden.
+#
+#       The document(s) may be used and/or copied only with the written
+#       permission from Ericsson Radio Systems AB or in accordance with
+#       the terms and conditions stipulated in the agreement/contract
+#       under which the document(s) have been supplied.
+#
+#################################################################################
+
+
+# ATCOMINF Test Callback Library
+
+# Revision History
+# <date>	<signum>	<details>
+
+# Complete the callbacks in this library to automate the test case.
+#
+# Callbacks are stateless, it is not possible to set a global variable in one callback 
+# and access it it in another.
+#
+# Callbacks are called by the test harness in the following order:
+#
+# tc_setup() 		# Called only for independent TC execution mode to setup TC
+# tc_precon()		# Conditions that should exist before TC can run
+# tc_test()		# Runs the test for this TC
+# tc_postcon()		# Conditions that should/should not exist after successful TC 
+# tc_cleanup()		# Called only for independent TC execution mode to cleanup after TC
+
+# All callbacks must PASS for a TC PASS result
+
+#################################################################################
+#
+# CALLBACK: TC_SETUP
+#
+# This callback function is only called if the harness execution mode is 'AT_INDEPENDENT'
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_setup() {
+
+	# Coded to fail in case TC_AUTOMATED=1 before automation completed
+	# Change return code as required
+
+	return 0
+
+}
+#################################################################################
+
+#################################################################################
+#
+# CALLBACK: TC_PRECON
+#
+# This callback function checks the correct conditions exist to run the TC.
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+ 
+tc_precon() {
+
+	# Coded to fail in case TC_AUTOMATED=1 before automation completed
+	# Change return code as required
+IsIIorUpgradeSuccessful
+VALUE=$?
+echo "++++++++++++++++++++++++++++++++++++++Value=$VALUE+++++++++++++++++++++++++"
+
+if [ "$VALUE" -eq "1" -o "$VALUE" -eq "2" ]; then
+   return 0
+else
+   return 1
+fi
+	return 0 
+
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_TEST
+#
+# This callback function runs the test.
+# The harness compares the return code to the SPEC_TC_TEST_PASSCODE value set in the test spec.
+#
+# Return or exit codes:
+#    SPEC_TC_TEST_PASSCODE 	success
+# != SPEC_TC_TEST_PASSCODE 	failure
+ 
+tc_test() {
+
+	# Coded to fail in case TC_AUTOMATED=1 before automation complete
+	# Change return code as required
+
+HOSTNAME=`/bin/hostname`
+RESULT=`cat /etc/hosts | grep priv | grep -v "$HOSTNAME" | awk -F" " '{print $2}' | cut -d"-" -f1`
+echo $RESULT
+
+
+if [ $? -ne 0 ]
+        then
+                echo "Error in getting admin2 hostname details"
+                return 1
+        fi
+
+#. ${WORKSPACE}/SOURCES/build_scripts/nfd/etc/atrcxb2787_88_log.env
+#RESULT=$CI_ADMIN2_HOSTNAME
+
+ssh root@$RESULT-priv <<!
+SLU_EXCEPTIONS="metainit: d70:\
+|ERROR: Unable to determine boot environment name from\
+|description provided\
+|ERROR: Failed to patch Live Upgrade on BE <d70>\
+|The Solaris upgrade of the boot environment <d10> is\
+|complete\
+|ERROR: Cannot unmount miniroot at </cdrom/cif_solaris_10_d\
+|vd/s0/Solaris_10/Tools/Boot>\
+|ERROR: Cannot unmount miniroot at </cdrom/cif_solaris_10_d\
+|vd/s0/Solaris_10/Tools/Boot>\
+|ERROR: Unable to mount failsafe archive Configuring\
+|failsafe for system\
+|145007-02\
+|Checking installed patches..\
+|Executing prepatch script...\
+|usr/lib/patch/patchadd[27]:\
+|177^J163^J181^J163^J163^J163^J172^J172^J172^J1526: syntax\
+|error\
+|Installing patch packages...\
+|Patch 145007-02 has been successfully installed.\
+|ERROR: The package <CPQary3> is currently\
+|installed on the system in the global zone only\
+|When this package was last installed the -G option\
+|was used (install package in the global zone only).\
+|The new instance of this package to be installed may\
+|only be installed in all zones.\
+|Before you can install the latest version of this\
+|package, you must first remove all instances of this\
+|package from the global zone (via pkgrm).\
+|pkgadd: ERROR: package <CPQary3> cannot be installed\
+|on this system/zone pkgadd return code = 1\
+|Doing pkgadd of SUNWjato to \
+|Installation of SUNWjato version 2.1.2 stopped because\
+|version 2.1.5 is already installed and will not be\
+|downgraded.\
+|pkgadd: ERROR: checkinstall script did not complete\
+|successfully\
+"
+SLU_KNOWN_ERRORS="WARNING: This form of metainit is not
+|recommended
+"
+cd /var/opt/ericsson/usck/log
+ls -ltr|tail -1|awk -F" " '{print $NF}'
+dir=`ls -ltr|tail -1|awk -F" " '{print $NF}'`
+cd $dir
+egrep -i "error|warning|fail" * > /tmp/file_log
+chmod u+x /tmp/file_log
+egrep -v '($slu_exceptions|$slu_known_errors|pre_sys_upg_check|split_cluster.log|system_checks|split_cluster)' /tmp/file_log >/tmp/test1
+if [ ! -s /tmp/test1 ]
+then
+echo "No errors and warnings"
+else
+echo "Errors are there in slulog files"
+uniq /tmp/test
+fi
+!
+return 0
+
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_POSTCON
+#
+# This callback function checks expected results.
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_postcon() {
+
+	# Coded to fail in case TC_AUTOMATED=1 before automation complete.
+	# Change return code as required
+
+	return 0 
+
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_CLEANUP
+#
+# This callback function is only called if the harness execution mode is 'AT_INDEPENDENT'
+# 
+# This callback restores the target system to the state it was in before the TC 
+# was run. It rolls back changes made by callbacks tc_setup() and tc_test()
+# 
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_cleanup() {
+
+	# Coded to fail in case TC_AUTOMATED=1 before automation complete
+	# Change return code as required
+
+	return 0 
+
+}

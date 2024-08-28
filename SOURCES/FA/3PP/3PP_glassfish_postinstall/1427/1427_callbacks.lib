@@ -1,0 +1,204 @@
+#!/bin/bash
+#################################################################################
+#
+#
+#       COPYRIGHT (C) ERICSSON RADIO SYSTEMS AB, Sweden
+#
+#       The copyright to the document(s) herein is the property of
+#       Ericsson Radio Systems AB, Sweden.
+#
+#       The document(s) may be used and/or copied only with the written
+#       permission from Ericsson Radio Systems AB or in accordance with
+#       the terms and conditions stipulated in the agreement/contract
+#       under which the document(s) have been supplied.
+#
+#################################################################################
+
+
+# ATCOMINF Test Callback Library
+
+# Revision History
+# <date>	<signum>	<details>
+
+# Complete the callbacks in this library to automate the test case.
+#
+# Callbacks are stateless, it is not possible to set a global variable in one callback 
+# and access it it in another.
+#
+# Callbacks are called by the test harness in the following order:
+#
+# tc_setup() 		# Called only for independent TC execution mode to setup TC
+# tc_precon()		# Conditions that should exist before TC can run
+# tc_test()		# Runs the test for this TC
+# tc_postcon()		# Conditions that should/should not exist after successful TC 
+# tc_cleanup()		# Called only for independent TC execution mode to cleanup after TC
+
+# All callbacks must PASS for a TC PASS result
+
+#################################################################################
+#
+# CALLBACK: TC_SETUP
+#
+# This callback function is only called if the harness execution mode is 'AT_INDEPENDENT'
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_setup() {
+
+	# Coded to fail in case TC_AUTOMATED=1 before automation completed
+	# Change return code as required
+
+	return 0
+
+}
+#################################################################################
+
+#################################################################################
+#
+# CALLBACK: TC_PRECON
+#
+# This callback function checks the correct conditions exist to run the TC.
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+ 
+tc_precon() {
+
+	# Coded to fail in case TC_AUTOMATED=1 before automation completed
+	# Change return code as required
+
+	return 0
+
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_TEST
+#
+# This callback function runs the test.
+# The harness compares the return code to the SPEC_TC_TEST_PASSCODE value set in the test spec.
+#
+# Return or exit codes:
+#    SPEC_TC_TEST_PASSCODE 	success
+# != SPEC_TC_TEST_PASSCODE 	failure
+ 
+tc_test() {
+
+	# Coded to fail in case TC_AUTOMATED=1 before automation complete
+	# Change return code as required
+
+	#return 0
+        retcode=0 
+
+
+        everythingOk()
+        {
+        if test $? -ne 0
+        then
+               echo $1
+               retcode=$(($retcode+1))
+        else
+                echo "\c"
+        fi
+        }
+
+        echo "Verify the status of the Glassfish service...\t\c"
+
+        GFISH_STATUS=`/usr/bin/svcs glassfish`
+
+        everythingOk "Failed get status of Glassfish service."
+
+        # The output should contain "online"
+        case "$GFISH_STATUS" in
+                *online*) echo "Glassfish is online." ;;
+                *) echo "***FAIL*** Glassfish doesn't look right: \n$GFISH_STATUS"
+                * exit 1;;
+        esac
+       
+       echo -e  "\nVerify Expected Applications are deployed to Glassfish"
+
+       DEPLOYED_APPS=`/opt/ericsson/nms_soapirp/etc/unsupported/bin/listDeployedApplications.sh`
+       EXPECTED_APPS="SoapAuthorityService SoapNotificationIRP SoapBulkCMIRP RestCM-ear-1.1.1 pms_compApplication nms_shm pss com.ericsson.oss.common.alarm.manager.webapp"
+        # Tempoarily remove SoapBasicCMIRP  TR HR47532 Open 
+        
+        # Check if PMTRACE package is installed,  if Yes add pmTrace_WebServices to EXPECTED APPS
+        pkginfo ERICpmtrace > /dev/null 2>&1
+        if [ $? -eq 0 ]; then
+                EXPECTED_APPS="$EXPECTED_APPS  pmTrace_WebServices"
+        fi
+
+        
+
+        for app in $EXPECTED_APPS; do
+
+                # The output should contain "$app"
+                case "$DEPLOYED_APPS" in
+                        *$app*) echo "$app deployed to glassfish." ;;
+                        *)  echo "***FAIL*** Could not find expected application $app. "
+                        retcode=$(($retcode+1))
+                        ;;
+                esac
+        done
+        
+
+        if [ $retcode -ne 0 ]; then
+               echo -e "One or more Application Deployments to Glassfish is not as expected "
+               return 1
+        else
+               return 0
+        fi
+ 
+
+        
+
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_POSTCON
+#
+# This callback function checks expected results.
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_postcon() {
+
+	# Coded to fail in case TC_AUTOMATED=1 before automation complete.
+	# Change return code as required
+
+	return 0
+
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_CLEANUP
+#
+# This callback function is only called if the harness execution mode is 'AT_INDEPENDENT'
+# 
+# This callback restores the target system to the state it was in before the TC 
+# was run. It rolls back changes made by callbacks tc_setup() and tc_test()
+# 
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_cleanup() {
+
+	# Coded to fail in case TC_AUTOMATED=1 before automation complete
+	# Change return code as required
+
+	return 0
+
+}

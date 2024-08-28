@@ -1,0 +1,77 @@
+#!/bin/bash
+
+# TEST CASE SPEC FILE
+# This file is generated/updated using the test framework web interface.
+# Manual updates on test servers are lost when the test package is re-installed.
+#
+# Last modified: Tuesday 14th of May 2013 14:11:26
+#
+
+# These settings must be in BASH script format, they are sourced by other scripts.
+SPEC_FA_NAME="LDAP"
+SPEC_UC_NAME="LDAP_PASSWORD_POLICY_LIST"
+SPEC_TC_ID=496
+SPEC_TC_SLOGAN="Verify list functionality of manage_pwd_policy.bsh"
+SPEC_TC_TYPE="FT"
+SPEC_TC_POLARITY="positive"
+SPEC_TC_PRIORITY="high"
+SPEC_TC_AUTOMATED=1
+SPEC_TC_DEPENDENT_ONLY=0
+SPEC_TC_TIMEOUT=300
+SPEC_TC_TEST_PASSCODE=0
+SPEC_TC_AUTHOR="edavmax"
+SPEC_TC_AUTOMATOR="edavmax"
+# this parameter is not interpreted by harness
+SPEC_TC_DISABLED=0
+
+# Please do not remove the comment lines below.
+# They are used as section locators by the test harness.
+
+# BEGIN_PRE_CONDITIONS
+#- LDAP_SERVER_UP
+#- LDAP_DOMAIN_EXISTS 1.com
+#- LDAP_DOMAIN_EXISTS 2.com
+#- LDAP_DOMAIN_EXISTS globaldomain
+#- Password policy is enabled for 1.com
+# END_PRE_CONDITIONS
+
+
+# BEGIN_MANUAL_STEPS
+#- Log into OM Services Primary as root
+#
+#- Verify the status list function
+#
+#manage_pwd_policy.bsh -l status
+#
+#CONSOLE_OUTPUT_CONTAINS "Password Policy for [1.com] - ENABLED"
+#CONSOLE_OUTPUT_CONTAINS "Password Policy for [2.com] - ENABLED"
+#CONSOLE_OUTPUT_CONTAINS "Password Policy for [globaldomain] - ENABLED"
+#
+#- Disable the  password policy for 1.com as follows
+#manage_pwd_policy.bsh -m disable -d 1.com -y
+#
+#- Verify "list" function reports policy is disabled
+#
+#manage_pwd_policy.bsh -l domain -d 1.com
+#
+#CONSOLE_OUTPUT_CONTAINS "Password Policy for [1.com] - DISABLED"
+#
+#- Re-enable the policy:
+#manage_pwd_policy.bsh -m disable -d 1.com -y
+#
+#- Verify "list" function reports policy is enabled
+#
+#manage_pwd_policy.bsh -l domain -d 1.com
+#CONSOLE_OUTPUT_CONTAINS "Password Policy for [1.com] - ENABLED"
+#
+#-Verify default policy list function
+#manage_pwd_policy.bsh -l default
+#
+#CONSOLE_OUTPUT_CONTAINS "Default Password Policy"
+#
+#
+# END_MANUAL_STEPS
+
+# BEGIN_POST_CONDITIONS
+#none
+# END_POST_CONDITIONS

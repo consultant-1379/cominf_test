@@ -1,0 +1,246 @@
+#!/bin/bash
+#################################################################################
+#
+#
+#       COPYRIGHT (C) ERICSSON RADIO SYSTEMS AB, Sweden
+#
+#       The copyright to the document(s) herein is the property of
+#       Ericsson Radio Systems AB, Sweden.
+#
+#       The document(s) may be used and/or copied only with the written
+#       permission from Ericsson Radio Systems AB or in accordance with
+#       the terms and conditions stipulated in the agreement/contract
+#       under which the document(s) have been supplied.
+#
+#################################################################################
+
+
+# ATCOMINF Test Callback Library
+
+# Revision History
+# <17/09/2013>	<epatnat>	<details>
+
+# Complete the callbacks in this library to automate the test case.
+#
+# Callbacks are stateless, it is not possible to set a global variable in one callback 
+# and access it it in another.
+#
+# Callbacks are called by the test harness in the following order:
+#
+# tc_setup() 		# Called only for independent TC execution mode to setup TC
+# tc_precon()		# Conditions that should exist before TC can run
+# tc_test()		# Runs the test for this TC
+# tc_postcon()		# Conditions that should/should not exist after successful TC 
+# tc_cleanup()		# Called only for independent TC execution mode to cleanup after TC
+
+# All callbacks must PASS for a TC PASS result
+
+#################################################################################
+#
+# CALLBACK: TC_SETUP
+#
+# This callback function is only called if the harness execution mode is 'AT_INDEPENDENT'
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_setup() {
+
+	# Coded to fail in case TC_AUTOMATED=1 before automation completed
+	# Change return code as required
+
+	return 0
+
+}
+#################################################################################
+
+#################################################################################
+#
+# CALLBACK: TC_PRECON
+#
+# This callback function checks the correct conditions exist to run the TC.
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+ 
+tc_precon() {
+
+	# Coded to fail in case TC_AUTOMATED=1 before automation completed
+	# Change return code as required
+        svcs -a |grep -i nameservice | grep online
+        nameservice=$?
+        svcs -a |grep -i notif | grep online
+        notif_service=$?
+
+        if [ $nameservice -ne 0 ] || [ $notif_service -ne 0 ]; then
+           return 1
+         else
+           return 0
+           echo "Services are up and running"
+        fi
+
+        return 0
+
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_TEST
+#
+# This callback function runs the test.
+# The harness compares the return code to the SPEC_TC_TEST_PASSCODE value set in the test spec.
+#
+# Return or exit codes:
+#    SPEC_TC_TEST_PASSCODE 	success
+# != SPEC_TC_TEST_PASSCODE 	failure
+ 
+tc_test() {
+
+	# Coded to fail in case TC_AUTOMATED=1 before automation complete
+	# Change return code as required
+         
+# Init --------------------------------------------
+RETURN_STATUS=0
+
+while getopts ":d" option
+do
+    case $option in
+        d) DEBUG=1;;
+   esac
+done
+
+if [ $DEBUG ]; then
+    set -x
+fi
+# -------------------------------------------------
+
+
+# Mandatory information ---------------------------
+echo [OUTPUT:TESTCASENAME:Openf_3PP_TC_22]
+echo [OUTPUT:TESTCASEDESCRIPTION:Test the notification push]
+echo [OUTPUT:SCRIPTVERSION:PA1]
+# -------------------------------------------------
+
+
+# Do the test -------------------------------------
+#
+echo $PATH
+set -a 
+. /etc/opt/ericsson/system.env
+
+PATH=$PATH\:/opt/prismtech/openfusion/bin:/usr/local/bin ; export PATH
+
+#server -start NotificationService
+#export DISPLAY=localhost:10.0
+echo $PATH 
+#xterm -l -lf /var/tmp/pc_push.log -e run -Djava.awt.headless=true com.prismt.cos.CosNotification.examples.Push.MyPushConsumer &
+
+screen -L -S local -d -m  run  com.prismt.cos.CosNotification.examples.Push.MyPushConsumer &
+echo $?
+run com.prismt.cos.CosNotification.examples.Push.MyPushSupplier > /var/tmp/ps_push.log
+echo $?
+
+more /var/tmp/pc_push.log |grep -i 100
+if [ $? -ne 0 ]; then
+
+sleep 45
+fi
+mv /var/tmp/platform_taf/FA/3PP/3PP_OPENFUSION__POSTINSTALL/1059/screenlog.0  /var/tmp/pc_push.log
+
+
+grep "Pushed event" /var/tmp/ps_push.log > /var/tmp/pushed_events
+rm /var/tmp/ps_push.log
+
+grep "Received event" /var/tmp/pc_push.log > /var/tmp/received_events
+rm /var/tmp/pc_push.log
+
+# -------------------------------------------------
+
+PUSHED=`wc -l /var/tmp/pushed_events | nawk '{print $1}'`
+echo ${PUSHED}
+RECEIVED=`wc -l /var/tmp/received_events | nawk '{print $1}'`
+echo ${RECEIVED}
+rm /var/tmp/received_events /var/tmp/pushed_events
+
+SCREEN_ID=`ps -aef | grep -i screen | grep -v grep | nawk '{print $2}'`
+echo $SCREEN_ID
+OUT=$?
+#PROCESS_ID=`ps -aef | grep -i screen | nawk '{print $2}'`
+
+if [ ${OUT} -eq 0 ] ; then
+       screen -S ${SCREEN_ID}.local -p 0 -X quit
+fi
+
+if [[ ${PUSHED} -eq ${RECEIVED} ]]; then
+        RETURN_STATUS=0
+        RETURN_STATUS_REASON="Success. Matching number of events"
+
+else
+       RETURN_STATUS=1
+       RETURN_STATUS_REASON="Matching number of events not found"
+fi
+
+
+# Return status and reason ------------------------
+#if [ "$RETURN_STATUS_REASON" ]; then
+ # echo [OUTPUT:REASON:$RETURN_STATUS_REASON]
+#fi
+
+#exit $RETURN_STATUS
+# -------------------------------------------------
+
+if [ ${RETURN_STATUS} -eq 0 ]; then 
+	return 0 
+else 
+        return 1
+fi
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_POSTCON
+#
+# This callback function checks expected results.
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_postcon() {
+
+	# Coded to fail in case TC_AUTOMATED=1 before automation complete.
+	# Change return code as required
+
+	return 0
+
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_CLEANUP
+#
+# This callback function is only called if the harness execution mode is 'AT_INDEPENDENT'
+# 
+# This callback restores the target system to the state it was in before the TC 
+# was run. It rolls back changes made by callbacks tc_setup() and tc_test()
+# 
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_cleanup() {
+
+	# Coded to fail in case TC_AUTOMATED=1 before automation complete
+	# Change return code as required
+
+	return 0
+
+}

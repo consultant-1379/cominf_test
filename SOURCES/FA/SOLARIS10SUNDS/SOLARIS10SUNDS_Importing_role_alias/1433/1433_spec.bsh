@@ -1,0 +1,105 @@
+#!/bin/bash
+
+# TEST CASE SPEC FILE
+# This file is generated/updated using the test framework web interface.
+# Manual updates on test servers are lost when the test package is re-installed.
+#
+# Last modified: Monday 16th of December 2013 10:49:43
+#
+
+# These settings must be in BASH script format, they are sourced by other scripts.
+SPEC_FA_NAME="SOLARIS10SUNDS"
+SPEC_UC_NAME="SOLARIS10SUNDS_Importing_role_alias"
+SPEC_TC_ID=1433
+SPEC_TC_SLOGAN="Importing role aliases "
+SPEC_TC_TYPE="FT"
+SPEC_TC_POLARITY="positive"
+SPEC_TC_PRIORITY="high"
+SPEC_TC_AUTOMATED=1
+SPEC_TC_DEPENDENT_ONLY=0
+SPEC_TC_TIMEOUT=300
+SPEC_TC_TEST_PASSCODE=0
+SPEC_TC_AUTHOR="xvinkat"
+SPEC_TC_AUTOMATOR="xvinkat"
+# this parameter is not interpreted by harness
+SPEC_TC_DISABLED=0
+
+# Please do not remove the comment lines below.
+# They are used as section locators by the test harness.
+
+# BEGIN_PRE_CONDITIONS
+#<path to the testcase>
+#
+#
+#SUN-DS/COM LDAP - User Management for 
+#COM-Enabled Nodes/Management of role/role alias/proxy agents
+#/Importing role/rolealias using COM import file    
+# END_PRE_CONDITIONS
+
+
+# BEGIN_MANUAL_STEPS
+#1. Prepare node export file with the below format by giving bulk roles and aliases to be loaded in to COM branch of the domain.
+#
+#
+#DOMAIN <LDAP_domain_name>
+#ROLE <role1>,<role2>,...<roleN>
+#ALIAS <alias1> <role1>,<role2>,...<roleN>
+#ALIAS <alias2> <role1>,<role2>,...<roleN>
+#.
+#.
+#ALIAS <aliasN> <role1>,<role2>,...<roleN>
+#
+#
+#
+#2. Validate and import a node export file in APPEND mode as below
+##/ericsson/sdee/bin/manage_COM.bsh -a import -d <LDAP_domain> -f <path_to_node_export_file>
+#
+#3.Add few roles and aliases in the export file and validate and import a node export file in OVERWRITE mode as below
+##/ericsson/sdee/bin/manage_COM.bsh -a import -d <LDAP_domain> -f <path_to_node_export_file> -o
+#
+#4.Check In both modes(append ,overwrite) whether new roles and aliases from the import file are added to the LDAP domain COM branch or not.
+#
+#5.Specify an alias name in the node export file which doesn't exists as a role name on the ROLE line or as a role name in the LDAP COM branch and validate /append/overwrite it.
+#
+#Ex:
+#DOMAIN <LDAP_domain_name>
+#ROLE <role1>,<role2>,...<roleN>
+#ALIAS <alias1> <role1>,<role2>,...<roleN>
+#
+#6.Specify an ALIAS role name in the node export file which doesn't exist as alias name on another ALIAS line or as an alias name in the LDAP domain COM branch (case-insensitive name matching) and validate/append/overwrite it.
+#
+#Ex: 
+#DOMAIN <LDAP_domain_name>
+#ALIAS <alias1> <role1>,<role2>,...<roleN>
+#ALIAS <alias2> <role3>,<role4>,...<roleN>
+#
+#7. Specify all alias role names on an ALIAS line which exist either as role names on the ROLE line (if present) or as role names in the LDAP domain COM branch (case-insensitive name matching) and validate/append/overwrite it.
+#
+#Ex:
+#DOMAIN <LDAP_domain_name>
+#ROLE role1,role2,role3,role4
+#ALIAS <alias1> <role1>,<role2>,...<roleN>
+#ALIAS <alias2> <role3>,<role4>,...<roleN>
+#
+#
+#
+# END_MANUAL_STEPS
+
+# BEGIN_POST_CONDITIONS
+#1.Export file is prepared.
+#
+#2.Validated the node import file and appended roles and aliases to the COM branch of the domain.
+#
+#3.Validated the node import file and aliases which are matched with COM aliases are replaced with the import file definitions.
+#
+#4.New oles and aliases from the import file are added to the LDAP domain COM branch.
+#
+#5.Validation should be fine and role/aliases are imported in to COM branch.
+#
+#6.Validation should be fine and role/aliases are imported in to COM branch.
+#
+#7.Validation should be fine and role/aliases are imported in to COM branch.
+#
+#
+#
+# END_POST_CONDITIONS

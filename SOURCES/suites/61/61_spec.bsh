@@ -1,0 +1,15 @@
+#!/bin/bash
+
+# TEST SUITE SPEC FILE
+# This file is generated/updated using the test framework web interface.
+# Manual updates on test servers are lost when the test package is re-installed.
+#
+# Last modified: Thursday 16th of May 2013 12:50:16
+#
+SPEC_TS_NAME=X86_CLUSTER_FROM_UG_WO_Cutover
+SPEC_TS_ID=61
+SPEC_TS_SLOGAN="Used for restarting after the Upgrade has failed"
+SPEC_TS_TIMEOUT=300
+SPEC_TS_AUTHOR="xramhar"
+SPEC_TS_INDEPENDENT=0
+SPEC_TS_TC_IDS=(859 860)

@@ -1,0 +1,141 @@
+#!/bin/bash
+
+# TEST CASE SPEC FILE
+# This file is generated/updated using the test framework web interface.
+# Manual updates on test servers are lost when the test package is re-installed.
+#
+# Last modified: Monday 16th of December 2013 10:15:51
+#
+
+# These settings must be in BASH script format, they are sourced by other scripts.
+SPEC_FA_NAME="SOLARIS10SUNDS"
+SPEC_UC_NAME="SOLARIS10SUNDS_Importing_privileges"
+SPEC_TC_ID=1401
+SPEC_TC_SLOGAN="Negative : Adding targets "
+SPEC_TC_TYPE="FT"
+SPEC_TC_POLARITY="positive"
+SPEC_TC_PRIORITY="high"
+SPEC_TC_AUTOMATED=1
+SPEC_TC_DEPENDENT_ONLY=0
+SPEC_TC_TIMEOUT=300
+SPEC_TC_TEST_PASSCODE=0
+SPEC_TC_AUTHOR="xvinkat"
+SPEC_TC_AUTOMATOR="xvinkat"
+# this parameter is not interpreted by harness
+SPEC_TC_DISABLED=0
+
+# Please do not remove the comment lines below.
+# They are used as section locators by the test harness.
+
+# BEGIN_PRE_CONDITIONS
+#<path to the testcase>
+#
+#
+#SUN-DS/COM LDAP - User Management for 
+#COM-Enabled Nodes/Managing COM targets 
+#,role, role alias attributes for COM user entries/
+#Importing privileges (role/aliases/targets)   
+# END_PRE_CONDITIONS
+
+
+# BEGIN_MANUAL_STEPS
+#1. Mention more than 20 targets in COM export file and try to add add them to the user entry.
+#
+#DOMAIN <LDAP domain>
+#ACTION add
+#OBJECT target
+#<user1> ,,...,
+#
+#
+#2. Mention duplicate targets to the user in the export file and try to add them to the user entry.
+#
+#DOMAIN <LDAP domain>
+#ACTION add
+#OBJECT target
+#<user1> ,,...
+#
+#
+#3. Mention target names with more than 49 characters in the export file and add them to the user entry.
+#
+#4. Mention targets with special characters in the export file and add them to the user entry.
+#
+#
+# END_MANUAL_STEPS
+
+# BEGIN_POST_CONDITIONS
+#1.Script should throw an error.
+#
+#2.Script should throw an error.
+#
+#Ex: bash-3.2# cat /var/tmp/import1
+#DOMAIN atrcus879.com
+#ACTION add
+#OBJECT target
+#
+#ossonly1 target1,target2,target3,target1
+#bash-3.2#
+#
+#bash-3.2# ./manage_COM_privs.bsh -a target -f /var/tmp/import1 -d atrcus879.com
+#
+#LDAP Directory Manager password:
+#
+#INFO : LDAP Domain [atrcus879.com]
+#INFO : ACTION: [add]
+#INFO : OBJECT: [target]
+#
+#Continue to add COM user target(s) from file [/var/tmp/import1] - Yes or No [No] Yes
+#
+#INFO : User [ossonly1] has type OSS_ONLY.
+#ERROR : Target list must contain unique members
+#ERROR : Batch file processing stopped at user [ossonly1]. Please correct the batch file and rerun the script to continue.
+#
+#
+#3.Script should throw an error.
+#
+#
+#Ex:
+#
+#bash-3.2# cat /var/tmp/import1
+#DOMAIN atrcus879.com
+#ACTION add
+#OBJECT target
+#
+#ossonly1 targethfjkhfkjhfkjshfksjhfkjsdhfkjhfkhkdfjhgkdjkjh1
+#bash-3.2#
+#
+#bash-3.2# ./manage_COM_privs.bsh -a target -f /var/tmp/import1 -d atrcus879.com
+#
+#LDAP Directory Manager password:
+#
+#INFO : LDAP Domain [atrcus879.com]
+#INFO : ACTION: [add]
+#INFO : OBJECT: [target]
+#
+#Continue to add COM user target(s) from file [/var/tmp/import1] - Yes or No [No] Yes
+#
+#INFO : User [ossonly1] has type OSS_ONLY.
+#ERROR : Targets cannot contain more than 49 characters.
+#ERROR : Batch file processing stopped at user [ossonly1]. Please correct the batch file and rerun the script to continue.
+#
+#4. Script should throw an error.
+#
+#Ex:
+#bash-3.2# cat /var/tmp/import
+#DOMAIN atrcus879.com
+#ROLE tcs16,tcs17,tcs18,tcs19
+#ALIAS alias4 tcs17,tcs18,tcs19
+#bash-3.2#
+#bash-3.2# ./manage_COM_privs.bsh -a target -f /var/tmp/import1 -d atrcus879.com
+#
+#LDAP Directory Manager password:
+#
+#INFO : LDAP Domain [atrcus879.com]
+#INFO : ACTION: [add]
+#INFO : OBJECT: [target]
+#
+#Continue to add COM user target(s) from file [/var/tmp/import1] - Yes or No [No] Yes
+#
+#INFO : User [ossonly1] has type OSS_ONLY.
+#ERROR : Invalid target name [eric@1234]; target names may only contain alphanumeric characters, hyphen(-), underscore(_) or dot(.)
+#ERROR : Batch file processing stopped at user [ossonly1]. Please correct the batch file and rerun the script to continue.
+# END_POST_CONDITIONS

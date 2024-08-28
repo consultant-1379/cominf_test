@@ -1,0 +1,56 @@
+#!/bin/bash
+
+# TEST CASE SPEC FILE
+# This file is generated/updated using the test framework web interface.
+# Manual updates on test servers are lost when the test package is re-installed.
+#
+# Last modified: Sunday 31st of March 2013 20:37:23
+#
+
+# These settings must be in BASH script format, they are sourced by other scripts.
+SPEC_FA_NAME="INSTALL"
+SPEC_UC_NAME="INSTALL_LINIRATOR_RERUN"
+SPEC_TC_ID=51
+SPEC_TC_SLOGAN="Re-run inirator with invalid LDAP passwords"
+SPEC_TC_TYPE="FT"
+SPEC_TC_POLARITY="negative"
+SPEC_TC_PRIORITY="high"
+SPEC_TC_AUTOMATED=0
+SPEC_TC_DEPENDENT_ONLY=0
+SPEC_TC_TIMEOUT=700
+SPEC_TC_TEST_PASSCODE=0
+SPEC_TC_AUTHOR="xamamcg"
+SPEC_TC_AUTOMATOR="xamamcg"
+# this parameter is not interpreted by harness
+SPEC_TC_DISABLED=0
+
+# Please do not remove the comment lines below.
+# They are used as section locators by the test harness.
+
+# BEGIN_PRE_CONDITIONS
+#1/ RHEL_INSTALLED
+#2/ config.ini exists
+#3/ POSIX_USER_EXISTS ldapadm
+#4/ CHECK_CONFIG_INI standard
+# END_PRE_CONDITIONS
+
+
+# BEGIN_MANUAL_STEPS
+#1. Directory Manager Password < 8 chars
+#2. Directory Manager Password and confirm not matching
+#1. repladm Password < 8 chars
+#2. repladm Password and confirm not matching
+#1. ldapadm Password < 8 chars
+#2. ldapadm Password and confirm not matching
+#1. msadmin Password < 8 chars
+#2. msadmin Password and confirm not matching
+#1. proxyagent Password < 8 chars
+#2. proxyagent Password and confirm not matching
+#1. mssync Password < 8 chars
+#2. mssync Password and confirm not matching
+# END_MANUAL_STEPS
+
+# BEGIN_POST_CONDITIONS
+#1. CONSOLE_OUTPUT_CONTAINS "Not a valid answer. Min number of characters is 8. Please try again."
+#2. CONSOLE_OUTPUT_CONTAINS "Passwords do not match"
+# END_POST_CONDITIONS

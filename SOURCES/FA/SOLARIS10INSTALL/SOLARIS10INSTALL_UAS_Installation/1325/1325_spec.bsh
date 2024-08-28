@@ -1,0 +1,102 @@
+#!/bin/bash
+
+# TEST CASE SPEC FILE
+# This file is generated/updated using the test framework web interface.
+# Manual updates on test servers are lost when the test package is re-installed.
+#
+# Last modified: Monday 16th of December 2013 9:17:26
+#
+
+# These settings must be in BASH script format, they are sourced by other scripts.
+SPEC_FA_NAME="SOLARIS10INSTALL"
+SPEC_UC_NAME="SOLARIS10INSTALL_UAS_Installation"
+SPEC_TC_ID=1325
+SPEC_TC_SLOGAN="Verify Desktop Environment for UAS "
+SPEC_TC_TYPE="FT"
+SPEC_TC_POLARITY="positive"
+SPEC_TC_PRIORITY="high"
+SPEC_TC_AUTOMATED=0
+SPEC_TC_DEPENDENT_ONLY=0
+SPEC_TC_TIMEOUT=300
+SPEC_TC_TEST_PASSCODE=0
+SPEC_TC_AUTHOR="xnavsur"
+SPEC_TC_AUTOMATOR="xnavsur"
+# this parameter is not interpreted by harness
+SPEC_TC_DISABLED=0
+
+# Please do not remove the comment lines below.
+# They are used as section locators by the test harness.
+
+# BEGIN_PRE_CONDITIONS
+#<path under "Verification Specification for Cominf Feature Test for 14.0 ":
+#Initial Installation/UAS Installation 
+#>  
+#
+#The test-case ensures that JDS is deployed as default GUI. This TC applies to initial install and upgrade where the upgrade from was default of cde.
+#Precondition: 
+#
+#connection to UAS configured. create a user "jdsuser". The Unix Application Server Document is available.
+#
+# END_PRE_CONDITIONS
+
+
+# BEGIN_MANUAL_STEPS
+#Action 1: 
+#
+#Configure an connection to the UAS following section 6.1 of the Unix Application Server Document.
+#
+#Action 2: 
+#
+#Connect to the UAS as "jdsuser" using the newly created connection.
+#
+#Action 3: 
+#
+#Ensure the Ericsson menu items are available under the Launch-> Application menu.
+#
+#Action 4: 
+#
+#Log off as "jdsuser".
+#
+#Action 5: 
+#
+#Connect to the UAS as "jdsuser" using the connection to ensure the default is set.
+#
+#Action 6: 
+#
+#Ensure the OSS-RC Application menu items are available by using the mouse right-click on the desktop.
+#
+#Action 7: 
+#
+#Log off as "jdsuser"
+#
+# END_MANUAL_STEPS
+
+# BEGIN_POST_CONDITIONS
+#Result 1: 
+#
+#The configuration of the connection is successful.
+#
+#Result 2: 
+#
+#The connection is successful and JDS GUI is launched.
+#
+#Result 3: 
+#
+#The Ericsson menu items are available and can be selected.
+#
+#Result 4: 
+#
+#"jdsuser" is successfully logged off and connection to desktop is closed
+#
+#Result 5: 
+#
+#The connection is successful and the JDS GUI is launched.
+#
+#Result 6: 
+#
+#The OSS-RC Application menu items are available and can be selected.
+#
+#Result 7: 
+#
+#"jdsuser" is successfully logged off and connection to desktop is closed. 
+# END_POST_CONDITIONS

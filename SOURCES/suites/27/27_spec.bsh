@@ -1,0 +1,15 @@
+#!/bin/bash
+
+# TEST SUITE SPEC FILE
+# This file is generated/updated using the test framework web interface.
+# Manual updates on test servers are lost when the test package is re-installed.
+#
+# Last modified: Monday 29th of July 2013 10:43:02
+#
+SPEC_TS_NAME=X86_CLUSTER_SANITY_CHECKS
+SPEC_TS_ID=27
+SPEC_TS_SLOGAN="Common Sanity Checks for OSS 2 node x86 Cluster. These must not change the state of the Server"
+SPEC_TS_TIMEOUT=1800
+SPEC_TS_AUTHOR="ebatric"
+SPEC_TS_INDEPENDENT=1
+SPEC_TS_TC_IDS=(416 754 606 784 796 955 956 920 785 789 398 765 781 844 794 954)

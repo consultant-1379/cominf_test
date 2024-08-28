@@ -1,0 +1,46 @@
+Enter Deployment type
+enhanced
+Is this a GEO redundant setup?
+n
+Enter IP address of the NTP Source:
+192.168.0.1
+Do you want to setup DHCP on this Machine
+y
+Enter DNS Domain Name
+vts.com
+Enter O&M Services Secondary server Hostname:
+omsrvs
+Enter O&M Services Secondary server IP:
+192.168.0.7
+Enter O&M Services Secondary server IPV6:
+2001:1b70:82a1:0103::7
+Enter IPV6 prefix
+64
+Enter LDAP Domain Name
+vts.com
+Enter LDAP Directory Manager
+
+Enter LDAP Replication ID
+99
+Enter a unique name for the masterservice of the OSS RC system using this LDAP domain:
+ossmaster
+Enter IP address for the masterservice of the OSS RC system using this LDAP Domain:
+192.168.0.12
+LDAP Directory Manager password
+ldappass
+Re-enter password:
+ldappass
+LDAP name service data migration password:
+ldappass
+Re-enter password:
+ldappass
+LDAP name service data maintenence password:
+ldappass
+Re-enter password:
+ldappass
+LDAP name service proxyagent password:
+ldappass
+Re-enter password:
+ldappass
+Are these values correct
+y

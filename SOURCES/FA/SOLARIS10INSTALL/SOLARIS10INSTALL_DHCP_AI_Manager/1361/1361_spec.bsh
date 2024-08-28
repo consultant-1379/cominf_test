@@ -1,0 +1,90 @@
+#!/bin/bash
+
+# TEST CASE SPEC FILE
+# This file is generated/updated using the test framework web interface.
+# Manual updates on test servers are lost when the test package is re-installed.
+#
+# Last modified: Monday 16th of December 2013 9:38:11
+#
+
+# These settings must be in BASH script format, they are sourced by other scripts.
+SPEC_FA_NAME="SOLARIS10INSTALL"
+SPEC_UC_NAME="SOLARIS10INSTALL_DHCP_AI_Manager"
+SPEC_TC_ID=1361
+SPEC_TC_SLOGAN="Verify ai_manager.sh only lists bsim clients"
+SPEC_TC_TYPE="FT"
+SPEC_TC_POLARITY="positive"
+SPEC_TC_PRIORITY="high"
+SPEC_TC_AUTOMATED=0
+SPEC_TC_DEPENDENT_ONLY=0
+SPEC_TC_TIMEOUT=300
+SPEC_TC_TEST_PASSCODE=0
+SPEC_TC_AUTHOR="xgansre"
+SPEC_TC_AUTOMATOR="xgansre"
+# this parameter is not interpreted by harness
+SPEC_TC_DISABLED=0
+
+# Please do not remove the comment lines below.
+# They are used as section locators by the test harness.
+
+# BEGIN_PRE_CONDITIONS
+#As introduced by TR HK76765 , ai_manager.sh script should not list hosts/clients added by DHCP service, it should only list clients added through the ai_manager.sh scriptÂ 
+#Precondition:
+#
+#Infra Server. DHCP service is initialised.
+#
+#
+#
+#Mars Path <Initial Installation/DHCP/AI Manager>
+#
+#
+# END_PRE_CONDITIONS
+
+
+# BEGIN_MANUAL_STEPS
+#Action 1:
+#
+#Create a network and client using DHCP commands:
+## dhcpconfig -N 192.169.1.0 -m 255.255.255.0 -t 192.169.1.1
+## pntadm -A 192.169.1.3 192.169.1.0
+#Update /etc/netmasks to add entry
+#192.169.1.0 255.255.255.0
+#
+#Action 2:
+#
+#Check the newly added client does not appear in the ai_manager list using the command:
+## /ericsson/ocs/bin/ai_manager.sh -list all
+#
+#Action 3:
+#
+#Add a client to this network using ai_manager.sh script
+## /ericsson/ocs/bin/ai_manager.sh -add client -a 192.169.1.4 -h AI_RBS1 - i AI_RBS1 -s 10.42.33.22 -p /var/tmp/SummaryFile.xml
+#
+#Action 4:
+#
+#Verify only the AI_RBS1 client is added to aif_hosts file
+##more /ericsson/ocs/etc/aif_hosts
+#
+#
+# END_MANUAL_STEPS
+
+# BEGIN_POST_CONDITIONS
+#Result 1:
+#
+#The client and network is added successfully and can be viewed using
+##dhtadm -P
+##pntadm -P 192.169.1.3
+#
+#Result 2:
+#
+#The client associated with 192.169.1.3 does not appear in the list, only Network 192.169.1.0 is listed.
+#
+#Result 3:
+#
+#The client AI_RBS1 is added successfully and listed along with network 192.169.1.0 in ai manager list command
+## /ericsson/ocs/bin/ai_manager.sh -list all
+#
+#Result 4:
+#
+#The client appears in ai_hosts file. 
+# END_POST_CONDITIONS

@@ -1,0 +1,45 @@
+#!/bin/bash
+
+# TEST CASE SPEC FILE
+# This file is generated/updated using the test framework web interface.
+# Manual updates on test servers are lost when the test package is re-installed.
+#
+# Last modified: Monday 16th of December 2013 6:51:52
+#
+
+# These settings must be in BASH script format, they are sourced by other scripts.
+SPEC_FA_NAME="SOLARIS10SUNDS"
+SPEC_UC_NAME="SOLARIS10SUNDS_Conflict_Domain_Migration"
+SPEC_TC_ID=1171
+SPEC_TC_SLOGAN="Verify that \"resolve_conflicts.bsh\" resolve mode for user conflicts should resolve nothing for new empty domain"
+SPEC_TC_TYPE="FT"
+SPEC_TC_POLARITY="positive"
+SPEC_TC_PRIORITY="high"
+SPEC_TC_AUTOMATED=0
+SPEC_TC_DEPENDENT_ONLY=0
+SPEC_TC_TIMEOUT=300
+SPEC_TC_TEST_PASSCODE=0
+SPEC_TC_AUTHOR="xlaxain"
+SPEC_TC_AUTOMATOR="xlaxain"
+# this parameter is not interpreted by harness
+SPEC_TC_DISABLED=0
+
+# Please do not remove the comment lines below.
+# They are used as section locators by the test harness.
+
+# BEGIN_PRE_CONDITIONS
+#Path in Mars:- SUN-DS/Conflict Resolution & Global Domain Migration       
+#
+#Make sure that you have a new empty domain when supplied to the resolve_conflicts.bsh script.
+# END_PRE_CONDITIONS
+
+
+# BEGIN_MANUAL_STEPS
+#Run /ericsson/sdee/bin/resolve_conflicts.bsh –d ldapdomain –w -u 
+# END_MANUAL_STEPS
+
+# BEGIN_POST_CONDITIONS
+#Resolve Mode: Nothing to resolve. Refer to the SUN-DS SAG for example or more details on the expected output 
+#
+#The resolve_conflicts.bsh script ran in resolve mode for users should resolve nothing for new empty domain
+# END_POST_CONDITIONS

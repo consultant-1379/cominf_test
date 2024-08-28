@@ -1,0 +1,241 @@
+#!/bin/bash
+#################################################################################
+#
+#
+#       COPYRIGHT (C) ERICSSON RADIO SYSTEMS AB, Sweden
+#
+#       The copyright to the document(s) herein is the property of
+#       Ericsson Radio Systems AB, Sweden.
+#
+#       The document(s) may be used and/or copied only with the written
+#       permission from Ericsson Radio Systems AB or in accordance with
+#       the terms and conditions stipulated in the agreement/contract
+#       under which the document(s) have been supplied.
+#
+#################################################################################
+
+
+# ATCOMINF Test Callback Library
+
+# Revision History
+# <date>	<signum>	<details>
+
+# Complete the callbacks in this library to automate the test case.
+#
+# Callbacks are stateless, it is not possible to set a global variable in one callback 
+# and access it it in another.
+#
+# Callbacks are called by the test harness in the following order:
+#
+# tc_setup() 		# Called only for independent TC execution mode to setup TC
+# tc_precon()		# Conditions that should exist before TC can run
+# tc_test()		# Runs the test for this TC
+# tc_postcon()		# Conditions that should/should not exist after successful TC 
+# tc_cleanup()		# Called only for independent TC execution mode to cleanup after TC
+
+# All callbacks must PASS for a TC PASS result
+
+#################################################################################
+#
+# CALLBACK: TC_SETUP
+#
+# This callback function is only called if the harness execution mode is 'AT_INDEPENDENT'
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_setup() {
+
+	# Coded to fail in case TC_AUTOMATED=1 before automation completed
+	# Change return code as required
+
+
+	myid=`whoami`
+
+
+/usr/bin/expect<<EOF2
+set timeout 120
+spawn ssh -ostricthostkeychecking=no ossrcci@selid1a029.lmera.ericsson.se
+while 1 {
+        expect {
+                "Are you sure you want to continue connecting" {
+                        send "yes\r"}
+                "Enter Windows password:" {
+                        send "Ericsson1\r"
+                        break}
+		">" {
+			exit 2}
+                eof {
+                        puts "warning: timed out"
+                        exit 1}
+                timeout {
+                        puts "warning: timed out"
+                        exit 1}
+                }
+        }
+send "exit\r"
+EOF2
+
+
+	case $? in
+		0)
+			echo -e "\nSetting up ssh keys on selid1a029 for user ${myid}"
+
+/usr/bin/expect<<EOF3
+	       	 	spawn scp ~${myid}/.ssh/id_rsa.pub ossrcci@selid1a029.lmera.ericsson.se:/tmp/${myid}_id_rsa.pub 
+        		expect "Enter Windows password:"
+        		send "Ericsson1\r"
+        		expect
+EOF3
+
+/usr/bin/expect<<EOF4
+			set timeout 120
+			spawn ssh -ostricthostkeychecking=no ossrcci@selid1a029.lmera.ericsson.se
+        		expect "Enter Windows password:"
+        		send "Ericsson1\r"
+			expect ">"
+			send "cat /tmp/${myid}_id_rsa.pub >> .ssh/authorized_keys \r"
+			expect ">"
+			send "exit/r"
+EOF4
+			;;
+		1)
+			echo "Timeout contacting selid1a029"
+			exit 1
+			;;
+		2)
+			echo -e "\nssh keys already defined on selid1a029 for user ${myid}"
+			;;
+		*)
+			echo "Unexpected value"
+			exit 1
+			;;
+	esac
+
+	return 0
+
+}
+#################################################################################
+
+#################################################################################
+#
+# CALLBACK: TC_PRECON
+#
+# This callback function checks the correct conditions exist to run the TC.
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+ 
+tc_precon() {
+
+	# Coded to fail in case TC_AUTOMATED=1 before automation completed
+	# Change return code as required
+
+        # Check valid environment file exists and source it.
+        env_file=$1
+        env_path="/var/lib/jenkins/cominf_build/build_scripts/nfd/etc"
+        [[ ! -f ${env_path}/${env_file} ]] && echo "Please specify valid env filename " && exit 1
+        .  ${env_path}/${env_file}
+        [[ $? -ne 0 ]] && echo "Problem sourcing env file" && exit 1
+
+	return 0
+
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_TEST
+#
+# This callback function runs the test.
+# The harness compares the return code to the SPEC_TC_TEST_PASSCODE value set in the test spec.
+#
+# Return or exit codes:
+#    SPEC_TC_TEST_PASSCODE 	success
+# != SPEC_TC_TEST_PASSCODE 	failure
+ 
+tc_test() {
+
+	# Coded to fail in case TC_AUTOMATED=1 before automation complete
+	# Change return code as required
+
+
+	echo -e "\n#######################################################\n"
+	echo -e "Starting master_wrapper at `date` "
+        echo -e "\n#######################################################\n"
+
+
+	ssh -ostricthostkeychecking=no ossrcci@selid1a029.lmera.ericsson.se /view/integrationci_view/vobs/ossrc/del-mgt/isobuild/ci/bin/master_wrapper -r ${CI_RELEASE} -s ${CI_SHIPMENT} -t ${CI_TYPE} -p ${CI_PLATFORM} -m ${CI_MACHINE} -d ${CI_DMR} -e ${CI_ENVIRONMENT} -l ${CI_BUILD_TYPE} -k ${CI_MWS_JUMP} -i ${CI_PRE_INI} 
+
+
+	if [[ $? -eq 0 ]];then
+        	echo -e "\n###########################################################\n"
+		echo -e "Installation using master_wrapper script was successful"
+		echo -e "Starting Jenkins Jobs at `date` "
+	        echo -e "\n###########################################################\n"
+
+		/var/lib/jenkins/cominf_build/build_scripts/nfd/ci_job.bsh -f ${env_path}/${env_file} 
+
+	else 
+                echo -e "\n###########################################################\n"
+		date
+		echo -e "Installation using master_wrapper script was not successful"
+		echo -e "Jenkins Jobs will not be executed"
+                echo -e "\n###########################################################\n"
+		exit 1
+	fi
+		
+	date
+	echo -e  "\nThis slave is ${HOSTNAME}"
+
+	return 0   
+
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_POSTCON
+#
+# This callback function checks expected results.
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_postcon() {
+
+	# Coded to fail in case TC_AUTOMATED=1 before automation complete.
+	# Change return code as required
+
+	return 1
+
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_CLEANUP
+#
+# This callback function is only called if the harness execution mode is 'AT_INDEPENDENT'
+# 
+# This callback restores the target system to the state it was in before the TC 
+# was run. It rolls back changes made by callbacks tc_setup() and tc_test()
+# 
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_cleanup() {
+
+	# Coded to fail in case TC_AUTOMATED=1 before automation complete
+	# Change return code as required
+
+	return 1
+
+}

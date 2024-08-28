@@ -1,0 +1,5 @@
+dn: uid=ruby,ou=people,dc=2,dc=com
+changetype: moddn
+newrdn: uid=newruby
+deleteoldrdn: 1
+

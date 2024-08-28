@@ -1,0 +1,305 @@
+#!/bin/bash
+#################################################################################
+#
+#
+#       COPYRIGHT (C) ERICSSON RADIO SYSTEMS AB, Sweden
+#
+#       The copyright to the document(s) herein is the property of
+#       Ericsson Radio Systems AB, Sweden.
+#
+#       The document(s) may be used and/or copied only with the written
+#       permission from Ericsson Radio Systems AB or in accordance with
+#       the terms and conditions stipulated in the agreement/contract
+#       under which the document(s) have been supplied.
+#
+#################################################################################
+
+
+# ATCOMINF Test Callback Library
+
+# Revision History
+# <date>	<signum>	<details>
+
+# Complete the callbacks in this library to automate the test case.
+#
+# Callbacks are stateless, it is not possible to set a global variable in one callback 
+# and access it it in another.
+#
+# Callbacks are called by the test harness in the following order:
+#
+# tc_setup() 		# Called only for independent TC execution mode to setup TC
+# tc_precon()		# Conditions that should exist before TC can run
+# tc_test()		# Runs the test for this TC
+# tc_postcon()		# Conditions that should/should not exist after successful TC 
+# tc_cleanup()		# Called only for independent TC execution mode to cleanup after TC
+
+# All callbacks must PASS for a TC PASS result
+
+#################################################################################
+#
+# CALLBACK: TC_SETUP
+#
+# This callback function is only called if the harness execution mode is 'AT_INDEPENDENT'
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_setup() {
+
+	return 0
+
+}
+#################################################################################
+
+#################################################################################
+#
+# CALLBACK: TC_PRECON
+#
+# This callback function checks the correct conditions exist to run the TC.
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+ 
+tc_precon() {
+
+	return 0
+
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_TEST
+#
+# This callback function runs the test.
+# The harness compares the return code to the SPEC_TC_TEST_PASSCODE value set in the test spec.
+#
+# Return or exit codes:
+#    SPEC_TC_TEST_PASSCODE 	success
+# != SPEC_TC_TEST_PASSCODE 	failure
+
+tc_test() {
+
+pkginfo ERICodj 2> /dev/null
+ret=$?
+if [[ $ret == 0 ]]; then
+
+
+        #Checking option 4 of prepReplication _disabling
+        ${AT_BIN}/con_ex.bsh -d 1763_odj_prepReplicationm4.in -o 1763_odj_prepReplicationm4.exp -c "/ericsson/opendj/bin/prepReplication.sh"
+        /usr/local/bin/expect 1763_odj_prepReplicationm4.exp || {
+                echo "Error while running script prepReplication.sh in master with option 4"
+                return 1
+        }
+        CONSOLE_OUTPUT_CONTAINS "Replication disabled: OK" || {
+                echo "Replication was not disabled in infra master."
+                return 1
+        }
+
+
+        #Checking option 2 of prepReplication
+        ${AT_BIN}/con_ex.bsh -d 1763_odj_prepReplicationm2.in -o 1763_odj_prepReplicationm2.exp -c "/ericsson/opendj/bin/prepReplication.sh "
+        /usr/local/bin/expect 1763_odj_prepReplicationm2.exp | tee /var/tmp/file1|| {
+                echo "Error while running script prepReplication.sh in master with option 2"
+                return 1
+        }
+
+       # RES=` head -6 /var/tmp/file1 | tail -4 | awk 'BEGIN {FS=":"}{print $5}' | tail -1`
+        RES=`grep -n "Replication enabled" /var/tmp/file1 | awk -F: '{print $1}' | xargs -I {} expr {} + 2  | xargs -I {} sed -n {}p /var/tmp/file1 | awk -F:
+ '{print $5}'`
+        [[ -z $RES  ]] || {
+              echo "Replication is not enabled "
+        }
+
+        #Checking  options 1,3 of prepReplication
+        ${AT_BIN}/con_ex.bsh -d 1763_odj_prepReplicationm1.in -o 1763_odj_prepReplicationm1.exp -c "/ericsson/opendj/bin/prepReplication.sh"
+        /usr/local/bin/expect 1763_odj_prepReplicationm1.exp || {
+                echo "Error while running script prepReplication.sh in master with option 1"
+                return 1
+        }
+        CONSOLE_OUTPUT_CONTAINS "replication was successfully enabled: OK" || {
+                echo "Replication is not enabled "
+                return 1
+      }
+
+
+        ${AT_BIN}/con_ex.bsh -d 1763_odj_prepReplicationm3.in -o 1763_odj_prepReplicationm3.exp -c "/ericsson/opendj/bin/prepReplication.sh"
+        /usr/local/bin/expect 1763_odj_prepReplicationm3.exp || {
+                echo "Error while running script prepReplication.sh in master with option 3"
+                return 1
+        }
+        CONSOLE_OUTPUT_CONTAINS "Replication initialized from" || {
+                echo "Error in initializing Replication on inframaster"
+                return 1
+        }
+
+
+else
+
+        #Checking option 7 of prepReplication
+        ${AT_BIN}/con_ex.bsh -d 1763_prepReplicationm7.in -o 1763_prepReplicationm7.exp -c "/ericsson/sdee/bin/prepReplication.sh"
+        /usr/local/bin/expect 1763_prepReplicationm7.exp || {
+                echo "Error while running script prepReplication.sh in master with option 7"
+                return 1
+        }
+        CONSOLE_OUTPUT_CONTAINS "Replication disabled: OK" || {
+                echo "Replication was not disabled in infra master."
+                return 1
+        }
+
+
+        #Checking option 6 of prepReplication
+        ${AT_BIN}/con_ex.bsh -d 1763_prepReplicationm6.in -o 1763_prepReplicationm6.exp -c "/ericsson/sdee/bin/prepReplication.sh"
+        /usr/local/bin/expect 1763_prepReplicationm6.exp || {
+                echo "Error while running script prepReplication.sh in master with option 6"
+                return 1
+        }
+        CONSOLE_OUTPUT_CONTAINS "no replication agreement exists" || {
+                echo "Replication agreement still exists in infra master."
+                return 1
+        }
+
+        #Checking option 3 of prepReplication
+        ${AT_BIN}/con_ex.bsh -d 1763_prepReplications3.in -o 1763_prepReplications3.exp -c "/ericsson/sdee/bin/prepReplication.sh"
+        scp 1763_prepReplications3.exp root@omsrvs:/var/tmp/
+        ssh omsrvs /usr/local/bin/expect /var/tmp/1763_prepReplications3.exp || {
+                echo "Error while running script prepReplication.sh in slave with option 3"
+                return 1
+        }
+
+        OUTPUT=`grep -c "NOT OK" ${TC_CONSOLE_FILE}`
+        #echo $OUTPUT
+        RESULT=3
+        #echo $RESULT
+        [ "$OUTPUT" -eq "$RESULT" ]  || {
+                       echo "Replication status was still enabled in infra slave."
+                       return 1
+        }
+
+        #Checking  1,2,4 and activating replication with secondary infra
+        ${AT_BIN}/con_ex.bsh -d 1763_prepReplicationm1.in -o 1763_prepReplicationm1.exp -c "/ericsson/sdee/bin/prepReplication.sh"
+        /usr/local/bin/expect 1763_prepReplicationm1.exp || {
+                echo "Error while running script prepReplication.sh in master with option 2"
+                return 1
+        }
+        CONSOLE_OUTPUT_CONTAINS "replication was successfully enabled: OK" || {
+                echo "Replication agreement was not enabled in infra master."
+                return 1
+        }
+
+        ${AT_BIN}/con_ex.bsh -d 1763_prepReplicationm2.in -o 1763_prepReplicationm2.exp -c "/ericsson/sdee/bin/prepReplication.sh"
+        /usr/local/bin/expect 1763_prepReplicationm2.exp || {
+                echo "Error while running script prepReplication.sh in master with option 2"
+                return 1
+        }
+        #XPG4GREP=/usr/xpg4/bin/egrep
+        CNT=`cat ${TC_CONSOLE_FILE}| egrep -c "Replication agreement is created between|Authentication agreement setup done: OK|Server authentication propert
+y changed: OK"`
+        #echo $CNT
+        ACNT="3"
+        #echo $ACNT
+        [ "$CNT" -eq "$ACNT" ] || {
+                echo "Error creating domain replication agreement in infra master."
+                return 1
+        }
+
+        ${AT_BIN}/con_ex.bsh -d 1763_prepReplicationm4.in -o 1763_prepReplicationm4.exp -c "/ericsson/sdee/bin/prepReplication.sh"
+        /usr/local/bin/expect 1763_prepReplicationm4.exp || {
+                echo "Error while running script prepReplication.sh in master with option 4"
+                return 1
+        }
+        CONSOLE_OUTPUT_CONTAINS "Replication initialized from" || {
+                echo "Error in initializing Replication agreement in infra master."
+                return 1
+        }
+
+        ##Checking option 3 of prepReplication
+        ${AT_BIN}/con_ex.bsh -d 1763_prepReplicationm33.in -o 1763_prepReplicationm33.exp -c "/ericsson/sdee/bin/prepReplication.sh"
+        /usr/local/bin/expect 1763_prepReplicationm33.exp || {
+                echo "Error while running script prepReplication.sh in master with option 3"
+                return 1
+        }
+
+        OUTPUT1=`grep -c "OK" ${TC_CONSOLE_FILE}`
+        #echo $OUTPUT1
+        RESULT1=12
+        #echo $RESULT1
+        [ "$OUTPUT1" -eq "$RESULT1" ]  || {
+                       echo "Replication status was not enabled on infra master."
+                       return 1
+        }
+
+        ${AT_BIN}/con_ex.bsh -d 1763_prepReplications33.in -o 1763_prepReplications33.exp -c "/ericsson/sdee/bin/prepReplication.sh"
+        scp 1763_prepReplications33.exp root@omsrvs:/var/tmp/
+        ssh omsrvs /usr/local/bin/expect /var/tmp/1763_prepReplications33.exp || {
+                echo "Error while running script prepReplication in slave with option 3"
+                return 1
+        }
+
+        OUTPUT2=`grep -c "OK" ${TC_CONSOLE_FILE}`
+        #echo $OUTPUT2
+        RESULT3=15
+        #echo $RESULT3
+        [ "$OUTPUT2" -eq "$RESULT3" ] || {
+                      echo "Replication was not enabled on infra slave."
+                      return 1
+        }
+
+
+        #Checking for errors in last executed prepReplication script
+        VALUE1=`ls -ltr /ericsson/sdee/log/prepReplication.sh_*|awk '{ print $9 }'|tail -1`;
+        grep "ERROR" $VALUE1 && {
+                echo "Error in the last executed prepReplication script"
+                return 1
+        }
+
+fi
+        return 0
+
+}	
+
+ 
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_POSTCON
+#
+# This callback function checks expected results.
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_postcon() {
+
+	rm -rf *.exp
+        return 0
+
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_CLEANUP
+#
+# This callback function is only called if the harness execution mode is 'AT_INDEPENDENT'
+# 
+# This callback restores the target system to the state it was in before the TC 
+# was run. It rolls back changes made by callbacks tc_setup() and tc_test()
+# 
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_cleanup() {
+       # rm -rf *.exp
+ 	rm -rf /var/tmp/file1	
+	return 0
+
+}

@@ -1,0 +1,61 @@
+#!/bin/bash
+
+# TEST CASE SPEC FILE
+# This file is generated/updated using the test framework web interface.
+# Manual updates on test servers are lost when the test package is re-installed.
+#
+# Last modified: Monday 16th of December 2013 6:51:47
+#
+
+# These settings must be in BASH script format, they are sourced by other scripts.
+SPEC_FA_NAME="SOLARIS10SUNDS"
+SPEC_UC_NAME="SOLARIS10SUNDS_Creation_Non_OSS_User"
+SPEC_TC_ID=1170
+SPEC_TC_SLOGAN="Password policy for COM user entries "
+SPEC_TC_TYPE="FT"
+SPEC_TC_POLARITY="positive"
+SPEC_TC_PRIORITY="high"
+SPEC_TC_AUTOMATED=0
+SPEC_TC_DEPENDENT_ONLY=0
+SPEC_TC_TIMEOUT=300
+SPEC_TC_TEST_PASSCODE=0
+SPEC_TC_AUTHOR="xvinkat"
+SPEC_TC_AUTOMATOR="xvinkat"
+# this parameter is not interpreted by harness
+SPEC_TC_DISABLED=0
+
+# Please do not remove the comment lines below.
+# They are used as section locators by the test harness.
+
+# BEGIN_PRE_CONDITIONS
+#<path to the testcase>
+#
+#SUN-DS/COM LDAP - User Management for 
+#COM-Enabled Nodes/Creation of a Non OSS user
+#
+#Following servers are successfully configured for 13.0.x version.
+#1.O&M primary
+#2.O&M secondary
+#3.OSS
+#4.UAS
+#Precondition: COM_OSS,COM_APP,COM_OSS users exists in ldap database 
+# END_PRE_CONDITIONS
+
+
+# BEGIN_MANUAL_STEPS
+#1.verify that it should be possible to change the password for the user.
+#2.Verify that password may not be used to authenticate after a specified number of consecutive failed bind attempts
+#3.Verify that should prompt for changing the pwd when the user logins for the firsttime.
+#4.Verify that it is not posible to use the password which is in history,to verify this execute the chg_user_pwd.sh script and enter the old password as the new pasword
+#5.Verify that pwd min.length,to verify this execute the chg_user_pwd.sh script and enter the password of size 4.
+#6.Verify that password policy for the domain can be modified to set the account policy where the paasword will never expire.
+# END_MANUAL_STEPS
+
+# BEGIN_POST_CONDITIONS
+#1.Password for all types of users (COM_OSS,COM_APP and COm_ONLY) are changed successfully.
+#2.Error message saying " password has been reset by the administratot"is displated when the user logins to OSS and enter the wrong password consecutively 3 times.
+#3.The user is prompted to change the password after first login to the ldap clients/node
+#4.The script displays the error message and the password is not changed.User is not allowed to login with the new password when logged in to the oSS.
+#5.The script returns an error for passwrod mininum length requirements.
+#6.The pwd policy is updated successfully where the account password will never expire. 
+# END_POST_CONDITIONS

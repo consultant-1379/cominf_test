@@ -1,0 +1,431 @@
+#!/bin/bash
+#################################################################################
+#
+#
+#	   COPYRIGHT (C) ERICSSON RADIO SYSTEMS AB, Sweden
+#
+#	   The copyright to the document(s) herein is the property of
+#	   Ericsson Radio Systems AB, Sweden.
+#
+#	   The document(s) may be used and/or copied only with the written
+#	   permission from Ericsson Radio Systems AB or in accordance with
+#	   the terms and conditions stipulated in the agreement/contract
+#	   under which the document(s) have been supplied.
+#
+#################################################################################
+
+
+# ATCOMINF Test Callback Library
+
+# Revision History
+# 20/09/13	xkalbha		Initial test for invalid options to add role to user
+
+# Complete the callbacks in this library to automate the test case.
+#
+# Callbacks are stateless, it is not possible to set a global variable in one callback 
+# and access it it in another.
+#
+# Callbacks are called by the test harness in the following order:
+#
+# tc_setup() 		# Called only for independent TC execution mode to setup TC
+# tc_precon()		# Conditions that should exist before TC can run
+# tc_test()		# Runs the test for this TC
+# tc_postcon()		# Conditions that should/should not exist after successful TC 
+# tc_cleanup()		# Called only for independent TC execution mode to clenup after TC
+
+# All callbacks must PASS for a TC PASS result
+
+#################################################################################
+#
+# CALLBACK: TC_SETUP
+#
+# This callback function is only called if the harness execution mode is 'AT_INDEPENDENT'
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_setup() {
+
+
+# Replace PASSWD and other fields in input file(s) with the correct credentials or data
+    for ii in *.in; do
+        sed -e "s/^PASSWD$/$LDAP_SUPERUSER_PASSWD/" \
+            -e "s/TESTROLE1/$TEST_ROLE1/" \
+            -e "s/TESTROLE2/$TEST_ROLE2/" \
+            -e "s/UPASSWD/12345678/" $ii > $ii.tmp || {
+            echo "Failed to replace LDAP superuser password holder etc in /usr/local/bin/expect input file $ii, rc $?"
+            return 6
+        }
+    done
+
+
+	
+#-------------------------------------------------------------------------------
+# Create a test user  
+#-------------------------------------------------------------------------------
+
+	CMD='/ericsson/sdee/bin/add_user.sh -t COM_ONLY -d 1.com -n u432a -i 1432 -C bhavana -y'
+	${AT_BIN}/con_ex.bsh -d 432adduser.in.tmp -o 432adduser.exp -c "$CMD" || {
+		echo "Failed to generate /usr/local/bin/expect script, $?"
+		return 1
+	}
+
+	/usr/local/bin/expect 432adduser.exp || {
+		echo "Failed to create user, error code $?"
+		return 2
+	}
+
+#-------------------------------------------------------------------------------
+# Create a 2nd test user  
+#-------------------------------------------------------------------------------
+
+	CMD='/ericsson/sdee/bin/add_user.sh -t COM_ONLY -d 1.com -n u432b -i 2432 -C bhavana -y'
+	${AT_BIN}/con_ex.bsh -d 432adduser.in.tmp -o 432adduser.exp -c "$CMD" || {
+		echo "Failed to generate /usr/local/bin/expect script, $?"
+		return 3
+	}
+
+	/usr/local/bin/expect 432adduser.exp || {
+		echo "Failed to create user, error code $?"
+		return 4
+	}
+	
+#-------------------------------------------------------------------------------
+# Create a test role
+#-------------------------------------------------------------------------------
+
+	CMD='/ericsson/sdee/bin/manage_COM.bsh -a role -d 1.com -R role432 -y'
+	${AT_BIN}/con_ex.bsh -d 432.in.tmp -o 432addrole.exp -c "$CMD" || {
+		echo "Failed to generate /usr/local/bin/expect script, $?"
+		return 5
+	}
+
+	/usr/local/bin/expect 432addrole.exp || {
+		echo "Failed to create role, error code $?"
+		return 6
+	}
+
+#-------------------------------------------------------------------------------
+# Create a test target
+#-------------------------------------------------------------------------------
+
+	CMD='/ericsson/sdee/bin/manage_COM_privs.bsh -a target -d 1.com -u u432a -T target1 -y'
+	${AT_BIN}/con_ex.bsh -d 432.in.tmp -o 432addtarget.exp -c "$CMD" || {
+		echo "Failed to generate /usr/local/bin/expect script, $?"
+		return 7
+	}
+
+	/usr/local/bin/expect 432addtarget.exp || {
+		echo "Failed to create target, error code $?"
+		return 8
+	}
+	
+	return 0
+}
+
+#################################################################################
+#
+# CALLBACK: TC_PRECON
+#
+# This callback function checks the correct conditions exist to run the TC.
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+ 
+tc_precon() {
+
+#-------------------------------------------------------------------------------
+#  Check LDAP is running
+#-------------------------------------------------------------------------------
+
+	LDAP_SERVER_UP || {
+		echo "LDAP server not running"
+		return 1
+	}
+
+#-------------------------------------------------------------------------------
+#  Test user is present
+#-------------------------------------------------------------------------------
+
+	/usr/bin/ldapsearch -D 'cn=Directory Manager' -w $LDAP_SUPERUSER_PASSWD -b uid=u432a,ou=people,dc=1,dc=com objectclass=* > u432.out || {
+		echo "Failed to do LDAP search"
+		return 1
+	}
+	grep 'ericssonUserAuthenticationScope: target1' u432.out || {
+		echo "Failed to find target1 for user u432a"
+		return 2
+	}
+	/usr/bin/ldapsearch -D 'cn=Directory Manager' -w $LDAP_SUPERUSER_PASSWD -b cn=role432,ou=role,ou=com,dc=1,dc=com objectclass=* | grep 'cn: role432' || {
+		echo "Failed to find 432"
+		return 3
+	}
+
+	/usr/bin/ldapsearch -D 'cn=Directory Manager' -w $LDAP_SUPERUSER_PASSWD -b uid=u432b,ou=people,dc=1,dc=com objectclass=* > u432.out || {
+		echo "Failed to do LDAP search"
+		return 4
+	}
+	grep 'ericssonUserAuthenticationScope' u432.out && {
+		echo "Found authentication for user u432b"
+		return 5
+	}
+
+	return 0
+
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_TEST
+#
+# This callback function runs the test.
+# The harness compares the return code to the SPEC_TC_TEST_PASSCODE value set in the test spec.
+#
+# Return or exit codes:
+#	SPEC_TC_TEST_PASSCODE 	success
+# != SPEC_TC_TEST_PASSCODE 	failure
+ 
+tc_test() {
+	echo "Test1: Extra option -e passed"
+	/ericsson/sdee/bin/manage_COM_privs.bsh -a role -d 1.com -u u432a -R role432 -y -e && { echo "Extra option -e passed"; return 1; }
+
+	echo "Test2:Add to user with no targets"
+	CMD='/ericsson/sdee/bin/manage_COM_privs.bsh -a role -d 1.com -u u432b -R role432 -y'
+	${AT_BIN}/con_ex.bsh -d 432.in.tmp -o 432adduser.exp -c "$CMD" || {
+		echo "Failed to generate /usr/local/bin/expect script, $?"
+		return 2
+	}
+
+	/usr/local/bin/expect 432adduser.exp
+	retval=$?
+	[ $retval -ne 0 ] && { echo "Expected error code 1 when no targets $?"; return 3; }
+	echo "Test3: Roles instead of role"
+	/ericsson/sdee/bin/manage_COM_privs.bsh -a roles -d 1.com -u u432a -R role432 -y && { echo "Roles instead of role msg error"; return 4; }
+	echo "Test4:No domain name"
+	/ericsson/sdee/bin/manage_COM_privs.bsh -a role -d -u u432a -R role432 -y  && { echo "No domain name"; return 5; }
+	echo "Test5:No domain and no username"
+	/ericsson/sdee/bin/manage_COM_privs.bsh -a role -d -u -R role432 -y && { echo "No domain and no username"; return 6; }
+	echo "Test6: Invalid domain name"
+	/ericsson/sdee/bin/manage_COM_privs.bsh -a role -d wrong.com -u u432a -R role432 -y && { echo "Invalid domain name"; return 7; }
+
+	echo " Test7: Add to user with no targets"
+	CMD='/ericsson/sdee/bin/manage_COM_privs.bsh -a role -d 1.com -u u432not -R role432 -y'
+	${AT_BIN}/con_ex.bsh -d 432.in.tmp -o 432adduser.exp -c "$CMD" || {
+		echo "Failed to generate /usr/local/bin/expect script, $?"
+		return 8
+	}
+
+	/usr/local/bin/expect 432adduser.exp
+	retval=$?
+	[ $retval -ne 1 ] && { echo "Expected error code 1 when no user ?"; return 9; }
+
+	echo "Test8: Add to user with role that doesn't exist"
+	CMD='/ericsson/sdee/bin/manage_COM_privs.bsh -a role -d 1.com -u u432a -R role432NEW -y'
+	${AT_BIN}/con_ex.bsh -d 432.in.tmp -o 432adduser.exp -c "$CMD" || {
+		echo "Failed to generate /usr/local/bin/expect script, $?"
+		return 10
+	}
+
+	/usr/local/bin/expect 432adduser.exp
+	retval=$?
+	[ $retval -ne 1 ] && { echo "Expected error code 1 when wrong rule $?"; return 11; }
+
+	echo "Test9: Add to user but answer No to proceed"
+	CMD='/ericsson/sdee/bin/manage_COM_privs.bsh -a role -d 1.com -u u432a -R role432'
+	${AT_BIN}/con_ex.bsh -d 432No.in.tmp -o 432adduser.exp -c "$CMD" || {
+		echo "Failed to generate /usr/local/bin/expect script, $?"
+		return 12
+	}
+
+	/usr/local/bin/expect 432adduser.exp || { echo "Expected success when answer No $?"; return 13; }
+
+	# Run as bsim
+	su - bsim -c '/ericsson/sdee/bin/manage_COM_privs.bsh -a role -d 1.com -u u432a -R role432 -y'
+	retval=$?
+	[ $retval -eq 126 ] && { echo "Managed to run as bsim $retval"; return 14; }
+
+
+	echo "Test10: Add to user with target that is > 49 chars"
+	CMD='/ericsson/sdee/bin/manage_COM_privs.bsh -a role -d 1.com -u u432a -R target78901234567890123456789012345678901234567890:role432 -y'
+	${AT_BIN}/con_ex.bsh -d 432.in.tmp -o 432adduser.exp -c "$CMD" || {
+		echo "Failed to generate /usr/local/bin/expect script, $?"
+		return 15
+	}
+	/usr/local/bin/expect 432adduser.exp
+	retval=$?
+	[ $retval -eq 1 ] || { echo "Wrong return on target > 50 $retval"; return 16; }
+
+	echo "Test11: Add to user with target that is start"
+	CMD='/ericsson/sdee/bin/manage_COM_privs.bsh -a role -d 1.com -u u432a -R _target:role432 -y'
+	${AT_BIN}/con_ex.bsh -d 432.in.tmp -o 432adduser.exp -c "$CMD" || {
+		echo "Failed to generate /usr/local/bin/expect script, $?"
+		return 17
+	}
+	/usr/local/bin/expect 432adduser.exp
+	retval=$?
+	[ $retval -eq 1 ] || { echo "Wrong return on target start _ $retval"; return 18; }
+
+	echo "Test12: Add to user with target that is start numeric"
+	CMD='/ericsson/sdee/bin/manage_COM_privs.bsh -a role -d 1.com -u u432a -R 1target:role432 -y'
+	${AT_BIN}/con_ex.bsh -d 432.in.tmp -o 432adduser.exp -c "$CMD" || {
+		echo "Failed to generate /usr/local/bin/expect script, $?"
+		return 19
+	}
+	/usr/local/bin/expect 432adduser.exp
+	retval=$?
+	[ $retval -eq 1 ] || { echo "Wrong return on target start numeric $retval"; return 20; }
+
+	echo "Test13: Add to user with target that is start hyphen"
+	CMD='/ericsson/sdee/bin/manage_COM_privs.bsh -a role -d 1.com -u u432a -R -target:role432 -y'
+	${AT_BIN}/con_ex.bsh -d 432.in.tmp -o 432adduser.exp -c "$CMD" || {
+		echo "Failed to generate /usr/local/bin/expect script, $?"
+		return 21
+	}
+	/usr/local/bin/expect 432adduser.exp
+	retval=$?
+	[ $retval -eq 1 ] || { echo "Wrong return on target start hyphen $retval"; return 22; }
+
+	echo "Test14: Add to user with target that is end hyphen"
+	CMD='/ericsson/sdee/bin/manage_COM_privs.bsh -a role -d 1.com -u u432a -R target-:role432 -y'
+	${AT_BIN}/con_ex.bsh -d 432.in.tmp -o 432adduser.exp -c "$CMD" || {
+		echo "Failed to generate /usr/local/bin/expect script, $?"
+		return 23
+	}
+	/usr/local/bin/expect 432adduser.exp
+	retval=$?
+	[ $retval -eq 1 ] || { echo "Wrong return on target end hyphen $retval"; return 24; }
+
+	echo "Test15: Add to user with target that is end _"
+	CMD='/ericsson/sdee/bin/manage_COM_privs.bsh -a role -d 1.com -u u432a -R target_:role432 -y'
+	${AT_BIN}/con_ex.bsh -d 432.in.tmp -o 432adduser.exp -c "$CMD" || {
+		echo "Failed to generate /usr/local/bin/expect script, $?"
+		return 25
+	}
+	/usr/local/bin/expect 432adduser.exp
+	retval=$?
+	[ $retval -eq 1 ] || { echo "Wrong return on target end underscore $retval"; return 26; }
+
+	echo "Test16: Add to user with target that contains %"
+	/ericsson/sdee/bin/manage_COM_privs.bsh -a role -d 1.com -u u432a -R ta%rget:role432 -y
+	retval=$?
+	[ $retval -eq 1 ] || { echo "Wrong return on target with percent $retval"; return 27; }
+
+	echo "Test17: Add to user with extra : in"
+	CMD='/ericsson/sdee/bin/manage_COM_privs.bsh -a role -d 1.com -u u432a -R role432:target7:role432 -y'
+	${AT_BIN}/con_ex.bsh -d 432.in.tmp -o 432adduser.exp -c "$CMD" || {
+		echo "Failed to generate /usr/local/bin/expect script, $?"
+		return 28
+	}
+	/usr/local/bin/expect 432adduser.exp
+	retval=$?
+	[ $retval -eq 1 ] || { echo "Wrong return on multiple : $retval"; return 29; }
+
+	echo "Test18: Add to user with wrong option combination"
+	/ericsson/sdee/bin/manage_COM_privs.bsh -a role -d 1.com -u u432a -A target1:role432 -y
+	retval=$?
+	[ $retval -eq 1 ] || { echo "Wrong return on invalid option combination : $retval"; return 30; }
+
+	return 0
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_POSTCON
+#
+# This callback function checks expected results.
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_postcon() {
+
+	
+
+	CONSOLE_OUTPUT_CONTAINS "/ericsson/sdee/bin/manage_COM_privs.bsh: illegal option -- e" || { echo "Test1: No illegal option e error msg"; return 4; }
+	CONSOLE_OUTPUT_CONTAINS "ERROR : Invalid modifier [roles] for action [add]." || { echo "Test2: No target error msg"; return 5; }
+	CONSOLE_OUTPUT_CONTAINS "ERROR : Invalid modifier [roles] for action [add]" || { echo "Test3: No roles error msg"; return 6; }
+	CONSOLE_OUTPUT_CONTAINS "Usage:  manage_COM_privs.bsh    -a alias [-d <domain>] [-u <user>] [-A <alias1>,<alias2>...] [-y]" && { echo "Test4: No usage msg"; return 6; }
+	CONSOLE_OUTPUT_CONTAINS "ERROR : checkOptionUsage: Domain [-u] does not exist in LDAP." || { echo "Test5: No domain -u error msg"; return 7; }
+	CONSOLE_OUTPUT_CONTAINS "ERROR : checkOptionUsage: Domain [wrong.com] does not exist in LDAP." || { echo "Test6: No domain wrong.com error msg"; return 8; }
+	CONSOLE_OUTPUT_CONTAINS "ERROR : Requested user [u432not] does not exist in domain [1.com]" || { echo "Test7: No invalid targets msg"; return 10; }
+	CONSOLE_OUTPUT_CONTAINS "ERROR : No valid role supplied" || { echo "Test8: No invalid role error msg"; return 11; }
+	CONSOLE_OUTPUT_CONTAINS "INFO : confirmProceed: negative response, script exiting" || { echo "Test9: No cancel message for the answer No"; return 12; }
+	CONSOLE_OUTPUT_CONTAINS "ERROR : Targets cannot contain more than 49 characters." || { echo "Test10: No permission denied msg"; return 13; }
+	CONSOLE_OUTPUT_CONTAINS "ERROR : Invalid target name [_target]; target names must start with an alpha character" || { echo "Test11: No invalid option combination msg"; return 14; }
+	CONSOLE_OUTPUT_CONTAINS "ERROR : Invalid target name [1target]; target names must start with an alpha character" || { echo "Test12: No targets 50 char length"; return 15; }
+	CONSOLE_OUTPUT_CONTAINS "ERROR : Invalid target name [-target]; target names must start with an alpha character" || { echo "Test13: No _target msg"; return 16; }
+	CONSOLE_OUTPUT_CONTAINS "ERROR : Invalid target name [target-]; target names must end with an alphanumeric character" || { echo "Test14: No 1target msg"; return 17; }
+	CONSOLE_OUTPUT_CONTAINS "ERROR : Invalid target name [target_]; target names must end with an alphanumeric character" || { echo "Test15: No -target msg"; return 18; }
+	CONSOLE_OUTPUT_CONTAINS "ERROR : Special character [%] is not valid in a role name." || { echo "Test16: No target- msg"; return 19; }
+	CONSOLE_OUTPUT_CONTAINS "ERROR : Invalid target/role pairing." || { echo "Test17: No target_ msg"; return 20; }
+	CONSOLE_OUTPUT_CONTAINS "ERROR : Invalid option combination." || { echo "Test18: No error for percent"; return 21; }
+
+
+
+
+
+
+		return 0
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_CLEANUP
+#
+# This callback function is only called if the harness execution mode is 'AT_INDEPENDENT'
+# 
+# This callback restores the target system to the state it was in before the TC 
+# was run. It rolls back changes made by callbacks tc_setup() and tc_test()
+# 
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_cleanup() {
+
+# Delete test user 1
+	echo "Deleting test user 1"
+        ${AT_BIN}/con_ex.bsh -d 432.in.tmp -o 432remuser.exp -c "/ericsson/sdee/bin/del_user.sh -d 1.com -n u432a -y" || {
+                echo "Failed to generate /usr/local/bin/expect script, $?"
+                return 1
+        }
+
+        /usr/local/bin/expect 432remuser.exp >/dev/null || {
+                echo "Failed to delete user, error code $?"
+                return 2
+        }
+		
+		# Delete test user 2
+	echo "Deleting test user 2"
+        ${AT_BIN}/con_ex.bsh -d 432.in.tmp -o 432remuser.exp -c "/ericsson/sdee/bin/del_user.sh -d 1.com -n u432b -y" || {
+                echo "Failed to generate /usr/local/bin/expect script, $?"
+                return 1
+        }
+
+        /usr/local/bin/expect 432remuser.exp >/dev/null || {
+                echo "Failed to delete user, error code $?"
+                return 2
+        }
+     # Remove roles
+	echo "Deleting test user roles"
+        ${AT_BIN}/con_ex.bsh -d 432.in.tmp -o 432_expect.exp -c "/ericsson/sdee/bin/manage_COM.bsh -r role -d 1.com -R role432 -y " -r
+        /usr/local/bin/expect 432_expect.exp >/dev/null || {
+                echo "Could not delete role added to 1.com domain - FAIL"
+                return 9
+        }
+
+	
+	# Remove temporary files
+	rm -f *.exp
+	rm -f *.out
+	
+	return 0
+}

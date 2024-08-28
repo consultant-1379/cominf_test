@@ -1,0 +1,290 @@
+#!/bin/bash
+#################################################################################
+#
+#
+#       COPYRIGHT (C) ERICSSON RADIO SYSTEMS AB, Sweden
+#
+#       The copyright to the document(s) herein is the property of
+#       Ericsson Radio Systems AB, Sweden.
+#
+#       The document(s) may be used and/or copied only with the written
+#       permission from Ericsson Radio Systems AB or in accordance with
+#       the terms and conditions stipulated in the agreement/contract
+#       under which the document(s) have been supplied.
+#
+#################################################################################
+
+
+# ATCOMINF Test Callback Library
+
+# Revision History
+# <date>	xsougha		First Version		
+
+# Complete the callbacks in this library to automate the test case.
+#
+# Callbacks are stateless, it is not possible to set a global variable in one callback 
+# and access it it in another.
+#
+# Callbacks are called by the test harness in the following order:
+#
+# tc_setup() 		# Called only for independent TC execution mode to setup TC
+# tc_precon()		# Conditions that should exist before TC can run
+# tc_test()		# Runs the test for this TC
+# tc_postcon()		# Conditions that should/should not exist after successful TC 
+# tc_cleanup()		# Called only for independent TC execution mode to cleanup after TC
+
+# All callbacks must PASS for a TC PASS result
+
+#################################################################################
+#
+# CALLBACK: TC_SETUP
+#
+# This callback function is only called if the harness execution mode is 'AT_INDEPENDENT'
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_setup() {
+	return 0
+}
+#################################################################################
+
+#################################################################################
+#
+# CALLBACK: TC_PRECON
+#
+# This callback function checks the correct conditions exist to run the TC.
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+ 
+tc_precon() {
+	return 0
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_TEST
+#
+# This callback function runs the test.
+# The harness compares the return code to the SPEC_TC_TEST_PASSCODE value set in the test spec.
+#
+# Return or exit codes:
+#    SPEC_TC_TEST_PASSCODE 	success
+# != SPEC_TC_TEST_PASSCODE 	failure
+ 
+tc_test() {
+        # Verifying help of the script reset_user_password.sh
+        /ericsson/sdee/bin/reset_user_password.sh -h
+        CONSOLE_OUTPUT_CONTAINS "Usage:  reset_user_password.sh [-G] [-d <domain>] [-u <user name>] [-f <file path>] [-t <User type>] [-a] [-h]" || {
+                echo "Failed to verify help of reset_user_password.sh script"
+                return 1
+        }
+
+        # Adding a OSS_ONLY user
+        ${AT_BIN}/con_ex.bsh -d 1783_add_user_u1783.in -o 1783_add_user_u1783.exp -c "/ericsson/sdee/bin/add_user.sh"
+        /usr/local/bin/expect 1783_add_user_u1783.exp
+        CONSOLE_OUTPUT_CONTAINS "OK: Account created" || {
+                echo "Failed to add user u1783"
+                return 1
+        }
+
+	# Adding a COM_APP user
+        ${AT_BIN}/con_ex.bsh -d 1783_add_user_uCOM_APP.in -o 1783_add_user_uCOM_APP.exp -c "/ericsson/sdee/bin/add_user.sh -t COM_APP"
+        /usr/local/bin/expect 1783_add_user_uCOM_APP.exp
+        CONSOLE_OUTPUT_CONTAINS "OK: Account created" || {
+                echo "Failed to add user uCOM_APP"
+                return 1
+        }
+
+	# Adding a COM_OSS user
+	# Step 1: Adding a OSS user 
+        ${AT_BIN}/con_ex.bsh -d 1783_add_user_uCOM_OSS.in -o 1783_add_user_uCOM_OSS.exp -c "/ericsson/sdee/bin/add_user.sh"
+        /usr/local/bin/expect 1783_add_user_uCOM_OSS.exp
+        CONSOLE_OUTPUT_CONTAINS "OK: Account created" || {
+                echo "Failed to add user uCOM_OSS"
+                return 1
+        }
+
+	# Step 2: Converting the OSS user to COM_OSS user 
+        ${AT_BIN}/con_ex.bsh -d 1783_add_target_to_user_uCOM_OSS.in -o 1783_add_target_to_user_uCOM_OSS.exp -c "/ericsson/sdee/bin/manage_COM_privs.bsh -a target -T target1 -u uCM_OSS"
+        /usr/local/bin/expect 1783_add_target_to_user_uCOM_OSS.exp
+        CONSOLE_OUTPUT_CONTAINS "INFO : Successfully added target" || {
+                echo "Failed to convert user uCOM_OSS to COM_OSS user"
+                return 1
+        }
+
+	# Adding a COM_ONLY user
+        ${AT_BIN}/con_ex.bsh -d 1783_add_user_uCOM_ONLY.in -o 1783_add_user_uCOM_ONLY.exp -c "/ericsson/sdee/bin/add_user.sh -t COM_ONLY"
+        /usr/local/bin/expect 1783_add_user_uCOM_ONLY.exp
+        CONSOLE_OUTPUT_CONTAINS "OK: Account created" || {
+                echo "Failed to add user uCOM_ONLY"
+                return 1
+        }
+
+        # Resetting user password for a user
+        ${AT_BIN}/con_ex.bsh -d 1783_reset_user_u1783_password.in -o 1783_reset_user_u1783_password.exp -c "/ericsson/sdee/bin/reset_user_password.sh"
+        /usr/local/bin/expect 1783_reset_user_u1783_password.exp
+        CONSOLE_OUTPUT_CONTAINS "INFO: Password Reset Applied for Local User [u1783] of Type [OSS_ONLY] in domain [vts.com]" || {
+                echo "Failed to reset password for user u1783"
+                return 1
+        }
+
+	# Resetting user password for a COM_APP user using -t option
+        ${AT_BIN}/con_ex.bsh -d 1783_reset_user_uCOM_APP_password.in -o 1783_reset_user_uCOM_APP_password.exp -c "/ericsson/sdee/bin/reset_user_password.sh -t COM_APP"
+        /usr/local/bin/expect 1783_reset_user_uCOM_APP_password.exp
+        CONSOLE_OUTPUT_CONTAINS "INFO: Password Reset Applied for Local User [uCM_APP] of Type [COM_APP] in domain [vts.com]" || {
+                echo "Failed to reset password for user uCM_APP"
+                return 1
+        }
+
+	# Resetting user password for a COM_OSS user using -t option
+        ${AT_BIN}/con_ex.bsh -d 1783_reset_user_uCOM_OSS_password.in -o 1783_reset_user_uCOM_OSS_password.exp -c "/ericsson/sdee/bin/reset_user_password.sh -t COM_OSS"
+        /usr/local/bin/expect 1783_reset_user_uCOM_OSS_password.exp
+        CONSOLE_OUTPUT_CONTAINS "INFO: Password Reset Applied for Local User [uCM_OSS] of Type [COM_OSS] in domain [vts.com]" || {
+                echo "Failed to reset password for user uCM_OSS"
+                return 1
+        }
+
+	# Resetting user password for a COM_ONLY user using -t option  
+        ${AT_BIN}/con_ex.bsh -d 1783_reset_user_uCOM_ONLY_password.in -o 1783_reset_user_uCOM_ONLY_password.exp -c "/ericsson/sdee/bin/reset_user_password.sh -t COM_ONLY"
+        /usr/local/bin/expect 1783_reset_user_uCOM_ONLY_password.exp
+        CONSOLE_OUTPUT_CONTAINS "INFO: Password Reset Applied for Local User [uCM_ONLY] of Type [COM_ONLY] in domain [vts.com]" || {
+                echo "Failed to reset password for user uCM_ONLY"
+                return 1
+        }
+
+        # Resetting single user password with "-u" option
+        ${AT_BIN}/con_ex.bsh -d 1783_reset_single_user_u1783_password.in -o 1783_reset_single_user_u1783_password.exp -c "/ericsson/sdee/bin/reset_user_password.sh -u u1783 -d vts.com"
+        /usr/local/bin/expect 1783_reset_single_user_u1783_password.exp
+        CONSOLE_OUTPUT_CONTAINS "INFO: Password Reset Applied for Local User [u1783] of Type [OSS_ONLY] in domain [vts.com]" || {
+                echo "Failed to reset all user passwords"
+                return 1
+        }
+
+        # Resetting all user passwords with "-a" option
+        ${AT_BIN}/con_ex.bsh -d 1783_reset_all_user_passwords.in -o 1783_reset_all_user_passwords.exp -c "/ericsson/sdee/bin/reset_user_password.sh -a"
+        /usr/local/bin/expect 1783_reset_all_user_passwords.exp
+        CONSOLE_OUTPUT_CONTAINS "INFO: Password Reset Applied for Local User [u1783] of Type [OSS_ONLY] in domain [vts.com]" || {
+                echo "Failed to reset all user passwords"
+                return 1
+        }
+
+	# Resetting bulk user passwords using "-f" option 
+	# Step 1: Creating file containing usernames
+	echo "u1783
+uCM_APP
+uCM_OSS
+uCM_ONLY" > /var/tmp/users_file || {
+		echo "Failed to add users to file"
+		return 1
+	}  
+
+	# Step 2: Resetting all user passwords contained in file
+        ${AT_BIN}/con_ex.bsh -d 1783_reset_all_user_passwords_from_file.in -o 1783_reset_all_user_passwords_from_file.exp -c "/ericsson/sdee/bin/reset_user_password.sh -f /var/tmp/users_file"
+        /usr/local/bin/expect 1783_reset_all_user_passwords_from_file.exp 
+	CONSOLE_OUTPUT_CONTAINS "INFO: Password Reset" || {
+                echo "Failed to reset all user passwords from file"
+                return 1
+        }
+
+	return 0
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_POSTCON
+#
+# This callback function checks expected results.
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_postcon() {
+	return 0
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_CLEANUP
+#
+# This callback function is only called if the harness execution mode is 'AT_INDEPENDENT'
+# 
+# This callback restores the target system to the state it was in before the TC 
+# was run. It rolls back changes made by callbacks tc_setup() and tc_test()
+# 
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_cleanup() {
+        # Deleting user u1783
+        ${AT_BIN}/con_ex.bsh -d 1783_del_user_u1783.in -o 1783_del_user_u1783.exp -c "/ericsson/sdee/bin/del_user.sh"
+        /usr/local/bin/expect 1783_del_user_u1783.exp
+        CONSOLE_OUTPUT_CONTAINS "OK: Account deleted" || {
+                echo "Failed to delete user u1783"
+                return 1
+        }
+
+        # Verifying whether user u1783 got successfully deleted
+        ldapsearch -D "cn=directory manager" -w ldappass -b "uid=u1783,ou=people,dc=vts,dc=com" "objectclass=*" && {
+                echo "User u1783 still exists. Failed to delete the same"
+                return 1
+        }
+
+        # Deleting user uCOM_APP
+        ${AT_BIN}/con_ex.bsh -d 1783_del_user_uCOM_APP.in -o 1783_del_user_uCOM_APP.exp -c "/ericsson/sdee/bin/del_user.sh"
+        /usr/local/bin/expect 1783_del_user_uCOM_APP.exp
+        CONSOLE_OUTPUT_CONTAINS "OK: Account deleted" || {
+                echo "Failed to delete user uCOM_APP"
+                return 1
+        }
+
+        # Verifying whether user uCOM_APP got successfully deleted
+        ldapsearch -D "cn=directory manager" -w ldappass -b "uid=uCOM_APP,ou=people,dc=vts,dc=com" "objectclass=*" && {
+                echo "User uCOM_APP still exists. Failed to delete the same"
+                return 1
+        }
+
+        # Deleting user uCOM_OSS
+        ${AT_BIN}/con_ex.bsh -d 1783_del_user_uCOM_OSS.in -o 1783_del_user_uCOM_OSS.exp -c "/ericsson/sdee/bin/del_user.sh"
+        /usr/local/bin/expect 1783_del_user_uCOM_OSS.exp
+        CONSOLE_OUTPUT_CONTAINS "OK: Account deleted" || {
+                echo "Failed to delete user uCOM_OSS"
+                return 1
+        }
+
+        # Verifying whether user uCOM_APP got successfully deleted
+        ldapsearch -D "cn=directory manager" -w ldappass -b "uid=uCOM_OSS,ou=people,dc=vts,dc=com" "objectclass=*" && {
+                echo "User uCOM_OSS still exists. Failed to delete the same"
+                return 1
+        }
+
+        # Deleting user uCOM_ONLY
+        ${AT_BIN}/con_ex.bsh -d 1783_del_user_uCOM_ONLY.in -o 1783_del_user_uCOM_ONLY.exp -c "/ericsson/sdee/bin/del_user.sh"
+        /usr/local/bin/expect 1783_del_user_uCOM_ONLY.exp
+        CONSOLE_OUTPUT_CONTAINS "OK: Account deleted" || {
+                echo "Failed to delete user uCOM_ONLY"
+                return 1
+        }
+
+        # Verifying whether user uCOM_ONLY got successfully deleted
+        ldapsearch -D "cn=directory manager" -w ldappass -b "uid=uCOM_ONLY,ou=people,dc=vts,dc=com" "objectclass=*" && {
+                echo "User uCOM_ONLY still exists. Failed to delete the same"
+                return 1
+        }
+
+	# Removing any temporary files used
+	rm -rf *.exp /var/tmp/users_file
+
+	return 0
+}

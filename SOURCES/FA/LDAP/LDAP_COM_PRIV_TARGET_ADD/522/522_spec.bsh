@@ -1,0 +1,75 @@
+#!/bin/bash
+
+# TEST CASE SPEC FILE
+# This file is generated/updated using the test framework web interface.
+# Manual updates on test servers are lost when the test package is re-installed.
+#
+# Last modified: Tuesday 14th of May 2013 10:34:53
+#
+
+# These settings must be in BASH script format, they are sourced by other scripts.
+SPEC_FA_NAME="LDAP"
+SPEC_UC_NAME="LDAP_COM_PRIV_TARGET_ADD"
+SPEC_TC_ID=522
+SPEC_TC_SLOGAN="Add target with invalid options"
+SPEC_TC_TYPE="FT"
+SPEC_TC_POLARITY="negative"
+SPEC_TC_PRIORITY="low"
+SPEC_TC_AUTOMATED=1
+SPEC_TC_DEPENDENT_ONLY=0
+SPEC_TC_TIMEOUT=300
+SPEC_TC_TEST_PASSCODE=0
+SPEC_TC_AUTHOR="xamamcg"
+SPEC_TC_AUTOMATOR="xamamcg"
+# this parameter is not interpreted by harness
+SPEC_TC_DISABLED=0
+
+# Please do not remove the comment lines below.
+# They are used as section locators by the test harness.
+
+# BEGIN_PRE_CONDITIONS
+#1. user522 exists
+#2. role522 exists
+#
+# END_PRE_CONDITIONS
+
+
+# BEGIN_MANUAL_STEPS
+#1. ! manage_COM_privs.bsh -a target -d 1.com -u u522 -T target1 -y -e
+#2. ! manage_COM_privs.bsh -a targets -d 1.com -u u522 -T target1 -y
+#3. ! manage_COM_privs.bsh -a target -d -u u522 -T target1 -y
+#4. ! manage_COM_privs.bsh -a target -d -u -T target1 -y
+#5. ! manage_COM_privs.bsh -a target -d wrong.com -u u522 -T target1 -y
+#6. ! manage_COM_privs.bsh -a target -d 1.com -u u522not -T target1 -y
+#7. manage_COM_privs.bsh -a target -d 1.com -u u522 -T target1 and then answer No to whether to proceed
+#8. ! su - bsim -c 'manage_COM_privs.bsh -a target -d 1.com -u u522 -T target1 -y'
+#9. ! manage_COM_privs.bsh -a target -d 1.com -u u522 -T target789012345678901234567890123456789012345678901 -y
+#10. ! manage_COM_privs.bsh -a target -d 1.com -u u522 -T _target -y
+#11. ! manage_COM_privs.bsh -a target -d 1.com -u u522 -T 1target -y
+#12. ! manage_COM_privs.bsh -a target -d 1.com -u u522 -T -target -y
+#13. ! manage_COM_privs.bsh -a target -d 1.com -u u522 -T target- -y
+#14 ! manage_COM_privs.bsh -a target -d 1.com -u u522 -T target_ -y
+#15. ! manage_COM_privs.bsh -a target -d 1.com -u u522 -T tar%get -y
+#16. ! manage_COM_privs.bsh -a target -d 1.com -u u522 -T target1:role522 -y
+#17. ! manage_COM_privs.bsh -a target -d 1.com -u u522 -R target1 -y
+# END_MANUAL_STEPS
+
+# BEGIN_POST_CONDITIONS
+#1. CONSOLE_OUTPUT_CONTAINS "illegal option -- e"
+#2. CONSOLE_OUTPUT_CONTAINS "ERROR : Invalid modifier [targets] for action [add]."
+#3. CONSOLE_OUTPUT_CONTAINS "Domain [-u] does not exist"
+#4. CONSOLE_OUTPUT_CONTAINS "Domain [wrong.com] does not exist"
+#5. CONSOLE_OUTPUT_CONTAINS "Requested user [u522not] does not existin domain"
+#6. CONSOLE_OUTPUT_CONTAINS "INFO: Cancelled"
+#7. CONSOLE_OUTPUT_CONTAINS "manage_COM_privs.bsh: Permission denied"
+#8. CONSOLE_OUTPUT_CONTAINS "Targets cannot contain more than 50 characters"
+#9. CONSOLE_OUTPUT_CONTAINS "Invalid target name [_target]; target names must start with an alpha"
+#10. CONSOLE_OUTPUT_CONTAINS "Invalid target name [1target]; target names must start with an alpha"
+#11. CONSOLE_OUTPUT_CONTAINS "Invalid target name [-target]; target names must start with an alpha"
+#12. CONSOLE_OUTPUT_CONTAINS "Invalid target name [target-]; target names must end with an"
+#13. CONSOLE_OUTPUT_CONTAINS "Invalid target name [target_]; target names must end with an"
+#14. CONSOLE_OUTPUT_CONTAINS "Invalid characters in target name list"
+#15. CONSOLE_OUTPUT_CONTAINS "Invalid option combination"
+#16.User u522 has no targets
+#17. Usage statement appears 4 times
+# END_POST_CONDITIONS

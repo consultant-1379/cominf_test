@@ -1,0 +1,321 @@
+#!/bin/bash
+#################################################################################
+#
+#
+#	   COPYRIGHT (C) ERICSSON RADIO SYSTEMS AB, Sweden
+#
+#	   The copyright to the document(s) herein is the property of
+#	   Ericsson Radio Systems AB, Sweden.
+#
+#	   The document(s) may be used and/or copied only with the written
+#	   permission from Ericsson Radio Systems AB or in accordance with
+#	   the terms and conditions stipulated in the agreement/contract
+#	   under which the document(s) have been supplied.
+#
+#################################################################################
+
+
+# ATCOMINF Test Callback Library
+
+# Revision History
+# 20/09/13	xkalbha		Initial test for add role to COM_only user
+
+# Complete the callbacks in this library to automate the test case.
+#
+# Callbacks are stateless, it is not possible to set a global variable in one callback 
+# and access it it in another.
+#
+# Callbacks are called by the test harness in the following order:
+#
+# tc_setup() 		# Called only for independent TC execution mode to setup TC
+# tc_precon()		# Conditions that should exist before TC can run
+# tc_test()		# Runs the test for this TC
+# tc_postcon()		# Conditions that should/should not exist after successful TC 
+# tc_cleanup()		# Called only for independent TC execution mode to clenup after TC
+
+# All callbacks must PASS for a TC PASS result
+LDAP_BIN="/ericsson/sdee/bin"
+TEST_DOMAIN=$(cat /ericsson/config/config.ini | grep "LDAP_DOMAIN_NAME" | awk -F= '{print $2}')
+TEST_USER1=u426a
+TEST_USER2=u426b
+TEST_UID1=1426
+TEST_UID2=2426
+TEST_ROLE1=r426a
+TEST_ROLE2=r426b
+TEST_ALIAS1=a426a
+TEST_TARGET1=t426a
+COMMENT=bhavana
+#################################################################################
+#
+# CALLBACK: TC_SETUP
+#
+# This callback function is only called if the harness execution mode is 'AT_INDEPENDENT'
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_setup() {
+
+    # Replace PASSWD and other fields in input file(s) with the correct credentials or data
+    for ii in *.in; do
+        sed -e "s/^PASSWD$/$LDAP_SUPERUSER_PASSWD/" \
+            -e "s/TESTROLE1/$TEST_ROLE1/" \
+            -e "s/TESTROLE2/$TEST_ROLE2/" \
+            -e "s/UPASSWD/12345678/" $ii > $ii.tmp || {
+            echo "Failed to replace LDAP superuser password holder etc in /usr/local/bin/expect input file $ii, rc $?"
+            return 1
+        }
+    done
+
+
+#-------------------------------------------------------------------------------
+# Create a test user  
+#-------------------------------------------------------------------------------
+
+	${AT_BIN}/con_ex.bsh -d 426adduser.in.tmp -o 426adduser.exp -c "$LDAP_BIN/add_user.sh -t COM_APP -d $TEST_DOMAIN -n $TEST_USER1 -i $TEST_UID1 -C $COMMENT -y" || {
+		echo "Failed to generate /usr/local/bin/expect script, $?"
+		return 2
+	}
+
+	echo "Creating first test user"
+	/usr/local/bin/expect 426adduser.exp  && {
+		echo "Failed to create user, error code $?"
+		return 3
+	}
+	
+#-------------------------------------------------------------------------------
+# Create a 2nd test user
+#-------------------------------------------------------------------------------
+
+	${AT_BIN}/con_ex.bsh -d 426adduser.in.tmp -o 426adduser.exp -c "$LDAP_BIN/add_user.sh -t COM_APP -d $TEST_DOMAIN -n $TEST_USER2 -i $TEST_UID2 -C $COMMENT -y" || {
+                echo "Failed to generate /usr/local/bin/expect script, $?"
+                return 4
+        }
+
+	echo "Creating second test user"
+        /usr/local/bin/expect 426adduser.exp  && {
+                echo "Failed to create user, error code $?"
+                return 5
+        }
+
+#-------------------------------------------------------------------------------
+# Create a test role
+#-------------------------------------------------------------------------------
+
+	${AT_BIN}/con_ex.bsh -d 426.in.tmp -o 426addrole.exp -c "$LDAP_BIN/manage_COM.bsh -a role -d $TEST_DOMAIN -R $TEST_ROLE1 -y" || {
+		echo "Failed to generate /usr/local/bin/expect script, $?"
+		return 6
+	}
+
+	echo "Creating first test role"
+	/usr/local/bin/expect 426addrole.exp  || {
+		echo "Failed to create role, error code $?"
+		return 7
+	}
+#-------------------------------------------------------------------------------
+# Create a 2nd test role
+#-------------------------------------------------------------------------------
+
+	${AT_BIN}/con_ex.bsh -d 426.in.tmp -o 426addrole.exp -c "$LDAP_BIN/manage_COM.bsh -a role -d $TEST_DOMAIN -R $TEST_ROLE2 -y" || {
+                echo "Failed to generate /usr/local/bin/expect script, $?"
+                return 8
+        }
+
+	echo "Creating second test role"
+        /usr/local/bin/expect 426addrole.exp  || {
+                echo "Failed to create role, error code $?"
+                return 9
+        }
+
+#-------------------------------------------------------------------------------
+# Create a test target
+#-------------------------------------------------------------------------------
+
+	${AT_BIN}/con_ex.bsh -d 426.in.tmp -o 426addtarget.exp -c "$LDAP_BIN/manage_COM_privs.bsh -a target -d $TEST_DOMAIN -u $TEST_USER1 -T $TEST_TARGET1 -y" || {
+		echo "Failed to generate /usr/local/bin/expect script, $?"
+		return 10
+	}
+
+	echo "Creating test target"
+	/usr/local/bin/expect 426addtarget.exp || {
+		echo "Failed to create target, error code $?"
+		return 11
+	}
+	
+	return 0
+}
+
+#################################################################################
+#
+# CALLBACK: TC_PRECON
+#
+# This callback function checks the correct conditions exist to run the TC.
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+ 
+tc_precon() {
+
+ 	dmn=$(LDAP_GET_DOMAIN_DN_FORMAT $TEST_DOMAIN)
+	LDAP_SERVER_UP || {
+		echo "LDAP server not running"
+		return 1
+	}
+
+#-------------------------------------------------------------------------------
+#  Test user is present
+#-------------------------------------------------------------------------------
+
+	/usr/bin/ldapsearch -D "cn=Directory Manager" -w $LDAP_SUPERUSER_PASSWD -b "uid=$TEST_USER1,ou=people,$dmn" objectclass=* > u426.out || {
+		echo "Failed to do LDAP search"
+		return 1
+	}
+	grep "ericssonUserAuthenticationScope: $TEST_TARGET1" u426.out || {
+		echo "Failed to find target1 for user $TEST_USER1"
+		return 2
+	}
+	/usr/bin/ldapsearch -D "cn=Directory Manager" -w $LDAP_SUPERUSER_PASSWD -b "cn=$TEST_ROLE1,ou=role,ou=com,$dmn" objectclass=* | grep "cn: $TEST_ROLE1" || {
+		echo "Failed to find $TEST_ROLE1"
+		return 3
+	}
+
+	/usr/bin/ldapsearch -D "cn=Directory Manager" -w $LDAP_SUPERUSER_PASSWD -b "uid=$TEST_USER2,ou=people,$dmn" objectclass=* > u426b.out || {
+		echo "Failed to do LDAP search for $TEST_USER2"
+		return 4
+	}
+	grep "ericssonUserAuthenticationScope" u426b.out && {
+		echo "Found authentication scope for $TEST_USER2"
+		return 5
+	}
+	/usr/bin/ldapsearch -D "cn=Directory Manager" -w $LDAP_SUPERUSER_PASSWD -b "cn=$TEST_ROLE2,ou=role,ou=com,$dmn" objectclass=* | grep "cn: $TEST_ROLE2" || {
+		echo "Failed to find $TEST_ROLE2"
+		return 6
+	}
+	return 0
+
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_TEST
+#
+# This callback function runs the test.
+# The harness compares the return code to the SPEC_TC_TEST_PASSCODE value set in the test spec.
+#
+# Return or exit codes:
+#	SPEC_TC_TEST_PASSCODE 	success
+# != SPEC_TC_TEST_PASSCODE 	failure
+ 
+tc_test() {
+
+	${AT_BIN}/con_ex.bsh -d 426.in.tmp -o 426.exp -c "$LDAP_BIN/manage_COM_privs.bsh -a role -d $TEST_DOMAIN -u $TEST_USER1 -R ,,$TEST_ROLE1, -y" || {
+		echo "Failed to generate /usr/local/bin/expect script, $?"
+		return 1
+	}
+
+	/usr/local/bin/expect 426.exp || {
+		echo "Failed to add role to user, error code $?"
+		return 2
+	}
+
+	${AT_BIN}/con_ex.bsh -d 426.in.tmp -o 426.exp -c "$LDAP_BIN/manage_COM_privs.bsh -a role -d $TEST_DOMAIN -u $TEST_USER2 -R TARGET.2:$TEST_ROLE2 -y" || {
+		echo "Failed to generate /usr/local/bin/expect script, $?"
+		return 3
+	}
+
+	/usr/local/bin/expect 426.exp || {
+		echo "Failed to add role to user, error code $?"
+		return 4
+	}
+	return 0
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_POSTCON
+#
+# This callback function checks expected results.
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_postcon() {
+
+ 	dmn=$(LDAP_GET_DOMAIN_DN_FORMAT $TEST_DOMAIN)
+	/usr/bin/ldapsearch -D 'cn=Directory Manager' -w $LDAP_SUPERUSER_PASSWD -b uid=$TEST_USER1,ou=people,$dmn objectclass=* | grep "ericssonUserAuthorizationScope: $TEST_ROLE1" || {
+		echo "$TEST_USER1 user does not have role ... This wasn't expected"
+		return 4
+	}
+
+	/usr/bin/ldapsearch -D 'cn=Directory Manager' -w $LDAP_SUPERUSER_PASSWD -b uid=$TEST_USER2,ou=people,$dmn objectclass=* | grep "ericssonUserAuthorizationScope: TARGET.2:$TEST_ROLE2" || {
+		echo "$TEST_USER2 user does not have role ... This wasn't expected"
+		return 8
+	}
+	return 0
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_CLEANUP
+#
+# This callback function is only called if the harness execution mode is 'AT_INDEPENDENT'
+# 
+# This callback restores the target system to the state it was in before the TC 
+# was run. It rolls back changes made by callbacks tc_setup() and tc_test()
+# 
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_cleanup() {
+
+        # Delete test user 1
+	echo "Deleting test user 1"
+        ${AT_BIN}/con_ex.bsh -d 426.in.tmp -o 426remrole.exp -c "$LDAP_BIN/del_user.sh -d $TEST_DOMAIN -n $TEST_USER1 -y" || {
+                echo "Failed to generate /usr/local/bin/expect script, $?"
+                return 1
+        }
+
+        /usr/local/bin/expect 426remrole.exp >/dev/null || {
+                echo "Failed to create role, error code $?"
+                return 2
+        }
+
+        # Delete test user 2
+	echo "Deleting test user 2"
+        ${AT_BIN}/con_ex.bsh -d 426.in.tmp -o 426remrole.exp -c "$LDAP_BIN/del_user.sh -d $TEST_DOMAIN -n $TEST_USER2 -y" || {
+                echo "Failed to generate /usr/local/bin/expect script, $?"
+                return 3
+        }
+
+        /usr/local/bin/expect 426remrole.exp || {
+                echo "Failed to create role, error code $?"
+                return 4
+        }
+
+        # Remove roles
+	echo "Deleting test user roles"
+        ${AT_BIN}/con_ex.bsh -d 426_remove_role.in.tmp -o 426_expect.exp -c "$LDAP_BIN/manage_COM.bsh -r role -d $TEST_DOMAIN  " -r
+        /usr/local/bin/expect 426_expect.exp  || {
+                echo "Could not delete role added to default domain - FAIL"
+                return 1
+        }
+
+        # remove the generated /usr/local/bin/expect files
+        rm -f *tmp *exp *out || {
+                echo "Failed to remove the generated working files"
+                return 1
+        }
+
+	rm -f *.exp
+	rm -f *.out
+}

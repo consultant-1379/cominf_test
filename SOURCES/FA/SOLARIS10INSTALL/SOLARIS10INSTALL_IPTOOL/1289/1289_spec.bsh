@@ -1,0 +1,67 @@
+#!/bin/bash
+
+# TEST CASE SPEC FILE
+# This file is generated/updated using the test framework web interface.
+# Manual updates on test servers are lost when the test package is re-installed.
+#
+# Last modified: Monday 16th of December 2013 8:56:05
+#
+
+# These settings must be in BASH script format, they are sourced by other scripts.
+SPEC_FA_NAME="SOLARIS10INSTALL"
+SPEC_UC_NAME="SOLARIS10INSTALL_IPTOOL"
+SPEC_TC_ID=1289
+SPEC_TC_SLOGAN="After reboot, the configuration stays "
+SPEC_TC_TYPE="FT"
+SPEC_TC_POLARITY="positive"
+SPEC_TC_PRIORITY="high"
+SPEC_TC_AUTOMATED=0
+SPEC_TC_DEPENDENT_ONLY=0
+SPEC_TC_TIMEOUT=300
+SPEC_TC_TEST_PASSCODE=0
+SPEC_TC_AUTHOR="xgansre"
+SPEC_TC_AUTOMATOR="xgansre"
+# this parameter is not interpreted by harness
+SPEC_TC_DISABLED=0
+
+# Please do not remove the comment lines below.
+# They are used as section locators by the test harness.
+
+# BEGIN_PRE_CONDITIONS
+#
+#Mars Path <Initial Installation/Automated installation of IPTOOL >
+#
+# END_PRE_CONDITIONS
+
+
+# BEGIN_MANUAL_STEPS
+#After running iptool, if you reboot that the interface stays configured.
+#Reboot the server and once the server is up and running.Verify that the ipv6 address configured using iptool is still configured and is up.
+#
+#
+# END_MANUAL_STEPS
+
+# BEGIN_POST_CONDITIONS
+#Resullt: the interface is configured and is up after reboot.
+#bash-3.2# ifconfig -a
+#lo0: flags=2001000849<UP,LOOPBACK,RUNNING,MULTICAST,IPv4,VIRTUAL> mtu 8232 index 1
+#inet 127.0.0.1 netmask ff000000
+#e1000g0: flags=1000843<UP,BROADCAST,RUNNING,MULTICAST,IPv4> mtu 1500 index 2
+#inet 10.45.201.4 netmask ffffff00 broadcast 10.45.201.255
+#ether 0:50:56:82:1:54
+#e1000g0:99: flags=1000843<UP,BROADCAST,RUNNING,MULTICAST,IPv4> mtu 1500 index 2
+#inet 10.45.201.150 netmask ffffff00 broadcast 10.45.201.255
+#e1000g1: flags=1000843<UP,BROADCAST,RUNNING,MULTICAST,IPv4> mtu 1500 index 3
+#inet 10.45.201.119 netmask ffffff00 broadcast 10.45.201.255
+#ether 0:50:56:82:1:55
+#e1000g2: flags=1000842<BROADCAST,RUNNING,MULTICAST,IPv4> mtu 1500 index 4
+#inet 10.45.201.150 netmask ffffff00 broadcast 10.45.201.255
+#ether 0:50:56:82:1:56
+#lo0: flags=2002000849<UP,LOOPBACK,RUNNING,MULTICAST,IPv6,VIRTUAL> mtu 8252 index 1
+#inet6 ::1/128
+#e1000g0: flags=2000841<UP,RUNNING,MULTICAST,IPv6> mtu 1500 index 2
+#inet6 fe80::250:56ff:fe82:154/10
+#ether 0:50:56:82:1:54
+#e1000g0:1: flags=2000841<UP,RUNNING,MULTICAST,IPv6> mtu 1500 index 2
+#inet6 2001:1b70:82a1:b:0:3008:4:1/64 
+# END_POST_CONDITIONS

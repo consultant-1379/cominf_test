@@ -1,0 +1,58 @@
+#!/bin/bash
+
+# TEST CASE SPEC FILE
+# This file is generated/updated using the test framework web interface.
+# Manual updates on test servers are lost when the test package is re-installed.
+#
+# Last modified: Tuesday 17th of December 2013 9:41:22
+#
+
+# These settings must be in BASH script format, they are sourced by other scripts.
+SPEC_FA_NAME="SOLARIS10MIGRATION"
+SPEC_UC_NAME="SOLARIS10MIGRATION_Same_Release"
+SPEC_TC_ID=1747
+SPEC_TC_SLOGAN="OCS Backup "
+SPEC_TC_TYPE="FT"
+SPEC_TC_POLARITY="positive"
+SPEC_TC_PRIORITY="high"
+SPEC_TC_AUTOMATED=0
+SPEC_TC_DEPENDENT_ONLY=0
+SPEC_TC_TIMEOUT=300
+SPEC_TC_TEST_PASSCODE=0
+SPEC_TC_AUTHOR="xvinkat"
+SPEC_TC_AUTOMATOR="xvinkat"
+# this parameter is not interpreted by harness
+SPEC_TC_DISABLED=0
+
+# Please do not remove the comment lines below.
+# They are used as section locators by the test harness.
+
+# BEGIN_PRE_CONDITIONS
+#<path to the testcase>
+#
+#<Upgrade/Migration/Same Release Migration>  
+#
+#Configuration OSS, O&M Infra Primary, O&M Infra Secondary and UAS are all configured according to the Same Release Migration Workflow.
+#
+#Create three users on the UAS to test the LDAP migration.
+#One user has an unlocked account, one user has a locked account and one user has an account where its password has expired.
+#
+#Global Domain Migration is not supported for 13. No ldap domains can be migrated to the global domain before Same Release Migration. Only one domain can be migrated at a time. 
+#
+#
+# END_PRE_CONDITIONS
+
+
+# BEGIN_MANUAL_STEPS
+#Follow the section “Backup Service Data” in chapter Same Release New Hardware Migration of the Cominf Upgrade Guide X86.
+#
+#Backup Service Data 
+# END_MANUAL_STEPS
+
+# BEGIN_POST_CONDITIONS
+#The backup procedure executed successfully
+#The document procedure executed successfully.
+#A valid mig file is created.
+#No errors are reported in the log file.
+#The log file shows that all necessary files for DNS, NTP, DHCP and LDAP are included in the mig file to ensure that no data is lost.
+# END_POST_CONDITIONS

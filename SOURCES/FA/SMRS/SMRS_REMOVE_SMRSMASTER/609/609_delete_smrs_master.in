@@ -1,0 +1,8 @@
+Do you wish to continue
+yes
+Do you wish to completely dismantle the SMRS Master Service on the SMRS Master Server
+yes
+What is the root account password of the SMRS Master
+shroot
+Would you like to remove SMO FtpServices in ONRM
+yes

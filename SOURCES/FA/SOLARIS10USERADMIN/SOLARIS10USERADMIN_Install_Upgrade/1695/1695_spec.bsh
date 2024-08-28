@@ -1,0 +1,60 @@
+#!/bin/bash
+
+# TEST CASE SPEC FILE
+# This file is generated/updated using the test framework web interface.
+# Manual updates on test servers are lost when the test package is re-installed.
+#
+# Last modified: Tuesday 17th of December 2013 6:53:16
+#
+
+# These settings must be in BASH script format, they are sourced by other scripts.
+SPEC_FA_NAME="SOLARIS10USERADMIN"
+SPEC_UC_NAME="SOLARIS10USERADMIN_Install_Upgrade"
+SPEC_TC_ID=1695
+SPEC_TC_SLOGAN="Verify adding an existing OSSRC User into LDAP. "
+SPEC_TC_TYPE="FT"
+SPEC_TC_POLARITY="positive"
+SPEC_TC_PRIORITY="high"
+SPEC_TC_AUTOMATED=1
+SPEC_TC_DEPENDENT_ONLY=0
+SPEC_TC_TIMEOUT=300
+SPEC_TC_TEST_PASSCODE=0
+SPEC_TC_AUTHOR="xlaxain"
+SPEC_TC_AUTOMATOR="xlaxain"
+# this parameter is not interpreted by harness
+SPEC_TC_DISABLED=0
+
+# Please do not remove the comment lines below.
+# They are used as section locators by the test harness.
+
+# BEGIN_PRE_CONDITIONS
+#Path in Mars:- User Administration/Initial Install/Upgrade User Administration Test Cases 
+#
+#The purpose is to verify that the addition of an existing OSSRC user is unsuccessful.
+#
+# END_PRE_CONDITIONS
+
+
+# BEGIN_MANUAL_STEPS
+#Action 1: 
+#
+#Execute the script /ericsson/sdee/bin/add_user.sh and attempt to add an existing user.
+#User is prompted that this user already exists.
+#
+#Action 2: 
+#
+#Execute the script /ericsson/sdee/bin/add_user.sh âEuro d <ldap_domain> and attempt to add an existing user to a different domain (where multiple domains exists).
+#
+#
+# END_MANUAL_STEPS
+
+# BEGIN_POST_CONDITIONS
+#Result 1: 
+#
+#It is not possible to add an existing OSSRC user. A warning message is displayed.
+#
+#Result 2: 
+#
+#It is possible to add an existing OSSRC user to a different ldap domain. A warning message is displayed.
+#
+# END_POST_CONDITIONS

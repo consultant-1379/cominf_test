@@ -1,0 +1,14 @@
+Password
+shroot
+#
+prctl -n project.max-shm-ids -i project default > /var/tmp/shared_memory_list.txt
+#
+crontab -l | grep /ericsson/ocs/bin/clear_unused_shmids.sh >> /var/tmp/shared_memory_list.txt
+#
+scp -o StrictHostKeyChecking=no /var/tmp/shared_memory_list.txt root@omsrvm:/var/tmp/shared_memory_list.txt
+Password
+shroot
+#
+rm /var/tmp/shared_memory_list.txt
+#
+exit

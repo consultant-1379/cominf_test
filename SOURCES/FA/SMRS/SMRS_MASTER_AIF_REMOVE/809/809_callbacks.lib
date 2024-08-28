@@ -1,0 +1,192 @@
+#!/bin/bash
+#################################################################################
+#
+#
+#       COPYRIGHT (C) ERICSSON RADIO SYSTEMS AB, Sweden
+#
+#       The copyright to the document(s) herein is the property of
+#       Ericsson Radio Systems AB, Sweden.
+#
+#       The document(s) may be used and/or copied only with the written
+#       permission from Ericsson Radio Systems AB or in accordance with
+#       the terms and conditions stipulated in the agreement/contract
+#       under which the document(s) have been supplied.
+#
+#################################################################################
+
+
+# ATCOMINF Test Callback Library
+
+# Revision History
+# <date>	<signum>	<details>
+
+# Complete the callbacks in this library to automate the test case.
+#
+# Callbacks are stateless, it is not possible to set a global variable in one callback 
+# and access it it in another.
+#
+# Callbacks are called by the test harness in the following order:
+#
+# tc_setup() 		# Called only for independent TC execution mode to setup TC
+# tc_precon()		# Conditions that should exist before TC can run
+# tc_test()		# Runs the test for this TC
+# tc_postcon()		# Conditions that should/should not exist after successful TC 
+# tc_cleanup()		# Called only for independent TC execution mode to cleanup after TC
+
+# All callbacks must PASS for a TC PASS result
+
+
+get_users() {
+	cat /etc/opt/ericsson/nms_bismrs_mc/smrs_config | egrep "AIF_FTP" | awk -F= '{print $2}' | grep .
+}
+
+
+#################################################################################
+#
+# CALLBACK: TC_SETUP
+#
+# This callback function is only called if the harness execution mode is 'AT_INDEPENDENT'
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_setup() {
+
+	return 0
+
+}
+#################################################################################
+
+#################################################################################
+#
+# CALLBACK: TC_PRECON
+#
+# This callback function checks the correct conditions exist to run the TC.
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+ 
+tc_precon() {
+
+	get_users > original_aif_users
+
+	return 0
+
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_TEST
+#
+# This callback function runs the test.
+# The harness compares the return code to the SPEC_TC_TEST_PASSCODE value set in the test spec.
+#
+# Return or exit codes:
+#    SPEC_TC_TEST_PASSCODE 	success
+# != SPEC_TC_TEST_PASSCODE 	failure
+ 
+tc_test() {
+
+	cmd="/opt/ericsson/nms_bismrs_mc/bin/configure_smrs.sh delete aif"
+
+	aif_users=($(get_users))
+	i=0
+	#while [ ${#aif_users[@]} -gt 0 ]
+	for uname in `get_users`
+	do
+		IFS=$OIFS
+
+		# Run modify command to change password
+		#echo "Testing password [${PW}]"
+		#echo ${aif_users[0]}
+		echo $uname
+		cat > delete_aif_user.tmp <<EOF
+What is the name for this user? 
+$uname
+Would you like to remove autoIntegration FtpService for that user*
+yes
+Are you sure you want to delete this user*
+yes
+EOF
+		${AT_BIN}/con_ex.bsh -d delete_aif_user.tmp -o delete_aif_user.exp -c "${cmd}" || {
+			echo "Failed to create expect script, rc $?"; return 1
+		}
+	
+		/usr/local/bin/expect delete_aif_user.exp || {
+			echo failed to delete aifuser
+			return 2
+		}
+
+		aif_users=($(get_users))
+		#let i=i+1
+	done
+
+	return 0
+
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_POSTCON
+#
+# This callback function checks expected results.
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_postcon() {
+
+	source /etc/opt/ericsson/nms_bismrs_mc/smrs_config
+
+	for user in $(cat original_aif_users | sed 's/,/ /g')
+	do
+		ssh -o "BatchMode=yes" smrs_master "id $user" && {
+			echo $user still exists on smrs_master
+			return 1
+		}
+
+		#for ip in ${SMRS_SLAVE_SERVICE_NEDSS_IP[@]}
+		#do
+		#	 ssh -o "BatchMode=yes" smrs_master "ssh $ip id $user" && {
+		#		 echo $user exists on nedss: $ip
+		#		 return 2
+		#	 }
+		#done
+
+		/opt/ericsson/nms_cif_cs/etc/unsupported/bin/cstest -s ONRM_CS -ns masterservice lt FtpService | grep -w $user && {
+			echo $user still exists in ONRM
+			return 3
+		}
+	done
+
+	return 0
+
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_CLEANUP
+#
+# This callback function is only called if the harness execution mode is 'AT_INDEPENDENT'
+# 
+# This callback restores the target system to the state it was in before the TC 
+# was run. It rolls back changes made by callbacks tc_setup() and tc_test()
+# 
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_cleanup() {
+
+	return 0
+
+}

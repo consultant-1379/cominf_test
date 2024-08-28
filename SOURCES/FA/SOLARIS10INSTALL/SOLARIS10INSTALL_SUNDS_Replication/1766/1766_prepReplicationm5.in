@@ -1,0 +1,10 @@
+LDAP Directory Manager password
+ldappass
+Enter option number
+5
+Enter Replication destination FQHN
+omsrvs.vts.com
+Continue to remove replication agreement with
+Y
+Do you want return to the main menu
+n

@@ -1,0 +1,187 @@
+#!/bin/bash
+#################################################################################
+#
+#
+#	   COPYRIGHT (C) ERICSSON RADIO SYSTEMS AB, Sweden
+#
+#	   The copyright to the document(s) herein is the property of
+#	   Ericsson Radio Systems AB, Sweden.
+#
+#	   The document(s) may be used and/or copied only with the written
+#	   permission from Ericsson Radio Systems AB or in accordance with
+#	   the terms and conditions stipulated in the agreement/contract
+#	   under which the document(s) have been supplied.
+#
+#################################################################################
+
+
+# ATCOMINF Test Callback Library
+
+# Revision History
+# 12/10/12	xamamcg	Initial test for invalid params.cfg 
+
+# Complete the callbacks in this library to automate the test case
+# Callbacks are called by the test harness in the following order:
+#
+# tc_setup() 		# Called only for independent TC execution mode to setup TC
+# tc_precon()		# Conditions that should exist before TC can run
+# tc_test()		# Runs the test for this TC
+# tc_postcon()		# Conditions that should/should not exist after successful TC 
+# tc_cleanup()		# Called only for independent TC execution mode to clenup after TC
+
+
+#################################################################################
+#
+# CALLBACK: TC_SETUP
+#
+# This callback function is only called if the harness execution mode is 'AT_INDEPENDENT'
+# In this mode, a TC should set up its own inputs, i.e. it does not depend on outputs 
+# from another TC. 
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_setup() {
+	return 0
+}
+#################################################################################
+
+#################################################################################
+#
+# CALLBACK: TC_PRECON
+#
+# This callback function checks the correct conditions exist to run the TC.
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+ 
+tc_precon() {
+
+	[ -f /ericsson/config/build/params.cfg ] || { echo "params.cfg does not exist"; return 1; }
+
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_TEST
+#
+# This callback function runs the test.
+# The harness compares the return code to the SPEC_TC_TEST_PASSCODE value set in the test spec.
+#
+# Return or exit codes:
+#	SPEC_TC_TEST_PASSCODE 	success
+# != SPEC_TC_TEST_PASSCODE 	failure
+ 
+tc_test() {
+
+
+	# Move params.cfg out of way
+	mv /ericsson/config/build/params.cfg params.cfg.bak
+
+	run_linirator a || { echo "Failed to run inirator on a.cfg"; return 1; }
+	run_linirator b || { echo "Failed to run inirator on b.cfg"; return 2; }
+	run_linirator c || { echo "Failed to run inirator on c.cfg"; return 3; }
+	run_linirator d || { echo "Failed to run inirator on d.cfg"; return 4; }
+	run_linirator e || { echo "Failed to run inirator on e.cfg"; return 5; }
+	run_linirator f || { echo "Failed to run inirator on f.cfg"; return 6; }
+	run_linirator g || { echo "Failed to run inirator on g.cfg"; return 7; }
+	run_linirator h || { echo "Failed to run inirator on h.cfg"; return 8; }
+	run_linirator i || { echo "Failed to run inirator on i.cfg"; return 9; }
+	run_linirator j || { echo "Failed to run inirator on j.cfg"; return 10; }
+	return 0
+}
+
+########################
+#
+# FUNCTION: run_linirator
+#
+# Params:
+#    $1: letter of cfg file to use, e.g. a->g
+#
+run_linirator() {
+	echo "Going to run inirator with $1.cfg"
+	# Check linirator exists
+	linfile=/opt/ericsson/cominf_core/bin/cominf_inirator.bsh
+	[ -r $linfile ] || { echo "Linirator missing"; return 1; }
+
+	
+	# Run con_ex.bsh to create expect script
+	# 632.in is checked into GIT and has the name and prompt values
+	${AT_BIN}/con_ex.bsh -d 632${1}.in -o 632${1}.exp -c "${linfile} -i"
+	retval=$?
+	[ $retval -ne 0 ] && { echo Failed to create expect $1 script $retval; return 1; }
+
+	# Copy corrupted params.cfg in place
+	cp ${1}.cfg /ericsson/config/build/params.cfg
+
+	# Run linirator with expect script
+	expect 632${1}.exp
+	retval=$?
+	[ $retval -eq 1 ] || { echo Failed to run expect $1 script $retval; return 3; }
+
+	#Save generated params.cfg
+	cp /ericsson/config/build/params.cfg params.$1.tmp
+
+	return 0
+
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_POSTCON
+#
+# This callback function checks expected results.
+# The return code decides the final test case verdict.
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_postcon() {
+
+	diff params.a.tmp expectedcfg.a || { echo "Unexpected cfg a"; return 1; }
+	diff params.b.tmp expectedcfg.b || { echo "Unexpected cfg b"; return 2; }
+	diff params.c.tmp expectedcfg.c || { echo "Unexpected cfg c"; return 3; }
+	diff params.d.tmp expectedcfg.d || { echo "Unexpected cfg d"; return 4; }
+	diff params.e.tmp expectedcfg.e || { echo "Unexpected cfg e"; return 5; }
+	diff params.f.tmp expectedcfg.f || { echo "Unexpected cfg f"; return 6; }
+	diff params.g.tmp expectedcfg.g || { echo "Unexpected cfg g"; return 7; }
+	diff params.h.tmp expectedcfg.h || { echo "Unexpected cfg h"; return 8; }
+	diff params.i.tmp expectedcfg.i || { echo "Unexpected cfg i"; return 9; }
+	diff params.j.tmp expectedcfg.j || { echo "Unexpected cfg j"; return 10; }
+	CONSOLE_OUTPUT_COUNT "params.cfg not present" 9 || { echo "Unexpected console lines"; return 11; }
+	
+
+	return 0
+
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_CLEANUP
+# 
+# This callback restores the target system to the state it was in before the TC 
+# was run. It rolls back changes made by callbacks tc_setup() and tc_test()
+# 
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_cleanup() {
+	[ -r params.cfg.bak ] && { cp params.cfg.bak /ericsson/config/build/params.cfg; }
+	[ -r config.ini.bak ] && { cp config.ini.bak /opt/ericsson/config/config.ini; }
+	rm -f params.cfg.bak
+
+	rm -f *.tmp
+	rm -f *.exp
+	return 0
+
+}

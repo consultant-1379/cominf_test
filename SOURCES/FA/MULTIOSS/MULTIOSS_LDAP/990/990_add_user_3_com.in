@@ -1,0 +1,18 @@
+LDAP Directory Manager password:
+ldapadmin
+New local user name:
+u990_3
+Start of uidNumber search range
+1000
+End of uidNumber search range
+59999
+New local user uidNumber
+6004
+New local user password:
+password
+Re-enter password:
+password
+New local user description
+OSS-RC user
+Continue to create local user
+y

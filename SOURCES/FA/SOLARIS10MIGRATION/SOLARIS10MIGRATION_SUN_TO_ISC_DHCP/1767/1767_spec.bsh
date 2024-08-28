@@ -1,0 +1,54 @@
+#!/bin/bash
+
+# TEST CASE SPEC FILE
+# This file is generated/updated using the test framework web interface.
+# Manual updates on test servers are lost when the test package is re-installed.
+#
+# Last modified: Tuesday 17th of December 2013 9:54:07
+#
+
+# These settings must be in BASH script format, they are sourced by other scripts.
+SPEC_FA_NAME="SOLARIS10MIGRATION"
+SPEC_UC_NAME="SOLARIS10MIGRATION_SUN_TO_ISC_DHCP"
+SPEC_TC_ID=1767
+SPEC_TC_SLOGAN="Verifying clients and networks after upgrade. "
+SPEC_TC_TYPE="FT"
+SPEC_TC_POLARITY="positive"
+SPEC_TC_PRIORITY="high"
+SPEC_TC_AUTOMATED=0
+SPEC_TC_DEPENDENT_ONLY=0
+SPEC_TC_TIMEOUT=300
+SPEC_TC_TEST_PASSCODE=0
+SPEC_TC_AUTHOR="xnavsur"
+SPEC_TC_AUTOMATOR="xnavsur"
+# this parameter is not interpreted by harness
+SPEC_TC_DISABLED=0
+
+# Please do not remove the comment lines below.
+# They are used as section locators by the test harness.
+
+# BEGIN_PRE_CONDITIONS
+#<path under "Verification Specification for Cominf Feature Test for 14.0 ":
+#Upgrade/Migration/Migration from SUN-DHCP to ISC-DHCP 
+#>  
+#Precondition:
+#1.cominf_small_upgrade executed succesfully.
+#2.IPV4 and IPV6 deamons are running.
+#3.dhcpd_* files exists under /etc/usr/local
+#
+#
+# END_PRE_CONDITIONS
+
+
+# BEGIN_MANUAL_STEPS
+#Action :
+#Verify networks and clients created before upgrade is still listed after upgrade.After upgrade of the Infra Server,|om_serv_server as user “root” execute the command
+## /ericsson/ocs/bin/ai_manager.sh –list all|hosts|networks
+#
+#
+# END_MANUAL_STEPS
+
+# BEGIN_POST_CONDITIONS
+#Result :
+#The list command is successful. The list command returns a list of all networks/clients added by ai_manager.sh prior to upgrade
+# END_POST_CONDITIONS

@@ -1,0 +1,67 @@
+#!/bin/bash
+
+# TEST CASE SPEC FILE
+# This file is generated/updated using the test framework web interface.
+# Manual updates on test servers are lost when the test package is re-installed.
+#
+# Last modified: Thursday 1st of May 2014 15:30:01
+#
+
+# These settings must be in BASH script format, they are sourced by other scripts.
+SPEC_FA_NAME="3PP"
+SPEC_UC_NAME="3PP_JDK16_POSTINSTALL_x86"
+SPEC_TC_ID=1306
+SPEC_TC_SLOGAN="GUI Test window Resize via Citrix "
+SPEC_TC_TYPE="FT"
+SPEC_TC_POLARITY="positive"
+SPEC_TC_PRIORITY="high"
+SPEC_TC_AUTOMATED=0
+SPEC_TC_DEPENDENT_ONLY=0
+SPEC_TC_TIMEOUT=300
+SPEC_TC_TEST_PASSCODE=0
+SPEC_TC_AUTHOR="eolikil"
+SPEC_TC_AUTOMATOR="eolikil"
+# this parameter is not interpreted by harness
+SPEC_TC_DISABLED=1
+
+# Please do not remove the comment lines below.
+# They are used as section locators by the test harness.
+
+# BEGIN_PRE_CONDITIONS
+#OSS full install, complete with UAS and local ldap  accounts created 
+#Sample Node info in Arne. 
+#
+#There were multiple variations of this issue.
+#2 of the test options are documented below. 
+# END_PRE_CONDITIONS
+
+
+# BEGIN_MANUAL_STEPS
+#Option 1. 
+#
+#Using the Samplegraph.zip eclipse code.  (available from the 3pp java team) 
+#
+#1. login to UAS via Citrix as a standard user 
+#2. launch eclipse.  This will display a sample graph to screen. 
+#3. Resize the graph, by dragging on the bottom right corner.  
+#
+#
+#OR 
+#Option 2. 
+#using  NSD-EPC GUI.
+#
+#1. Launch the gui using nsd_cn_ps&
+#
+#2. Then from view menu select Health Check and you find Show graph option in the view, click on it.
+#
+#3.  Attempt to resize 
+#
+#If you have pools then right click and you will find Load and Balance View option and check for show graph in the view.
+#
+# END_MANUAL_STEPS
+
+# BEGIN_POST_CONDITIONS
+#gui crash = failure 
+#No crash = success
+#HQ26001 for more info 
+# END_POST_CONDITIONS

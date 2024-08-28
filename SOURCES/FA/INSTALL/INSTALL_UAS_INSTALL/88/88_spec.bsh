@@ -1,0 +1,63 @@
+#!/bin/bash
+
+# TEST CASE SPEC FILE
+# This file is generated/updated using the test framework web interface.
+# Manual updates on test servers are lost when the test package is re-installed.
+#
+# Last modified: Sunday 31st of March 2013 20:37:23
+#
+
+# These settings must be in BASH script format, they are sourced by other scripts.
+SPEC_FA_NAME="INSTALL"
+SPEC_UC_NAME="INSTALL_UAS_INSTALL"
+SPEC_TC_ID=88
+SPEC_TC_SLOGAN="Verify initial installation of UAS for Oracle Hardware"
+SPEC_TC_TYPE="FT"
+SPEC_TC_POLARITY="positive"
+SPEC_TC_PRIORITY="high"
+SPEC_TC_AUTOMATED=0
+SPEC_TC_DEPENDENT_ONLY=0
+SPEC_TC_TIMEOUT=300
+SPEC_TC_TEST_PASSCODE=0
+SPEC_TC_AUTHOR="ecoophi"
+SPEC_TC_AUTOMATOR="edavmax"
+# this parameter is not interpreted by harness
+SPEC_TC_DISABLED=0
+
+# Please do not remove the comment lines below.
+# They are used as section locators by the test harness.
+
+# BEGIN_PRE_CONDITIONS
+## All relevant media are cached on OSS master server
+## LDAP server is UP
+# END_PRE_CONDITIONS
+
+
+# BEGIN_MANUAL_STEPS
+##Follow following chapters Install workflow for Std deployment Oracle HW:
+#
+#- Installing UAS
+#
+# END_MANUAL_STEPS
+
+# BEGIN_POST_CONDITIONS
+## ERICocs, ERICdynport and CTX packages are installed
+#
+##The file /ericsson/ocs/log/sys_inst_cominf_install.sh contains message "INSTALLATION for appserv COMPLETE"
+#
+## No errors/warnings contained in files in /ericsson/ocs/log
+#
+## check the following citrix users exist
+#ctxsrvr:x:56000:55000:Citrix Administrator:/export/home/ctxsrvr:/bin/sh
+#ctxssl:x:58000:55000:Citrix SSL:/export/home/ctxssl:/bin/sh
+#ctxlsadm:x:100:55001:Citrix License Server Administrator:/export/home/ctxlsadm:/bin/sh
+#
+#
+## check the following citrix groups exist
+#
+#ctxadm::55000:
+#lmadmin::55001:
+#
+#
+#
+# END_POST_CONDITIONS

@@ -1,0 +1,84 @@
+#!/bin/bash
+
+# TEST CASE SPEC FILE
+# This file is generated/updated using the test framework web interface.
+# Manual updates on test servers are lost when the test package is re-installed.
+#
+# Last modified: Tuesday 17th of December 2013 6:51:06
+#
+
+# These settings must be in BASH script format, they are sourced by other scripts.
+SPEC_FA_NAME="SOLARIS10USERADMIN"
+SPEC_UC_NAME="SOLARIS10USERADMIN_Install_Upgrade"
+SPEC_TC_ID=1692
+SPEC_TC_SLOGAN="Verify deleting an OSSRC User from LDAP"
+SPEC_TC_TYPE="FT"
+SPEC_TC_POLARITY="positive"
+SPEC_TC_PRIORITY="high"
+SPEC_TC_AUTOMATED=1
+SPEC_TC_DEPENDENT_ONLY=0
+SPEC_TC_TIMEOUT=300
+SPEC_TC_TEST_PASSCODE=0
+SPEC_TC_AUTHOR="xlaxain"
+SPEC_TC_AUTOMATOR="xlaxain"
+# this parameter is not interpreted by harness
+SPEC_TC_DISABLED=0
+
+# Please do not remove the comment lines below.
+# They are used as section locators by the test harness.
+
+# BEGIN_PRE_CONDITIONS
+#Path in Mars:- User Administration/Initial Install/Upgrade User Administration Test Cases 
+#
+#Infra Server
+#
+# END_PRE_CONDITIONS
+
+
+# BEGIN_MANUAL_STEPS
+#Action 1: 
+#
+#Follow the COMInf SUN Directory Server System Administration Guide execute the script /ericsson/sdee/bin/del_user.sh script with specific options.
+#
+#Action 2: 
+#
+#Verify the user details are no longer listed in ldap with ldapsearch command
+##ldapsearch -D "cn=directory manager" -w <ldap bind pw> -b "uid=<username>,ou=people,dc=<ldapdomain>" "objectclass=*"
+#E.g.
+##ldapsearch -D "cn=directory manager" -w shroot11 -b "uid=tester5,ou=people,dc=atrcus764,dc=athtem,dc=eei,dc=ericsson,dc=se" "objectclass=*"
+#Action 3: 
+#
+#Follow the COMInf SUN Directory Server System Administration Guide execute the script /ericsson/sdee/bin/dele_user.sh âEuro d <ldap_domain>
+#Action 4: 
+#
+#Verify the user details are no longer listed in ldap with ldapsearch command
+##ldapsearch -D "cn=directory manager" -w <ldap bind pw> -b "uid=<username>,ou=people,dc=<ldapdomain>" "objectclass=*"
+#E.g.
+##ldapsearch -D "cn=directory manager" -w shroot11 -b "uid=tester5,ou=people,dc=atrcus764,dc=athtem,dc=eei,dc=ericsson,dc=se" "objectclass=*"
+#Action 5: 
+#
+#Attempt to log in as the deleted user via client and command line
+#
+# END_MANUAL_STEPS
+
+# BEGIN_POST_CONDITIONS
+#Result 1: 
+#
+#The user is deleted from the system
+#
+#Result 2: 
+#
+#User details are no longer listed by ldapsearch command
+#
+#Result 3: 
+#
+#The user is deleted from the system for the specific domain
+#
+#Result 4: 
+#
+#User details are no longer listed by ldapsearch command
+#
+#Result 5:
+#
+#It is not possible to login as deleted user 
+# END_POST_CONDITIONS

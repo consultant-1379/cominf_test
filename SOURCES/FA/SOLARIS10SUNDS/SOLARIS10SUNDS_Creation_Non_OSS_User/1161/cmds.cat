@@ -1,0 +1,6 @@
+01^/ericsson/opendj/bin/add_user.sh -t COM_ONLY -d vts.com^Unable to create user t116101
+02^/ericsson/opendj/bin/add_user.sh -t COM_ONLY -n t116102 -d vts.com^Unable to create user t116102
+03^/ericsson/opendj/bin/add_user.sh -t COM_ONLY -d vts.com -n t116103 -s 3000^Unable to create user t116103 with ID >=3000
+04^/ericsson/opendj/bin/add_user.sh -t COM_ONLY -d vts.com -n t116104 -s 1200 -e 1249^Unable to create user t116104 with ID >=1200 and <=1249
+05^/ericsson/opendj/bin/add_user.sh -t COM_ONLY -d vts.com -n t116105 -s 1200 -e 1249 -C "comment"^Unable to create user t116105 with given comment
+06^/ericsson/opendj/bin/add_user.sh -t COM_ONLY -d vts.com -n t116106 -i 1750 -C "Test user t116106"^Unable to create user t116106 with id 1650

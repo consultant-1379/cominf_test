@@ -1,0 +1,49 @@
+#!/bin/bash
+
+# TEST CASE SPEC FILE
+# This file is generated/updated using the test framework web interface.
+# Manual updates on test servers are lost when the test package is re-installed.
+#
+# Last modified: Monday 16th of December 2013 9:55:02
+#
+
+# These settings must be in BASH script format, they are sourced by other scripts.
+SPEC_FA_NAME="SOLARIS10INSTALL"
+SPEC_UC_NAME="SOLARIS10INSTALL_DHCP_AI_Manager"
+SPEC_TC_ID=1384
+SPEC_TC_SLOGAN="Adding a dynamic ip range to a network using ai manager (in quiet mode) "
+SPEC_TC_TYPE="FT"
+SPEC_TC_POLARITY="positive"
+SPEC_TC_PRIORITY="high"
+SPEC_TC_AUTOMATED=0
+SPEC_TC_DEPENDENT_ONLY=0
+SPEC_TC_TIMEOUT=300
+SPEC_TC_TEST_PASSCODE=0
+SPEC_TC_AUTHOR="xgansre"
+SPEC_TC_AUTOMATOR="xgansre"
+# this parameter is not interpreted by harness
+SPEC_TC_DISABLED=0
+
+# Please do not remove the comment lines below.
+# They are used as section locators by the test harness.
+
+# BEGIN_PRE_CONDITIONS
+#Mars Path <Initial Installation/DHCP/AI Manager>
+# END_PRE_CONDITIONS
+
+
+# BEGIN_MANUAL_STEPS
+#Test
+#Verify a network has been added using ai_manager under ai_manager.sh –list nets and there is no range information
+#
+#Test adding a dynamic range to that network using the ai manager –add range function with the –q parameter at the end
+#
+#
+# END_MANUAL_STEPS
+
+# BEGIN_POST_CONDITIONS
+#Acceptance Test
+#Dynamic range is successfully added without any prompts.
+#Default lease time of 20 minutes is used.
+#Verify that the network is listed in ai_manager.sh -list nets with the dynamic range specified under ai_manager.sh –list nets 
+# END_POST_CONDITIONS

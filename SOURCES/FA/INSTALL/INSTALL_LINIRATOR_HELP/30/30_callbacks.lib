@@ -1,0 +1,170 @@
+#!/bin/bash
+#################################################################################
+#
+#
+#       COPYRIGHT (C) ERICSSON RADIO SYSTEMS AB, Sweden
+#
+#       The copyright to the document(s) herein is the property of
+#       Ericsson Radio Systems AB, Sweden.
+#
+#       The document(s) may be used and/or copied only with the written
+#       permission from Ericsson Radio Systems AB or in accordance with
+#       the terms and conditions stipulated in the agreement/contract
+#       under which the document(s) have been supplied.
+#
+#################################################################################
+
+
+# ATCOMINF Test Callback Library
+
+# Revision History
+# <date>	<signum>	<details>
+
+# Complete the callbacks in this library to automate the test case.
+#
+# Callbacks are stateless, it is not possible to set a global variable in one callback 
+# and access it it in another.
+#
+# Callbacks are called by the test harness in the following order:
+#
+# tc_setup() 		# Called only for independent TC execution mode to setup TC
+# tc_precon()		# Conditions that should exist before TC can run
+# tc_test()		# Runs the test for this TC
+# tc_postcon()		# Conditions that should/should not exist after successful TC 
+			# Returns the final TC verdict to the harness
+# tc_cleanup()		# Called only for independent TC execution mode to clenup after TC
+
+
+#################################################################################
+#
+# CALLBACK: TC_SETUP
+#
+# This callback function is only called if the harness execution mode is 'AT_INDEPENDENT'
+# In this mode, a TC should set up its own inputs, i.e. it does not depend on outputs 
+# from another TC. 
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_setup() {
+
+	return 0
+
+}
+#################################################################################
+
+#################################################################################
+#
+# CALLBACK: TC_PRECON
+#
+# This callback function checks the correct conditions exist to run the TC.
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+ 
+tc_precon() {
+
+	RHEL_INSTALLED
+	retval=$?
+	if [ $retval -ne 0 ]; then
+		echo RHEL not installed $retval
+		return $retval
+	fi
+	CHECK_PROFILE om_serv_master
+	retval=$?
+	if [ $retval -ne 0 ]; then
+		echo Wrong profile type $retval
+		return $retval
+	fi
+
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_TEST
+#
+# This callback function runs the test.
+# The harness compares the return code to the SPEC_TC_TEST_PASSCODE value set in the test spec.
+#
+# Return or exit codes:
+#    SPEC_TC_TEST_PASSCODE 	success
+# != SPEC_TC_TEST_PASSCODE 	failure
+ 
+tc_test() {
+
+	# Check linirator exists
+	linfile=/opt/ericsson/cominf_core/bin/cominf_inirator.bsh
+	if ! test -r ${linfile}; then
+		echo "${linfile} does not exist"
+		return 1
+	fi
+	$linfile -h
+	return $?
+
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_POSTCON
+#
+# This callback function checks expected results.
+# It returns the final TC verdict to the harness
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_postcon() {
+
+	CONSOLE_OUTPUT_CONTAINS "Usage:  cominf_inirator.bsh [-h] [-i] [ -f preinirator file ]"
+	if [ $? -ne 0 ]; then
+		echo Usage not found
+		return 1 
+	fi
+	CONSOLE_OUTPUT_CONTAINS "COMInf Inirator: Acquires COMInf service data and writes to file."
+	if [ $? -ne 0 ]; then
+		echo Acquire not found
+		return 2
+	fi
+	CONSOLE_OUTPUT_MATCH "-h.Print help."
+	if [ $? -ne 0 ]; then
+		echo help not found
+		return 3
+	fi
+	CONSOLE_OUTPUT_MATCH "-i.force interactive mode"
+	if [ $? -ne 0 ]; then
+		echo force message not found
+		return 4
+	fi
+	CONSOLE_OUTPUT_CONTAINS "error"
+	if [ $? -eq 0 ]; then
+		echo Error found
+		return 5 
+	fi
+	return 0
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_CLEANUP
+# 
+# This callback restores the target system to the state it was in before the TC 
+# was run. It rolls back changes made by callbacks tc_setup() and tc_test()
+# 
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_cleanup() {
+
+	return 0
+
+}

@@ -1,0 +1,44 @@
+set force_conservative 1
+set server [lindex $argv 0]
+set ilom [lindex $argv 1]
+set prompt "^.*-> $"
+set prompt_dm "> $"
+set state 0
+set timeout 5400
+spawn ssh -oUserKnownHostsFile=/dev/null -ostricthostkeychecking=no Administrator@$ilom
+
+
+while 1 {
+expect {
+ "Are you sure you want to continue connecting" {send "yes\r"}
+ "assword" {
+                send "shroot12\r"
+                break }
+ timeout        {exit 1}
+ }
+}
+expect -re $prompt 
+send "set /system1/bootconfig1/bootsource5 bootorder=1\r"
+expect -re $prompt 
+sleep 60
+send_user "Initiating Network Connection...\n"
+send "reset /system1\r"
+expect -re $prompt
+exec sleep 300
+send "set /system1/bootconfig1/bootsource3 bootorder=1\r"
+expect -re $prompt
+send "stop /system1/oemhp_vsp1\r"
+expect -re $prompt
+send "vsp\r"
+while 1 {
+expect {
+ "ogin" {
+	send "root\r"}
+ "assword" {
+                send "shroot\r"
+                break }
+ timeout	{break}
+ }
+}
+send_user "Connected..\1"
+exec sleep 600

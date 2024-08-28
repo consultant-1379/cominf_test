@@ -1,0 +1,66 @@
+#!/bin/bash
+
+# TEST CASE SPEC FILE
+# This file is generated/updated using the test framework web interface.
+# Manual updates on test servers are lost when the test package is re-installed.
+#
+# Last modified: Thursday 16th of May 2013 7:11:11
+#
+
+# These settings must be in BASH script format, they are sourced by other scripts.
+SPEC_FA_NAME="DNS"
+SPEC_UC_NAME="DNS_CDP_CRL_CONFIGURE"
+SPEC_TC_ID=890
+SPEC_TC_SLOGAN="Post Steps to configure DNS for CDP"
+SPEC_TC_TYPE="FT"
+SPEC_TC_POLARITY="positive"
+SPEC_TC_PRIORITY="high"
+SPEC_TC_AUTOMATED=1
+SPEC_TC_DEPENDENT_ONLY=0
+SPEC_TC_TIMEOUT=300
+SPEC_TC_TEST_PASSCODE=0
+SPEC_TC_AUTHOR="eshmuna"
+SPEC_TC_AUTOMATOR="eshmuna"
+# this parameter is not interpreted by harness
+SPEC_TC_DISABLED=0
+
+# Please do not remove the comment lines below.
+# They are used as section locators by the test harness.
+
+# BEGIN_PRE_CONDITIONS
+#- DHCP server is up and running
+#- Domain vts.com is defined
+#- /var/named/vts.com.ip4zone exists and is not empty
+#
+# END_PRE_CONDITIONS
+
+
+# BEGIN_MANUAL_STEPS
+#- Follow the doc to do the post steps for dns.
+#Add the following in the vts.com.ip4zone 
+#
+#1. cdp1.cdps.vts.com IN A <IP Primary>
+#2. cdp2.cdps.vts.com IN A <IP Secondary>
+#
+#Restart the DNS Service
+#
+#Verify as below
+#
+#
+#-> host cdp1.cdps.vts.com
+#
+#Result should be 
+#
+#cdp1.cdps.vts.com has address <IP Address Primary>
+#
+#
+#-> host cdp2.cdps.vts.com
+#
+#Result should be 
+#
+#cdp2.cdps.vts.com has address <IP Address Secondary>
+# END_MANUAL_STEPS
+
+# BEGIN_POST_CONDITIONS
+#none
+# END_POST_CONDITIONS

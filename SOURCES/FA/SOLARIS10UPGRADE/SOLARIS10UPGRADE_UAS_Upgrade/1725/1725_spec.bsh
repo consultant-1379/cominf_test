@@ -1,0 +1,48 @@
+#!/bin/bash
+
+# TEST CASE SPEC FILE
+# This file is generated/updated using the test framework web interface.
+# Manual updates on test servers are lost when the test package is re-installed.
+#
+# Last modified: Tuesday 17th of December 2013 7:20:34
+#
+
+# These settings must be in BASH script format, they are sourced by other scripts.
+SPEC_FA_NAME="SOLARIS10UPGRADE"
+SPEC_UC_NAME="SOLARIS10UPGRADE_UAS_Upgrade"
+SPEC_TC_ID=1725
+SPEC_TC_SLOGAN="Installation of Firefox 10 in a non standard location "
+SPEC_TC_TYPE="FT"
+SPEC_TC_POLARITY="positive"
+SPEC_TC_PRIORITY="high"
+SPEC_TC_AUTOMATED=1
+SPEC_TC_DEPENDENT_ONLY=0
+SPEC_TC_TIMEOUT=300
+SPEC_TC_TEST_PASSCODE=0
+SPEC_TC_AUTHOR="xsripin"
+SPEC_TC_AUTOMATOR="xsripin"
+# this parameter is not interpreted by harness
+SPEC_TC_DISABLED=0
+
+# Please do not remove the comment lines below.
+# They are used as section locators by the test harness.
+
+# BEGIN_PRE_CONDITIONS
+#<path under "Verification Specification for Cominf Feature Test for 14.0 ":
+#Upgrade/Migration/UAS Upgrade  
+#>  
+#UAS shall be installed and Citrix has been configured 
+# END_PRE_CONDITIONS
+
+
+# BEGIN_MANUAL_STEPS
+#Cominf Install software run successfully without any user interaction 
+#
+#Action: Check for the OSS-RC delivered version of firefox 10 on UAS server.
+#
+#
+# END_MANUAL_STEPS
+
+# BEGIN_POST_CONDITIONS
+#Result: OSS-RC delivered version of firefox 10 will be at /opt/firefox 
+# END_POST_CONDITIONS

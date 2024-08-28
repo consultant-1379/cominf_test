@@ -1,0 +1,6 @@
+LDAP Directory Manager password:
+PASSWD
+Enter an ordered comma-separated list of LDAP server IP addresses:
+LDAPSERVER
+Set defaultServerList for domain .TSTDOM. to .LDAPSERVER. - Yes or No .No.
+Yes

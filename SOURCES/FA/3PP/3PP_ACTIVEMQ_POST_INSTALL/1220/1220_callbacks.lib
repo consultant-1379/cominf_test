@@ -1,0 +1,197 @@
+#!/bin/bash
+#################################################################################
+#
+#
+#       COPYRIGHT (C) ERICSSON RADIO SYSTEMS AB, Sweden
+#
+#       The copyright to the document(s) herein is the property of
+#       Ericsson Radio Systems AB, Sweden.
+#
+#       The document(s) may be used and/or copied only with the written
+#       permission from Ericsson Radio Systems AB or in accordance with
+#       the terms and conditions stipulated in the agreement/contract
+#       under which the document(s) have been supplied.
+#
+#################################################################################
+
+
+# ATCOMINF Test Callback Library
+
+# Revision History
+#2013-3-12      epelene hecks if files and/or directories have proper write permissions. They should not have world write permissions.
+
+
+# Complete the callbacks in this library to automate the test case.
+#
+# Callbacks are stateless, it is not possible to set a global variable in one callback 
+# and access it it in another.
+#
+# Callbacks are called by the test harness in the following order:
+#
+# tc_setup() 		# Called only for independent TC execution mode to setup TC
+# tc_precon()		# Conditions that should exist before TC can run
+# tc_test()		# Runs the test for this TC
+# tc_postcon()		# Conditions that should/should not exist after successful TC 
+# tc_cleanup()		# Called only for independent TC execution mode to cleanup after TC
+
+# All callbacks must PASS for a TC PASS result
+
+#################################################################################
+#
+# CALLBACK: TC_SETUP
+#
+# This callback function is only called if the harness execution mode is 'AT_INDEPENDENT'
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_setup() {
+
+
+	#Coded to pass 
+
+	return 0 
+
+}
+#################################################################################
+
+#################################################################################
+#
+# CALLBACK: TC_PRECON
+#
+# This callback function checks the correct conditions exist to run the TC.
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+ 
+tc_precon() {
+
+	# Coded to fail in case TC_AUTOMATED=1 before automation completed
+	# Change return code as required
+
+	return 0
+
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_TEST
+#
+# This callback function runs the test.
+# The harness compares the return code to the SPEC_TC_TEST_PASSCODE value set in the test spec.
+#
+# Return or exit codes:
+#    SPEC_TC_TEST_PASSCODE 	success
+# != SPEC_TC_TEST_PASSCODE 	failure
+ 
+tc_test() {
+        
+        check_directory (){
+         if [ ! -d "${1}" ]; then
+
+                DIRECTORY_STATUS="${DIRECTORY_STATUS:=Missing directories}:${1}"
+                return 1 #Failed, directory does not exist
+        else
+           VARIABLE=`ls -ld ${1} | nawk '{print$1}' | cut -c9`
+           if [ $VARIABLE  = "w" ]; then
+              DIRECTORY_STATUS="${DIRECTORY_STATUS:=directory has world write access}:${1}"
+              return 1 #Failed, file does not exist
+           elif [ $RECURSE = "TRUE" ]; then
+                        for i in `ls -lRt ${1} | grep -v total | grep -v '/' | nawk '{print$1}'`
+                        do
+                               LINK=`echo ${i}| cut -c1`
+                               if [ $LINK != "l" ]; then
+                                     VARIABLE=`echo ${i}| cut -c9`
+                                     if [ $VARIABLE  = "w" ]; then
+                                        DIRECTORY_STATUS="${DIRECTORY_STATUS:=One of the file/subdirectory has world write access}:${1}"
+                                        return 1 #Failed, file does not
+exist
+
+                                        break
+                                     fi
+                               fi
+                        done
+           fi
+      fi
+}
+check_file (){
+      if [ ! -f "${1}" ]; then
+
+                FILE_STATUS="${FILE_STATUS:=Missing files}:${1}"
+                return 1 #Failed, directory does not exist
+        else
+            for i in `ls -lrt ${1} | nawk '{print$1}'`
+            do
+
+               VARIABLE=`echo ${i}| cut -c9`
+               if [ $VARIABLE  = "w" ]; then
+
+                  FILE_STATUS="${FILE_STATUS:=file has world write access}:${1}"
+                  return 1  #Failed, file does not exist
+                  break
+               fi
+            done
+        fi
+}
+
+# Do the test -------------------------------------
+
+# Check that the directories exist
+for foo in $DIR_PATHS; do
+        check_directory $foo
+done
+
+# Check that the files exist
+for foo in $FILE_PATHS; do
+        check_file $foo
+done
+
+return 0
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_POSTCON
+#
+# This callback function checks expected results.
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_postcon() {
+
+	# Coded to pass
+
+	return 0
+
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_CLEANUP
+#
+# This callback function is only called if the harness execution mode is 'AT_INDEPENDENT'
+# 
+# This callback restores the target system to the state it was in before the TC 
+# was run. It rolls back changes made by callbacks tc_setup() and tc_test()
+# 
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_cleanup() {
+        
+         # Coded to pass
+
+        return 0
+
+}

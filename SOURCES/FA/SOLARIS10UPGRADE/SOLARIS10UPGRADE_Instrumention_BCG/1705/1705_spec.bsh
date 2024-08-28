@@ -1,0 +1,85 @@
+#!/bin/bash
+
+# TEST CASE SPEC FILE
+# This file is generated/updated using the test framework web interface.
+# Manual updates on test servers are lost when the test package is re-installed.
+#
+# Last modified: Tuesday 17th of December 2013 7:02:33
+#
+
+# These settings must be in BASH script format, they are sourced by other scripts.
+SPEC_FA_NAME="SOLARIS10UPGRADE"
+SPEC_UC_NAME="SOLARIS10UPGRADE_Instrumention_BCG"
+SPEC_TC_ID=1705
+SPEC_TC_SLOGAN="Instrumention of BCG imports and exports "
+SPEC_TC_TYPE="FT"
+SPEC_TC_POLARITY="positive"
+SPEC_TC_PRIORITY="high"
+SPEC_TC_AUTOMATED=1
+SPEC_TC_DEPENDENT_ONLY=0
+SPEC_TC_TIMEOUT=300
+SPEC_TC_TEST_PASSCODE=0
+SPEC_TC_AUTHOR="xsripin"
+SPEC_TC_AUTOMATOR="xsripin"
+# this parameter is not interpreted by harness
+SPEC_TC_DISABLED=0
+
+# Please do not remove the comment lines below.
+# They are used as section locators by the test harness.
+
+# BEGIN_PRE_CONDITIONS
+#<path under "Verification Specification for Cominf Feature Test for 14.0 ":
+#Upgrade/Migration 
+#
+#>  
+#
+#Precondition:
+#The servers are on shipment prior to 12.0 release.OSS-RC 12.2 introduces the Global Domain (GD) to the Multi-OSS LDAP
+#directory enabling centralized global user and group administration. From OSS-RC 12.2, the GD is always installed at installation or upgrade time if it
+#does not already exist.
+#
+#
+# END_PRE_CONDITIONS
+
+
+# BEGIN_MANUAL_STEPS
+#Action 1:
+#
+#Execute the testcase : Verify the O&M Infra server upgrade procedure.
+#
+#Action 2:
+#
+#Verify that ddc bind identity for global domain is created by executing the following command :
+#ldapsearch -T -D "cn=Directory manager" -w shroot11 -b "cn=ddc,dc=globaldomain" "objectclass=*"
+#
+#Action 3:
+#
+#Verify the aci (access control information) for the user "ddc" by executing this command.
+#
+#ldapsearch -T -D "cn=Directory manager" -w shroot11 -b "cn=ldbm database,cn=plugins,cn=config" "objectclass=*" aci | grep ddc
+#
+#
+# END_MANUAL_STEPS
+
+# BEGIN_POST_CONDITIONS
+#Result 1:
+#Upgrade is succesfull.
+#
+#Result 2:
+#
+#After upgrade, the ddc user is created succussfully.
+#"objectclass=*"
+#version: 1
+#dn: cn=ddc,dc=globaldomain
+#objectClass: top
+#objectClass: person
+#cn: ddc
+#sn: ddc
+#userPassword: {SSHA}ffr69oHNnQAYfgp6BQpUs3ZX3j/5LSIdUE4kUA==
+#
+#
+#Result 3:
+#aci: (target="ldap:///cn=monitor,cn=*,cn=ldbm database,cn=plugins,cn=config")(targetattr != "aci")(version 3.0; acl "DDC monitor"; allow (read, search, compare) userdn="ldap:///cn=ddc,dc=globaldomain";)
+#
+#The user ddc has read,search,compare permissions for the target : cn=monitor,cn=*,cn=ldbm database,cn=plugins,cn=config 
+# END_POST_CONDITIONS

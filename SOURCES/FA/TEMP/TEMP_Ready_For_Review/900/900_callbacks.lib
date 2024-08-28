@@ -1,0 +1,287 @@
+#!/bin/bash
+#################################################################################
+#
+#
+#       COPYRIGHT (C) ERICSSON RADIO SYSTEMS AB, Sweden
+#
+#       The copyright to the document(s) herein is the property of
+#       Ericsson Radio Systems AB, Sweden.
+#
+#       The document(s) may be used and/or copied only with the written
+#       permission from Ericsson Radio Systems AB or in accordance with
+#       the terms and conditions stipulated in the agreement/contract
+#       under which the document(s) have been supplied.
+#
+#################################################################################
+
+
+# ATCOMINF Test Callback Library
+
+# Revision History
+# <date>	<signum>	<details>
+
+# Complete the callbacks in this library to automate the test case.
+#
+# Callbacks are stateless, it is not possible to set a global variable in one callback 
+# and access it it in another.
+#
+# Callbacks are called by the test harness in the following order:
+#
+# tc_setup() 		# Called only for independent TC execution mode to setup TC
+# tc_precon()		# Conditions that should exist before TC can run
+# tc_test()		# Runs the test for this TC
+# tc_postcon()		# Conditions that should/should not exist after successful TC 
+# tc_cleanup()		# Called only for independent TC execution mode to cleanup after TC
+
+# All callbacks must PASS for a TC PASS result
+
+#################################################################################
+#
+# CALLBACK: TC_SETUP
+#
+# This callback function is only called if the harness execution mode is 'AT_INDEPENDENT'
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_setup() {
+
+	# Coded to fail in case TC_AUTOMATED=1 before automation completed
+	# Change return code as required
+
+	return 0 
+
+}
+#################################################################################
+
+#################################################################################
+#
+# CALLBACK: TC_PRECON
+#
+# This callback function checks the correct conditions exist to run the TC.
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+tc_precon() {
+
+	# Coded to fail in case TC_AUTOMATED=1 before automation completed
+	# Change return code as required
+hostname
+        IsIIorUpgradeSuccessful
+VALUE=$?
+echo "++++++++++++++++++++++++++++++++++++++Value=$VALUE+++++++++++++++++++++++++"
+
+if [ "$VALUE" -eq "1" -o "$VALUE" -eq "2" ]; then
+   return 0
+else
+   return 1
+fi
+
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_TEST
+#
+# This callback function runs the test.
+# The harness compares the return code to the SPEC_TC_TEST_PASSCODE value set in the test spec.
+#
+# Return or exit codes:
+#    SPEC_TC_TEST_PASSCODE 	success
+# != SPEC_TC_TEST_PASSCODE 	failure
+ 
+tc_test() {
+
+#Excelsheet mountpoints and values to compare with config_ossrc_server  
+host=`hostname`
+IST_RUN=/opt/ericsson/sck/bin/ist_run
+shipment=`${IST_RUN} -v|awk -F" " '/OSS Installation/{print $3}'|awk -F"_" '{print $5}'`
+file="Filesystem_exp_${shipment}_${host}"
+echo "shipment:$shipment"
+echo "file:$file"
+
+awk '{print $1}' /var/tmp/platform_taf/${file}_FS>/tmp/mountpoints
+
+ 
+        #if [ ! -f /tmp/dimen.txt ]
+        #then
+        #echo "config_ossrc output  is not there"
+        #exit
+        #fi 
+        /opt/ericsson/sck/bin/config_ossrc_server -a -U 0 -G 0 -C 0 -L 0 -i 0 -F >/tmp/dimen.txt
+        for mounts in $(cat /tmp/mountpoints)
+        do
+        fgrep  "$mounts" /tmp/dimen.txt
+        done> /tmp/ignoresck
+        grep -v "sck" /tmp/ignoresck >/tmp/get
+
+#To delete the second word in the first column
+        sed -e s/Device//g /tmp/get> /tmp/getout
+
+#To compare values in excelsheet and
+#/opt/ericsson/sck/bin/config_ossrc_server       
+        awk '{print $2,$5}' /tmp/getout> /tmp/getout1
+        awk '{print $2}' /tmp/getout1>/tmp/gb
+
+ #To grep the mountpoints present in /opt/ericsson/sck/bin/config_ossrc_server from excelmountpoints
+        awk '{print $1}' /tmp/getout1 > /tmp/getout12
+        for mbs in $(cat /tmp/getout12)
+        do
+        grep -i "$mbs" /var/tmp/platform_taf/${file}_FS
+        done>/tmp/mb2
+        uniq /tmp/mb2 >/tmp/mb3
+        awk '{print $2}' /tmp/mb3 > /tmp/mb
+ 
+        cp /tmp/gb /tmp/cgb
+        i=0
+        mcount=`wc -l /tmp/gb|awk -F" " '{print $1}'`
+        for excel_size in $(cat /tmp/mb)
+        do
+        x=`echo $excel_size/0.95|bc`
+        y=`echo $excel_size/1.05|bc`
+        for oss_size in $(cat /tmp/cgb)
+        do
+        if [[ $oss_size -le $x && $oss_size -ge $y ]] || [[ $excel_size -eq $oss_size ]]
+        then
+        echo "File size matched    $excel_sizes     $oss_size"
+        return 0
+        break
+        else
+        echo "File sizes are not matched       $excel_size    $oss_size"
+        return 1
+        #echo $excel_size
+        break
+        fi
+done
+        i=`expr $i + 1`
+        count=`expr $mcount - $i`
+        if [ $count -eq 0 ];then
+        break
+        fi
+        tail -"$count" /tmp/gb > /tmp/cgb
+done>/tmp/final
+
+
+#To compare nas file system values        
+        grep -i "calculated" /tmp/dimen.txt>/tmp/nassize
+        for nas in $(cat /var/tmp/platform_taf/${file}_NAS_FS_keys)
+        do
+        grep -i "$nas" /tmp/nassize
+        done >/tmp/nasexcel
+        awk -F":" '{print $2}' /tmp/nasexcel>/tmp/newvalues
+        sed 's/^  //g' /tmp/newvalues > /tmp/values1
+        dos2unix /tmp/values1 > /tmp/values2
+#To grep the nasmountpoints present in
+#/opt/ericsson/sck/bin/config_ossrc_server from excelmountpoints
+        for nas in $(cat /tmp/nasexcel)
+        do
+        grep -i "$nas" /var/tmp/platform_taf/${file}_NAS_FS
+        done >/tmp/excel2
+        awk '{print $2}' /var/tmp/platform_taf/${file}_NAS_FS  >/tmp/excel
+  
+        cp /tmp/excel /tmp/cpexcel
+        n=0
+        ncount=`wc -l /tmp/excel|awk -F" " '{print $1}'`  
+        for sizes in $(cat /tmp/values2)
+        do
+        xy=`echo $sizes/0.95|bc`
+        yz=`echo $sizes/1.05|bc`
+        for numbers in $(cat /tmp/cpexcel)
+        do
+if [[ "$numbers" -le "$xy" && "$numbers" -ge "$yz" ]] || [[ "$numbers" -eq "$sizes" ]]
+        then
+        echo "File size matched $sizes     $numbers"
+        break
+        else
+        echo "File sizes are not matched        $sizes     $numbers"
+        break
+        fi
+        done
+        n=`expr $n + 1`
+        counting=`expr $ncount - $n`
+        if [ $counting -eq 0 ];then
+        break
+        fi
+        tail -"$counting" /tmp/excel > /tmp/cpexcel
+        done> /tmp/finalnas
+#fi
+	# Coded to fail in case TC_AUTOMATED=1 before automation complete
+	# Change return code as required
+
+	return 0 
+
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_POSTCON
+#
+# This callback function checks expected results.
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_postcon() {
+
+	# Coded to fail in case TC_AUTOMATED=1 before automation complete.
+	# Change return code as required
+host=`hostname`
+IST_RUN=/opt/ericsson/sck/bin/ist_run
+shipment=`${IST_RUN} -v|awk -F" " '/OSS Installation/{print $3}'|awk -F"_" '{print $5}'`
+file="Filesystem_exp_${shipment}_${host}"
+
+        f1=/tmp/final
+        f2=/tmp/finalnas
+        if [[ ! -s $f1 && ! -s $f2 ]]        
+        then
+        echo "File system  size not compared"
+        else
+        echo "After comparing file sizes"
+        #cat final finalnas 
+        awk '{print $1}' /tmp/mb3 >/tmp/mb4
+        awk '{print $1}' /var/tmp/platform_taf/${file}_NAS_FS >/tmp/excel4
+        paste /tmp/getout1 /tmp/final
+        paste /tmp/excel4 /tmp/finalnas
+        fi 	
+        return 0 
+
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_CLEANUP
+#
+# This callback function is only called if the harness execution mode is 'AT_INDEPENDENT'
+# 
+# This callback restores the target system to the state it was in before the TC 
+# was run. It rolls back changes made by callbacks tc_setup() and tc_test()
+# 
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_cleanup() {
+
+	# Coded to fail in case TC_AUTOMATED=1 before automation complete
+	# Change return code as required
+host=`hostname`
+IST_RUN=/opt/ericsson/sck/bin/ist_run
+shipment=`${IST_RUN} -v|awk -F" " '/OSS Installation/{print $3}'|awk -F"_" '{print $5}'`
+file="Filesystem_exp_${shipment}_${host}"
+       rm  -f /tmp/toexcel /tmp/cells /tmp/dimen.txt /tmp/get /tmp/getout /tmp/getout1 /tmp/gb /tmp/cgb     
+       rm -f /tmp/final /tmp/nassize /var/tmp/platform_taf/${file}_NAS_FS_keys /tmp/nasexcel /tmp/values /tmp/excel /tmp/cpexcel /tmp/finalnas
+       rm -f /var/tmp/platform_taf/${file}_FS /tmp/mb2 /tmp/mb3 /tmp/mb /tmp/excel4 /tmp/mb4 /tmp/excel2         
+       rm -f /tmp/mountpoints /var/tmp/platform_taf/${file}_NAS_FS /tmp/ignoresck
+
+return 0 
+
+}

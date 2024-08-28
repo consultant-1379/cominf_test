@@ -1,0 +1,72 @@
+#!/bin/bash
+
+# TEST CASE SPEC FILE
+# This file is generated/updated using the test framework web interface.
+# Manual updates on test servers are lost when the test package is re-installed.
+#
+# Last modified: Tuesday 17th of December 2013 7:05:40
+#
+
+# These settings must be in BASH script format, they are sourced by other scripts.
+SPEC_FA_NAME="SOLARIS10USERADMIN"
+SPEC_UC_NAME="SOLARIS10USERADMIN_Install_Upgrade"
+SPEC_TC_ID=1707
+SPEC_TC_SLOGAN="Verify adding an OSSRC User to a LDAP Group"
+SPEC_TC_TYPE="FT"
+SPEC_TC_POLARITY="positive"
+SPEC_TC_PRIORITY="high"
+SPEC_TC_AUTOMATED=1
+SPEC_TC_DEPENDENT_ONLY=0
+SPEC_TC_TIMEOUT=300
+SPEC_TC_TEST_PASSCODE=0
+SPEC_TC_AUTHOR="xlaxain"
+SPEC_TC_AUTOMATOR="xlaxain"
+# this parameter is not interpreted by harness
+SPEC_TC_DISABLED=0
+
+# Please do not remove the comment lines below.
+# They are used as section locators by the test harness.
+
+# BEGIN_PRE_CONDITIONS
+#Path in Mars:- User Administration/Initial Install/Upgrade User Administration Test Cases 
+#
+#The purpose is to verify the addition of an OSSRC user to a LDAP Group is successful in both Single and Multi OSS domains.
+#This test case is applicable to both initial installation and upgrade.
+#
+#Precondition:
+#
+#Infra Server
+#
+# END_PRE_CONDITIONS
+
+
+# BEGIN_MANUAL_STEPS
+#Action 1: 
+#
+#Single OSS Domain - Following the COMInf SUN Directory Server System Administration Guide execute the script /ericsson/sdee/bin/add_user_to_group.sh to add a user to a group
+#
+#Action 2:
+#
+#Multi OSS Domain - Following the COMInf SUN Directory Server System Administration Guide execute the script /ericsson/sdee/bin/add_user_to_group.sh âEuro d <ldap_domain> to add a user to a group for a specific ldap domain
+#Action 3: 
+#
+#Verify the user is added to group with ldapsearch command
+#ldapsearch -D "cn=directory manager" -w <ldap bind pw> -b "uid=<username>,ou=people,dc=<ldapdomain>" "objectclass=*"
+#E.g.
+#ldapsearch -D "cn=directory manager" -w shroot11 -b "uid=tester5,ou=people,dc=atrcus764,dc=athtem,dc=eei,dc=ericsson,dc=se" "objectclass=*"
+#
+# END_MANUAL_STEPS
+
+# BEGIN_POST_CONDITIONS
+#Result 1: 
+#
+#The user is successfully added to the group
+#
+#Result 2:
+#
+#The user is added to group
+#
+#Result 3: 
+#
+#The users are added to the group 
+# END_POST_CONDITIONS

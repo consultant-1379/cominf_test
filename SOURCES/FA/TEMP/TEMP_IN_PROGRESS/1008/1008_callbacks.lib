@@ -1,0 +1,370 @@
+#!/bin/bash
+#################################################################################
+#
+#
+#       COPYRIGHT (C) ERICSSON RADIO SYSTEMS AB, Sweden
+#
+#       The copyright to the document(s) herein is the property of
+#       Ericsson Radio Systems AB, Sweden.
+#
+#       The document(s) may be used and/or copied only with the written
+#       permission from Ericsson Radio Systems AB or in accordance with
+#       the terms and conditions stipulated in the agreement/contract
+#       under which the document(s) have been supplied.
+#
+#################################################################################
+
+
+# ATCOMINF Test Callback Library
+
+# Revision History
+# <date>	<signum>	<details>
+
+# Complete the callbacks in this library to automate the test case.
+#
+# Callbacks are stateless, it is not possible to set a global variable in one callback 
+# and access it it in another.
+#
+# Callbacks are called by the test harness in the following order:
+#
+# tc_setup() 		# Called only for independent TC execution mode to setup TC
+# tc_precon()		# Conditions that should exist before TC can run
+# tc_test()		# Runs the test for this TC
+# tc_postcon()		# Conditions that should/should not exist after successful TC 
+# tc_cleanup()		# Called only for independent TC execution mode to cleanup after TC
+
+# All callbacks must PASS for a TC PASS result
+
+#################################################################################
+#
+# CALLBACK: TC_SETUP
+#
+# This callback function is only called if the harness execution mode is 'AT_INDEPENDENT'
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_setup() {
+
+	# Coded to fail in case TC_AUTOMATED=1 before automation completed
+	# Change return code as required
+
+	return 0
+
+}
+#################################################################################
+
+#################################################################################
+#
+# CALLBACK: TC_PRECON
+#
+# This callback function checks the correct conditions exist to run the TC.
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+ 
+tc_precon() {
+
+	# Coded to fail in case TC_AUTOMATED=1 before automation completed
+	# Change return code as required
+
+	return 0
+
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_TEST
+#
+# This callback function runs the test.
+# The harness compares the return code to the SPEC_TC_TEST_PASSCODE value set in the test spec.
+#
+# Return or exit codes:
+#    SPEC_TC_TEST_PASSCODE 	success
+# != SPEC_TC_TEST_PASSCODE 	failure
+ 
+tc_test() {
+
+echo "6.4       OSS-RC 14 WP00178 - WRAN: SON Automated scrambling code selection"
+
+echo "1. Verify the sentinel license mapping document is updated with the CXC for Auto Scrambling Code Selection WCDMA feature."
+
+
+$EXPECT << EOF1
+
+  spawn ftp atnfdbuildvm
+      set timeout 100   
+      expect "Name (atnfdbuildvm:root):"
+      send "root\r"
+      expect "Password:"
+      send "shroot12\r"
+      expect "ftp>"
+      send "bin\r"     
+      expect "ftp>"
+      send "cd /JUMP/MWS_add_client_files/\r"
+      expect "ftp>"
+      send "get Sentinel_License_14.1.6_sck_view /var/tmp/Sentinel_License_14.1.6_sck_view\r"
+      expect "ftp>"
+      send "get Sentinel_License_14.1.6_commercial_view /var/tmp/Sentinel_License_14.1.6_commercial_view\r"
+      expect "ftp>"
+      send "quit\r"
+
+exit 0
+
+EOF1
+
+export a=`cat /var/tmp/Sentinel_License_14.1.6_sck_view | grep "CXC4019027" | awk '{print $1}'`
+
+if [ "$a" == "CXC4019027" ]; then
+
+  echo "CXC4019027 found"
+
+else
+
+  echo "CXC4019027 not found"
+
+fi
+
+export a=`cat /var/tmp/Sentinel_License_14.1.6_commercial_view | grep "CXC4019027" | awk '{print $7}'`
+
+if [ "$a" == "CXC4019027" ]; then
+
+  echo "CXC4019027 found"
+
+else
+
+  echo "CXC4019027 not found"
+
+fi
+
+
+echo "2. Verify the Auto Scrambling Code Selection WCDMA feature license is updated in FTP server."
+
+$EXPECT << EOF1
+
+  spawn ftp 159.107.220.96
+      set timeout 100
+      expect "Name (attemfs1.athtem.eei.ericsson.se:root):"
+      send "ossread\r"
+      expect "Password:"
+      send "ossread\r"
+      expect "ftp>"
+      send "bin\r"
+      expect "ftp>"
+      send "cd sentinel\r"
+      expect "ftp>"
+      send "cd O14\r"
+      expect "ftp>"
+      send "ls\r"
+      expect "ftp>"
+      send "get sentinel_license_full /var/tmp/sentinel_license_full\r"
+      expect "ftp>"
+      send "get sentinel_license_wran /var/tmp/sentinel_license_wran\r"
+      expect "ftp>"
+      send "quit\r"
+
+EOF1
+
+export a=`cat /var/tmp/sentinel_license_full|grep CXC4019027`
+
+echo "$a"
+
+export a=`cat /var/tmp/sentinel_license_full| grep CXC4019027 | awk '{print $2}'`
+
+
+if [ "$a" == "CXC4019027" ]; then
+
+  echo "CXC4019027 found"
+
+else
+
+  echo "CXC4019027 not found"
+
+fi
+
+
+export b=`cat /var/tmp/sentinel_license_wran|grep CXC4019027`
+
+echo "$b"
+
+export b=`cat /var/tmp/sentinel_license_wran | grep CXC4019027 | awk '{print $2}'`
+
+
+if [ "$b" == "CXC4019027" ]; then
+
+  echo "CXC4019027 found"
+
+else
+
+  echo "CXC4019027 not found"
+
+fi 
+
+echo "3. Verify the Auto Scrambling Code Selection WCDMA feature license is installed at initial install on the server."
+
+export a=`/opt/Sentinel/bin/lsmon | grep CXC4019027`
+
+echo "$a"
+
+export a=`/opt/Sentinel/bin/lsmon |grep CXC4019027 | awk '{print $5}' | cut -c2-11`
+
+if [ "$a" == "CXC4019027" ]; then
+
+  echo "CXC4019027 found"
+
+else
+
+  echo "CXC4019027 not found"
+
+fi
+
+echo "4.Verify the Auto Scrambling Code Selection WCDMA feature license can be removed / installed back."
+
+export a=`/opt/Sentinel/bin/lsmon |grep -i CXC4019027`
+
+echo "$a"
+
+. ${AT_ROOT}/*.env
+
+$EXPECT << EOF1
+
+  spawn ssh root@${CI_ADMIN1_HOSTNAME}
+      set timeout 100
+      expect "Password:"
+      send "shroot\r"
+      expect "#"
+      send "bash\r"
+      expect "#"
+      send "/opt/Sentinel/bin/lsmon > /tmp/lic.txt\r"
+      expect "#"
+      send "/opt/Sentinel/bin/lslic -DL CXC4019027 O14 01D54BB3A2ACEED0\r"
+      expect "This will delete license(s) from the server, do you want to continue? (Y/N):"
+      send "Y\r"
+      expect "#"
+      send "exit\r"
+EOF1
+
+export b=`/opt/Sentinel/bin/lsmon |grep -i CXC4019027`
+
+echo "$b"
+
+if [ $? == 0 ]; then
+
+  echo "License removed"
+
+else
+
+  echo "License not removed"
+
+fi
+
+$EXPECT << EOF1
+
+  spawn ftp 159.107.220.96
+      set timeout 100
+      expect "Name (attemfs1.athtem.eei.ericsson.se:root):"
+      send "ossread\r"
+      expect "Password:"
+      send "ossread\r"
+      expect "ftp>"
+      send "bin\r"
+      expect "ftp>"
+      send "cd sentinel\r"
+      expect "ftp>"
+      send "cd O14\r"
+      expect "ftp>"
+      send "ls\r"
+      expect "ftp>"
+      send "get sentinel_license_full /var/tmp/sentinel_license_full\r"
+      expect "ftp>"
+      send "quit\r"
+EOF1
+
+. ${AT_ROOT}/*.env
+
+$EXPECT << EOF1
+
+  spawn ssh root@${CI_ADMIN1_HOSTNAME}
+      set timeout 100
+      expect "Password:"
+      send "shroot\r"
+      expect "#"
+      send "bash\r"
+      expect "#"
+      send "export LSFORCEHOST=masterservice\r"
+      expect "#"
+      send "/opt/Sentinel/bin/lslic -F /var/tmp/sentinel_license_full\r"
+      expect "#"
+      send "exit\r"
+EOF1
+
+
+export a=`cd /var/tmp | /opt/Sentinel/bin/lsmon |grep -i CXC4019027`
+
+echo "$a"
+
+export a=`/opt/Sentinel/bin/lsmon |grep CXC4019027 | awk '{print $5}' | cut -c2-11`
+
+if [ "$a" == "CXC4019027" ]; then
+
+  echo "CXC4019027 found"
+
+else
+
+  echo "CXC4019027 not found"
+
+fi
+	# Change return code as required
+
+	return 0
+
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_POSTCON
+#
+# This callback function checks expected results.
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_postcon() {
+
+	# Coded to fail in case TC_AUTOMATED=1 before automation complete.
+	# Change return code as required
+
+	return 0
+
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_CLEANUP
+#
+# This callback function is only called if the harness execution mode is 'AT_INDEPENDENT'
+# 
+# This callback restores the target system to the state it was in before the TC 
+# was run. It rolls back changes made by callbacks tc_setup() and tc_test()
+# 
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_cleanup() {
+
+	# Coded to fail in case TC_AUTOMATED=1 before automation complete
+	# Change return code as required
+
+	return 0
+
+}

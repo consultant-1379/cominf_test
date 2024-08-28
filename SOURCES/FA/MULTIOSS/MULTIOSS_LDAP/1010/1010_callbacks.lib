@@ -1,0 +1,184 @@
+#!/bin/bash
+#################################################################################
+#
+#
+#       COPYRIGHT (C) ERICSSON RADIO SYSTEMS AB, Sweden
+#
+#       The copyright to the document(s) herein is the property of
+#       Ericsson Radio Systems AB, Sweden.
+#
+#       The document(s) may be used and/or copied only with the written
+#       permission from Ericsson Radio Systems AB or in accordance with
+#       the terms and conditions stipulated in the agreement/contract
+#       under which the document(s) have been supplied.
+#
+#################################################################################
+
+
+# ATCOMINF Test Callback Library
+
+# Revision History
+# <date>	xsougha		First Version	
+
+# Complete the callbacks in this library to automate the test case.
+#
+# Callbacks are stateless, it is not possible to set a global variable in one callback 
+# and access it it in another.
+#
+# Callbacks are called by the test harness in the following order:
+#
+# tc_setup() 		# Called only for independent TC execution mode to setup TC
+# tc_precon()		# Conditions that should exist before TC can run
+# tc_test()		# Runs the test for this TC
+# tc_postcon()		# Conditions that should/should not exist after successful TC 
+# tc_cleanup()		# Called only for independent TC execution mode to cleanup after TC
+
+# All callbacks must PASS for a TC PASS result
+
+#################################################################################
+#
+# CALLBACK: TC_SETUP
+#
+# This callback function is only called if the harness execution mode is 'AT_INDEPENDENT'
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_setup() {
+	return 0 
+}
+#################################################################################
+
+#################################################################################
+#
+# CALLBACK: TC_PRECON
+#
+# This callback function checks the correct conditions exist to run the TC.
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+ 
+tc_precon() {
+	# Adding a new isolated domain on oss1
+	${AT_BIN}/con_ex.bsh -d 1010_create_isolated_domain_1.in -o 1010_create_isolated_domain_1.exp -c "/ericsson/sdee/bin/prepSUNDS.sh -c"
+	/usr/local/bin/expect 1010_create_isolated_domain_1.exp || {
+		echo "Failed to create isolated domain on oss1"
+		return 1
+	}
+
+	sleep 20
+
+	# Adding a new isolated domain on oss2
+	${AT_BIN}/con_ex.bsh -d 1010_create_isolated_domain_2.in -o 1010_create_isolated_domain_2.exp -c "/ericsson/sdee/bin/prepSUNDS.sh -c"
+        /usr/local/bin/expect 1010_create_isolated_domain_2.exp || {
+                echo "Failed to create isolated domain on oss2"
+                return 1
+        }
+
+	sleep 20
+
+	# Setting iso10101.com as the default domain
+	${AT_BIN}/con_ex.bsh -d 1010_set_default_domain_iso10101_com.in -o 1010_set_default_domain_iso10101_com.exp -c "/ericsson/sdee/bin/set_default_ldap_domain.sh"
+	/usr/local/bin/expect 1010_set_default_domain_iso10101_com.exp || {
+		echo "Failed to set iso10101.com as the default domain."
+		return 1
+	}
+
+        # Adding group1 to the new isolated domain on oss1
+        ${AT_BIN}/con_ex.bsh -d 1010_add_group_isolated_domain_1.in -o 1010_add_group_isolated_domain_1.exp -c "/ericsson/sdee/bin/add_group.sh"
+        /usr/local/bin/expect 1010_add_group_isolated_domain_1.exp || {
+                echo "Failed to add group to isolated domain on oss1"
+                return 1
+        }
+
+        sleep 5
+
+        # Setting iso10102.com as the default domain
+        ${AT_BIN}/con_ex.bsh -d 1010_set_default_domain_iso10102_com.in -o 1010_set_default_domain_iso10102_com.exp -c "/ericsson/sdee/bin/set_default_ldap_domain.sh"
+        /usr/local/bin/expect 1010_set_default_domain_iso10102_com.exp || {
+                echo "Failed to set iso10102.com as the default domain."
+                return 1
+        }
+
+        # Adding group2 to the new isolated domain on oss2
+        ${AT_BIN}/con_ex.bsh -d 1010_add_group_isolated_domain_2.in -o 1010_add_group_isolated_domain_2.exp -c "/ericsson/sdee/bin/add_group.sh"
+        /usr/local/bin/expect 1010_add_group_isolated_domain_2.exp || {
+                echo "Failed to add group to isolated domain on oss2"
+                return 1
+        }
+
+        sleep 5
+
+	return 0 
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_TEST
+#
+# This callback function runs the test.
+# The harness compares the return code to the SPEC_TC_TEST_PASSCODE value set in the test spec.
+#
+# Return or exit codes:
+#    SPEC_TC_TEST_PASSCODE 	success
+# != SPEC_TC_TEST_PASSCODE 	failure
+ 
+tc_test() {
+        # Migrating isolated domain1 to GD
+        ${AT_BIN}/con_ex.bsh -d 1010_migrate_isolated_domain_1_to_GD.in -o 1010_migrate_isolated_domain_1_to_GD.exp -c "/ericsson/sdee/bin/migrate_domain.bsh -d iso10101.com"
+        /usr/local/bin/expect 1010_migrate_isolated_domain_1_to_GD.exp
+        CONSOLE_OUTPUT_CONTAINS "domain migration completed: OK" || {
+                echo "Failed to migrate isolated_domain_2 to GD"
+                return 1
+        }
+
+	# Migrating isolated domain2 to GD
+	${AT_BIN}/con_ex.bsh -d 1010_migrate_isolated_domain_2_to_GD.in -o 1010_migrate_isolated_domain_2_to_GD.exp -c "/ericsson/sdee/bin/migrate_domain.bsh -d iso10102.com"
+	/usr/local/bin/expect 1010_migrate_isolated_domain_2_to_GD.exp
+	CONSOLE_OUTPUT_CONTAINS "domain migration completed: OK" || {
+		echo "Failed to migrate isolated_domain_2 to GD"
+		return 1
+	}
+
+	return 0
+}
+############################################################################################################################
+
+
+############################################################################################################################
+# CALLBACK: TC_POSTCON
+#
+# This callback function checks expected results.
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_postcon() {
+	return 0 
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_CLEANUP
+#
+# This callback function is only called if the harness execution mode is 'AT_INDEPENDENT'
+# 
+# This callback restores the target system to the state it was in before the TC 
+# was run. It rolls back changes made by callbacks tc_setup() and tc_test()
+# 
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_cleanup() {
+	rm -rf *.exp
+ 
+	return 0 
+}

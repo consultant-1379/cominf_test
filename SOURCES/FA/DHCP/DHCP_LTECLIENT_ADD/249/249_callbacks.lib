@@ -1,0 +1,219 @@
+#!/bin/bash
+#################################################################################
+#
+#
+#       COPYRIGHT (C) ERICSSON RADIO SYSTEMS AB, Sweden
+#
+#       The copyright to the document(s) herein is the property of
+#       Ericsson Radio Systems AB, Sweden.
+#
+#       The document(s) may be used and/or copied only with the written
+#       permission from Ericsson Radio Systems AB or in accordance with
+#       the terms and conditions stipulated in the agreement/contract
+#       under which the document(s) have been supplied.
+#
+#################################################################################
+
+
+# ATCOMINF Test Callback Library
+
+# Revision History
+# <date>	<signum>	<details>
+# 2012-08-17    xfeldan    Initial version
+
+# Complete the callbacks in this library to automate the test case.
+#
+# Callbacks are stateless, it is not possible to set a global variable in one callback 
+# and access it it in another.
+#
+# Callbacks are called by the test harness in the following order:
+#
+# tc_setup() 		# Called only for independent TC execution mode to setup TC
+# tc_precon()		# Conditions that should exist before TC can run
+# tc_test()		# Runs the test for this TC
+# tc_postcon()		# Conditions that should/should not exist after successful TC 
+# tc_cleanup()		# Called only for independent TC execution mode to clenup after TC
+
+# All callbacks must PASS for a TC PASS result
+
+#################################################################################
+#
+# CALLBACK: TC_SETUP
+#
+# This callback function is only called if the harness execution mode is 'AT_INDEPENDENT'
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_setup() {
+
+	echo "Adding networks:"
+	#for ip in 234.234.234.234 106.206.184.200 114.41.95.201 91.69.84.49; do
+	#	net=$(ipcalc -n ${ip}/21|awk -F= '{print $2}')
+	#	echo -e "\t$net"
+	#	DHCP_NETWORK_EXISTS $net || {
+	#		/ericsson/ocs/bin/ai_manager.sh -add net -a $net -m 255.255.248.0 -r $ip -d conservapedia.org -n 1.1.1.1
+	#	}
+	/ericsson/ocs/bin/ai_manager.sh -add net -a 10.96.1.0 -m 255.255.255.0 -r 10.96.1.1 -d conservapedia.org -n 1.1.1.1 -q	
+	/ericsson/ocs/bin/ai_manager.sh -add net -a 10.97.1.0 -m 255.255.255.0 -r 10.97.1.1 -d conservapedia.org -n 1.1.1.1 -q
+	/ericsson/ocs/bin/ai_manager.sh -add net -a 10.98.1.0 -m 255.255.255.0 -r 10.98.1.1 -d conservapedia.org -n 1.1.1.1 -q
+	/ericsson/ocs/bin/ai_manager.sh -add net -a 10.99.1.0 -m 255.255.255.0 -r 10.99.1.1 -d conservapedia.org -n 1.1.1.1 -q
+	#done
+
+	return 0
+
+}
+#################################################################################
+
+#################################################################################
+#
+# CALLBACK: TC_PRECON
+#
+# This callback function checks the correct conditions exist to run the TC.
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+ 
+tc_precon() {
+
+	DHCP_SERVER_INSTALLED || {
+		echo "DHCP server not installed"
+		return 1
+	}
+
+	DHCP_SERVER_RUNNING || {
+		echo "DHCP server not running"
+		return 2
+	}
+
+#	[ -r $G_CONFIG_INI_FILE ] || {
+#		echo "Cannot read: $G_CONFIG_INI_FILE"
+#		return 3
+#	}
+grep "om_serv_master" /ericsson/config/ericsson_use_config || {
+echo "Its not OM SERVICES SERVER" 
+return 3
+}
+
+	[ -n "$BSIM_USER" ] || {
+		echo "\$BSIM_USER variable not defined"
+		return 4
+	}
+
+	id $BSIM_USER&>/dev/null || {
+		echo "BSIM user not present"
+		return 5
+	}
+	return 0
+
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_TEST
+#
+# This callback function runs the test.
+# The harness compares the return code to the SPEC_TC_TEST_PASSCODE value set in the test spec.
+#
+# Return or exit codes:
+#    SPEC_TC_TEST_PASSCODE 	success
+# != SPEC_TC_TEST_PASSCODE 	failure
+ 
+tc_test() {
+
+	echo "Test 1: Add LTE client in quiet mode with NTP primary and zero offset"
+	echo "As $BSIM_USER: /ericsson/ocs/bin/ai_manager.sh -add lte_client -a 10.97.1.10 -h valid90 -i testclient90 -s 2.2.2.2 -p 3.3.3.3 -t \"4.4.4.4\" -u 0"
+	su - bsim -c "/ericsson/ocs/bin/ai_manager.sh -add lte_client -a 10.97.1.10 -h valid90 -i testclient90 -s 2.2.2.2 -p 3.3.3.3 -t \"4.4.4.4\" -u 0"  || {
+		echo "Error creating test LTE client, error code $?"
+		return 1
+	}
+
+	echo "Test 2: Add LTE client in quiet mode with NTP primary and non-zero offset"
+	echo "As $BSIM_USER: /ericsson/ocs/bin/ai_manager.sh -add lte_client -a 10.96.1.10 -h valid89 -i testclient89 -s 2.2.2.2 -p 3.3.3.3 -t \"4.4.4.4\" -u 3"
+	su - bsim -c "/ericsson/ocs/bin/ai_manager.sh -add lte_client -a 10.96.1.10 -h valid89 -i testclient89 -s 2.2.2.2 -p 3.3.3.3 -t \"4.4.4.4\" -u 3" || {
+		echo "Error creating test LTE client with NTP primary, error code $?"
+		return 2
+	}
+
+	echo "Test 3: Add LTE client in quiet mode with NTP secondary"
+	echo "As $BSIM_USER: /ericsson/ocs/bin/ai_manager.sh -add lte_client -a 10.98.1.10 -h valid88 -i testclient88 -s 2.2.2.2 -p 3.3.3.3 -t \"4.4.4.4 5.5.5.5\" -u 0"
+	su - bsim -c " /ericsson/ocs/bin/ai_manager.sh -add lte_client -a 10.98.1.10 -h valid88 -i testclient88 -s 2.2.2.2 -p 3.3.3.3 -t \"4.4.4.4 5.5.5.5\" -u 0" || {
+		echo "Error creating test LTE client with NTP secondary, error code $?"
+		return 3
+	}
+
+	echo "Test 6: Check that LTE client is listed"
+	/ericsson/ocs/bin/ai_manager.sh -list hosts|grep -i "testclient89" || {
+		echo "Test network was not listed"
+		return 6
+	}
+
+	return 0
+
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_POSTCON
+#
+# This callback function checks expected results.
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_postcon() {
+
+	grep "#START of testclient90" /usr/local/etc/dhcpd.conf_static || {
+		echo "Client entry was not found in /usr/local/etc/dhcpd.conf_static"
+		return 1
+	}
+	return 0
+
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_CLEANUP
+#
+# This callback function is only called if the harness execution mode is 'AT_INDEPENDENT'
+# 
+# This callback restores the target system to the state it was in before the TC 
+# was run. It rolls back changes made by callbacks tc_setup() and tc_test()
+# 
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_cleanup() {
+
+	# Remove test LTE clients
+#	for CLIENT in testclient1 testclient2 testclient3 LTE_MALAKAI LTE_MALAKAI6; do
+		echo "Deleting client, $CLIENT"
+#		/ericsson/ocs/bin/ai_manager.sh -delete client -i $CLIENT &>/dev/null
+#	done
+	/ericsson/ocs/bin/ai_manager.sh -delete client -i testclient90 -q
+	/ericsson/ocs/bin/ai_manager.sh -delete client -i testclient89 -q
+	/ericsson/ocs/bin/ai_manager.sh -delete client -i testclient88 -q
+
+	# Delete networks
+	echo "Deleting networks"
+#	for ip in 234.234.232.0 106.206.184.0 114.41.88.0 91.69.80.0; do
+#		net=$(ipcalc -n ${ip}/21|awk -F= '{print $2}')
+#			expect expect.exp&>/dev/null
+#		}
+#	done
+	/ericsson/ocs/bin/ai_manager.sh -delete net -a 10.96.1.0 -q
+	/ericsson/ocs/bin/ai_manager.sh -delete net -a 10.97.1.0 -q
+	/ericsson/ocs/bin/ai_manager.sh -delete net -a 10.99.1.0 -q
+	/ericsson/ocs/bin/ai_manager.sh -delete net -a 10.98.1.0 -q
+	return 0
+}

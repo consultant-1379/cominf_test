@@ -1,0 +1,43 @@
+#!/bin/bash
+
+# TEST CASE SPEC FILE
+# This file is generated/updated using the test framework web interface.
+# Manual updates on test servers are lost when the test package is re-installed.
+#
+# Last modified: Sunday 31st of March 2013 20:37:23
+#
+
+# These settings must be in BASH script format, they are sourced by other scripts.
+SPEC_FA_NAME="SMRS"
+SPEC_UC_NAME="SMRS_IPV4SLAVE_ADD_SMRSMASTER"
+SPEC_TC_ID=190
+SPEC_TC_SLOGAN="Add IPv4 slave with invalid config file to smrs_master"
+SPEC_TC_TYPE="FT"
+SPEC_TC_POLARITY="positive"
+SPEC_TC_PRIORITY="high"
+SPEC_TC_AUTOMATED=1
+SPEC_TC_DEPENDENT_ONLY=0
+SPEC_TC_TIMEOUT=300
+SPEC_TC_TEST_PASSCODE=0
+SPEC_TC_AUTHOR="xfeldan"
+SPEC_TC_AUTOMATOR="xfeldan"
+# this parameter is not interpreted by harness
+SPEC_TC_DISABLED=0
+
+# Please do not remove the comment lines below.
+# They are used as section locators by the test harness.
+
+# BEGIN_PRE_CONDITIONS
+#1. smrs_master entry exists in /etc/inet/hosts
+# END_PRE_CONDITIONS
+
+
+# BEGIN_MANUAL_STEPS
+#1. Run configure_smrs add slave_service -f <config file> using config file that has different invalid IP addresses for SMRS_SLAVE_NES_IP, expect non-zero return code
+#2. Run configure_smrs with missing SMRS_SLAVE_NES_IP parameter, expect non-zero return code
+#
+# END_MANUAL_STEPS
+
+# BEGIN_POST_CONDITIONS
+#1. Check console_output_contains for each command displays suitable error message
+# END_POST_CONDITIONS

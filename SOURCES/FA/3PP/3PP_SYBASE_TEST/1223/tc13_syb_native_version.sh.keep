@@ -1,0 +1,191 @@
+#!/bin/ksh
+
+#--------------------------------------------------------------------------
+# Ericsson AB    SCRIPT
+#--------------------------------------------------------------------------
+#
+# (c) Ericsson AB 2007 - All rights reserved.
+# 
+# The copyright to the computer program(s) herein is the property
+# of Ericsson AB, Sweden. The programs may be used and/or copied
+# only with the written permission from Ericsson AB or
+# in accordance with the terms and conditions stipulated in the
+# agreement/contract under which the program(s) have been supplied.
+# 
+#------ History ----------------------------------------------------------- 
+# Rev		Date		Prepared		Description
+#
+# PA1		080527		EASHIMA	                First Version
+# PA2		090716		EJOSODO			Updated path for isql	
+# PA3		091117		EQIIYAO			Modified fetch version sentence
+# PA4           110524          EWENHUG 	        Modified check for diff types of servers
+#--------------------------------------------------------------------------
+#
+#   Name       : tc13_syb_native_version.sh 
+#
+#   Description: Checks native Sybase version 
+#
+#   Arguments  : Check for following arguments:
+#                -d = debug
+#                -r = Expected result for native version on sparc servers
+#                -x = Expected result for native version on x86 servers
+#                -n = testcase name
+#
+
+
+# Init --------------------------------------------
+
+echo "[INPUT:PRODUCT]"
+read PROD
+
+RETURN_STATUS=0
+NATIVE_VER_CHECK=`/opt/sybase/sybase/OCS-15_0/bin/isql -Usa -Psybase11  -t 300 << eof1 | grep Server | awk -F'/' '{ print $2 $3 }'
+set nocount on
+go
+select @@version
+go
+eof1`
+
+# Read input options
+while getopts "dr:x:n:" option
+do
+    case $option in
+        d) DEBUG=1;;
+        r) NATIVE_VER_RESULT_SPARC=${OPTARG};;
+		x) NATIVE_VER_RESULT_X86=${OPTARG};;
+        n) TEST_CASE=$OPTARG;;
+   esac
+done
+
+if [ $DEBUG ]; then
+    set -x
+fi
+# -------------------------------------------------
+
+
+# Mandatory information ---------------------------
+echo "[OUTPUT:TESTCASENAME:${TEST_CASE}]"
+echo "[OUTPUT:TESTCASEDESCRIPTION:Checks that the native 3pp version is correct]"
+echo "[OUTPUT:SCRIPTVERSION:PA4]"
+# -------------------------------------------------
+
+
+# ********************************************************************
+#
+#       Command Section
+#
+# ********************************************************************
+WC=/usr/bin/wc
+UNAME=/usr/bin/uname
+GREP=/usr/bin/grep
+
+# Do the test -------------------------------------
+#
+#
+check_native_version ()
+{
+
+
+        EXPECTED_VERSION=${NATIVE_VER_RESULT}
+
+
+        CURRENT_VERSION=$NATIVE_VER_CHECK
+
+        if [ $? -ne 0 ]; then
+                RETURN_STATUS=7 #Failed, can not execute
+                RETURN_STATUS_REASON="No result from the command: $NATIVE_VER_CHECK" 
+                echo [OUTPUT:REASON:$RETURN_STATUS_REASON]
+                exit $RETURN_STATUS
+        fi
+  
+	echo "$CURRENT_VERSION" | grep "$EXPECTED_VERSION" >/dev/null
+	if [ $? -eq 0 ]; then
+		echo "Version match"
+        else
+	        RETURN_STATUS=1 # native version does not match
+            RETURN_STATUS_REASON="${RETURN_STATUS_REASON}Current native version: $CURRENT_VERSION, does not match with expected native version: $EXPECTED_VERSION "
+        fi
+}
+
+# MAIN ---------------------------------------------------------------
+#By default, set the server type to sparc
+NATIVE_VER_RESULT=${NATIVE_VER_RESULT_SPARC}
+
+#Identify the server (sparc / i386)
+ServerInfo=$(expect - <<EOF
+set timeout 60
+spawn ist_run 
+expect {
+	" Please enter selection:"  {
+		send "q\r" 
+	}
+}
+EOF)
+
+#Read the server info from the installation and identify the server architecture(sparc / i386)
+OSSinfo=`echo "$ServerInfo" | grep "OSS Installation" | awk -F":" '{print $2}'`
+echo "The OSS: $OSSinfo"
+
+#Check whether the server is O12 as this test case is for O12 presently
+O12COUNT=`echo "$OSSinfo" | grep "OSSRC_O12" | wc -l`
+
+if [ $O12COUNT -le 0 ]; then
+	echo "This test case is for O12 only, and this is not an O12 server"
+	RETURN_STATUS=0
+	RETURN_STATUS_REASON="This test case is for O12 only, and this is not an O12 server"
+	exit RETURN_STATUS
+fi
+
+#Read the Architecutre
+Architecture=`echo "$ServerInfo" | grep "Architecture" | awk -F":" '{print $2}'`
+echo $Architecture
+Architecture=`echo $Architecture | tr -d "\015" | tr -d " "`
+
+echo "Architecture is :$Architecture"
+
+
+if [ "$Architecture" = "sparc" ]; then 
+#If the architecture is sparc
+	echo "This is a sparc server"
+	NATIVE_VER_RESULT=${NATIVE_VER_RESULT_SPARC}
+else 
+	if [ "$Architecture" = "i386" ]; then 
+#If the architecture is x86
+		echo "This is a x86 server"
+		NATIVE_VER_RESULT=${NATIVE_VER_RESULT_X86}
+	else
+		RETURN_STATUS=1 #Failed, can not execute
+		RETURN_STATUS_REASON="Failed to identify the server type - $Architecture"
+		echo [OUTPUT:REASON:$RETURN_STATUS_REASON]
+        exit $RETURN_STATUS
+	fi	
+fi
+
+
+# Check input
+if [ "$NATIVE_VER_CHECK" = "" ]; then
+                RETURN_STATUS=7 #Failed, can not execute
+                RETURN_STATUS_REASON="No command given to fetch the native version"
+                echo [OUTPUT:REASON:$RETURN_STATUS_REASON]
+                exit $RETURN_STATUS
+fi
+
+if [ "$NATIVE_VER_RESULT" = "" ]; then
+                RETURN_STATUS=7 #Failed, can not execute
+                RETURN_STATUS_REASON="No result given to compare against the actuall native version" 
+                echo [OUTPUT:REASON:$RETURN_STATUS_REASON]
+                exit $RETURN_STATUS
+        fi
+
+# Check if expected native version is the same as real expected version
+check_native_version 
+
+
+# Return status and reason ------------------------
+if [ "$RETURN_STATUS_REASON" ]; then
+  echo [OUTPUT:REASON:$RETURN_STATUS_REASON]
+fi
+
+exit $RETURN_STATUS
+# -------------------------------------------------
+

@@ -1,0 +1,62 @@
+#!/bin/bash
+
+# TEST CASE SPEC FILE
+# This file is generated/updated using the test framework web interface.
+# Manual updates on test servers are lost when the test package is re-installed.
+#
+# Last modified: Monday 20th of January 2014 15:33:25
+#
+
+# These settings must be in BASH script format, they are sourced by other scripts.
+SPEC_FA_NAME="3PP"
+SPEC_UC_NAME="3PP_SYBASE_TEST"
+SPEC_TC_ID=1245
+SPEC_TC_SLOGAN="Verify that ASE_CORE license is set as permanent and validate the SySAM configuration (TC for TR HS19039)"
+SPEC_TC_TYPE="FT"
+SPEC_TC_POLARITY="positive"
+SPEC_TC_PRIORITY="high"
+SPEC_TC_AUTOMATED=1
+SPEC_TC_DEPENDENT_ONLY=0
+SPEC_TC_TIMEOUT=300
+SPEC_TC_TEST_PASSCODE=0
+SPEC_TC_AUTHOR="eprzmar"
+SPEC_TC_AUTOMATOR="eprzmar"
+# this parameter is not interpreted by harness
+SPEC_TC_DISABLED=0
+
+# Please do not remove the comment lines below.
+# They are used as section locators by the test harness.
+
+# BEGIN_PRE_CONDITIONS
+#- Sybase must be online
+#- ASE post install scripts must have been executed
+# END_PRE_CONDITIONS
+
+
+# BEGIN_MANUAL_STEPS
+#TC for HS19039 "Sybase Error While doing the upgrade via CI" 
+#
+#Steps to execute:
+#1. Check if file /opt/sybase/sybase//ASE-15_0/sysam/sysam.properties.template contains this line:
+#
+#LT=AR
+#
+#And that it does not contain this line:
+#LT=SR
+#
+#2. Connect to ISQL client.
+#
+#3. Run:
+#
+#1> sp_lmconfig
+#2> go
+#
+#4. Check if ASE_CORE license status is OK and its Expiry Date permanent: 
+#
+#ASE_CORE, 2016.03080 1, OK, Permanent, null
+#
+# END_MANUAL_STEPS
+
+# BEGIN_POST_CONDITIONS
+#- Sybase is usable, proper license files are used and configuration is OK
+# END_POST_CONDITIONS

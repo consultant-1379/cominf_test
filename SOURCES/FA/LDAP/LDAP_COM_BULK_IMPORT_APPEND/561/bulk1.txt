@@ -1,0 +1,3 @@
+DOMAIN 1.com
+ROlE role2
+ALIAS alias2 role2

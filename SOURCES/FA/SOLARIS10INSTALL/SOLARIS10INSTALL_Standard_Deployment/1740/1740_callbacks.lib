@@ -1,0 +1,296 @@
+#!/bin/bash
+#################################################################################
+#
+#
+#       COPYRIGHT (C) ERICSSON RADIO SYSTEMS AB, Sweden
+#
+#       The copyright to the document(s) herein is the property of
+#       Ericsson Radio Systems AB, Sweden.
+#
+#       The document(s) may be used and/or copied only with the written
+#       permission from Ericsson Radio Systems AB or in accordance with
+#       the terms and conditions stipulated in the agreement/contract
+#       under which the document(s) have been supplied.
+#
+#################################################################################
+
+
+# ATCOMINF Test Callback Library
+
+# Revision History
+# <date>	<signum>	<details>
+
+# Complete the callbacks in this library to automate the test case.
+#
+# Callbacks are stateless, it is not possible to set a global variable in one callback 
+# and access it it in another.
+#
+# Callbacks are called by the test harness in the following order:
+#
+# tc_setup() 		# Called only for independent TC execution mode to setup TC
+# tc_precon()		# Conditions that should exist before TC can run
+# tc_test()		# Runs the test for this TC
+# tc_postcon()		# Conditions that should/should not exist after successful TC 
+# tc_cleanup()		# Called only for independent TC execution mode to cleanup after TC
+
+# All callbacks must PASS for a TC PASS result
+
+#################################################################################
+#
+# CALLBACK: TC_SETUP
+#
+# This callback function is only called if the harness execution mode is 'AT_INDEPENDENT'
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_setup() {
+
+	# Coded to fail in case TC_AUTOMATED=1 before automation completed
+	# Change return code as required
+
+	return 0
+
+}
+#################################################################################
+
+#################################################################################
+#
+# CALLBACK: TC_PRECON
+#
+# This callback function checks the correct conditions exist to run the TC.
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+ 
+tc_precon() {
+
+	# Coded to fail in case TC_AUTOMATED=1 before automation completed
+	# Change return code as required
+
+	return 0
+
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_TEST
+#
+# This callback function runs the test.
+# The harness compares the return code to the SPEC_TC_TEST_PASSCODE value set in the test spec.
+#
+# Return or exit codes:
+#    SPEC_TC_TEST_PASSCODE 	success
+# != SPEC_TC_TEST_PASSCODE 	failure
+ 
+tc_test() {
+
+	# Coded to fail in case TC_AUTOMATED=1 before automation complete
+	# Change return code as required
+
+	cp /ericsson/config/config.ini /ericsson/config/config.ini.orig
+
+	DEPLOYMENT_TYPE=enhanced
+	GEO_SETUP=n
+	NTP_IP="192.168.0.1"
+	DNS_DOMAIN_NAME=vts.com
+	SECONDARY_HOSTNAME=omsrvs
+	SECONDARY_IP="192.168.0.7"
+	SECONDARY_IPV6="2001:1b70:82a1:0103::7"
+	LDAP_DOMAIN_NAME=vts.com
+	REPLICATION_ID=99
+	MASTER_HOSTNAME=ossmaster
+	MASTER_IP="192.168.0.12"
+	LDAP_DN="cn=directory manager"
+
+	${AT_BIN}/con_ex.bsh -d 1740_inirator.in -o 1740_inirator.exp -c "/ericsson/ocs/bin/conf_cominf_serv.sh"
+	/usr/local/bin/expect 1740_inirator.exp || {
+		echo "Inirator failed to execute "
+	                return 1
+        }
+
+	[ $(grep -cw $DEPLOYMENT_TYPE /ericsson/config/config.ini) -ne 1 ] && {
+		echo "$DEPLOYMENT_TYPE is not updated in /ericsson/config/config.ini"
+	           	return 2
+       		}
+
+	[ $(grep -cw $NTP_IP /ericsson/config/config.ini) -eq 0 ] && {
+		echo "$NTP_IP is not updated in /ericsson/config/config.ini"
+	           	return 3
+        	}
+
+	[ $(grep -cw $DNS_DOMAIN_NAME /ericsson/config/config.ini) -eq 0 ] && {
+		echo "$DNS_DOMAIN_NAME is not updated in /ericsson/config/config.ini"
+		return 4
+        	}
+
+	[ $(grep -cw $SECONDARY_HOSTNAME /ericsson/config/config.ini) -ne 1 ] && {
+		echo "$SECONDARY_HOSTNAME is not updated in /ericsson/config/config.ini"
+		return 5
+        	}
+
+	[ $(grep -cw  $SECONDARY_IP /ericsson/config/config.ini) -ne 1 ] && {
+		echo "$SECONDARY_IP is not updated in /ericsson/config/config.ini"
+		return 6
+        	}
+
+	[ $(grep -cw  $SECONDARY_IPV6 /ericsson/config/config.ini) -ne 1 ] && {
+		echo "$SECONDARY_IPV6 is not updated in /ericsson/config/config.ini"
+		return 7
+        	}
+
+	[ $(grep -cw  $REPLICATION_ID /ericsson/config/config.ini) -ne 1 ] && {
+		echo "$REPLICATION_ID is not updated in /ericsson/config/config.ini"
+		return 8
+        	}
+
+	[ $(grep -cw  $LDAP_DOMAIN_NAME /ericsson/config/config.ini) -eq 0 ] && {
+		echo "$LDAP_DOMAIN_NAME is not updated in /ericsson/config/config.ini"
+		return 9
+        	}
+
+	[ $(grep -cw  $MASTER_HOSTNAME /ericsson/config/config.ini) -ne 1 ] && {
+		echo "$MASTER_HOSTNAME is not updated in /ericsson/config/config.ini"
+		return 10
+        	}
+
+
+	[ $(grep -cw  $MASTER_IP /ericsson/config/config.ini) -ne 1 ] && {
+		echo "$MASTER_IP is not updated in /ericsson/config/config.ini"
+		return 11
+        	}
+
+	[ $(grep -icw $LDAP_DN /ericsson/config/config.ini) -ne 1 ] && {
+		echo "$LDAP_DN is not updated in /ericsson/config/config.ini"
+           	return 12
+       		}
+       
+           return 0
+
+
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_POSTCON
+#
+# This callback function checks expected results.
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_postcon() {
+
+        # Coded to fail in case TC_AUTOMATED=1 before automation complete.
+        ## Change return code as required
+	 NTP_IP="192.168.0.1"
+
+        ${AT_BIN}/con_ex.bsh -d 1740_inirator_post.in -o 1740_inirator_post.exp -c "/ericsson/ocs/bin/conf_cominf_serv.sh"
+        /usr/local/bin/expect 1740_inirator_post.exp || {
+                echo "Inirator failed to execute "
+                        return 1
+        }
+        [ $(grep -c "enhanced" /ericsson/config/config.ini) -eq 1 ] || {
+                        echo " Enhanced type is not enhanced"
+                        return 2 
+						}
+
+        [ $(grep $NTP_IP /ericsson/config/config.ini|grep -ci ntp) -eq 1 ] || {
+                        echo " NTP IP  is not $NTP_IP "
+                        return 3 
+						}
+
+        [ $(grep DHCP_CONF /ericsson/config/config.ini |grep -c yes) -eq 1 ] || {
+                        echo " DHCP_CONF is not enabled "
+                        return 4 
+						}
+
+        [ $(grep DHCP6_CONF /ericsson/config/config.ini |grep -c yes) -eq 1 ] || {
+                        echo " DHCP_CONF6 is not enabled"
+                        return 5 
+						}
+
+        [ $(grep DNS_DOMAIN_NAME /ericsson/config/config.ini |grep -c vts.com) -eq 1 ] || {
+                        echo "DNS_DOMAIN NAME is not vts.com"
+                        return 6
+						}
+
+        [ $(grep MASTER_SERVER /ericsson/config/config.ini |grep -c ossmaster) -eq 1 ] || {
+                        echo "OSS Master hostname is not ossmaster "
+                        return 7 
+						}
+
+        [ $(grep MS_IP /ericsson/config/config.ini |grep -c 192.168.0.12) -eq 1 ] || {
+                        echo "MS IP is not 192.168.0.12 "
+                        return 8 
+						}
+
+        [ $(grep LDAP_DOMAIN_NAME /ericsson/config/config.ini |grep -c vts.com) -eq 1 ] || {
+                        echo "LDAP domain name is not vts.com"
+                        return 9
+						}
+
+        [ $(grep LDAP_DN /ericsson/config/config.ini | grep -ic "directory manager") -eq 1 ] || {
+                        echo "LDAP DN is not cn=directory manager"
+                        return 10 
+						}
+
+        [ $(grep LDAP_REPL_ID /ericsson/config/config.ini |grep -c 1) -eq 1 ] || {
+                        echo "LDAP_REPL_ID is not 1"
+                        return 11 
+						}
+
+        [ $(grep OTHER_INFRA_NAME /ericsson/config/config.ini |grep -c omsrvs) -eq 1 ] ||{
+                        echo "OTHER_INFRA_NAME is not omsrvs"
+                        return 12 
+						}
+
+        [ $(grep OTHER_INFRA_IP /ericsson/config/config.ini |grep -c 192.168.0.7) -eq 1 ] || {
+                        echo "OTHER_INFRA_IP is not 192.168.0.7"
+                        return 13 
+						}
+
+        [ $(grep OTHER_INFRA_IPV6 /ericsson/config/config.ini |grep -c 2001:1b70:82a1:0103::7) -eq 1 ] || {
+                        echo "OTHER INFRA IPV6 is not2001:1b70:82a1:0103::7"
+                        return 14 
+						}
+
+        return 0
+
+}
+
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_CLEANUP
+#
+# This callback function is only called if the harness execution mode is 'AT_INDEPENDENT'
+# 
+# This callback restores the target system to the state it was in before the TC 
+# was run. It rolls back changes made by callbacks tc_setup() and tc_test()
+# 
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_cleanup() {
+
+	# Coded to fail in case TC_AUTOMATED=1 before automation complete
+	# Change return code as required
+
+	rm 1740_inirator_post.exp
+        rm 1740_inirator.exp
+
+	return 0
+
+
+}

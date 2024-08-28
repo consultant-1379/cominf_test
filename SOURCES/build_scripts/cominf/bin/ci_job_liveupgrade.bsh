@@ -1,0 +1,258 @@
+#!/bin/bash
+# ********************************************************************
+# Ericsson Radio Systems AB                                     SCRIPT
+# ********************************************************************
+#
+#
+# (c) Ericsson Radio Systems AB 2008 - All rights reserved.
+#
+# The copyright to the computer program(s) herein is the property
+# of Ericsson Radio Systems AB, Sweden. The programs may be used
+# and/or copied only with the written permission from Ericsson Radio
+# Systems AB or in accordance with the terms and conditions stipulated
+# in the agreement/contract under which the program(s) have been
+# supplied.
+#
+#
+# ********************************************************************
+# Name    : COMinf_CI_live_upgrade
+# Date    : 01/06/2014
+# Purpose : live upgrade for OSS servers CI JOB
+#
+# ********************************************************************
+#
+#   Command Section
+#
+# ********************************************************************
+G_SCRIPTDIR=$(cd $(/usr/bin/dirname $0); pwd)
+G_ETCDIR=$( dirname $G_SCRIPTDIR )/etc
+. /var/tmp/ci_liveupgrade.env
+
+
+AWK=/usr/bin/awk
+BASENAME=/usr/bin/basename
+BOOTADM=/usr/sbin/bootadm
+CAT=/usr/bin/cat
+CHMOD=/usr/bin/chmod
+CHOWN=/usr/bin/chown
+CLEAR=/usr/bin/clear
+CMP=/usr/bin/cmp
+CP=/usr/bin/cp
+CPIO=/usr/bin/cpio
+DATE=/usr/bin/date
+DF=/usr/bin/df
+DIRNAME=/usr/bin/dirname
+DTCONFIG=/usr/dt/bin/dtconfig
+ECHO=/usr/bin/echo
+EGREP=/usr/bin/egrep
+EJECT=/usr/bin/eject
+ENV=/usr/bin/env
+EXPR=/usr/bin/expr
+FIND=/usr/bin/find
+FMTHARD=/usr/sbin/fmthard
+FORMAT=/usr/sbin/format
+FUSER=/usr/sbin/fuser
+GETENT=/usr/bin/getent
+GETTEXT=/usr/bin/gettext
+GREP=/usr/bin/grep
+GROUPADD=/usr/sbin/groupadd
+GTAR=/usr/sfw/bin/gtar
+GZCAT=/usr/bin/gzcat
+HASTATUS=/opt/VRTS/bin/hastatus
+HEAD=/usr/bin/head
+HOSTNAME=/usr/bin/hostname
+ID=/usr/bin/id
+INIT=/usr/sbin/init
+KILL=/bin/kill
+LS=/usr/bin/ls
+LN=/usr/bin/ln
+LUACTIVATE=/usr/sbin/luactivate
+LUCREATE=/usr/sbin/lucreate
+LUCURR=/usr/sbin/lucurr
+LUDELETE=/usr/sbin/ludelete
+LUDESC=/usr/sbin/ludesc
+LUMOUNT=/usr/sbin/lumount
+LUUMOUNT=/usr/sbin/luumount
+LUSTATUS=/usr/sbin/lustatus
+LUUPGRADE=/usr/sbin/luupgrade
+LUX86menu_PROPAGATE=/usr/lib/lu/lux86menu_propagate
+METACLEAR=/usr/sbin/metaclear
+METAINIT=/usr/sbin/metainit
+METASTAT=/usr/sbin/metastat
+MKDIR=/usr/bin/mkdir
+MORE=/usr/bin/more
+MOUNT=/usr/sbin/mount
+MV=/usr/bin/mv
+NAWK=/usr/bin/nawk
+PGREP=/usr/bin/pgrep
+PING=/usr/sbin/ping
+PKGADD=/usr/sbin/pkgadd
+PKGINFO=/usr/bin/pkginfo
+PRTCONF=/usr/sbin/prtconf
+PRTDIAG=/usr/sbin/prtdiag
+PRTVTOC=/usr/sbin/prtvtoc
+RM=/usr/bin/rm
+RMDIR=/usr/bin/rmdir
+RCP=/usr/bin/rcp
+RSH=/usr/bin/rsh
+SED=/usr/bin/sed
+SLEEP=/usr/bin/sleep
+SORT=/usr/bin/sort
+SU=/usr/bin/su
+SVCADM=/usr/sbin/svcadm
+SVCCFG=/usr/sbin/svccfg
+SVCS=/usr/bin/svcs
+SWAP=/usr/sbin/swap
+SYNC=/usr/sbin/sync
+TAIL=/usr/bin/tail
+TAR=/usr/bin/tar
+TEE=/usr/bin/tee
+TOUCH=/usr/bin/touch
+TPUT=/usr/bin/tput
+UADMIN=/usr/sbin/uadmin
+UNAME=/usr/bin/uname
+UMOUNT=/usr/sbin/umount
+UNZIP=/usr/bin/unzip
+USERADD=/usr/sbin/useradd
+VOLD=/usr/sbin/vold
+WC=/usr/bin/wc
+ZFS=/usr/sbin/zfs
+ZPOOL=/usr/sbin/zpool
+SHOWREV=/usr/bin/showrev
+
+UPGRADE_DIR=/a
+LIVE_UPGRADE_SCRIPT=/var/tmp/Liveupgrade/liveupgrade.bsh
+LIVE_UPGRADE_TAR=/var/tmp/19090-CXP9017500_EN_G_TAR_GZIPV1.tar
+
+if [  /ericsson/config/ericsson_use_config ]; then
+
+    G_CONFIGTYPE=$( awk -F= '{print $2}' /ericsson/config/ericsson_use_config )
+
+else
+    log_script "/ericsson/config/ericsson_use_config not found"	
+	exit 1
+
+fi	
+
+### Function: log_script ###
+#
+# Logs Messages
+#
+# Arguments     : $1 - Message
+#
+# Return Values : none
+#
+#*****************************
+log_script()
+{
+  #******************
+  # Timestamp message
+  #******************
+  if [[ -n "${1}" ]]
+  then
+      L_LOG_MESS=" `date '+%Y-%m-%d-%H-%M-%S'`:: ${1}"
+  else
+      L_LOG_MESS=" `date '+%Y-%m-%d-%H-%M-%S'`:: Error in Script ${0}"
+  fi
+
+  #********************************
+  # Ouput to log file and/or screen
+  #********************************
+  if [ "${LOGFILE}" ]
+  then
+      echo "${L_LOG_MESS}" | ${TEE} -a ${LOGFILE}
+  else
+      echo "${L_LOG_MESS}"
+  fi
+  echo 
+}
+
+#MAIN 
+
+l_pwd=`pwd`
+cd $SOLARIS_MEDIA_PATH
+cd $OM_MEDIA_PATH
+cd $SMALL_UPGRADE_PATH
+cd $l_pwd
+
+#git pull tar file and this script 
+#***************
+
+#***************************
+
+log_script "Checking Live upgrade script ${LIVE_UPGRADE_TAR}"
+
+if [ -f ${LIVE_UPGRADE_TAR} ]; then
+    log_script "${LIVE_UPGRADE_TAR} file found, Extracting"
+    ${TAR} -xvf ${LIVE_UPGRADE_TAR} 
+    if [ -e  /Liveupgrade ]; then
+
+        ${MV} -f /Liveupgrade /var/tmp
+    fi 
+else
+    log_script "${LIVE_UPGRADE_TAR} file not found"
+    exit 1
+fi
+
+
+#check /a folder or dir , if exists delete 
+
+if [  -d $UPGRADE_DIR   -o  -f $UPGRADE_DIR  ];  then
+	log_script "INFO: ${UPGRADE_DIR} exists, deleting."
+	${RM} -rf $UPGRADE_DIR -C /var/tmp/
+fi
+
+log_script "Executing showrev "
+${SHOWREV} -p | grep IDR
+
+log_script "Checking d10 mount status on '/' folder "  
+
+if [ `df -h | grep -c dsk/d10` -gt 0 ]; then
+
+	log_script "INFO : d10 is mounted on /" 
+else
+	log_script "ERROR: d10 is not mounted"	
+	exit 1
+fi
+
+#verify symbolic link /var/svc/profile/name_service.xml only on UAS 
+
+if [ ${G_CONFIGTYPE} = "appserv" ]; then
+
+	log_script "verifying symbolic link on appserv /var/svc/profile/name_service.xml -> ns_files.xml"
+	if [ -f /var/svc/profile/ns_files.xml ]; then 
+	
+		if [[ ! -e /var/svc/profile/name_service.xml || ! -L /var/svc/profile/name_service.xml ]]; then
+			log_script   "INFO :/var/svc/profile/name_service.xml symlink is  broken!"
+		fi
+		
+		if [ `ls -l /var/svc/profile/name_service.xml  >>  /dev/null 2>&1 | grep -c "/var/svc/profile/name_service.xml -> ns_files.xml"` -eq 1 ]; then
+			log_script "/var/svc/profile/name_service.xml -> ns_files.xml is valid"
+		else
+
+			#log_script
+			rm -rf /var/svc/profile/name_service.xml >> /dev/null 2>&1 
+			(cd /var/svc/profile/ ; ln -s  ns_files.xml name_service.xml)
+		fi	
+		
+	else
+		log_script "ERROR :/var/svc/profile/ns_files.xml doesn't exists"
+		exit 1
+	fi	
+		
+fi
+
+#
+
+
+#Perform live upgrade on all servers expect OSS Master server 
+
+if [ ${G_CONFIGTYPE} != "system" ]; then
+ 
+	log_script "Performing live upgrade on ${G_CONFIGTYPE}"
+	${LIVE_UPGRADE_SCRIPT} -c -s ${SOLARIS_MEDIA_PATH} -D ${OM_MEDIA_PATH} -U 
+ 
+fi
+
+
+

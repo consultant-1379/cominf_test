@@ -1,0 +1,8 @@
+LDAP Directory Manager password: 
+PASSWD
+New user password:
+newpass1
+Re-enter password:
+newpass1
+Reset password for local user .TESTUSER. in domain .TESTDOM. - Yes or No .No.
+Yes

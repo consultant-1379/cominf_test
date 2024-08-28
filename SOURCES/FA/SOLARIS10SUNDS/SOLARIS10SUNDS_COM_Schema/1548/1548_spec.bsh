@@ -1,0 +1,54 @@
+#!/bin/bash
+
+# TEST CASE SPEC FILE
+# This file is generated/updated using the test framework web interface.
+# Manual updates on test servers are lost when the test package is re-installed.
+#
+# Last modified: Monday 16th of December 2013 11:59:06
+#
+
+# These settings must be in BASH script format, they are sourced by other scripts.
+SPEC_FA_NAME="SOLARIS10SUNDS"
+SPEC_UC_NAME="SOLARIS10SUNDS_COM_Schema"
+SPEC_TC_ID=1548
+SPEC_TC_SLOGAN="Extending directory schema "
+SPEC_TC_TYPE="FT"
+SPEC_TC_POLARITY="positive"
+SPEC_TC_PRIORITY="high"
+SPEC_TC_AUTOMATED=1
+SPEC_TC_DEPENDENT_ONLY=0
+SPEC_TC_TIMEOUT=300
+SPEC_TC_TEST_PASSCODE=0
+SPEC_TC_AUTHOR="xvinkat"
+SPEC_TC_AUTOMATOR="xvinkat"
+# this parameter is not interpreted by harness
+SPEC_TC_DISABLED=0
+
+# Please do not remove the comment lines below.
+# They are used as section locators by the test harness.
+
+# BEGIN_PRE_CONDITIONS
+#<path to the testcase>
+#
+#SUN-DS/COM LDAP - User Management for 
+#COM-Enabled Nodes/COM schema in the OSS LDAP database
+#
+#Following servers are required :
+#1.O&M primary
+#2.O&M Secondary
+#3.OSS
+#4.UAS 
+# END_PRE_CONDITIONS
+
+
+# BEGIN_MANUAL_STEPS
+#1.Verify II of the cominf servers to 13.0.x version.
+#2.Verify that after II, directory schema is extended to support the COM objects on ldap domains (on the O&M primary and secondary servers). 
+# END_MANUAL_STEPS
+
+# BEGIN_POST_CONDITIONS
+#1.Servers are successfully jumpstarted to 13.0.x version.Verify this by checking the ERICocs package with the package version in baseline.Execute the following on O&M primary and secondary servers: pkginfo -l ERICocs.
+#2.The directory schema is extended during initial install of the server to support the COM objects and attributes. 
+#This can be verified by executing the following command on the O&M primary and secondary server.
+#ldapsearch -b "cn=schema" -s base "objectclass=*" objectclasses | grep -i ericssonUserAuth 
+# END_POST_CONDITIONS

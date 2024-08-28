@@ -1,0 +1,248 @@
+#!/bin/bash
+#################################################################################
+#
+#
+#	   COPYRIGHT (C) ERICSSON RADIO SYSTEMS AB, Sweden
+#
+#	   The copyright to the document(s) herein is the property of
+#	   Ericsson Radio Systems AB, Sweden.
+#
+#	   The document(s) may be used and/or copied only with the written
+#	   permission from Ericsson Radio Systems AB or in accordance with
+#	   the terms and conditions stipulated in the agreement/contract
+#	   under which the document(s) have been supplied.
+#
+#################################################################################
+
+
+# ATCOMINF Test Callback Library
+
+# Revision History
+# 20/09/13	xkalbha		Initial test for invalid options to add alias to user
+
+# Complete the callbacks in this library to automate the test case.
+#
+# Callbacks are stateless, it is not possible to set a global variable in one callback 
+# and access it it in another.
+#
+# Callbacks are called by the test harness in the following order:
+#
+# tc_setup() 		# Called only for independent TC execution mode to setup TC
+# tc_precon()		# Conditions that should exist before TC can run
+# tc_test()		# Runs the test for this TC
+# tc_postcon()		# Conditions that should/should not exist after successful TC 
+# tc_cleanup()		# Called only for independent TC execution mode to clenup after TC
+
+# All callbacks must PASS for a TC PASS result
+
+#################################################################################
+#
+# CALLBACK: TC_SETUP
+#
+# This callback function is only called if the harness execution mode is 'AT_INDEPENDENT'
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_setup() {
+
+
+
+	# Replace PASSWD with the correct credentials
+	for ii in *.in; do
+		sed "s/^PASSWD$/$LDAP_SUPERUSER_PASSWD/" $ii > $ii.tmp
+	done
+
+	
+
+#-------------------------------------------------------------------------------
+# Create the nms group
+#-------------------------------------------------------------------------------
+	LDAP_GROUP_EXISTS 1.com nms || {
+		echo "Need to create nms group"
+		CMD='/ericsson/sdee/bin/add_group.sh -d 1.com -n nms -y'
+		${AT_BIN}/con_ex.bsh -d 502.in.tmp -o 502nms.exp -c "$CMD" || {
+			echo "Failed to generate /usr/local/bin/expect script $?"
+			return 2
+		}
+
+		/usr/local/bin/expect 502nms.exp || {
+			echo "Failed to create nms group, $?"
+			return 3
+		}
+	}
+
+#-------------------------------------------------------------------------------
+# Create the nmsadm user
+#-------------------------------------------------------------------------------
+
+	LDAP_USER_EXISTS 1.com nmsadm || {
+	CMD='/ericsson/sdee/bin/add_user.sh  -d 1.com -n nmsadm '
+	${AT_BIN}/con_ex.bsh -d 502adduser.in.tmp -o 502adduser.exp -c "$CMD" || {
+		echo "Failed to generate /usr/local/bin/expect script, $?"
+		return 4
+	}
+
+	/usr/local/bin/expect 502adduser.exp ||{
+		echo "Failed to create user, error code $?"
+		return 5
+	}
+	}
+#-------------------------------------------------------------------------------
+# Create a test role
+#-------------------------------------------------------------------------------
+
+	CMD='/ericsson/sdee/bin/manage_COM.bsh -a role -d 1.com -R role502 -y'
+	${AT_BIN}/con_ex.bsh -d 502.in.tmp -o 502addrole.exp -c "$CMD" || {
+		echo "Failed to generate /usr/local/bin/expect script, $?"
+		return 6
+	}
+
+	/usr/local/bin/expect 502addrole.exp || {
+		echo "Failed to create role, error code $?"
+		return 7
+	}
+
+#-------------------------------------------------------------------------------
+# Create a test alias
+#-------------------------------------------------------------------------------
+
+	CMD='/ericsson/sdee/bin/manage_COM.bsh -a alias -d 1.com -A alias502 -R role502 -y'
+	${AT_BIN}/con_ex.bsh -d 502.in.tmp -o 502addrole.exp -c "$CMD" || {
+		echo "Failed to generate /usr/local/bin/expect script, $?"
+		return 8
+	}
+
+	/usr/local/bin/expect 502addrole.exp || {
+		echo "Failed to create alias, error code $?"
+		return 9
+	}
+	return 0
+}
+
+#################################################################################
+#
+# CALLBACK: TC_PRECON
+#
+# This callback function checks the correct conditions exist to run the TC.
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+ 
+tc_precon() {
+
+#-------------------------------------------------------------------------------
+#  Check LDAP is running
+#-------------------------------------------------------------------------------
+
+	LDAP_SERVER_UP || {
+		echo "LDAP server not running"
+		return 1
+	}
+
+#-------------------------------------------------------------------------------
+#  nmsadm is present
+#-------------------------------------------------------------------------------
+
+	/usr/bin/ldapsearch -D 'cn=Directory Manager' -w $LDAP_SUPERUSER_PASSWD -b uid=nmsadm,ou=people,dc=1,dc=com objectclass=* > u502.out || {
+		echo "Failed to do LDAP search"
+		return 1
+	}
+	grep 'ericssonUserAuthenticationScope' u502.out && {
+		echo "Found authentication for user u502a"
+		return 2
+	}
+	/usr/bin/ldapsearch -D 'cn=Directory Manager' -w $LDAP_SUPERUSER_PASSWD -b cn=role502,ou=role,ou=com,dc=1,dc=com objectclass=* | grep 'cn: role502' || {
+		echo "Failed to find role502"
+		return 3
+	}
+	/usr/bin/ldapsearch -D 'cn=Directory Manager' -w $LDAP_SUPERUSER_PASSWD -b role=alias502,ou=rolealias,ou=com,dc=1,dc=com objectclass=* | grep 'role: alias502' || {
+		echo "Failed to find alias502"
+		return 3
+	}
+
+	return 0
+
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_TEST
+#
+# This callback function runs the test.
+# The harness compares the return code to the SPEC_TC_TEST_PASSCODE value set in the test spec.
+#
+# Return or exit codes:
+#	SPEC_TC_TEST_PASSCODE 	success
+# != SPEC_TC_TEST_PASSCODE 	failure
+ 
+tc_test() {
+
+	CMD='/ericsson/sdee/bin/manage_COM_privs.bsh -a alias -d 1.com -u nmsadm -A target1:alias502 -y'
+
+	${AT_BIN}/con_ex.bsh -d 502.in.tmp -o 502.exp -c "$CMD" || {
+		echo "Failed to generate /usr/local/bin/expect script $?"
+		return 1
+	}
+
+	/usr/local/bin/expect 502.exp
+	retval=$?
+	[ $retval -eq 1 ] || { echo "Wrong error on add alias $retval"; return 2; }
+
+	return 0
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_POSTCON
+#
+# This callback function checks expected results.
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_postcon(){
+
+	LDAP_USER_EXISTS 1.com nmsadm || {
+		echo "Test user does not exist, $?"
+		return 1
+	}
+
+	
+
+	CONSOLE_OUTPUT_CONTAINS "Failed to add COM target [target1] to user [nmsadm]" || { echo "No failed to add target"; return 4; }
+	CONSOLE_OUTPUT_CONTAINS "INFO : User [nmsadm] is type OSS_SYSTEM" || { echo "No failed to add target"; return 5; }
+
+	return 0
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_CLEANUP
+#
+# This callback function is only called if the harness execution mode is 'AT_INDEPENDENT'
+# 
+# This callback restores the target system to the state it was in before the TC 
+# was run. It rolls back changes made by callbacks tc_setup() and tc_test()
+# 
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_cleanup() {
+
+
+	
+	# Remove temporary files
+	rm -f *.exp
+	rm -f *.out
+}

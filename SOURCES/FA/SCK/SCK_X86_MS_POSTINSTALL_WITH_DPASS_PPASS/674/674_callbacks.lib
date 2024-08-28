@@ -1,0 +1,280 @@
+#!/bin/bash
+#################################################################################
+#
+#
+#       COPYRIGHT (C) ERICSSON RADIO SYSTEMS AB, Sweden
+#
+#       The copyright to the document(s) herein is the property of
+#       Ericsson Radio Systems AB, Sweden.
+#
+#       The document(s) may be used and/or copied only with the written
+#       permission from Ericsson Radio Systems AB or in accordance with
+#       the terms and conditions stipulated in the agreement/contract
+#       under which the document(s) have been supplied.
+#
+#################################################################################
+
+
+# ATCOMINF Test Callback Library
+
+# Revision History
+# <date>	<signum>	<details>
+
+# Complete the callbacks in this library to automate the test case.
+#
+# Callbacks are stateless, it is not possible to set a global variable in one callback 
+# and access it it in another.
+#
+# Callbacks are called by the test harness in the following order:
+#
+# tc_setup() 		# Called only for independent TC execution mode to setup TC
+# tc_precon()		# Conditions that should exist before TC can run
+# tc_test()		# Runs the test for this TC
+# tc_postcon()		# Conditions that should/should not exist after successful TC 
+# tc_cleanup()		# Called only for independent TC execution mode to clenup after TC
+
+# All callbacks must PASS for a TC PASS result
+
+#################################################################################
+#
+# CALLBACK: TC_SETUP
+#
+# This callback function is only called if the harness execution mode is 'AT_INDEPENDENT'
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_setup() {
+
+	# Coded to fail in case TC_AUTOMATED=1 before automation completed
+	# Change return code as required
+
+	return 0
+
+}
+#################################################################################
+
+#################################################################################
+#
+# CALLBACK: TC_PRECON
+#
+# This callback function checks the correct conditions exist to run the TC.
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+ 
+tc_precon() {
+
+
+AT_BIN=/var/tmp/platform_taf/harness/bin/
+AT_HOST=/var/tmp/platform_taf/
+
+	# Coded to fail in case TC_AUTOMATED=1 before automation completed
+	# Change return code as required
+
+        [ -s  ${AT_HOST}/add_cluster_node_to_${HOSTNAME} ]
+        if [ $? -ne 0 ]; then
+                echo "file does not exist or is empty."
+                return 1
+        fi
+
+        . ${AT_HOST}/add_cluster_node_to_${HOSTNAME} || return 1
+        # first check if ipv6 is enabled, if so use the ipv6 template questions 
+        ifconfig -a | grep inet6 
+        if [ $? -eq 0 ]; then
+              cp add_cluster_node.in.template_ipv6 add_cluster_node.in.template
+        else
+              cp add_cluster_node.in.template_ipv4 add_cluster_node.in.template
+        fi
+{       while read line ; do
+                echo -e $line |sed s/CI_ADMIN2_ROOTPW/$CI_ADMIN2_ROOTPW/ |sed s/CI_ADMIN2_HOSTNAME/$CI_ADMIN2_HOSTNAME/ \
+                            |sed s/CI_ADMIN2_IPV4_ADDRESS/$CI_ADMIN2_IPV4_ADDRESS/  \
+                            |sed s/CI_ADMIN2_STORAGE_IP/$CI_ADMIN2_STORAGE_IP/ \
+                            |sed s/CI_ADMIN2_STORAGE_NIC1/$CI_ADMIN2_STORAGE_NIC1/ \
+                            |sed s/CI_ADMIN2_STORAGE_NIC2/$CI_ADMIN2_STORAGE_NIC2/ \
+                            |sed s/CI_ADMIN2_STORAGE_NETMASK/$CI_ADMIN2_STORAGE_NETMASK/ \
+                            |sed s/CI_ADMIN2_PUBLIC_NIC1/$CI_ADMIN2_PUBLIC_NIC1/   \
+                            |sed s/CI_ADMIN2_PUBLIC_NIC2/$CI_ADMIN2_PUBLIC_NIC2/   \
+                            |sed s/CI_ADMIN2_PUBLIC_NETMASK/$CI_ADMIN2_PUBLIC_NETMASK/ \
+                            |sed s/CI_ADMIN2_BACKUP_IP/$CI_ADMIN2_BACKUP_IP/       \
+                            |sed s/CI_ADMIN2_BACKUP_NETMASK/$CI_ADMIN2_BACKUP_NETMASK/ \
+                            |sed s/CI_ADMIN2_PUBLIC_DEFAULT_ROUTER/$CI_ADMIN2_PUBLIC_DEFAULT_ROUTER/ \
+                            |sed s/CI_ADMIN2_IPV6_ADDRESS/$CI_ADMIN2_IPV6_ADDRESS/ \
+				|sed s/CI_ADMIN2_IPV6_SUBNET_PREFIX/$CI_ADMIN2_IPV6_SUBNET_PREFIX/ \
+				|sed s/CI_ADMIN2_IPV6_DEFAULT_ROUTER/$CI_ADMIN2_IPV6_DEFAULT_ROUTER/ 
+			
+        done
+} < add_cluster_node.in.template   > add_cluster_node.in
+
+        echo "tc_precon completed successfully"
+	return 0
+
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_TEST
+#
+# This callback function runs the test.
+# The harness compares the return code to the SPEC_TC_TEST_PASSCODE value set in the test spec.
+#
+# Return or exit codes:
+#    SPEC_TC_TEST_PASSCODE 	success
+# != SPEC_TC_TEST_PASSCODE 	failure
+ 
+tc_test() {
+	# Coded to fail in case TC_AUTOMATED=1 before automation complete
+	# Change return code as required
+
+
+        # This takes about an hour hence -b 3600.
+        # /opt/ericsson/cominf_test/harness/bin/con_ex.bsh
+${AT_BIN}/con_ex.bsh -b 3600 -d add_cluster_node.in -o expect.exp -c "/ericsson/core/cluster/bin/add_cluster_node"
+        if [ $? -ne 0 ];then
+                echo "Error: con_ex.bsh problem"
+                return 1
+        fi
+        echo "con_ex completed successfully, now running expect.exp"
+        /usr/local/bin/expect expect.exp >output.tmp
+        echo "expect.exp  exited with return code $? "
+        if [ $? -ne 0 ];then
+                echo "Error: add_cluster_node problem"
+                return 1
+        fi
+        echo "expect.exp completed successfully"
+        sleep 150
+        grep "closed by remote host." output.tmp
+        if [ $? -ne 0 ]; then
+                echo "Error: failed to reboot Admin 2"
+                return 1
+        else
+                echo "Success Admin2 has rebooted."
+                return 0       
+        fi
+
+
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_POSTCON
+#
+# This callback function checks expected results.
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_postcon() {
+
+	# Coded to fail in case TC_AUTOMATED=1 before automation complete.
+	# Change return code as required
+
+
+. ${AT_ROOT}/add_cluster_node_to_${HOSTNAME}
+        sleep 2000
+        LOCAL_STATE=`/opt/VRTS/bin/hasys -state ${HOSTNAME}`
+        ADMIN2_STATE=`/opt/VRTS/bin/hasys -state ${CI_ADMIN2_HOSTNAME}`
+	
+	echo "CI_ADMIN2_HOSTNAME= ${CI_ADMIN2_HOSTNAME}"
+
+        if [ ${LOCAL_STATE} != "RUNNING" ]; then
+                echo "Cluster not in running state on ${HOSTNAME}"
+                return 1
+        else
+                echo "Cluster running OK on ${HOSTNAME}"
+        fi
+
+        if [ -z "${ADMIN2_STATE}" ]; then
+                echo "Cluster not in running state on ${CI_ADMIN2_HOSTNAME}. ADMIN2_STATE Not Found."
+                return 1
+	fi
+        if [ ${ADMIN2_STATE} != "RUNNING" ]; then
+                echo "Cluster not in running state on ${CI_ADMIN2_HOSTNAME}"
+                return 1
+	fi
+        echo "Cluster running OK on ${CI_ADMIN2_HOSTNAME}"
+
+
+# add root disk to remote hosr
+
+/usr/local/bin/expect<<EOF
+        spawn ssh -ostricthostkeychecking=no root@${CI_ADMIN2_HOSTNAME}.athtem.eei.ericsson.se
+        exp_internal 1
+        set timeout 30
+        expect "#"
+
+        set timeout 1000
+        send "/ericsson/dmr/bin/dmtool ro a\r"
+        expect "How many mirrors should be defined*"
+        send "2\r"
+	sleep 4
+
+        expect "Are data disks OK (y/n)?" 
+	send "y\r"
+        sleep 4 
+
+	expect "Enter selection (q=quit):" 
+send "`cat /ericsson/dmr/etc/disk_serial_no |grep "c[0-9]t[0-9]d[0-9]s[0-9]" |head -1 |awk '{print $1}'`\r"
+        sleep 5
+	
+        expect "Enter selection (q=quit):"
+send "`cat /ericsson/dmr/etc/disk_serial_no |grep "c[0-9]t[0-9]d[0-9]s[0-9]"|head -2|tail -1 |awk '{print $1}'`\r"
+        sleep 5
+
+	expect "Is this a good mirror definition (y/n)?"
+	send "y\r"
+	sleep 5
+
+#exp_internal 1
+
+        expect "Enter disk to add as a root disk:"
+send "`cat /ericsson/dmr/etc/disk_serial_no|grep "c[0-9]t[0-9]d[0-9]s[0-9]"|head -2 |tail -1|awk '{print $1}'`\r"
+        sleep 5
+
+        expect "Is this correct (y/n)"
+        send "y\r"
+        sleep 120
+
+#send -- "/ericsson/dmr/bin/dmtool m 2\r"
+#expect "<-"
+#sleep 600
+#send -- "/ericsson/dmr/bin/dmtool m 2\r"
+expect "#"
+sleep 1200
+EOF
+
+
+	return 0
+
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_CLEANUP
+#
+# This callback function is only called if the harness execution mode is 'AT_INDEPENDENT'
+# 
+# This callback restores the target system to the state it was in before the TC 
+# was run. It rolls back changes made by callbacks tc_setup() and tc_test()
+# 
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_cleanup() {
+
+	# Coded to fail in case TC_AUTOMATED=1 before automation complete
+	# Change return code as required
+
+	return 0
+
+}

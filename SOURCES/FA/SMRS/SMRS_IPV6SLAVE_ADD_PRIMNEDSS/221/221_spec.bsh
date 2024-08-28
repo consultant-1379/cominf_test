@@ -1,0 +1,83 @@
+#!/bin/bash
+
+# TEST CASE SPEC FILE
+# This file is generated/updated using the test framework web interface.
+# Manual updates on test servers are lost when the test package is re-installed.
+#
+# Last modified: Sunday 31st of March 2013 20:37:23
+#
+
+# These settings must be in BASH script format, they are sourced by other scripts.
+SPEC_FA_NAME="SMRS"
+SPEC_UC_NAME="SMRS_IPV6SLAVE_ADD_PRIMNEDSS"
+SPEC_TC_ID=221
+SPEC_TC_SLOGAN="Test adding IPV6 slave to primary NEDSS with BISMRS_RESTART as no"
+SPEC_TC_TYPE="FT"
+SPEC_TC_POLARITY="positive"
+SPEC_TC_PRIORITY="high"
+SPEC_TC_AUTOMATED=1
+SPEC_TC_DEPENDENT_ONLY=0
+SPEC_TC_TIMEOUT=600
+SPEC_TC_TEST_PASSCODE=0
+SPEC_TC_AUTHOR="xkalbha"
+SPEC_TC_AUTOMATOR="xfeldan"
+# this parameter is not interpreted by harness
+SPEC_TC_DISABLED=0
+
+# Please do not remove the comment lines below.
+# They are used as section locators by the test harness.
+
+# BEGIN_PRE_CONDITIONS
+#1. TEST_SOLARIS
+#2. gran_nedssv6, core_nedssv6, lran_nedssv6, wran_nedssv6 filesystems configured on the NASConfig file is present
+# END_PRE_CONDITIONS
+
+
+# BEGIN_MANUAL_STEPS
+#1. Create config file for OSS master with all 4 network types enabled, and IPv6 slave called nedssv6, SMRS_SLAVE_NEDSS_IP and SMRS_SLAVE_NEDSS_IPV6 set to primary NEDSS, NAS_SHARE_NAMES specified for all filesystems, PERFORM_ARNEIMPORTS yes, RESTART_BISMRS_MC no
+#2. configure_smrs add smrs_slave -f <config file>
+#3. $? -eq 0
+#4. smtool action BI_SMRS_MC printCache file <tmp file>
+#5. Verify slave service is not in <tmp file>
+#6. manually restart BI_SMRS_MC using:
+#smtool coldrestart BI_SMRS_MC -reason=other -reasontext="hi mum"
+#7. smtool action BI_SMRS_MC printCache file <tmp file>
+#8. Verify slave service is now in <tmp file>
+# END_MANUAL_STEPS
+
+# BEGIN_POST_CONDITIONS
+#1. No errors in /var/opt/ericsson/log/add_smrs_slave.sh_log_<date> latest log file
+#2. No warnings in /var/opt/ericsson/log/add_smrs_slave.sh_log_<date> latest log file
+#3. mount command shows gran_nedssv6, core_nedssv6, lran_nedssv6, wran_nedssv6 filesystems mounted on OSS master, OM primary and primary NEDSS
+#4. /export/CORE/nedssv6, /export/GRAN/nedssv6, /export/LRAN/nedssv6, /export/WRAN/nedssv6 exists on OM primary and primary NEDSS
+#5. /etc/vfstab has new filesystems in on OM primary and primary NEDSS
+#6. /etc/mnttab has new filesystems in on OSS master
+#7. Check "auto" mounts in /etc/auto* have new filesystems on OM primary and primary NEDSS, but ignore failure.
+#8. FTP Services are created, i.e output from following on OSS master:
+#/opt/ericsson/nms_cif_cs/etc/unsupported/bin/cstest -s ONRM_CS -ns masterservice lt FtpService contains:
+#SubNetwork=ONRM_ROOT_MO,FtpServer=SMRSSLAVE-LRAN-nedssv6,FtpService=l-sws-nedssv6
+#SubNetwork=ONRM_ROOT_MO,FtpServer=SMRSSLAVE-LRAN-nedssv6,FtpService=l-key-nedssv6
+#SubNetwork=ONRM_ROOT_MO,FtpServer=SMRSSLAVE-LRAN-nedssv6,FtpService=l-back-nedssv6
+#SubNetwork=ONRM_ROOT_MO,FtpServer=SMRSSLAVE-nedssv6,FtpService=swstore-nedssv6
+#SubNetwork=ONRM_ROOT_MO,FtpServer=SMRSSLAVE-nedssv6,FtpService=pmup-nedssv6
+#SubNetwork=ONRM_ROOT_MO,FtpServer=SMRSSLAVE-nedssv6,FtpService=cmup-nedssv6
+#SubNetwork=ONRM_ROOT_MO,FtpServer=SMRSSLAVE-nedssv6,FtpService=cmdown-nedssv6
+#SubNetwork=ONRM_ROOT_MO,FtpServer=SMRSSLAVE-nedssv6,FtpService=backup-nedssv6
+#SubNetwork=ONRM_ROOT_MO,FtpServer=SMRSSLAVE-nedssv6,FtpService=keystore-nedssv6
+#SubNetwork=ONRM_ROOT_MO,FtpServer=SMRSSLAVE-CORE-nedssv6,FtpService=corepmu-nedssv6
+#SubNetwork=ONRM_ROOT_MO,FtpServer=SMRSSLAVE-WRAN-nedssv6,FtpService=w-sws-nedssv6
+#SubNetwork=ONRM_ROOT_MO,FtpServer=SMRSSLAVE-WRAN-nedssv6,FtpService=w-key-nedssv6
+#SubNetwork=ONRM_ROOT_MO,FtpServer=SMRSSLAVE-WRAN-nedssv6,FtpService=w-back-nedssv6
+#12. SMRS_MC is online, i.e.
+#/opt/ericsson/nms_cif_sm/bin/smtool -l BI_SMRS_MC 
+#indicates its online (started state)
+#13. Following user accounts exist on OSS master, OM primary and primary NEDSS:
+#l-sws-nedssv6,l-key-nedssv6,l-back-nedssv6,
+#swstore-nedssv6, pmup-nedssv6, cmup-nedssv6, cmdown-nedssv6 backup-nedssv6, keystore-nedssv6, corepmu-nedssv6, w-sws-nedssv6, w-key-nedssv6, w-back-nedssv6
+#13. Following SMO FTP Services file exist in /var/opt/ericsson/arne/FTPServices:
+#SMO_FTPServiceLRAN_nedssv6.xml
+#SMO_FTPServiceWRAN_nedssv6.xml
+#SMO_FTPServiceGRAN_nedssv6.xml
+#SMO_FTPServiceCORE_nedssv6.xml
+#14. smtool action BI_SMRS_MC printCache file <tmpfile>. <tmpfile> should contain GslaveN1 service.
+# END_POST_CONDITIONS

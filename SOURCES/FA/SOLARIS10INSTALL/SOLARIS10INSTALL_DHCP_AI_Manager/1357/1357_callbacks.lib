@@ -1,0 +1,191 @@
+#!/bin/bash
+#################################################################################
+#
+#
+#       COPYRIGHT (C) ERICSSON RADIO SYSTEMS AB, Sweden
+#
+#       The copyright to the document(s) herein is the property of
+#       Ericsson Radio Systems AB, Sweden.
+#
+#       The document(s) may be used and/or copied only with the written
+#       permission from Ericsson Radio Systems AB or in accordance with
+#       the terms and conditions stipulated in the agreement/contract
+#       under which the document(s) have been supplied.
+#
+#################################################################################
+
+
+# ATCOMINF Test Callback Library
+
+# Revision History
+# <date>	xsougha		<details>
+
+# Complete the callbacks in this library to automate the test case.
+#
+# Callbacks are stateless, it is not possible to set a global variable in one callback 
+# and access it it in another.
+#
+# Callbacks are called by the test harness in the following order:
+#
+# tc_setup() 		# Called only for independent TC execution mode to setup TC
+# tc_precon()		# Conditions that should exist before TC can run
+# tc_test()		# Runs the test for this TC
+# tc_postcon()		# Conditions that should/should not exist after successful TC 
+# tc_cleanup()		# Called only for independent TC execution mode to cleanup after TC
+
+# All callbacks must PASS for a TC PASS result
+
+#################################################################################
+#
+# CALLBACK: TC_SETUP
+#
+# This callback function is only called if the harness execution mode is 'AT_INDEPENDENT'
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_setup() {
+	return 0
+}
+#################################################################################
+
+#################################################################################
+#
+# CALLBACK: TC_PRECON
+#
+# This callback function checks the correct conditions exist to run the TC.
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+ 
+tc_precon() {
+	return 0
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_TEST
+#
+# This callback function runs the test.
+# The harness compares the return code to the SPEC_TC_TEST_PASSCODE value set in the test spec.
+#
+# Return or exit codes:
+#    SPEC_TC_TEST_PASSCODE 	success
+# != SPEC_TC_TEST_PASSCODE 	failure
+ 
+tc_test() {
+	# Login as bsim user and perform your tasks pertaining to adding or deleting networks
+        ${AT_BIN}/con_ex.bsh -d 1357_bsim_user_tasks.in -o 1357_bsim_user_tasks.exp -c "ssh bsimuser@ossmaster '
+		# Deleting previously existing networks if any
+	        /ericsson/ocs/bin/ai_manager.sh -list nets |grep 10.10.10.0 && {
+        		/ericsson/ocs/bin/ai_manager.sh -delete net -a 10.10.10.0 -q
+     		}
+
+       		/ericsson/ocs/bin/ai_manager.sh -list nets |grep 11.11.11.0 && {
+        		/ericsson/ocs/bin/ai_manager.sh -delete net -a 11.11.11.0 -q
+     		}
+       		/ericsson/ocs/bin/ai_manager.sh -list nets |grep 192.45.201.0 && {
+        		/ericsson/ocs/bin/ai_manager.sh -delete net -a 192.45.201.0 -q
+     		}
+
+		# Adding and verifying addition of networks
+		# Action1:
+          	/ericsson/ocs/bin/ai_manager.sh -add net -a 10.10.10.0 -m 255.255.255.0 -r 10.10.10.1 -d athtem.eei.ericsson.se  -n "159.107.163.3,10.42.33.198" -q || {
+                	echo "Error in adding network "
+                	return 1
+          	}
+
+          	#Action2:
+          	echo "Listing added network details"
+          	/ericsson/ocs/bin/ai_manager.sh -list nets | grep 10.10.10 || {
+                	echo "Error in listing the details of the network "
+                	return 1
+          	}
+
+          	#Action3:
+          	/ericsson/ocs/bin/ai_manager.sh -add net -a 11.11.11.0 -m 255.255.255.0 -r 11.11.11.1 -d dns.com -n "159.107.163.3,10.42.33.198" -q || {
+                	echo "Error in adding network 11.11.11.0"
+                	return 1
+          	}
+          	/ericsson/ocs/bin/ai_manager.sh -add net -a 192.45.201.0 -m 255.255.255.0 -r 192.45.201.1 -d dns.com -n "159.107.163.3,10.42.33.198" -q || {
+                	echo "Error in adding network 192.45.201.0"
+                	return 1
+          	}
+
+          	echo "Listing added network details"
+          	/ericsson/ocs/bin/ai_manager.sh -list nets | grep 11.11.11 || {
+                	echo "Error in listing the details of the network 11.11.11.0"
+                	return 1
+          	}
+
+          	/ericsson/ocs/bin/ai_manager.sh -list nets | grep 192.45.201 || {
+                	echo "Error in listing the details of the network 192.45.201.0"
+                	return 1
+          	}
+
+		# Deleting the added networks 
+                /ericsson/ocs/bin/ai_manager.sh -delete net -a 10.10.10.0 -q || {
+                        echo "Error in deleting the network 10.10.10.0"
+                        return 1
+                }
+
+                /ericsson/ocs/bin/ai_manager.sh -delete net -a 11.11.11.0 -q || {
+                        echo "Error in deleting the network 11.11.11.0"
+                        return 1
+                }
+
+                /ericsson/ocs/bin/ai_manager.sh -delete net -a 192.45.201.0 -q || {
+                        echo "Error in deleting the network 192.45.201.0"
+                        return 1
+		}
+    		' "
+
+        /usr/local/bin/expect 1357_bsim_user_tasks.exp || {
+                echo "Failed to ssh using bsim user"
+                return 1
+        }
+
+	return 0
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_POSTCON
+#
+# This callback function checks expected results.
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_postcon() {
+	return 0
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_CLEANUP
+#
+# This callback function is only called if the harness execution mode is 'AT_INDEPENDENT'
+# 
+# This callback restores the target system to the state it was in before the TC 
+# was run. It rolls back changes made by callbacks tc_setup() and tc_test()
+# 
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_cleanup() {
+	# Removing any temporary files used
+	rm -rf 1357_bsim_user_tasks.exp
+
+	return 0
+}

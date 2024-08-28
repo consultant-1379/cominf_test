@@ -1,0 +1,10 @@
+     global core file pattern: /var/core/core_%n_%f_%u_%g
+     global core file content: default
+       init core file pattern: core
+       init core file content: default
+            global core dumps: enabled
+       per-process core dumps: disabled
+      global setid core dumps: enabled
+ per-process setid core dumps: disabled
+     global core dump logging: enabled
+

@@ -1,0 +1,15 @@
+#!/bin/bash
+
+# TEST SUITE SPEC FILE
+# This file is generated/updated using the test framework web interface.
+# Manual updates on test servers are lost when the test package is re-installed.
+#
+# Last modified: Tuesday 4th of December 2012 16:59:02
+#
+SPEC_TS_NAME=SPARC_MS_POSTINSTALL_CONFIG
+SPEC_TS_ID=40
+SPEC_TS_SLOGAN="Post install configuration test cases that change the state of the OSS. These must be in order of sequence as per II document."
+SPEC_TS_TIMEOUT=5000
+SPEC_TS_AUTHOR="eeidle"
+SPEC_TS_INDEPENDENT=1
+SPEC_TS_TC_IDS=(611 612 613 192 645 671 736)

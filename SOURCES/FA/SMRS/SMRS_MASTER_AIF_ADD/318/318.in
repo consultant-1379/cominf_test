@@ -1,0 +1,38 @@
+Enter Network Type*
+CORE
+What is the name for this user?
+aif@318
+What is the name for this user?
+aif318
+What is the password for this user?
+12
+What is the password for this user?
+shroot12
+Please confirm the password for this user?
+12345679
+What is the password for this user?
+shroot12
+Please confirm the password for this user?
+shroot12
+Would you like to create autoIntegration FtpService for that user?
+NOx
+Would you like to create autoIntegration FtpService for that user?
+YES x 
+Would you like to create autoIntegration FtpService for that user?
+y 
+Would you like to create autoIntegration FtpService for that user?
+yes 
+Please enter number of required option:
+-1
+Please enter number of required option:
+7
+Please enter number of required option:
+1
+Do you wish to restart BI_SMRS_MC on the OSS master if required?
+NOx
+Do you wish to restart BI_SMRS_MC on the OSS master if required?
+YES x
+Do you wish to restart BI_SMRS_MC on the OSS master if required?
+y
+Do you wish to restart BI_SMRS_MC on the OSS master if required?
+\003

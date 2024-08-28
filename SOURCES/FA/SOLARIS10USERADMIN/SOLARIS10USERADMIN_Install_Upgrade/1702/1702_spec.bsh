@@ -1,0 +1,81 @@
+#!/bin/bash
+
+# TEST CASE SPEC FILE
+# This file is generated/updated using the test framework web interface.
+# Manual updates on test servers are lost when the test package is re-installed.
+#
+# Last modified: Tuesday 17th of December 2013 7:00:25
+#
+
+# These settings must be in BASH script format, they are sourced by other scripts.
+SPEC_FA_NAME="SOLARIS10USERADMIN"
+SPEC_UC_NAME="SOLARIS10USERADMIN_Install_Upgrade"
+SPEC_TC_ID=1702
+SPEC_TC_SLOGAN="Verify deleting a group from LDAP "
+SPEC_TC_TYPE="FT"
+SPEC_TC_POLARITY="positive"
+SPEC_TC_PRIORITY="high"
+SPEC_TC_AUTOMATED=1
+SPEC_TC_DEPENDENT_ONLY=0
+SPEC_TC_TIMEOUT=300
+SPEC_TC_TEST_PASSCODE=0
+SPEC_TC_AUTHOR="xlaxain"
+SPEC_TC_AUTOMATOR="xlaxain"
+# this parameter is not interpreted by harness
+SPEC_TC_DISABLED=0
+
+# Please do not remove the comment lines below.
+# They are used as section locators by the test harness.
+
+# BEGIN_PRE_CONDITIONS
+#Path in Mars:- User Administration/Initial Install/Upgrade User Administration Test Cases 
+#
+#The purpose is to verify that the deletion of group successful.
+#
+#Infra Server
+#
+# END_PRE_CONDITIONS
+
+
+# BEGIN_MANUAL_STEPS
+#Action 1:
+#
+#Following the COMInf SUN Directory Server System Administration Guide execute the /ericsson/sdee/bin/del_group.sh and delete a group from the ldap server
+#
+#Action 2: 
+#
+#Verify the group details are no longer listed in ldap with ldapsearch command
+##ldapsearch -D "cn=directory manager" -w <ldap bind pw> -b "ou=group,dc=<ldap domain name>" "objectclass=*"
+#E.g.
+##ldapsearch -D "cn=directory manager" -w shroot11 -b "ou=group,dc=atrcus764,dc=athtem,dc=eei,dc=ericsson,dc=se" "objectclass=*"
+#
+#Action 3:
+#
+#Following the COMInf SUN Directory Server System Administration Guide execute the /ericsson/sdee/bin/del_group.sh âEuro d <ldap_domain> and delete a group from a specific ldap domain
+#
+#Action 4: 
+#
+#Verify the group details are no longer listed in ldap with ldapsearch command
+##ldapsearch -D "cn=directory manager" -w <ldap bind pw> -b "ou=group,dc=<ldap domain name>" "objectclass=*"
+#E.g.
+##ldapsearch -D "cn=directory manager" -w shroot11 -b "ou=group,dc=atrcus764,dc=athtem,dc=eei,dc=ericsson,dc=se" "objectclass=*"
+#
+# END_MANUAL_STEPS
+
+# BEGIN_POST_CONDITIONS
+#Result 1: 
+#
+#Delete was successful
+#
+#Result 2: 
+#
+#Group details are no longer listed with ldapsearch command
+#
+#Result 3: 
+#
+#Delete was successful
+#
+#Result 4: 
+#
+#Group details are no longer listed with ldapsearch command 
+# END_POST_CONDITIONS

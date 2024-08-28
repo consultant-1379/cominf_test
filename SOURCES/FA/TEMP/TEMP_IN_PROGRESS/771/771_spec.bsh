@@ -1,0 +1,60 @@
+#!/bin/bash
+
+# TEST CASE SPEC FILE
+# This file is generated/updated using the test framework web interface.
+# Manual updates on test servers are lost when the test package is re-installed.
+#
+# Last modified: Sunday 31st of March 2013 20:37:24
+#
+
+# These settings must be in BASH script format, they are sourced by other scripts.
+SPEC_FA_NAME="TEMP"
+SPEC_UC_NAME="TEMP_IN_PROGRESS"
+SPEC_TC_ID=771
+SPEC_TC_SLOGAN="Validate /etc/hosts configuration on X86 Master Server"
+SPEC_TC_TYPE="UNIT"
+SPEC_TC_POLARITY="positive"
+SPEC_TC_PRIORITY="high"
+SPEC_TC_AUTOMATED=0
+SPEC_TC_DEPENDENT_ONLY=0
+SPEC_TC_TIMEOUT=300
+SPEC_TC_TEST_PASSCODE=0
+SPEC_TC_AUTHOR="xjithbv"
+SPEC_TC_AUTOMATOR="xjithbv"
+# this parameter is not interpreted by harness
+SPEC_TC_DISABLED=0
+
+# Please do not remove the comment lines below.
+# They are used as section locators by the test harness.
+
+# BEGIN_PRE_CONDITIONS
+#None
+# END_PRE_CONDITIONS
+
+
+# BEGIN_MANUAL_STEPS
+#Manually verify if the /etc/hosts file has any duplicate entries for hostnames.
+#
+#Also make sure the following hostnames are defined in /etc/hosts:
+#fmnnmservice
+#webiserver
+#nas1
+#nas2
+#nasconsole
+#atnfdvm20.athtem.eei.ericsson.se atnfdvm20
+#om-serv-master
+#<hostname> loghost
+#masterservice cnservice gsmservice fmadvservice wcdmaservice cdmas ervice rpmoservice ebswservice ebssservice ftpmservice smservice pmservice fmser vice
+#mailhost mashost timehost jumphost
+#ossfs
+#pms-vip-v4
+#cms-vip-v4
+#snmp_vip
+#masterdataservice pmdataservice fmdataservice dathost
+#<hostname>-priv
+#
+# END_MANUAL_STEPS
+
+# BEGIN_POST_CONDITIONS
+#None
+# END_POST_CONDITIONS

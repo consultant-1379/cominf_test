@@ -1,0 +1,326 @@
+#!/bin/bash
+#################################################################################
+#
+#
+#       COPYRIGHT (C) ERICSSON RADIO SYSTEMS AB, Sweden
+#
+#       The copyright to the document(s) herein is the property of
+#       Ericsson Radio Systems AB, Sweden.
+#
+#       The document(s) may be used and/or copied only with the written
+#       permission from Ericsson Radio Systems AB or in accordance with
+#       the terms and conditions stipulated in the agreement/contract
+#       under which the document(s) have been supplied.
+#
+#################################################################################
+
+
+# ATCOMINF Test Callback Library
+
+# Revision History
+# <date>	<signum>	<details>
+
+# Complete the callbacks in this library to automate the test case.
+#
+# Callbacks are stateless, it is not possible to set a global variable in one callback 
+# and access it it in another.
+#
+# Callbacks are called by the test harness in the following order:
+#
+# tc_setup() 		# Called only for independent TC execution mode to setup TC
+# tc_precon()		# Conditions that should exist before TC can run
+# tc_test()		# Runs the test for this TC
+# tc_postcon()		# Conditions that should/should not exist after successful TC 
+# tc_cleanup()		# Called only for independent TC execution mode to cleanup after TC
+
+# All callbacks must PASS for a TC PASS result
+
+#################################################################################
+#
+# CALLBACK: TC_SETUP
+#
+# This callback function is only called if the harness execution mode is 'AT_INDEPENDENT'
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_setup() {
+banner "~~~~~~~~~~"
+echo -e "\t\tTest: ${SPEC_TC_ID}\n\t\t${SPEC_TC_SLOGAN}"
+banner "__________"
+
+	# Coded to fail in case TC_AUTOMATED=1 before automation completed
+	# Change return code as required
+
+	return 0
+
+}
+#################################################################################
+
+#################################################################################
+#
+# CALLBACK: TC_PRECON
+#
+# This callback function checks the correct conditions exist to run the TC.
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+ 
+tc_precon() {
+
+	# Coded to fail in case TC_AUTOMATED=1 before automation completed
+	# Change return code as required
+	if [ ! -f "${G_SMTOOL}" ]; then
+                echo "smtool not found"
+        return 1
+        fi
+
+	return 0
+
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_TEST
+#
+# This callback function runs the test.
+# The harness compares the return code to the SPEC_TC_TEST_PASSCODE value set in the test spec.
+#
+# Return or exit codes:
+#    SPEC_TC_TEST_PASSCODE 	success
+# != SPEC_TC_TEST_PASSCODE 	failure
+ 
+tc_test() {
+. /var/tmp/platform_taf/nfdmasterservice.env
+local _syschks="/opt/ericsson/sck/bin/system_checks.bsh"
+local _ugutils="/opt/ericsson/sck/bin/system_upgrade_utils.bsh"
+local _tmpfile="/tmp/preupgrade_checks.tmp"
+local _logfile="/var/tmp/platform_taf/preupgrade_checks.log"
+LIC_SERVER="159.107.220.96"
+usr_LIC_SERVER="ossread"
+pwd_LIC_SERVER="ossread"
+LIC_DIR="/ossrc/upgrade/sentinel_license"
+release1=$(echo ${CI_RELEASE} |awk -F_ '{print $1}')
+
+
+        cat /dev/null > $_tmpfile
+        cat /dev/null > $_logfile
+
+echo -e "\n========================================\n L O G    F I L E\n========================================\nVariables used:\n==============
+CI release: ${CI_RELEASE}
+release1: ${release1}
+Sentinel License directory (local): ${LIC_DIR}
+User for accessing license server: ${usr_LIC_SERVER}
+pwd for accessing license server: ${pwd_LIC_SERVER}
+license server: ${LIC_SERVER}
+Upgrade utils script: ${_ugutils}
+System checks script: ${_syschks}
+CI_SHIPMENT: ${CI_SHIPMENT}
+CI_RELEASE: ${CI_RELEASE}
+DMTOOL: ${DMTOOL}
+Log file: ${_logfile}
+Temp file: ${_tmpfile}" >> $_logfile
+
+        # Coded to fail in case TC_AUTOMATED=1 before automation complete
+        # Change return code as required
+
+# pre upgrade checks:
+# ===================
+# 1. filesystem space
+# 2. Check Unsupported NEs
+# 3. Pre-upgrade Checks
+# 4. Check MCs
+# 5. Sentinel Licensing
+# 6. Sybase DBA Healthcheck.  (seperate TC part 2)
+# 7. DMR mirror config
+# 8. Update system.ini
+
+
+        # 1. Filesystem Requirements
+        # ==========================
+        echo "1. Checking filesystem requirements..."
+        [[ `$_syschks -d volume_checks` ]] || echo "1. Filesytem Requirements" >> $_tmpfile
+
+
+        # 2.  Check Unsupported NEs
+        # ==========================
+        echo "2. Checking unsupported Network Elements..."
+        [[ `$_ugutils -a un_ne` ]] || echo "2. Unsupported NEs" >> $_tmpfile
+
+
+        # 3.  Perform Pre-Upgrade Checks
+        # ==========================
+        echo "3a. Running Pre-Upgrade checks..."
+        _check_log=`$_syschks -a pre_sys_upgrade | grep log |tail -1 |awk '{print $NF}'`
+        [[ -z ${_check_log} ]] && echo "3. Pre-Upgrade Checks failed to run" >> $_tmpfile
+echo "Pre-upgrade checks log file: ${_check_log}" >> ${_logfile}
+
+	echo "3b. Checking Pre-Upgrade check log file for [NOK] entries..."
+echo -e "\n\n======================================\nCommand outputs:\n===============\n3b. Running: [StringSearch -f ${_check_log} -s NOK -e MCs]" >> ${_logfile}
+	StringSearch -f ${_check_log} -s NOK -e MCs >> ${_logfile}
+	[ $? -ne 0 ] && echo "3b. Some Pre-Upgrade checks failed.  For details, check ${_check_log}" >> $_tmpfile
+
+
+        # 4.  Check MCs
+        # ==========================
+        BuildMCExcludeList
+        echo -e "4. Checking MCs...(Excluding MCs:${MC_EXCLUDE_LIST})"
+	[[ `$G_SMTOOL list |egrep -v ${MC_EXCLUDE_LIST} |grep -v started` ]] && echo "4. Check MCs. Some MCs were not online." >> $_tmpfile
+
+	# 5. Sentinel Licensing
+	# =====================
+	echo "5. Getting Sentinel Licenses from ${LIC_SERVER}"
+
+	[[ ! -d ${LIC_DIR} ]] && mkdir ${LIC_DIR}
+	[[ -s ${LIC_DIR}/sentinel_license_full ]] && mv ${LIC_DIR}/sentinel_license_full ${LIC_DIR}/sentinel_license_full.`date +%Y%m%d`
+
+/usr/local/bin/expect << EOF1
+	log_user 0
+	spawn sftp ${usr_LIC_SERVER}@${LIC_SERVER}
+
+	while 1 {
+        	expect {
+                "Are you sure you want to continue connecting" {
+                        send "yes\r"}
+
+                "assword" {
+                        send "$pwd_LIC_SERVER\r"
+                        break}
+                eof {
+                        puts "warning: timed out"
+
+                        exit 1}
+                timeout {
+                        puts "warning: timed out"
+                        exit 1}
+                	}
+        	}
+
+	expect "sftp>"
+		send "cd sentinel/$release1\r"
+        	expect {
+        	"sftp>" {
+        	send -- "lcd ${LIC_DIR}\r"
+        expect "sftp>"
+        	send -- "get sentinel_license_full\r"
+        expect "sftp>"
+        	send -- "bye\r"
+       	expect "#"
+       		}
+       		"No such file or directory" {
+        send -- "bye\r"
+        expect "#"
+}
+}
+sleep 1
+EOF1
+	[[ -s ${LIC_DIR}/sentinel_license_full ]] || echo "5. Sentinel Licensing file not copied." >> $_tmpfile
+
+
+	# 6. Sybase Healthcheck 
+	# =====================
+	echo "6. Performing Sybase Healthcheck..."
+	>/tmp/sybase_logs
+
+/usr/local/bin/expect << EOF2
+	log_user 0
+        log_file /tmp/sybase_logs
+        spawn su - sybase -c /ericsson/syb/util/dba_tools
+        expect "Enter your choice"
+        send "13\r"
+        expect "Press <Return> to continue:"
+        send "\r"
+        expect "Enter your choice"
+        send "0\r"
+        expect closed
+EOF2
+
+	error_found=$(/bin/nawk '/Running checks/,/All checks completed/ {if(match($0,/Not OK/)) {print $0}}' /tmp/sybase_logs)
+        [[ -z "${error_found}" ]] || echo -e "6. Sybase Healthcheck with the following errors:\n--------------------------------\n${error_found}"
+
+rm -rf /tmp/sybase_logs >/dev/null 2>&1
+
+
+	# 7. DMR Mirror config
+	# ====================
+	echo "7a. Checking DMR Mirrors are defined..."
+	_mirror_config="yes"
+	[[ -s /ericsson/dmr/etc/dm_define ]] || { _mirror_config="no"; echo "7a. DMR Mirrors not defined." >> $_tmpfile; }
+	if [ ${_mirror_config} == "yes" ] ;then
+		echo "7b. Checking DMR Mirrors synced..."
+		[[ `$DMTOOL c m |grep "Found these good mirrors: 1 2"` ]] || echo "7b. DMR Mirrors not synced." >> $_tmpfile
+	fi
+
+
+	# 8. Update System.ini file
+	# =========================
+	echo "8. Updating system.ini with default values..."
+	_set_ini="yes"
+	echo -e "\n==========================\n8. Running: ${_ugutils} -v Set_default 1 1 1 1 1 0" >> $_logfile
+	${_ugutils} -v Set_default 1 1 1 1 1 0 >> ${_logfile}
+	[ $? -ne 0 ] && echo "8. Setting system.ini defaults failed." >>  $_tmpfile
+
+
+
+        # Process temp file
+        # =================
+	echo -e "\n\n\n P R E - U P G R A D E    C H E C K S     C O M P L E T E "
+	echo -e "=====================\n R E S U L T S \n====================="
+        [[ ! -s $_tmpfile ]] && { echo -e "Preupgrade checks completed successfully.";return 0; }
+        echo -e "The following preupgrade steps failed:\n--------------------------------------------------------"
+        cat $_tmpfile
+	echo -e "--------------------------------------------------------\n\n"
+	cat ${_logfile}
+	echo "==============================================================="
+        return 1
+
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_POSTCON
+#
+# This callback function checks expected results.
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_postcon() {
+
+	# Coded to fail in case TC_AUTOMATED=1 before automation complete.
+	# Change return code as required
+
+	return 0
+
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_CLEANUP
+#
+# This callback function is only called if the harness execution mode is 'AT_INDEPENDENT'
+# 
+# This callback restores the target system to the state it was in before the TC 
+# was run. It rolls back changes made by callbacks tc_setup() and tc_test()
+# 
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_cleanup() {
+
+	# Coded to fail in case TC_AUTOMATED=1 before automation complete
+	# Change return code as required
+
+	return 0
+
+}

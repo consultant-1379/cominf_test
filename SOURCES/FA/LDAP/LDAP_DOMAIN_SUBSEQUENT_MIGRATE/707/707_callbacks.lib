@@ -1,0 +1,248 @@
+#!/bin/bash
+#################################################################################
+#
+#
+#       COPYRIGHT (C) ERICSSON RADIO SYSTEMS AB, Sweden
+#
+#       The copyright to the document(s) herein is the property of
+#       Ericsson Radio Systems AB, Sweden.
+#
+#       The document(s) may be used and/or copied only with the written
+#       permission from Ericsson Radio Systems AB or in accordance with
+#       the terms and conditions stipulated in the agreement/contract
+#       under which the document(s) have been supplied.
+#
+#################################################################################
+
+
+# ATCOMINF Test Callback Library
+
+# Revision History
+# <date>	<signum>	<details>
+
+# Complete the callbacks in this library to automate the test case.
+#
+# Callbacks are stateless, it is not possible to set a global variable in one callback 
+# and access it it in another.
+#
+# Callbacks are called by the test harness in the following order:
+#
+# tc_setup() 		# Called only for independent TC execution mode to setup TC
+# tc_precon()		# Conditions that should exist before TC can run
+# tc_test()		# Runs the test for this TC
+# tc_postcon()		# Conditions that should/should not exist after successful TC 
+# tc_cleanup()		# Called only for independent TC execution mode to cleanup after TC
+
+# All callbacks must PASS for a TC PASS result
+
+
+# Function to create /usr/local/bin/expect script to run command and verify expected output and exit code (all passed as arguments)
+runCmd() {
+	cmd=$1
+	grepString=$2
+	expectedReturn=$3
+	filePrefix=resolveConflicts
+
+	# Use here document to generate input file
+	# ----- START HERE DOCUMENT -----
+	cat > ${filePrefix}.in << EOF || { echo "ERROR: failed to make /usr/local/bin/expect template file ${filePrefix}.in" ; return 1; }
+Enter passphrase for /root/.ssh/id_dsa:
+$SSH_PASSPHRASE
+EOF
+	# ----- END HERE DOCUMENT -----
+
+
+	${AT_BIN}/con_ex.bsh -d ${filePrefix}.in -o ${filePrefix}.exp -c "$cmd" -r || {
+		echo "ERROR: Could not create input file ${filePrefix}.in"
+		return 1
+	}
+
+	# Change /usr/local/bin/expect script exit code of 1 to 10, as some tests need to verify resolve conflict failures 
+	# where the script under test will exit with code 1.
+	sed -i 's/exit 1/exit 10/g' ${filePrefix}.exp 
+
+	echo "INFO: testing $cmd"
+	output=$(/usr/local/bin/expect ${filePrefix}.exp)
+	ret=$?
+
+	[ $ret -ne $expectedReturn ] && {
+		echo "ERROR: Script should have exited with $expectedReturn, instead it exited with $ret"
+		return 1
+	}
+
+	grep -i "$grepString" <<< "$output" || { 
+		echo "ERROR: Failed to match [$grepString] in output"
+		return 1
+	}
+	return 0	
+}
+
+
+
+#################################################################################
+#
+# CALLBACK: TC_SETUP
+#
+# This callback function is only called if the harness execution mode is 'AT_INDEPENDENT'
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_setup() {
+
+	# Coded to fail in case TC_AUTOMATED=1 before automation completed
+	# Change return code as required
+
+	return 1
+
+}
+#################################################################################
+
+#################################################################################
+#
+# CALLBACK: TC_PRECON
+#
+# This callback function checks the correct conditions exist to run the TC.
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+ 
+tc_precon() {
+
+	# Coded to fail in case TC_AUTOMATED=1 before automation completed
+	# Change return code as required
+
+	return 0
+
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_TEST
+#
+# This callback function runs the test.
+# The harness compares the return code to the SPEC_TC_TEST_PASSCODE value set in the test spec.
+#
+# Return or exit codes:
+#    SPEC_TC_TEST_PASSCODE 	success
+# != SPEC_TC_TEST_PASSCODE 	failure
+ 
+tc_test() {
+	export BIND_TOKEN=${LDAP_SUPERUSER_PASSWD}
+	export g_PASSWORD=${LDAP_SUPERUSER_PASSWD}
+	/ericsson/sdee/
+	SSH_PASSPHRASE=passphrase
+	# Test resolving when proposals have not been made
+	COMMAND_STRING="/ericsson/sdee/bin/resolve_conflicts.bsh -w -d 2.com -u "
+	echo "INFO: Testing $COMMAND_STRING"
+	set +o pipefail
+
+	$COMMAND_STRING | grep -i   "Nothing to do" || {
+	ret=$?
+	set -o pipefail
+		echo "ERROR: Script did not report status correctly. $ret"
+		return 1
+	}
+	set -o pipefail
+	# Create proposals ready for the subsequent resolve mode testing
+	/ericsson/sdee/bin/resolve_conflicts.bsh -p -u -d 2.com -a auto_all > /dev/null 2>&1
+	[ $? -ne 0 ] && { echo "ERROR: setting up user proposals failed" ; return 1; }
+
+	/ericsson/sdee/bin/resolve_conflicts.bsh -p -g -d 2.com -a auto_all > /dev/null 2>&1
+	[ $? -ne 0 ] && { echo "ERROR: setting up group proposals failed" ; return 1; }
+
+
+	# Test resolve mode, both negative and positive
+	COMMAND_STRING="/ericsson/sdee/bin/resolve_conflicts.bsh -w -u -d 2.com -n harry"
+	ERROR="ERROR : harry is part of conflict LOOP_1."
+	runCmd "$COMMAND_STRING" "$ERROR" 1 || {
+		echo "ERROR: test failed, problem not correctly reported."
+		return 1
+	}
+
+	COMMAND_STRING="/ericsson/sdee/bin/resolve_conflicts.bsh -w -u -d 2.com -n cindy"
+	PATTERN="OSS_ONLY user \[cindy\] has an OSS account. ID change required on OSS system."
+	runCmd "$COMMAND_STRING"  "$PATTERN" 0 || {
+		echo "ERROR: Test failed"
+		return 1
+	}
+
+	set +o pipefail
+
+	COMMAND_STRING="/ericsson/sdee/bin/resolve_conflicts.bsh -w"
+	echo "INFO: Testing $COMMAND_STRING"
+	$COMMAND_STRING | grep "ERROR : Please specify option -d <domain>." || {
+		echo "ERROR: Script did not report the error correctly"
+		set -o pipefail
+		return 1
+	}
+
+	COMMAND_STRING="/ericsson/sdee/bin/resolve_conflicts.bsh -w -d 2.com"
+	echo "INFO: Testing $COMMAND_STRING"
+	$COMMAND_STRING | grep "ERROR : Please specify one of options -u, -g" || {
+		echo "ERROR: Failed to match failure string"
+		set -o pipefail
+		return 1
+	}
+
+	COMMAND_STRING="/ericsson/sdee/bin/resolve_conflicts.bsh -d 2.com -X -r"
+	echo "INFO: Testing $COMMAND_STRING"
+	$COMMAND_STRING | grep  "ERROR : Option -X can only be used with options -d, -T." || {
+		echo "ERROR: Failed to match failure string"
+		set -o pipefail
+		return 1
+	}
+
+	COMMAND_STRING="/ericsson/sdee/bin/resolve_conflicts.bsh -d 2.com -O -r"
+	echo "INFO: Testing $COMMAND_STRING"
+	$COMMAND_STRING | grep  "ERROR : Option -O can only be used with options -d, -T." || {
+		echo "ERROR: Failed to match failure string"
+		set -o pipefail
+		return 1
+	}
+
+	set -o pipefail
+	return 0
+
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_POSTCON
+#
+# This callback function checks expected results.
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_postcon() {
+	return 0
+
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_CLEANUP
+#
+# This callback function is only called if the harness execution mode is 'AT_INDEPENDENT'
+# 
+# This callback restores the target system to the state it was in before the TC 
+# was run. It rolls back changes made by callbacks tc_setup() and tc_test()
+# 
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_cleanup() {
+	return 0
+}
+

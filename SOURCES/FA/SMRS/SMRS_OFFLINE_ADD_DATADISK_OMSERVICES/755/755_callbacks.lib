@@ -1,0 +1,241 @@
+#!/bin/bash
+#################################################################################
+#
+#
+#	   COPYRIGHT (C) ERICSSON RADIO SYSTEMS AB, Sweden
+#
+#	   The copyright to the document(s) herein is the property of
+#	   Ericsson Radio Systems AB, Sweden.
+#
+#	   The document(s) may be used and/or copied only with the written
+#	   permission from Ericsson Radio Systems AB or in accordance with
+#	   the terms and conditions stipulated in the agreement/contract
+#	   under which the document(s) have been supplied.
+#
+#################################################################################
+
+
+# ATCOMINF Test Callback Library
+
+# Revision History
+# 09/11/12	xkalbha		Initial version 
+
+# Complete the callbacks in this library to automate the test case.
+#
+# Callbacks are stateless, it is not possible to set a global variable in one callback 
+# and access it it in another.
+#
+# Callbacks are called by the test harness in the following order:
+#
+# tc_setup() 		# Called only for independent TC execution mode to setup TC
+# tc_precon()		# Conditions that should exist before TC can run
+# tc_test()		# Runs the test for this TC
+# tc_postcon()		# Conditions that should/should not exist after successful TC 
+# tc_cleanup()		# Called only for independent TC execution mode to clenup after TC
+
+# All callbacks must PASS for a TC PASS result
+
+#extract the IP address of offline SMRS Master
+OFFL_ip=`grep ^OFFLINE_SMRS_MASTER_TRAFFIC_PIP offline_smrs_master_config.$(hostname) 2> /dev/null | awk -F= '{print $2}'`
+
+#################################################################################
+#
+# CALLBACK: TC_SETUP
+#
+# This callback function is only called if the harness execution mode is 'AT_INDEPENDENT'
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_setup() {
+
+
+	return 0
+
+}
+#################################################################################
+
+#################################################################################
+#
+# CALLBACK: TC_PRECON
+#
+# This callback function checks the correct conditions exist to run the TC.
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+ 
+tc_precon() {
+
+	TEST_SOLARIS || { echo "Not Solaris"; return 1; }
+
+	filename="offline_smrs_master_config.$(hostname)"
+	[ -r $filename ] || { echo "Offline SMRS config $filename does not exist"; return 1; }
+
+	cp $filename offline_smrs_master_config
+
+	[ -z $OFFL_ip ] && { echo "OFFLINE_SMRS_MASTER_TRAFFIC_PIP not found in config file $filename "; return 2; }
+
+
+	echo  "Replace PASSWD with the correct credentials in *.in files"
+	for ii in *.in; do
+		sed "s/^PASSWD$/$SMRS_MASTER_ROOTPW/" $ii > $ii.tmp
+	done
+
+	rc=0
+	
+	echo "check if all network types except GRAN are mounted on OSS master "
+
+	mount >mount.tmp
+	grep "/local/GRAN" mount.tmp && {
+		echo "/local/GRAN mounted on OSS master "
+		rc=2
+		}
+
+	grep "/local/WRAN" mount.tmp || {
+		echo "/local/WRAN not mounted on OSS master"
+		rc=3
+		}
+
+	grep "/local/LRAN" mount.tmp || {
+		echo "/local/LRAN not mounted on OSS master"
+		rc=4
+		}
+
+	grep "/local/CORE" mount.tmp || {
+		echo "/local/CORE not mounted on OSS master"
+		rc=5
+		}
+
+
+	echo "Checking smrspool does not yet exist ..."
+	${AT_BIN}/con_ex.bsh -d ssh.in.tmp -o expect.exp -c "ssh root@$OFFL_ip \"zfs list | grep smrspool \" "
+	/usr/local/bin/expect expect.exp && {
+		echo "smrspool already exists on offline master $OFFL_ip, Test FAILED "
+		rc=6
+	}
+
+
+	return $rc
+}
+
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_TEST
+#
+# This callback function runs the test.
+# The harness compares the return code to the SPEC_TC_TEST_PASSCODE value set in the test spec.
+#
+# Return or exit codes:
+#	SPEC_TC_TEST_PASSCODE 	success
+# != SPEC_TC_TEST_PASSCODE 	failure
+ 
+tc_test() {
+
+
+	# Run con_ex.bsh to create expect script
+	# 755.in is checked into GIT and has the name and prompt values
+
+	cmd='/opt/ericsson/nms_bismrs_mc/bin/configure_smrs.sh add offline_smrs_master -f offline_smrs_master_config'
+	${AT_BIN}/con_ex.bsh -d 755.in.tmp -o 755.exp -c "${cmd}"
+	retval=$?
+	[ $retval -ne 0 ] && { echo Failed to create expect script $retval; return 1; }
+
+	/usr/local/bin/expect 755.exp
+
+	retval=$?
+	[ $retval -ne 0 ] && { echo "add offline_smrs_master failed $retval, where 0 expected"; return 2; }
+
+	return 0
+
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_POSTCON
+#
+# This callback function checks expected results.
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_postcon() {
+
+	CONSOLE_OUTPUT_CONTAINS "INFO Successfully added offline SMRS Master." || { echo "Message not found: INFO Successfully added offline SMRS Master."; return 1; }
+
+	rc=0
+	echo "check if all network types are mounted on the offline SMRS master $OFFL_ip"
+
+	ssh $OFFL_ip mount >mount.tmp
+	grep "/local/GRAN" mount.tmp || {
+		echo "/local/GRAN not mounted on offline SMRS master $OFFL_ip"
+		rc=2
+		}
+
+	grep "/local/WRAN" mount.tmp || {
+		echo "/local/WRAN not mounted on offline SMRS master $OFFL_ip"
+		rc=3
+		}
+
+	grep "/local/LRAN" mount.tmp || {
+		echo "/local/LRAN not mounted on offline SMRS master $OFFL_ip"
+		rc=4
+		}
+
+	grep "/local/CORE" mount.tmp || {
+		echo "/local/CORE not mounted on offline SMRS master $OFFL_ip"
+		rc=5
+		}
+
+	
+
+	echo "check if /etc/exports contains all network types on the offline SMRS master $OFFL_ip"
+	ssh $OFFL_ip cat /etc/exports > exports.tmp
+	grep "/local/GRAN" exports.tmp || {
+		echo "/local/GRAN not found in /etc/exports on offline SMRS master $OFFL_ip"
+		rc=10
+		}
+	grep "/local/WRAN" exports.tmp || {
+		echo "/local/WRAN not found in /etc/exports on offline SMRS master $OFFL_ip"
+		rc=11
+		}
+	grep "/local/LRAN" exports.tmp || {
+		echo "/local/LRAN not found in /etc/exports on offline SMRS master $OFFL_ip"
+		rc=12
+		}
+	grep "/local/CORE" exports.tmp || {
+		echo "/local/CORE not found in /etc/exports on offline SMRS master $OFFL_ip"
+		rc=13
+		}
+
+	return $rc
+
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_CLEANUP
+#
+# This callback function is only called if the harness execution mode is 'AT_INDEPENDENT'
+# 
+# This callback restores the target system to the state it was in before the TC 
+# was run. It rolls back changes made by callbacks tc_setup() and tc_test()
+# 
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_cleanup() {
+
+	return 0
+
+}

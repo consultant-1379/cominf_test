@@ -1,0 +1,135 @@
+#!/bin/bash
+
+# TEST CASE SPEC FILE
+# This file is generated/updated using the test framework web interface.
+# Manual updates on test servers are lost when the test package is re-installed.
+#
+# Last modified: Monday 16th of December 2013 7:22:50
+#
+
+# These settings must be in BASH script format, they are sourced by other scripts.
+SPEC_FA_NAME="SOLARIS10SUNDS"
+SPEC_UC_NAME="SOLARIS10SUNDS_Mgmt_role_alias_proxy"
+SPEC_TC_ID=1211
+SPEC_TC_SLOGAN="Modifying,Listing and Removing COM roles from the ldap domain "
+SPEC_TC_TYPE="FT"
+SPEC_TC_POLARITY="positive"
+SPEC_TC_PRIORITY="high"
+SPEC_TC_AUTOMATED=1
+SPEC_TC_DEPENDENT_ONLY=0
+SPEC_TC_TIMEOUT=300
+SPEC_TC_TEST_PASSCODE=0
+SPEC_TC_AUTHOR="xvinkat"
+SPEC_TC_AUTOMATOR="xvinkat"
+# this parameter is not interpreted by harness
+SPEC_TC_DISABLED=0
+
+# Please do not remove the comment lines below.
+# They are used as section locators by the test harness.
+
+# BEGIN_PRE_CONDITIONS
+#<path to the testcase>
+#
+#SUN-DS/COM LDAP - User Management for 
+#COM-Enabled Nodes/Management of role/role alias/proxy agents
+#
+#Following servers are successfully configured for 13.0.x version.
+#1.O&M primary
+#2.O&M secondary
+#3.OSS
+#4.UAS 
+# END_PRE_CONDITIONS
+
+
+# BEGIN_MANUAL_STEPS
+#1.Modifying COM roles in ldap domain
+#
+#Action: Try to modify the role using manage_COM.bsh with -m option.
+#
+#
+#
+#
+#2.Listing COM roles in ldap domain using /ericsson/sdee/bin/manage_COM.bsh
+#
+#Action: List the roles in the domain using manage_COM.bsh -l role
+#
+#
+#3.Removing COM roles from ldap domain.
+#
+#Action: Remove the role from the ldap domain using manage.com.bsh -r role -R <role name>
+#
+#
+#
+#4 Try to remove the role which doesn't exist in the COM role branch.
+#
+# END_MANUAL_STEPS
+
+# BEGIN_POST_CONDITIONS
+#1. Script should throw an error should show the usage of the script.
+#
+#Ex: 
+#
+#bash-3.2# ./manage_COM.bsh -m role
+#ERROR : Invalid modifier [role] for action [modify].
+#
+#Usage: manage_COM.bsh -a alias [-d <domain>] [-A <alias>] [-R <role1>,<role2>...] [-y]
+#-a proxy [-d <domain>] [-P <proxyagent>] [-y]
+#-a role [-d <domain>] [-R <role1>,<role2>...] [-y]
+#-a import -d <domain> -f <import file name> [-o] [-v] [-y]
+#-r alias [-d <domain>] [-A <alias>] [-y]
+#-r proxy [-d <domain>] [-P <proxyagent>] [-y]
+#-r role [-d <domain>] [-R <role1>,<role2>...] [-y]
+#-m alias [-d <domain>] [-A <alias>] [-R <role>] -i [-y]
+#-m alias [-d <domain>] [-A <alias>] [-R <role>] -x [-y]
+#-m proxy [-d <domain>] [-P <proxyagent>] [-y]
+#-l alias [-d <domain>] [-A <alias>]
+#-l proxy [-d <domain>]
+#-l role [-d <domain>]
+#-h
+#
+#
+#2. Roles which are presented in the domain are listed 
+#
+#Ex: bash-3.2# ./manage_COM.bsh -l role
+#
+#LDAP Directory Manager password:
+#
+#Roles for domain [atrcus879.com].
+#tcs1
+#tcs2
+#tcs3
+#tcs4
+#bash-3.2#
+#
+#3. Roles are removed from the ldap domain.
+#
+#Note: Remove the role in prompt mode as well.
+#
+#
+#bash-3.2# ./manage_COM.bsh -r role -R tcs1
+#
+#LDAP Directory Manager password:
+#
+#Please confirm that you want to proceed with requested actions - Yes or No [No] Yes
+#
+#bash-3.2#
+#
+#
+#4. Script manage_COM.bsh should throw an error 
+#
+#
+#Ex: bash-3.2# ./manage_COM.bsh -r role -R tcs110
+#
+#LDAP Directory Manager password:
+#ERROR : [tcs110] does not exist as a role in this domain
+#ERROR : Script terminated with errors. No updates have been made.
+#
+#bash-3.2#
+#
+#Note : If the role is removed from the role container, the same role should be removed from the role alias,and from the user entry. 
+#
+#
+#
+#
+#
+# END_POST_CONDITIONS

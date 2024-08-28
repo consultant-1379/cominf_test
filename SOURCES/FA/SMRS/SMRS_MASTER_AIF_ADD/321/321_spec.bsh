@@ -1,0 +1,81 @@
+#!/bin/bash
+
+# TEST CASE SPEC FILE
+# This file is generated/updated using the test framework web interface.
+# Manual updates on test servers are lost when the test package is re-installed.
+#
+# Last modified: Sunday 31st of March 2013 20:37:23
+#
+
+# These settings must be in BASH script format, they are sourced by other scripts.
+SPEC_FA_NAME="SMRS"
+SPEC_UC_NAME="SMRS_MASTER_AIF_ADD"
+SPEC_TC_ID=321
+SPEC_TC_SLOGAN="Invalid arguments to add_aif.sh script"
+SPEC_TC_TYPE="FT"
+SPEC_TC_POLARITY="negative"
+SPEC_TC_PRIORITY="low"
+SPEC_TC_AUTOMATED=1
+SPEC_TC_DEPENDENT_ONLY=0
+SPEC_TC_TIMEOUT=300
+SPEC_TC_TEST_PASSCODE=0
+SPEC_TC_AUTHOR="xkalbha"
+SPEC_TC_AUTOMATOR="xkalbha"
+# this parameter is not interpreted by harness
+SPEC_TC_DISABLED=0
+
+# Please do not remove the comment lines below.
+# They are used as section locators by the test harness.
+
+# BEGIN_PRE_CONDITIONS
+#1. grep smrs_master /etc/inet/hosts
+#2. POSIX_REMOTE_USER_EXISTS l-sws-4SlaveM2
+# END_PRE_CONDITIONS
+
+
+# BEGIN_MANUAL_STEPS
+#As root: Run following add_aif options which should all fail
+#1. add_aif.sh
+#returns error code 1
+#2. add_aif.sh -n LRAN -a aif321 -p passwo12 -s 4SlaveM2 -q
+#returns error code 1
+#3. add_aif.sh -n LRAN -a aif321 -p passwor1 -s 4SlaveM2
+#returns error code 4
+#4. add_aif.sh -n CORE -a aif321 -p pass1234 -s 4SlaveM2
+#returns error code 1
+#5. add_aif.sh -n LRAN -a aif@321 -p passwo12 -s 4SlaveM2
+#returns error code 3
+#7. add_aif.sh -n LRAN -a aif321 -p passwo12 -s 4SlaveRubbish
+#returns error code 6
+#8. add_aif.sh -a aif321 -p passwo12 -s 4SlaveM2
+#returns error code 1 
+#9. add_aif.sh -n LRAN -p passwo12 -s 4SlaveM2
+#returns error code 1 
+#10. add_aif.sh -n LRAN -a aif321 -s 4SlaveM2
+#returns error code 1 
+#11. add_aif.sh -n LRAN -a aif321 -p passwo12 
+#returns error code 1
+#12. add_aif.sh -n LRAN -a aif321 -p passwo12 -s 4SlaveM2 -b yes
+#returns error code 1
+#13. add_aif.sh -n LRAN -a aif321 -p passwo12 -s 4SlaveM2 -f yes
+#returns error code 1
+#14. add_aif.sh -n LRAN -a aif321 -p passwo12 -s 4SlaveM2 -u yes
+#returns error code 3
+#15. add_aif.sh -n LRAN -a aif321 -p passwo12 -s 4SlaveM2 -u 0
+#returns error code 3
+#16. add_aif.sh -n LRAN -a aif321 -p passwo12 -s 4SlaveM2 -u
+#returns error code 3
+#17. add_aif.sh -n LRAN -a aif321 -p passwo12 -s 4SlaveM2 -u aif321
+#returns error code 3
+#18. add_aif.sh -n LRAN -a aif321 -p passwo12 -s 4SlaveM2 -g 0
+#?????
+#19. add_aif.sh -n LRAN -a aif321 -p passwo12 -s 4SlaveM2 -g
+#?????
+#20. add_aif.sh -n LRAN -a aif321 -p passwo12 -s 4SlaveM2 -g aif
+#?????
+#
+# END_MANUAL_STEPS
+
+# BEGIN_POST_CONDITIONS
+#1. CONSOLE_OUTPUT_CONTAINS suitable error message for each attempt
+# END_POST_CONDITIONS

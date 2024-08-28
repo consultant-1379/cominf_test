@@ -1,0 +1,250 @@
+#!/bin/bash
+#################################################################################
+#
+#
+#       COPYRIGHT (C) ERICSSON RADIO SYSTEMS AB, Sweden
+#
+#       The copyright to the document(s) herein is the property of
+#       Ericsson Radio Systems AB, Sweden.
+#
+#       The document(s) may be used and/or copied only with the written
+#       permission from Ericsson Radio Systems AB or in accordance with
+#       the terms and conditions stipulated in the agreement/contract
+#       under which the document(s) have been supplied.
+#
+#################################################################################
+
+
+# ATCOMINF Test Callback Library
+
+# Revision History
+# <date>	<signum>	<details>
+
+# Complete the callbacks in this library to automate the test case.
+#
+# Callbacks are stateless, it is not possible to set a global variable in one callback 
+# and access it it in another.
+#
+# Callbacks are called by the test harness in the following order:
+#
+# tc_setup() 		# Called only for independent TC execution mode to setup TC
+# tc_precon()		# Conditions that should exist before TC can run
+# tc_test()		# Runs the test for this TC
+# tc_postcon()		# Conditions that should/should not exist after successful TC 
+# tc_cleanup()		# Called only for independent TC execution mode to cleanup after TC
+
+# All callbacks must PASS for a TC PASS result
+
+#################################################################################
+#
+# CALLBACK: TC_SETUP
+#
+# This callback function is only called if the harness execution mode is 'AT_INDEPENDENT'
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_setup() {
+
+	# Coded to fail in case TC_AUTOMATED=1 before automation completed
+	# Change return code as required
+
+	return 0
+
+}
+#################################################################################
+
+#################################################################################
+#
+# CALLBACK: TC_PRECON
+#
+# This callback function checks the correct conditions exist to run the TC.
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+ 
+tc_precon() {
+
+	# Coded to fail in case TC_AUTOMATED=1 before automation completed
+	# Change return code as required
+
+	return 0
+
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_TEST
+#
+# This callback function runs the test.
+# The harness compares the return code to the SPEC_TC_TEST_PASSCODE value set in the test spec.
+#
+# Return or exit codes:
+#    SPEC_TC_TEST_PASSCODE 	success
+# != SPEC_TC_TEST_PASSCODE 	failure
+ 
+tc_test() {
+
+	# Coded to fail in case TC_AUTOMATED=1 before automation complete
+	# Change return code as required
+
+        retcode=0
+        
+        
+        COMMON_GLASSFISH=/ericsson/glassfish/bin/common_glassfish.sh
+
+
+        #Checking if the file with common glassfish variables and functions is present
+        if [ ! -f $COMMON_GLASSFISH ]; then
+                echo "ERROR! $COMMON_GLASSFISH not found "
+                echo "Cannot proceed Exiting..."
+                return 1
+        else
+                echo "Sourcing needed files $COMMON_GLASSFISH "
+                . $COMMON_GLASSFISH
+        fi
+ 
+          # Only proceed if the domain.xml exists
+        if [ ! -f $G3_DOMAIN_XML ]; then
+                echo "$G3_DOMAIN_XML File not found!  cannot proceed"
+                return 1
+        fi
+
+
+
+
+
+        function jvm_checking(){
+       . /etc/opt/ericsson/3ppenv/borland.env
+        BES_JAVA_FLAGS="$BES_JAVA_FLAGS -Dvbroker.se.iiop_tp.scm.iiop_tp.dispatcher.threadMax=100 -Dvbroker.se.iiop_tp.scm.iiop_tp.dispatcher.threadMaxIdle=120 -Dsm.cs.host=masterservice -Xmx1736m  -Xms1736m -XX:MaxPermSize=448m -DORBInitRef=NameService=iioploc://masterservice:12468/NameService"
+        EXCEPT_OPTION="-Djava.endorsed.dirs=/opt/borland/bes/lib/endorsed"
+        for opt in $BES_JAVA_FLAGS
+        do
+                echo "Checking jvm option ${opt} "
+                cat /opt/glassfish3/glassfish/domains/domain1/config/domain.xml | grep "\\$opt" > /dev/null
+                if [ $? -eq 0 ]; then
+                        echo "Option ${opt} exsts"
+                else
+                        if [ "$opt" == "${EXCEPT_OPTION}" ]; then
+                           echo "Verify ${opt} does not exist. it's OK"
+                        else
+                           echo " ======  Problem Option ${opt} does exist ======"
+                           retcode=$(($retcode+1))
+                        fi
+                fi
+                echo ""
+        done
+
+        echo "Verify that jvm option ${EXCEPT_OPTION} does not exist"
+        cat /opt/glassfish3/glassfish/domains/domain1/config/domain.xml | grep "\\${EXCEPT_OPTION}" > /dev/null
+        if [ $? -ne 0 ]; then
+                echo "Verify $EXCEPT_OPTION does not exist, as expected"
+        else
+                echo "Problme $EXCEPT_OPTION exists, testcase fail"
+                retcode=$(($retcode+1)) 
+        fi      
+        return $retcode
+        }
+        
+        # Call function to verify Several JVM options iset in Domain.xml 
+        jvm_checking
+
+
+
+        #  Second type of check,  interrogate the JVM Options using glassfish commands 
+        #  We cant rely on grep for -server as there are multiple hits.
+        
+
+        #create temp password file using common function  
+        create_password_file
+
+        expectopt="-server"
+        opt=`/opt/glassfish3/glassfish/bin/asadmin --host=masterservice --port 50500 --user admin --passwordfile $V3_PASSWORD_FILE list-jvm-options | nawk  '/-server/{print}'`
+        echo -e "$ Option is $opt"
+        echo -e " \n Verify glassfish JVM option  $opt is set"
+        if [ "$expectopt" != "$opt" ]; then
+                echo " ===== JVM Option $expectopt  not found ===== "
+                retcode=$(($retcode+1))
+        else
+                echo -e " \n JVM Option $opt is correctly set"
+        fi
+
+        expectopt="-client"
+        opt=`/opt/glassfish3/glassfish/bin/asadmin --host=masterservice --port 50500 --user admin --passwordfile $V3_PASSWORD_FILE list-jvm-options | nawk  '/-client/{print}'`
+        echo -e "$ Verify Option $opt no longer exists"
+        echo -e " \n glassfish JVM option  is $opt"
+        if [ "$expectopt" == "$opt" ]; then
+                echo " ===== Problem JVM Option $expectopt found ===== "
+                retcode=$(($retcode+1))
+        fi
+
+        
+
+        
+
+
+
+
+
+
+
+         #Check retcode,  if any one of the options above failed. TC failed. 
+        if [ $retcode -ne 0 ]; then
+               echo -e " \n  One or more JVM settings are not as expected"
+               return 1
+        else
+               return 0
+        fi
+
+
+
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_POSTCON
+#
+# This callback function checks expected results.
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_postcon() {
+
+	# Coded to fail in case TC_AUTOMATED=1 before automation complete.
+	# Change return code as required
+
+	return 0
+
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_CLEANUP
+#
+# This callback function is only called if the harness execution mode is 'AT_INDEPENDENT'
+# 
+# This callback restores the target system to the state it was in before the TC 
+# was run. It rolls back changes made by callbacks tc_setup() and tc_test()
+# 
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_cleanup() {
+
+	# Coded to fail in case TC_AUTOMATED=1 before automation complete
+	# Change return code as required
+
+	return 0
+
+}

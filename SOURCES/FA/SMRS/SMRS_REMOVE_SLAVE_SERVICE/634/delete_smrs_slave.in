@@ -1,0 +1,8 @@
+Please enter number of required option:
+1
+Are you sure you want to delete the slave service*
+yes
+Would you like to remove the slave FtpServices in ONRM
+yes
+Do you wish to restart BI_SMRS_MC on the OSS master
+yes

@@ -1,0 +1,47 @@
+#!/bin/bash
+
+# TEST CASE SPEC FILE
+# This file is generated/updated using the test framework web interface.
+# Manual updates on test servers are lost when the test package is re-installed.
+#
+# Last modified: Sunday 31st of March 2013 20:37:24
+#
+
+# These settings must be in BASH script format, they are sourced by other scripts.
+SPEC_FA_NAME="INSTALL"
+SPEC_UC_NAME="INSTALL_NONBLADE_MANUAL_INSTALL"
+SPEC_TC_ID=627
+SPEC_TC_SLOGAN="Give inirator valid answers to params.cfg questions on om_primary"
+SPEC_TC_TYPE="FT"
+SPEC_TC_POLARITY="positive"
+SPEC_TC_PRIORITY="high"
+SPEC_TC_AUTOMATED=0
+SPEC_TC_DEPENDENT_ONLY=0
+SPEC_TC_TIMEOUT=300
+SPEC_TC_TEST_PASSCODE=0
+SPEC_TC_AUTHOR="xamamcg"
+SPEC_TC_AUTOMATOR="xamamcg"
+# this parameter is not interpreted by harness
+SPEC_TC_DISABLED=0
+
+# Please do not remove the comment lines below.
+# They are used as section locators by the test harness.
+
+# BEGIN_PRE_CONDITIONS
+#1. params.cfg present
+# END_PRE_CONDITIONS
+
+
+# BEGIN_MANUAL_STEPS
+#1. Save copy of config.ini
+#2. Move params.cfg to params.bak
+#3. Run linirator and answer om_serv_slave for config and cominf for installation type then n whether to accept
+#4. Then answer om_serv_master for config and security for installation type  then n whether to accept
+#5. Then answer om_serv_master for config and securityca for installation type then n when whether to accept
+#6. Then answer om_serv_master for config and cominf for installation type then hit return to get defaults for each value and Yes at end
+#
+# END_MANUAL_STEPS
+
+# BEGIN_POST_CONDITIONS
+#1. Params.cfg and config.ini are the same as that previously
+# END_POST_CONDITIONS

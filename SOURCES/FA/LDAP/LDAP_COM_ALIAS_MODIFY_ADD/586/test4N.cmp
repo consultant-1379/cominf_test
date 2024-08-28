@@ -1,0 +1,20 @@
+/ericsson/sdee/bin/manage_COM.bsh: illegal option -- n
+
+Usage:  manage_COM.bsh	-a alias [-d <domain>] [-A <alias>] [-R <role1>,<role2>...] [-y]
+			-a proxy [-d <domain>] [-P <proxyagent>] [-y]
+			-a role [-d <domain>] [-R <role1>,<role2>...] [-y]
+			-a import -d <domain> -f <import file name> [-o] [-v] [-y]
+			-r alias [-d <domain>] [-A <alias>] [-y]
+			-r proxy [-d <domain>] [-P <proxyagent>] [-y]
+			-r role [-d <domain>] [-R <role1>,<role2>...] [-y]
+			-m alias [-d <domain>] [-A <alias>] [-R <role>] -i [-y]
+			-m alias [-d <domain>] [-A <alias>] [-R <role>] -x [-y]
+			-m proxy [-d <domain>] [-P <proxyagent>] [-y]
+			-l alias [-d <domain>] [-A <alias>]
+			-l proxy [-d <domain>]
+			-l role [-d <domain>]
+			-h
+
+For a detailed explanation of the script and its options run the command -
+man manage_COM.bsh
+

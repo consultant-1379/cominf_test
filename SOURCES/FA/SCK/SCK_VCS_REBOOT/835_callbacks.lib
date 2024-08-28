@@ -1,0 +1,390 @@
+#!/bin/bash
+#################################################################################
+#
+#
+#       COPYRIGHT (C) ERICSSON RADIO SYSTEMS AB, Sweden
+#
+#       The copyright to the document(s) herein is the property of
+#       Ericsson Radio Systems AB, Sweden.
+#
+#       The document(s) may be used and/or copied only with the written
+#       permission from Ericsson Radio Systems AB or in accordance with
+#       the terms and conditions stipulated in the agreement/contract
+#       under which the document(s) have been supplied.
+#
+#################################################################################
+#SOURCE ENVIRONMENT FILE for GLOBAL variables
+. ${AT_ROOT}/*.env
+
+# ATCOMINF Test Callback Library
+
+# Revision History
+# <date>	<signum>	<details>
+
+# Complete the callbacks in this library to automate the test case.
+#
+# Callbacks are stateless, it is not possible to set a global variable in one callback 
+# and access it it in another.
+#
+# Callbacks are called by the test harness in the following order:
+#
+# tc_setup() 		# Called only for independent TC execution mode to setup TC
+# tc_precon()		# Conditions that should exist before TC can run
+# tc_test()		# Runs the test for this TC
+# tc_postcon()		# Conditions that should/should not exist after successful TC 
+# tc_cleanup()		# Called only for independent TC execution mode to cleanup after TC
+
+# All callbacks must PASS for a TC PASS result
+
+tee_pid=0
+
+#################################################################################
+#
+# CALLBACK: TC_SETUP
+#
+# This callback function is only called if the harness execution mode is 'AT_INDEPENDENT'
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_setup() {
+
+	# Coded to fail in case TC_AUTOMATED=1 before automation completed
+	# Change return code as required
+        echo "{CI_MACHINE} = ${CI_MACHINE}"
+        echo "{CI_MACHINE_ILO}= ${CI_MACHINE_ILO}"
+
+        return 0
+}
+#################################################################################
+
+#################################################################################
+#
+# CALLBACK: TC_PRECON
+#
+# This callback function checks the correct conditions exist to run the TC.
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+ 
+tc_precon() {
+	# Coded to fail in case TC_AUTOMATED=1 before automation completed
+	# Change return code as required
+
+        if [[ -z ${CI_MACHINE_ILO} ]]; then
+                echo "ERROR: CI_MACHINE_ILO is not defined in env file"
+                return 1
+        fi
+
+        confirmConnection ${CI_MACHINE_ILO}.athtem.eei.ericsson.se 
+        [[ $? -ne 0 ]] && return 1
+
+
+        echo -e "\n=============================================================================================="
+        echo -e "Login to ${CI_MACHINE} and confirm Oss and Sybase1 Groups correct at `date` "
+        echo -e "=============================================================================================="
+
+/usr/bin/expect<<EOF2
+
+        spawn ssh -ostricthostkeychecking=no root@${CI_MACHINE}.athtem.eei.ericsson.se
+        set timeout 90
+        while 1 {
+                expect {
+                        "Are you sure you want to continue connecting" {
+                                send "yes\r"}
+                        "Password:" {
+                                send "${CI_SERVER_ROOTPW[0]}\r"}
+                        "#" {
+                                break}
+                        eof {
+                                puts "Warning: timed out"
+                                exit 1}
+                        timeout {
+                                puts "Warning: timed out - connecting to ${CI_MACHINE}"
+                                exit 1}
+                        }
+                }
+
+
+        send "/usr/bin/uname -p\r"
+        expect {
+                "i386"          {puts "\nINFO: Expected environment\n"}
+                timeout         {puts "\nERROR: Not X86 server\n"
+                                exit 1}
+                 }
+
+        send "date\r"; expect "201"
+        send "${HASTATUS} -sum\r"
+        expect "#"
+
+        send "date\r"; expect "201"
+        set timeout 30
+        send "${HAGRP} -state Oss -sys ${CI_MACHINE}\r" 
+        expect {
+                "ONLINE"        {puts "INFO: Oss group OK"}
+                timeout         {puts "ERROR: Oss group is not ONLINE on ${CI_MACHINE} prior to power off of ${CI_MACHINE}"
+                                exit 1}
+                 }
+        send "date\r"; expect "201"
+        send "${HAGRP} -state Sybase1 -sys ${CI_MACHINE2}\r"
+        expect {
+                "ONLINE"        {puts "INFO: Sybase1 group OK"}
+                timeout         {puts "ERROR: Sybase1 group is not ONLINE on ${CI_MACHINE2} prior to power off of ${CI_MACHINE}"
+                                exit 1}
+                 }
+
+        send "exit\r"
+        expect "logout"
+EOF2
+
+        if [[ $? -eq 0 ]]; then
+                return 0
+        else
+                return 1
+        fi 
+
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_TEST
+#
+# This callback function runs the test.
+# The harness compares the return code to the SPEC_TC_TEST_PASSCODE value set in the test spec.
+#
+# Return or exit codes:
+#    SPEC_TC_TEST_PASSCODE 	success
+# != SPEC_TC_TEST_PASSCODE 	failure
+ 
+tc_test() {
+	# Coded to fail in case TC_AUTOMATED=1 before automation complete
+	# Change return code as required
+
+        # Start log
+        LOG_DIR=`pwd`
+        LOG_FILE=`/bin/basename $0`_$( date +%y%m%d-%H_%M_%S ).log
+	startLog ${LOG_DIR} ${LOG_FILE}
+
+        echo -e "\n============================================================================================"
+        echo -e "Starting power off of ${CI_MACHINE} using ${CI_MACHINE_ILO} at `date` "
+        echo -e "============================================================================================\n"
+
+
+
+
+
+/usr/bin/expect<<EOF
+
+
+spawn ssh -ostricthostkeychecking=no root@${CI_MACHINE_ILO}.athtem.eei.ericsson.se
+#exp_internal 1
+#expect_after timeout exit
+set timeout 60
+while 1 {
+        expect {
+                "Are you sure you want to continue connecting" {
+                        send "yes\r"}
+		"password:" {
+			send "${CI_ILO_ROOTPW}\r"}
+                "hpiLO" {
+                        send "stop system1\/oemhp_vsp1\r"
+                        sleep 20 
+                        break}
+                eof {
+                        puts "Warning: timed out"
+                        exit 1}
+                timeout {
+                        puts "Warning: timed out - connecting ILO"
+                        exit 1}
+                }
+        }
+
+
+	send "power\r"
+	expect "On"
+        send "power off\r"
+        expect "Server powering off ......." 
+        sleep 30
+        send "power\r"
+        while 1 {
+                expect {
+                         "Off"          {puts "\nINFO: Power is Off ..... OK\n"
+                                         break}
+                         "On"           {sleep 30
+                                         send "power\r"}
+                         timeout         {puts "\nERROR: Power problem on ${CI_MACHINE2}"
+                                         exit 1}
+                        }
+                 }
+
+        send "exit\r"
+
+EOF
+       
+        if [[ $? -ne 0 ]]; then
+                return 1
+        fi
+
+        echo -e "\n================================================================="
+        echo -e "Power off of ${CI_MACHINE_ILO} completed at `date` "
+        echo -e "=================================================================\n"
+
+	sleep 10 
+
+        echo -e "\n========================================================================================"
+        echo -e "Login to ${CI_MACHINE2} and confirm Oss Group and MCs are started at `date` "
+        echo -e "========================================================================================"
+
+/usr/bin/expect<<EOF4
+
+        spawn ssh -ostricthostkeychecking=no root@${CI_MACHINE2}.athtem.eei.ericsson.se
+        set timeout 30
+        while 1 {
+                expect {
+                        "Are you sure you want to continue connecting" {
+                                send "yes\r"}
+                        "Password:" {
+                                send "${CI_SERVER2_ROOTPW}\r"}
+                        "#" {
+                                break}
+                        eof {
+                                puts "Warning: timed out"
+                                exit 1}
+                        timeout {
+                                puts "Warning: timed out - connecting to ${CI_MACHINE2}"
+                                exit 1}
+                        }
+                }
+
+
+        send "${HASTATUS} -sum\r"
+        expect "#"
+        send "date\r"; expect "201"
+
+        send "${HAGRP} -state Sybase1 -sys ${CI_MACHINE2}\r"
+        expect {
+                "ONLINE"        {puts "\nINFO: Sybase1 group OK"}
+                timeout         {puts "\nERROR: Sybase1 group is not ONLINE on ${CI_MACHINE2} after reboot of ${CI_MACHINE}"
+                                exit 1}
+                 }
+
+
+        send "${HAGRP} -state Oss -sys ${CI_MACHINE2}\r"
+        while 1 {
+                expect {
+                        "ONLINE"        {sleep 10
+                                         puts "\nINFO: Oss group OK"
+                                         break}
+                        "STARTING"      { sleep 10
+                                          send "${HAGRP} -state Oss -sys ${CI_MACHINE2}\r"}
+                        "OFFLINE"       { sleep 20
+                                          send "${HAGRP} -state Oss -sys ${CI_MACHINE2}\r"}
+                        timeout         {puts "\nERROR: Oss group is not ONLINE on ${CI_MACHINE2} after power off of ${CI_MACHINE1}"
+                                         exit 1}
+                        }
+                 }
+
+
+        set timeout 1800
+        send "${G_SMTOOL} -progress\r"
+        while 1 {
+                expect {
+                        "root is not authorized to run this application" { sleep 20
+                                                  send "${G_SMTOOL} -progress\r"}
+                        "masterservice  done"   { sleep 15
+                                                  puts "\nINFO: MC restart completed"
+                                                  break }
+                        }
+                }
+        send "date\r"; expect "201"
+
+        set timeout 30
+        puts "\n========================================================================================"
+        puts "========   List of not started MCs on ${CI_MACHINE2} after power off of ${CI_MACHINE}   ========"
+        puts "========================================================================================"
+        send "${G_SMTOOL} -list |grep -v started\r"
+        expect "#"
+
+        send "date\r"; expect "201"
+        puts "Number of unexpected non-started MCs:"
+        send "${G_SMTOOL} -list |grep -v started|grep -v BI_SMRS_MC|grep -v netop_ems|wc -l\r"
+        expect {
+                "0"     {puts "INFO: All expected MCs are online after Power off"}
+                timeout {puts "WARNING: There are unexpected MCs not online after Power off, see $LOGFILE"
+                                return 1}
+                 }
+
+        send "${HASTATUS} -sum\r"
+        expect "#"
+
+        send "exit\r"
+        expect "logout"
+
+EOF4
+	EXP_RES=$?
+
+        echo -e "\n==========================================================================="
+        echo -e "Log file for the power off of ${CI_MACHINE} is available at :" 
+        echo -e $LOGFILE
+        echo -e "===========================================================================\n"
+
+        if [[ ${EXP_RES} -eq 0 ]]; then
+                return 0
+        else
+                return 1
+        fi
+
+}
+
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_POSTCON
+#
+# This callback function checks expected results.
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_postcon() {
+	# Coded to fail in case TC_AUTOMATED=1 before automation complete.
+	# Change return code as required
+
+
+
+        # Stop log
+        stop_log         
+
+	return 0
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_CLEANUP
+#
+# This callback function is only called if the harness execution mode is 'AT_INDEPENDENT'
+# 
+# This callback restores the target system to the state it was in before the TC 
+# was run. It rolls back changes made by callbacks tc_setup() and tc_test()
+# 
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_cleanup() {
+
+	# Coded to fail in case TC_AUTOMATED=1 before automation complete
+	# Change return code as required
+      
+	return 0
+
+}

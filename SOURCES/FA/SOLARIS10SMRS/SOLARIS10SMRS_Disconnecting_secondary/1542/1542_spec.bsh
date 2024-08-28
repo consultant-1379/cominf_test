@@ -1,0 +1,48 @@
+#!/bin/bash
+
+# TEST CASE SPEC FILE
+# This file is generated/updated using the test framework web interface.
+# Manual updates on test servers are lost when the test package is re-installed.
+#
+# Last modified: Monday 16th of December 2013 11:50:09
+#
+
+# These settings must be in BASH script format, they are sourced by other scripts.
+SPEC_FA_NAME="SOLARIS10SMRS"
+SPEC_UC_NAME="SOLARIS10SMRS_Disconnecting_secondary"
+SPEC_TC_ID=1542
+SPEC_TC_SLOGAN="Deleting NESS in Multi Environment "
+SPEC_TC_TYPE="FT"
+SPEC_TC_POLARITY="positive"
+SPEC_TC_PRIORITY="high"
+SPEC_TC_AUTOMATED=0
+SPEC_TC_DEPENDENT_ONLY=0
+SPEC_TC_TIMEOUT=300
+SPEC_TC_TEST_PASSCODE=0
+SPEC_TC_AUTHOR="xsougha"
+SPEC_TC_AUTOMATOR="xsougha"
+# this parameter is not interpreted by harness
+SPEC_TC_DISABLED=0
+
+# Please do not remove the comment lines below.
+# They are used as section locators by the test harness.
+
+# BEGIN_PRE_CONDITIONS
+#Multi OSS Master Server should be connected to the SMRS master service with out slave service and any FTP users.
+#
+#<Path under "Verification Specification for Cominf Feature Test for 14.0":
+#
+#Dismantling Bi-directional SMRS/Disconnecting secondary and 3rd from SMRS 
+#>
+# END_PRE_CONDITIONS
+
+
+# BEGIN_MANUAL_STEPS
+#Verify deleting NESS in multi environment.
+#
+#./configure_smrs.sh
+# END_MANUAL_STEPS
+
+# BEGIN_POST_CONDITIONS
+#you should be able to delete SMRS_Master successfully All mounts and users related to SMRS_master should check all the mounts related specific deleted SMRS are being removed .you should able to see only mounts related to primary OSS only 
+# END_POST_CONDITIONS

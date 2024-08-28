@@ -1,0 +1,172 @@
+#!/bin/ksh
+
+#--------------------------------------------------------------------------
+# Ericsson AB    SCRIPT
+#--------------------------------------------------------------------------
+#
+# (c) Ericsson AB 2007 - All rights reserved.
+# 
+# The copyright to the computer program(s) herein is the property
+# of Ericsson AB, Sweden. The programs may be used and/or copied
+# only with the written permission from Ericsson AB or
+# in accordance with the terms and conditions stipulated in the
+# agreement/contract under which the program(s) have been supplied.
+# 
+#------ History ----------------------------------------------------------- 
+# Rev		Date		Prepared		Description
+#
+# PA1		080602		XRSKEAN		Checks that the specified services (in SMF) can handle a restart 
+#--------------------------------------------------------------------------
+#
+#   Name       : check_svcs_restart.sh
+#
+#   Description: Checks that the specified managed services in Solaris SMF are restarted if they are killed
+#
+#   Arguments  : Check for following arguments:
+#					-d = debug
+#					-n = testcase name
+#					-s = directory paths in a colon-separated list
+#                                       -p = corresponding process name in a colon-separated list
+#                                       -t = timeout value, if not set default value of 10s is used. 
+#
+
+
+# Init --------------------------------------------
+PS_STRING="/usr/ucb/ps -auxww"
+# Get the name of our product from the framework
+echo "[INPUT:PRODUCT]"
+read PROD
+
+RETURN_STATUS=0
+
+#inc library
+if [ ${PROD} = "syb" ]; then
+. /ericsson/syb/lib/syb_libsvc.sh
+fi
+
+while getopts "dn:s:p:t:" option
+#					-s = directory paths in a colon-separated list
+do
+    case $option in
+                 d) DEBUG=1;;
+		 n) TEST_CASE=$OPTARG;;
+		 s) SERVICES=`echo $OPTARG | sed -e "s/:/ /g"`;;
+                 p) PROCESSES=`echo $OPTARG | sed -e "s/:/ /g"`;;
+                 t) TIMEOUT=$OPTARG;;
+	esac
+done
+
+if [ $DEBUG ]; then
+    set -x
+fi
+
+if [ $TIMEOUT ]; then
+    timeout="$TIMEOUT"
+else
+    timeout=10
+fi
+
+# -------------------------------------------------
+
+
+# Mandatory information ---------------------------
+echo "[OUTPUT:TESTCASENAME:${TEST_CASE}]"
+echo "[OUTPUT:TESTCASEDESCRIPTION:Checks that SMF services are restarted if they are killed]"
+echo "[OUTPUT:SCRIPTVERSION:PA1]"
+# -------------------------------------------------
+
+
+# Do the test -------------------------------------
+
+check_svc_online ()
+{
+  for foo in $SERVICES; do
+	svcadm clear ${foo};
+        stopnow=0;
+        found=0;
+        while [[ $found -ne 1 ]]&&[[ $stopnow -ne 5 ]];do
+		# Count lines that includes $foo
+		PROCS=`svcs -a 2>/dev/null | grep ${foo} | cut -d' ' -f1 | wc -l`
+		# Count lines that includes $foo and are online
+		ONLINE_PROCS=`svcs -a 2>/dev/null | grep ${foo} | cut -d' ' -f1 | grep online | wc -l`
+
+		# Check if all of the services were online
+		if [ ! $PROCS = $ONLINE_PROCS ]&&[ $stopnow -eq 5 ]; then
+			RETURN_STATUS_REASON="${RETURN_STATUS_REASON:=Services offline}:${foo}"
+			RETURN_STATUS=1
+                else
+                        found=1;
+		fi
+                stopnow=$(($stopnow+1))
+                sleep $timeout 
+        done
+  done
+  if [ "$RETURN_STATUS" -ne 1 ];then
+       echo "SMF services are online"
+  fi
+}
+
+kill_svc_procs ()
+{
+
+   MYSELF=$$
+   
+  for process in $PROCESSES; do
+         	PID=`$PS_STRING  | grep ${process} | grep -v grep | grep -v $MYSELF | nawk '{print $2}'`
+                if [ ! -z "$PID" ]; then
+			kill -9 $PID 2>/dev/null
+                fi
+		sleep $timeout
+  for service in $SERVICES; do
+		svcadm clear ${service}
+  done
+               # Check to see if restarted with new pid
+              stopnow=0;
+              while [[ $stopnow -ne 5 ]]&&[[ -z $NEW_PID ]];do
+              	sleep $timeout 
+                NEW_PID=`$PS_STRING  | grep ${process} | grep -v grep | grep -v $MYSELF |  nawk '{print $2}'`
+                stopnow="$(($stopnow + 1))"
+             done
+
+             if [ -z "$NEW_PID" ];then
+                RETURN_STATUS_REASON="${RETURN_STATUS_REASON:=Process not restarted}:${process}"
+                RETURN_STATUS=1
+             else
+                echo "Process $process restarted after kill"
+             fi
+
+  done
+}
+
+# main ---------------
+if [ ${PROD} = "syb" ]; then
+        svc_online
+        RESULT=$?
+        if [ $RESULT -ne 0 ]; then
+                RETURN_STATUS_REASON="${RETURN_STATUS_REASON}Sybase SMF services cannot be enabled"
+                echo [OUTPUT:REASON:$RETURN_STATUS_REASON]
+                exit 1
+        fi
+fi
+
+check_svc_online
+kill_svc_procs
+check_svc_online
+
+if [ ${PROD} = "syb" ]; then
+        svc_online
+        RESULT=$?
+        if [ $RESULT -ne 0 ]; then
+                RETURN_STATUS_REASON="${RETURN_STATUS_REASON}Sybase SMF services cannot be enabled"
+                echo [OUTPUT:REASON:$RETURN_STATUS_REASON]
+                exit 1
+        fi
+fi
+
+# Return status and reason ------------------------
+if [ "$RETURN_STATUS_REASON" ]; then
+  echo [OUTPUT:REASON:$RETURN_STATUS_REASON]
+fi
+
+exit $RETURN_STATUS
+# -------------------------------------------------

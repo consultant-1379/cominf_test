@@ -1,0 +1,15 @@
+#!/bin/bash
+
+# TEST SUITE SPEC FILE
+# This file is generated/updated using the test framework web interface.
+# Manual updates on test servers are lost when the test package is re-installed.
+#
+# Last modified: Tuesday 8th of January 2013 16:39:57
+#
+SPEC_TS_NAME=X86_IMPORT_NETWORK_ELEMENTS
+SPEC_TS_ID=42
+SPEC_TS_SLOGAN="Import network elements into OSS Servers"
+SPEC_TS_TIMEOUT=300
+SPEC_TS_AUTHOR="eeidle"
+SPEC_TS_INDEPENDENT=1
+SPEC_TS_TC_IDS=(769 790 791 792)

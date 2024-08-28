@@ -1,0 +1,116 @@
+#!/bin/bash
+
+# TEST CASE SPEC FILE
+# This file is generated/updated using the test framework web interface.
+# Manual updates on test servers are lost when the test package is re-installed.
+#
+# Last modified: Tuesday 17th of December 2013 10:12:00
+#
+
+# These settings must be in BASH script format, they are sourced by other scripts.
+SPEC_FA_NAME="SOLARIS10MIGRATION"
+SPEC_UC_NAME="SOLARIS10MIGRATION_Migration_Test_Cases"
+SPEC_TC_ID=1778
+SPEC_TC_SLOGAN="Verify the Migration Procedure for upgrade from Non-Media Consolidation to Media Consolidation Standard Deployment "
+SPEC_TC_TYPE="FT"
+SPEC_TC_POLARITY="positive"
+SPEC_TC_PRIORITY="high"
+SPEC_TC_AUTOMATED=0
+SPEC_TC_DEPENDENT_ONLY=0
+SPEC_TC_TIMEOUT=300
+SPEC_TC_TEST_PASSCODE=0
+SPEC_TC_AUTHOR="xgansre"
+SPEC_TC_AUTOMATOR="xgansre"
+# this parameter is not interpreted by harness
+SPEC_TC_DISABLED=0
+
+# Please do not remove the comment lines below.
+# They are used as section locators by the test harness.
+
+# BEGIN_PRE_CONDITIONS
+#The purpose of this test-case is to verify the migration procedure from Non-Media Consolidation (prior to 10.2 Ship N) to a Media Consolidation (10.2. Ship N onwards). This procedure verifies that it is possible to take a minimal backup of configuration files like DNS, DHCP, binary backup of SunDS data and user defined data.
+#Precondition: 
+#
+#A working OSS-RC N version of the O&M Infra server. DNS, DHCP, NTP and LDAP are configured successfully.
+#
+#
+#Mars Path<Upgrade/Migration/Migration Test Cases>
+# END_PRE_CONDITIONS
+
+
+# BEGIN_MANUAL_STEPS
+#Action 1: 
+#
+#Create a custom_mig_file with entries for files other than default backup e.g. crontabs
+##vi /var/tmp/ custom_mig_file
+#/var/spool/cron/crontabs
+#
+#Action 2: 
+#
+#Take a backup of COMINF service configuration/data using script. Accept default /var/tmp directory to store the tar file. Check the log file for any errors.
+##/ericsson/ocs/bin/preMIG_bkup.sh
+#
+#Action 3: 
+#
+#Verify the contents of the backup list file against printout to screen to ensure that all custom files and default directories are listed. Note the list printed to screen displays files with directories listed under the directories contained in preMIGbckup_list. Verify the contents against COMInf services document section "O&M Infra server/OMSAS only - Backup COMINF service configuration and data" Examine the tar file for completeness with the command:
+##/usr/sfw/bin/gtar -tvzf /var/tmp/preMIG_backup_atrcus763.tar.gz
+#
+#Action 4: 
+#
+#Move the backup tar file and list file to another server.
+#
+#Action 5: 
+#
+#Complete the remaining procedure as per the COMInf services Installation Instructions. When prompted store the previously created backup tar file created in action 2 (preMIG_backup_<server_name>.tar.gz
+#
+#) on the server in /var/tmp directory.
+#
+#
+#Action 6: 
+#
+#Verify the DNS/DHCP/NTP services are successfully restored and can be checked with the commands:
+##svcs svc:/network/ntp:default
+##svcs svc:/ericsson/cominf/dns/server:default
+##svcs svc:/network/dhcp-server:default
+#
+#Action 7: 
+#
+#Verify LDAP service is running and LDAP Information is replicated successfully from other infra.
+#
+#
+#
+#
+# END_MANUAL_STEPS
+
+# BEGIN_POST_CONDITIONS
+#Result 1: 
+#
+#The custom_mig_file is created and saved successfully.
+#
+#Result 2: 
+#
+#The script executes successfully and a backup list file and backup tar file is created in the location /var/tmp with the names preMIGbckup<host name>.tar.gz and preMIGbckup_list. There are no errors contained in the log file
+##cd /var/tmp
+##ls âEuro lrt preMIGbckup*
+##more /ericsson/ocs/log/preMIG_backup_<timestamp>.log
+#
+#Result 3: 
+#
+#The contents are correct and match the contents of the tar file.
+#
+#Result 4: 
+#
+#The back-up file is moved to another server successfully.
+#
+#Result 5: 
+#
+#The remaining procedure is clear and can be followed without any errors.
+#
+#Result 6Â : 
+#
+#The services are online and there are no errors in /var/adm/messages
+#
+#Result 7: 
+#
+#The services are online and there are no errors in /var/adm/messages
+# END_POST_CONDITIONS

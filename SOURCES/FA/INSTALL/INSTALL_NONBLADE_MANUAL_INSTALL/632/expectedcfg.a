@@ -1,0 +1,4 @@
+config=om_serv_master
+export DDC=YES
+export HYPERIC=YES
+inst_type=cominf

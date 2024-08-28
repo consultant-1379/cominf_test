@@ -1,0 +1,50 @@
+#!/bin/bash
+
+# TEST CASE SPEC FILE
+# This file is generated/updated using the test framework web interface.
+# Manual updates on test servers are lost when the test package is re-installed.
+#
+# Last modified: Tuesday 17th of December 2013 4:56:37
+#
+
+# These settings must be in BASH script format, they are sourced by other scripts.
+SPEC_FA_NAME="SOLARIS10SMRS"
+SPEC_UC_NAME="SOLARIS10SMRS_12_2_Upgrade_procedure"
+SPEC_TC_ID=1587
+SPEC_TC_SLOGAN="SMRS Restore pre-check "
+SPEC_TC_TYPE="FT"
+SPEC_TC_POLARITY="positive"
+SPEC_TC_PRIORITY="high"
+SPEC_TC_AUTOMATED=0
+SPEC_TC_DEPENDENT_ONLY=0
+SPEC_TC_TIMEOUT=300
+SPEC_TC_TEST_PASSCODE=0
+SPEC_TC_AUTHOR="xlaxain"
+SPEC_TC_AUTOMATOR="xlaxain"
+# this parameter is not interpreted by harness
+SPEC_TC_DISABLED=0
+
+# Please do not remove the comment lines below.
+# They are used as section locators by the test harness.
+
+# BEGIN_PRE_CONDITIONS
+#Path in Mars:- Bi-directional SMRS Upgrade/Migration/Pre 12.2 to 12.2 Upgrade Procedure 
+#
+#Before doing smrs restore check the file systems and sys id in SFS server. 105 65-0580/02136
+#
+# END_PRE_CONDITIONS
+
+
+# BEGIN_MANUAL_STEPS
+#All general file system should be avaliable in SFS system
+# END_MANUAL_STEPS
+
+# BEGIN_POST_CONDITIONS
+#Run the below command and select the lf option to check the file systems associated with the sys-id.
+#/ericsson/storage/bin/nascli menu
+#Example output for general file systems.
+#/vx/smrs123-gran_common 10.44.95.110/32 (rw,no_root_squash)
+#/vx/smrs123-core_common 10.44.95.110/32 (rw,no_root_squash)
+#/vx/smrs123-lran_common 10.44.95.110/32 (rw,no_root_squash)
+#/vx/smrs123-wran_common 10.44.95.110/32 (rw,no_root_squash)
+# END_POST_CONDITIONS

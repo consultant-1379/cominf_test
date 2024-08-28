@@ -1,0 +1,71 @@
+#!/bin/bash
+
+# TEST CASE SPEC FILE
+# This file is generated/updated using the test framework web interface.
+# Manual updates on test servers are lost when the test package is re-installed.
+#
+# Last modified: Tuesday 17th of December 2013 7:30:05
+#
+
+# These settings must be in BASH script format, they are sourced by other scripts.
+SPEC_FA_NAME="SOLARIS10USERADMIN"
+SPEC_UC_NAME="SOLARIS10USERADMIN_Install_Upgrade"
+SPEC_TC_ID=1738
+SPEC_TC_SLOGAN="Once password is changed, it cannot be changed before min_password_age has elapsed"
+SPEC_TC_TYPE="FT"
+SPEC_TC_POLARITY="positive"
+SPEC_TC_PRIORITY="high"
+SPEC_TC_AUTOMATED=0
+SPEC_TC_DEPENDENT_ONLY=0
+SPEC_TC_TIMEOUT=300
+SPEC_TC_TEST_PASSCODE=0
+SPEC_TC_AUTHOR="xlaxain"
+SPEC_TC_AUTOMATOR="xlaxain"
+# this parameter is not interpreted by harness
+SPEC_TC_DISABLED=0
+
+# Please do not remove the comment lines below.
+# They are used as section locators by the test harness.
+
+# BEGIN_PRE_CONDITIONS
+#Path in Mars:- User Administration/Initial Install/Upgrade User Administration Test Cases 
+#
+#The purpose is to verify that a password cannot be change if min_pass_age wasnâEuro t reached. This cannot be tested if Security Policy wasnâEuro t enabled, and pwdminage didnâEuro t have a value higher than 0.
+#This test case is applicable to both initial installation and upgrade.
+#Precondition: 
+#
+#Infra Server, security policies are set, see COMInf SUN Directory Server System Administration Guide (1/1543-APR 901 0124 Uen)
+#
+# END_PRE_CONDITIONS
+
+
+# BEGIN_MANUAL_STEPS
+#Priority:
+#
+#Medium
+#Action 1: 
+#
+#Create an account (or use the existing one) for example "uni11", and try to login via command line.
+#Action 2: 
+#
+#Change password and logout.
+#Action 3: 
+#
+#Login in again and change password while pwdminage wasnâEuro t reached
+#. 
+# END_MANUAL_STEPS
+
+# BEGIN_POST_CONDITIONS
+#Result 1: "
+#
+#uni11" logs in
+#
+#Result 2: 
+#
+#password changed successfully.
+#
+#Result 3: 
+#
+#SUN-DS will throw back a message that not enough time elapsed before allowing a change
+#
+# END_POST_CONDITIONS

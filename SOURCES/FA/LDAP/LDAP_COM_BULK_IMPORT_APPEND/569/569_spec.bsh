@@ -1,0 +1,49 @@
+#!/bin/bash
+
+# TEST CASE SPEC FILE
+# This file is generated/updated using the test framework web interface.
+# Manual updates on test servers are lost when the test package is re-installed.
+#
+# Last modified: Tuesday 14th of May 2013 14:04:47
+#
+
+# These settings must be in BASH script format, they are sourced by other scripts.
+SPEC_FA_NAME="LDAP"
+SPEC_UC_NAME="LDAP_COM_BULK_IMPORT_APPEND"
+SPEC_TC_ID=569
+SPEC_TC_SLOGAN="Test that multiple alias lines are allowed"
+SPEC_TC_TYPE="FT"
+SPEC_TC_POLARITY="positive"
+SPEC_TC_PRIORITY="high"
+SPEC_TC_AUTOMATED=1
+SPEC_TC_DEPENDENT_ONLY=0
+SPEC_TC_TIMEOUT=300
+SPEC_TC_TEST_PASSCODE=0
+SPEC_TC_AUTHOR="xdansan"
+SPEC_TC_AUTOMATOR="xdansan"
+# this parameter is not interpreted by harness
+SPEC_TC_DISABLED=0
+
+# Please do not remove the comment lines below.
+# They are used as section locators by the test harness.
+
+# BEGIN_PRE_CONDITIONS
+#1. bulk1.txt contains:
+#
+#DOMAIN 1.com
+#ROLE role1,role2,role3
+#ALIAS alias1 role1
+#ALIAS alias2 role1,role2
+#ALIAS alias3 role2,role3
+#
+# END_PRE_CONDITIONS
+
+
+# BEGIN_MANUAL_STEPS
+#1. manage_COM.bsh -a import -d 1.com -f bulk1.txt
+# END_MANUAL_STEPS
+
+# BEGIN_POST_CONDITIONS
+#1. role1, role2, role3 created
+#2. alias1, alias2, alias3 created
+# END_POST_CONDITIONS

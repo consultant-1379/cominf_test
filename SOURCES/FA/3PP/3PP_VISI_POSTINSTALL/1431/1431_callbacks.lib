@@ -1,0 +1,192 @@
+#!/bin/bash
+#################################################################################
+#
+#
+#       COPYRIGHT (C) ERICSSON RADIO SYSTEMS AB, Sweden
+#
+#       The copyright to the document(s) herein is the property of
+#       Ericsson Radio Systems AB, Sweden.
+#
+#       The document(s) may be used and/or copied only with the written
+#       permission from Ericsson Radio Systems AB or in accordance with
+#       the terms and conditions stipulated in the agreement/contract
+#       under which the document(s) have been supplied.
+#
+#################################################################################
+
+
+# ATCOMINF Test Callback Library
+
+# Revision History
+# <25/03/2014>	<epatnat>	<TR HR27195: check variables and start syntax>
+
+# Complete the callbacks in this library to automate the test case.
+#
+# Callbacks are stateless, it is not possible to set a global variable in one callback 
+# and access it it in another.
+#
+# Callbacks are called by the test harness in the following order:
+#
+# tc_setup() 		# Called only for independent TC execution mode to setup TC
+# tc_precon()		# Conditions that should exist before TC can run
+# tc_test()		# Runs the test for this TC
+# tc_postcon()		# Conditions that should/should not exist after successful TC 
+# tc_cleanup()		# Called only for independent TC execution mode to cleanup after TC
+
+# All callbacks must PASS for a TC PASS result
+
+#################################################################################
+#
+# CALLBACK: TC_SETUP
+#
+# This callback function is only called if the harness execution mode is 'AT_INDEPENDENT'
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_setup() {
+
+	# Coded to fail in case TC_AUTOMATED=1 before automation completed
+	# Change return code as required
+
+	return 0
+
+}
+#################################################################################
+
+#################################################################################
+#
+# CALLBACK: TC_PRECON
+#
+# This callback function checks the correct conditions exist to run the TC.
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+ 
+tc_precon() {
+
+	# Coded to fail in case TC_AUTOMATED=1 before automation completed
+	# Change return code as required
+        UNAME=`uname -a | nawk '{print $6}'`
+
+        if [ $UNAME == "sparc" ]; then
+        pkginfo -l ERICbrlndSPARC | grep "STATUS:  completely installed"
+        ERICbrlndSPARC=$?
+        pkginfo -l EXTRbrlndSPARC | grep "STATUS:  completely installed"
+        EXTRbrlndSPARC=$?
+           if [ $ERICbrlndSPARC != 0 ]; then
+                 echo  "NOT OK! ERICbrlndSPARC package NOT installed on the server"
+                 return 1
+           elif [ $EXTRbrlndSPARC != 0 ]; then
+                 echo  "NOT OK! EXTRbrlndSPARC package NOT installed on the server"
+                 return 1
+           else
+                 echo "ERICbrlndSPARC and EXTRbrlndSPARC are completly installed"
+                 return 0
+           fi
+        fi
+        
+        if [ $UNAME == "i86" ]; then
+        pkginfo -l ERICbrlndi86  | grep "STATUS:  completely installed"
+        ERICbrlndi86=$?
+        pkginfo -l EXTRbrlni86 | grep "STATUS:  completely installed"
+        EXTRbrlndi86=$?
+
+          if [ $ERICbrlndi86 != 0 ]; then
+                 echo  "NOT OK! ERICbrlni86 package installed on the server"
+                 return 1
+           elif [ $EXTRbrlndi86 != 0 ]; then
+                 echo  "NOT OK! EXTRbrlndi86 package NOT installed on the server"
+                 return 1
+           else
+                 echo "ERICbrlndi86 and EXTRbrlndi86 are completly installed"
+                 return 0
+           fi
+        fi
+
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_TEST
+#
+# This callback function runs the test.
+# The harness compares the return code to the SPEC_TC_TEST_PASSCODE value set in the test spec.
+#
+# Return or exit codes:
+#    SPEC_TC_TEST_PASSCODE 	success
+# != SPEC_TC_TEST_PASSCODE 	failure
+ 
+tc_test() {
+
+	# Coded to fail in case TC_AUTOMATED=1 before automation complete
+	# Change return code as required
+        ECHO=/usr/bin/echo
+	SCRIPT=/ericsson/bes/bin/osagent_init.sh
+	FILE=/ericsson/bes/etc/addrFile
+	FILESIZE=`ls -lah $FILE | awk '{ print $5}'`
+	MASTERSERVICE_IP=`getent hosts masterservice | nawk -F"\t" '{print $1}'`
+	FILE_CONTENT=`cat $FILE`
+
+	if [[ $FILESIZE != 0 && "$MASTERSERVICE_IP" == "$FILE_CONTENT" ]]; then
+   		$ECHO "OK!"
+   		$ECHO "addrFile non zero filesize: $FILESIZE It contains ip: $FILE_CONTENT Masterservice ip is: $MASTERSERVICE_IP"
+       		exit 0
+ 	else
+   		$ECHO "NOT OK!"
+   		$ECHO "addrFile filesize: $FILESIZE It contains ip: $FILE_CONTENT Masterservice ip is: $MATSERSERVICE_IP"
+   		exit 1
+	fi
+
+	return 0
+
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_POSTCON
+#
+# This callback function checks expected results.
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_postcon() {
+
+	# Coded to fail in case TC_AUTOMATED=1 before automation complete.
+	# Change return code as required
+
+	return 0
+
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_CLEANUP
+#
+# This callback function is only called if the harness execution mode is 'AT_INDEPENDENT'
+# 
+# This callback restores the target system to the state it was in before the TC 
+# was run. It rolls back changes made by callbacks tc_setup() and tc_test()
+# 
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_cleanup() {
+
+	# Coded to fail in case TC_AUTOMATED=1 before automation complete
+	# Change return code as required
+
+	return 0
+
+}

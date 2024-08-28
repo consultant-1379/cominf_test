@@ -1,0 +1,61 @@
+#!/bin/bash
+
+# TEST CASE SPEC FILE
+# This file is generated/updated using the test framework web interface.
+# Manual updates on test servers are lost when the test package is re-installed.
+#
+# Last modified: Monday 16th of December 2013 5:54:31
+#
+
+# These settings must be in BASH script format, they are sourced by other scripts.
+SPEC_FA_NAME="SOLARIS10SMRS"
+SPEC_UC_NAME="SOLARIS10SMRS_NFS_monitor"
+SPEC_TC_ID=1147
+SPEC_TC_SLOGAN="Verify the smrs nfs monitor on the OSS MS "
+SPEC_TC_TYPE="FT"
+SPEC_TC_POLARITY="positive"
+SPEC_TC_PRIORITY="high"
+SPEC_TC_AUTOMATED=0
+SPEC_TC_DEPENDENT_ONLY=0
+SPEC_TC_TIMEOUT=300
+SPEC_TC_TEST_PASSCODE=0
+SPEC_TC_AUTHOR="xsougha"
+SPEC_TC_AUTOMATOR="xsougha"
+# this parameter is not interpreted by harness
+SPEC_TC_DISABLED=0
+
+# Please do not remove the comment lines below.
+# They are used as section locators by the test harness.
+
+# BEGIN_PRE_CONDITIONS
+#Online and Offline NESS and NEDSS configured. NFS connection between SMRS Master & OSS MS has been performed 
+#
+#<Path of testcase in MARS under "Verification Specification for Cominf Feature Test for 14.0 ": 
+#Bi-directional SMRS Upgrade/Bi-directional SMRS High Availability/ SMRS NFS monitor
+#>
+# END_PRE_CONDITIONS
+
+
+# BEGIN_MANUAL_STEPS
+#From the OSS MS, run the following command:
+#mount | grep smrs
+#
+#The output should be similar to the following:
+#/var/opt/ericsson/smrsstore/GRAN on smrs_master:/export/GRAN remote/read/write/setuid/devices/xattr/dev=4d80002 on Thu Jun 16 08:16:48 2011
+#/var/opt/ericsson/smrsstore/CORE on smrs_master:/export/CORE remote/read/write/setuid/devices/xattr/dev=4d80003 on Thu Jun 16 08:16:49 2011
+#/var/opt/ericsson/smrsstore/LRAN on smrs_master:/export/LRAN remote/read/write/setuid/devices/xattr/dev=4d80004 on Thu Jun 16 08:16:51 2011
+#/var/opt/ericsson/smrsstore/WRAN on smrs_master:/export/WRAN remote/read/write/setuid/devices/xattr/dev=4d80005 on Thu Jun 16 08:16:53 2011
+#
+#Check the contents of /etc/hosts for the smrs_master value:
+#more /etc/hosts | grep smrs_master
+#10.42.33.2 smrs_mater
+#The ip address returned should be the virtual IP address of the Online NESS or Offline NESS if failover has been performed.
+#
+#For example:
+#e1000g0:1: flags=1000843<UP,BROADCAST,RUNNING,MULTICAST,IPv4> mtu 1500 index 2
+#inet 10.42.33.2 netmask ffffff00 broadcast 10.42.33.255 
+# END_MANUAL_STEPS
+
+# BEGIN_POST_CONDITIONS
+#None
+# END_POST_CONDITIONS

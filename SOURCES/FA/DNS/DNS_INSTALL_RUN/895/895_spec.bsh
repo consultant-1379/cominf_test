@@ -1,0 +1,108 @@
+#!/bin/bash
+
+# TEST CASE SPEC FILE
+# This file is generated/updated using the test framework web interface.
+# Manual updates on test servers are lost when the test package is re-installed.
+#
+# Last modified: Tuesday 14th of May 2013 8:10:15
+#
+
+# These settings must be in BASH script format, they are sourced by other scripts.
+SPEC_FA_NAME="DNS"
+SPEC_UC_NAME="DNS_INSTALL_RUN"
+SPEC_TC_ID=895
+SPEC_TC_SLOGAN="Resolve the IP and hostname"
+SPEC_TC_TYPE="FT"
+SPEC_TC_POLARITY="positive"
+SPEC_TC_PRIORITY="high"
+SPEC_TC_AUTOMATED=1
+SPEC_TC_DEPENDENT_ONLY=0
+SPEC_TC_TIMEOUT=300
+SPEC_TC_TEST_PASSCODE=0
+SPEC_TC_AUTHOR="eshmuna"
+SPEC_TC_AUTOMATOR="eshmuna"
+# this parameter is not interpreted by harness
+SPEC_TC_DISABLED=0
+
+# Please do not remove the comment lines below.
+# They are used as section locators by the test harness.
+
+# BEGIN_PRE_CONDITIONS
+#- DNS server is up and running
+#- Primary  and Secondary OM Services servers are installed successfully
+# END_PRE_CONDITIONS
+
+
+# BEGIN_MANUAL_STEPS
+#1. bash-3.2# svcs -a | grep dns
+#
+#2. dig -x 127.0.0.1
+#
+#3. nslookup localhost
+#
+#4. nslookup
+#>set debug=10
+#<IP address>
+#
+#5. Check the rndc status
+##rndc status
+#
+#6. nslookup <Primary HostName>
+#
+#7. nslookup <Secondary HostName>
+#
+#8. nslookup <Primary IP Address>
+#
+#9. nslookup <Secondary IP Address>
+#
+#10. Check /etc/resolv.conf on both O&M master and slave servers
+#
+# END_MANUAL_STEPS
+
+# BEGIN_POST_CONDITIONS
+#Result 1:
+#disabled       Mar_19   svc:/network/dns/client:default
+#online         15:43:19 svc:/network/dns/server:default
+#
+#Result 2:
+#local host entry should exist in the output
+#
+#Result 3:
+#Name:   localhost
+#Address: 127.0.0.1
+#
+#Result 4:
+#In output we should not have the following message 
+#** server can't find <IP address>.in-addr.arpa.: NXDOMAIN
+#
+#Result 5:
+#version: 9.6-ESV-R5-P1
+#CPUs found: 1
+#worker threads: 1
+#number of zones: 19
+#debug level: 0
+#xfers running: 0
+#xfers deferred: 0
+#soa queries in progress: 0
+#query logging is OFF
+#recursive clients: 0/0/1000
+#tcp clients: 0/100
+#server is up and running
+#
+#Result 6:
+#FQHN of Primary is resolved
+#
+#Result 7:
+#FQHN of Secondary is resolved
+#
+#Result 8:
+#Primary IP addres is resolved
+#
+#Result 9:
+#Secondary IP addres is resolved
+#
+#Result 10:
+#“ Domain name” and “name server “ details of both infra servers are updated/present
+#
+#Secondary IP addres is resolved
+# END_POST_CONDITIONS

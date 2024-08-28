@@ -1,0 +1,210 @@
+#!/bin/bash
+#################################################################################
+#
+#
+#       COPYRIGHT (C) ERICSSON RADIO SYSTEMS AB, Sweden
+#
+#       The copyright to the document(s) herein is the property of
+#       Ericsson Radio Systems AB, Sweden.
+#
+#       The document(s) may be used and/or copied only with the written
+#       permission from Ericsson Radio Systems AB or in accordance with
+#       the terms and conditions stipulated in the agreement/contract
+#       under which the document(s) have been supplied.
+#
+#################################################################################
+
+
+# ATCOMINF Test Callback Library
+
+# Revision History
+# <date>	<signum>	<details>
+
+# Complete the callbacks in this library to automate the test case.
+#
+# Callbacks are stateless, it is not possible to set a global variable in one callback 
+# and access it it in another.
+#
+# Callbacks are called by the test harness in the following order:
+#
+# tc_setup() 		# Called only for independent TC execution mode to setup TC
+# tc_precon()		# Conditions that should exist before TC can run
+# tc_test()		# Runs the test for this TC
+# tc_postcon()		# Conditions that should/should not exist after successful TC 
+# tc_cleanup()		# Called only for independent TC execution mode to cleanup after TC
+
+# All callbacks must PASS for a TC PASS result
+
+#################################################################################
+#
+# CALLBACK: TC_SETUP
+#
+# This callback function is only called if the harness execution mode is 'AT_INDEPENDENT'
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_setup() {
+
+	# Coded to fail in case TC_AUTOMATED=1 before automation completed
+	# Change return code as required
+
+	return 0
+
+}
+#################################################################################
+
+#################################################################################
+#
+# CALLBACK: TC_PRECON
+#
+# This callback function checks the correct conditions exist to run the TC.
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+ 
+tc_precon() {
+
+	# Coded to fail in case TC_AUTOMATED=1 before automation completed
+	# Change return code as required
+
+	return 0
+
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_TEST
+#
+# This callback function runs the test.
+# The harness compares the return code to the SPEC_TC_TEST_PASSCODE value set in the test spec.
+#
+# Return or exit codes:
+#    SPEC_TC_TEST_PASSCODE 	success
+# != SPEC_TC_TEST_PASSCODE 	failure
+ 
+tc_test() {
+
+	# Coded to fail in case TC_AUTOMATED=1 before automation complete
+	# Change return code as required
+
+
+        if [ `crontab -l  | grep /ericsson/ocs/bin/dhcp_check.sh  | grep -cw 01,31` -ne 1 ]; then
+
+              echo "crontab /ericsson/ocs/bin/dhcp_check.sh        not configured on infra master" 
+              return 1
+        fi
+
+        if [ `ps -ef | grep -i dhcp | grep -v grep | grep -c "/usr/local/sbin/dhcpd -q -lf /var/lib/dhcp/dhcpd.leases"` -ne 1 ]; then
+
+
+           echo "/usr/local/sbin/dhcpd is not runningn on infra master"
+           return 1
+        fi
+
+        
+        `ssh omsrvs rm -f  /var/tmp/dhcpd.leases` >> /dev/null
+        `ssh omsrvs rm -f  /var/tmp/dhcpd.conf_subnet` >> /dev/null 
+        `ssh omsrvs rm -f  /var/tmp/dhcpd.conf`  >> /dev/null
+        `ssh omsrvs rm -f  /var/tmp/dhcpd.conf_static`   >> /dev/null
+        `ssh omsrvs rm -f  /var/tmp/aif_hosts` >> /dev/null
+  
+        PREVIOUS_LOG_COUNT=`ls -ltr /ericsson/ocs/log/ | grep sys_dhcp_check_* | wc -l  | tr -d ' '`
+
+        /ericsson/ocs/bin/dhcp_check.sh >> /dev/null 
+
+        sleep 20
+             
+        if [ `ssh omsrvs ls  /var/tmp/dhcpd.leases | wc -l | tr -d ' '` -ne 1 ]; then
+              echo "/var/tmp/dhcpd.leases is copied failed , /ericsson/ocs/bin/dhcp_check.sh failed "
+              return 1;
+        fi	 
+             
+        if [ `ssh omsrvs ls  /var/tmp/dhcpd.conf_subnet | wc -l | tr -d ' '` -ne 1 ]; then
+              echo "/var/tmp/dhcpd.conf_subnet is copied failed , /ericsson/ocs/bin/dhcp_check.sh failed "
+              return 1;
+        fi	 
+             
+        if [ `ssh omsrvs ls  /var/tmp/dhcpd.conf  | wc -l | tr -d ' '` -ne 1 ]; then
+              echo "/var/tmp/dhcpd.conf  is copied failed , /ericsson/ocs/bin/dhcp_check.sh failed "
+              return 1;
+        fi	 
+             
+        if [ `ssh omsrvs ls  /var/tmp/dhcpd.conf_static  | wc -l | tr -d ' '` -ne 1 ]; then
+              echo "/var/tmp/dhcpd.conf_static  is copied failed , /ericsson/ocs/bin/dhcp_check.sh failed "
+              return 1;
+        fi	 
+             
+        if [ `ssh omsrvs ls  /var/tmp/aif_hosts  | wc -l | tr -d ' '` -ne 1 ]; then
+              echo "/var/tmp/aif_hosts  is copied failed , /ericsson/ocs/bin/dhcp_check.sh failed "
+              return 1;
+        fi	 
+
+        NEW_LOG_COUNT=`ls -ltr /ericsson/ocs/log/ | grep sys_dhcp_check_* | wc -l  | tr -d ' '` 
+            
+        if [ $NEW_LOG_COUNT -eq $PREVIOUS_LOG_COUNT ]; then
+
+            echo " New /ericsson/ocs/log/sys_dhcp_check log is not created"
+            return 1
+        fi 
+
+
+        #echo "CITESTING" >> /usr/local/etc/dhcpd.conf_subnet
+        #/ericsson/ocs/bin/dhcp_check.sh >> /dev/null 
+ 
+        #sleep 20 
+        
+        
+        
+	return 0
+
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_POSTCON
+#
+# This callback function checks expected results.
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_postcon() {
+
+	# Coded to fail in case TC_AUTOMATED=1 before automation complete.
+	# Change return code as required
+
+	return 0
+
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_CLEANUP
+#
+# This callback function is only called if the harness execution mode is 'AT_INDEPENDENT'
+# 
+# This callback restores the target system to the state it was in before the TC 
+# was run. It rolls back changes made by callbacks tc_setup() and tc_test()
+# 
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_cleanup() {
+
+	# Coded to fail in case TC_AUTOMATED=1 before automation complete
+	# Change return code as required
+
+	return 0
+
+}

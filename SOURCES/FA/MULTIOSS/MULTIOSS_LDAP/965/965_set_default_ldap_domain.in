@@ -1,0 +1,8 @@
+LDAP Directory Manager DN
+cn=directory manager
+LDAP Directory Manager password:
+ldapadmin
+New default LDAP domain
+3.com
+Continue to set the default domain to
+y

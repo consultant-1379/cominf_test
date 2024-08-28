@@ -1,0 +1,7 @@
+DOMAIN 1.com
+# comments are allowed
+
+ROLE role2,role3,#,role4
+#comments are allowed
+ALIAS alias2 role2
+

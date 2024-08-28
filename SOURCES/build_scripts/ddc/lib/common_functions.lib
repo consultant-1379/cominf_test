@@ -1,0 +1,91 @@
+info () {
+	local timestamp=`date +%d-%m-%Y_%H-%M-%S`
+	[ -z "$LOG" ] && {
+		echo "creating tmp log file /tmp/copy_jump.log.$$"
+		LOG=/tmp/copy_jump.log.$$
+	}
+	echo "Info: $*" | tee -a $LOG 1>&2
+	
+
+}
+
+error ()
+{
+	local timestamp=`date +%d-%m-%Y_%H-%M-%S`
+	[ -z "$LOG" ] && {
+		echo "creating tmp log file /tmp/copy_jump.log.$$"
+		LOG=/tmp/copy_jump.log.$$
+	}
+        echo "Error: $*" | tee -a $LOG 1>&2
+}
+
+warning ()
+{
+	local timestamp=`date +%d-%m-%Y_%H-%M-%S`
+	[ -z "$LOG" ] && {
+		echo "creating tmp log file /tmp/copy_jump.log.$$"
+		LOG=/tmp/copy_jump.log.$$
+	}
+        echo "Warning: $*" | tee -a $LOG 1>&2
+}
+
+#
+# Function to check that the DM server NFS mount is healthy
+#
+check_dm_server() {
+	local l_waittime=5
+	local l_maxtries=10
+	local l_count=0
+	local l_ls_pid
+
+	while [ $l_count -lt $l_maxtries ]; do
+		info "Checking DM NFS mount $DM_SHIPMENTLOCATION ($( expr $l_count + 1)/$l_maxtries)"
+		ls $DM_SHIPMENTLOCATION > /dev/null &
+		l_ls_pid=$!
+		sleep $l_waittime
+		while true; do
+			kill -0 $l_ls_pid 2>/dev/null
+			if [ $? -ne 0 ]; then
+				#process is dead
+				wait $l_ls_pid
+				if [ $? -eq 0 ]; then
+					info "DM NFS mount is OK"
+					return 0
+				else
+					error "DM NFS mount is not OK"
+				fi
+			else
+				# process still alive
+				kill -9 $l_ls_pid > /dev/null 2>&1
+				let l_count+=1
+				break
+			fi
+		done
+	done
+	# if we get here listing timed out
+	error "DM NFS mount is not OK"
+}
+
+#
+# function to check a shipment
+#
+check_shipment () {
+	local l_shipment=$1
+	local l_checkbuildok=$2
+	if [ -z "$l_shipment" ]; then
+		warning "No shipment arg to $FUNCNAME"
+		return 1
+	fi
+	if [ ! -d $DM_SHIPMENTLOCATION/$l_shipment ]; then
+		warning "Unable to find shipment \"$l_shipment\" on DM server"
+		return 1
+	fi
+	if [ "$l_checkbuildok" = TRUE ]; then
+		for flag in $II_BUILD_COMPLETEFLAGS; do
+			if [ ! -f $DM_SHIPMENTLOCATION/$l_shipment/$flag  ]; then
+				warning "Unable to build-ok flag $flag on DM server for shipment \"$l_shipment\""
+				return 1
+			fi
+		done
+	fi
+}

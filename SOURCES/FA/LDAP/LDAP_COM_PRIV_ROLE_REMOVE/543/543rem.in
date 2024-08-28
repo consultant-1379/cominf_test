@@ -1,0 +1,8 @@
+LDAP Directory Manager password
+PASSWD
+Enter user name:
+u543
+Enter COM role names to remove as a comma separated list:
+r543
+Please confirm that you want to proceed with requested actions
+Yes

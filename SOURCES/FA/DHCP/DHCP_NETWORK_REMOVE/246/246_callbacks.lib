@@ -1,0 +1,204 @@
+#COPYRIGHT (C) ERICSSON RADIO SYSTEMS AB, Sweden
+#
+#       The copyright to the document(s) herein is the property of
+#       Ericsson Radio Systems AB, Sweden.
+#
+#       The document(s) may be used and/or copied only with the written
+#       permission from Ericsson Radio Systems AB or in accordance with
+#       the terms and conditions stipulated in the agreement/contract
+#       under which the document(s) have been supplied.
+#
+#################################################################################
+
+
+# ATCOMINF Test Callback Library
+
+# Revision History
+# <date>        <signum>        <details>
+# 2012-08-17    xfeldan    Initial version
+
+# Complete the callbacks in this library to automate the test case.
+#
+# Callbacks are stateless, it is not possible to set a global variable in one callback
+# and access it it in another.
+#
+# Callbacks are called by the test harness in the following order:
+#
+# tc_setup()            # Called only for independent TC execution mode to setup TC
+# tc_precon()           # Conditions that should exist before TC can run
+# tc_test()             # Runs the test for this TC
+# tc_postcon()          # Conditions that should/should not exist after successful TC
+# tc_cleanup()          # Called only for independent TC execution mode to clenup after TC
+
+# All callbacks must PASS for a TC PASS result
+
+#################################################################################
+#
+# CALLBACK: TC_SETUP
+#
+# This callback function is only called if the harness execution mode is 'AT_INDEPENDENT'
+#
+# Return or exit codes:
+#  0    success
+# >0    failure
+
+tc_setup() {
+
+        return 0
+
+}
+#################################################################################
+
+#################################################################################
+#
+# CALLBACK: TC_PRECON
+#
+# This callback function checks the correct conditions exist to run the TC.
+#
+# Return or exit codes:
+#  0    success
+# >0    failure
+
+tc_precon() {
+
+        DHCP_SERVER_INSTALLED || {
+                echo "DHCP server not installed"
+                return 1
+        }
+
+        DHCP_SERVER_RUNNING || {
+                echo "DHCP server not running"
+                return 2
+        }
+
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_TEST
+#
+# This callback function runs the test.
+# The harness compares the return code to the SPEC_TC_TEST_PASSCODE value set in the test spec.
+#
+# Return or exit codes:
+#    SPEC_TC_TEST_PASSCODE      success
+# != SPEC_TC_TEST_PASSCODE      failure
+
+tc_test() {
+
+        i=1
+        echo "Test $i: delete network with missing -a parameter"
+        /ericsson/ocs/bin/ai_manager.sh -delete net 10.45.201.98 2>$i.out&& {
+                echo "Deletion of test network with missing -a parameter did not return error code"
+                return $i
+        }
+        let i=i+1
+        echo "Test $i: delete network with missing -a parameter"
+        /ericsson/ocs/bin/ai_manager.sh -delete net 10.45.201.98 -q 2>$i.out&& {
+                echo "Deletion of test network with missing -a parameter did not return error code"
+                return $i
+        }
+        let i=i+1
+
+        echo "Test $i: delete network with invalid IP address to -a parameter"
+        /ericsson/ocs/bin/ai_manager.sh -delete net -a 10.45.201.98.2 >$i.out&& {
+                echo "Deletion of test network with invalid -a parameter did not return error code"
+                return $i
+        }
+        let i=i+1
+        echo "Test $i: delete network with invalid IP address to -a parameter"
+        /ericsson/ocs/bin/ai_manager.sh -delete net -a 1.2.-30.4 >$i.out&& {
+                echo "Deletion of test network with invalid -a parameter did not return error code"
+                return $i
+        }
+        let i=i+1
+
+        echo "Test $i: delete network with additional invalid parameter"
+        /ericsson/ocs/bin/ai_manager.sh -delete net -a 234.234.232.0 -t >$i.out 2>&1&& {
+                echo "Deletion of test network with additional invalid parameter did not return error code"
+                return $i
+        }
+        let i=i+1
+
+        return 0
+
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_POSTCON
+#
+# This callback function checks expected results.
+#
+# Return or exit codes:
+#  0    success
+# >0    failure
+
+tc_postcon() {
+
+        # Usage statement should be in the output of only some invalid commands
+        for i in 1 2; do
+                grep "ERROR: You must specify a network address using the -a paramter" $i.out || {
+                        echo "Usage statement not found in output of test $i"
+                        return $i
+                }
+        done
+
+        i=1
+        grep "ERROR: You must specify a network address using the -a paramter" $i.out || {
+                echo "Could not find error message in test $i"
+                return $i
+        }
+        let i=i+1
+        grep "ERROR: You must specify a network address using the -a paramter" $i.out || {
+                echo "Could not find error message in test $i"
+                return $i
+        }
+        let i=i+1
+        #grep "Invalid IP address" $i.out || {
+        cat $i.out | grep "Invalid IP address" || {
+                echo "Could not find error message in test $i"
+                return $i
+        }
+        let i=i+1
+#       grep "Invalid IP4 Address" $i.out || {
+        cat $i.out | grep "Invalid IP address" || {
+                echo "Could not find error message in test $i"
+                return $i
+        }
+        let i=i+1
+#       grep "/ericsson/ocs/bin/ai_manager.sh: illegal option -- t" $i.out || {
+        cat $i.out | grep "/ericsson/ocs/bin/ai_manager.sh: illegal option -- t" || {
+                echo "Could not find error message in test $i"
+                return $i
+        }
+        return 0
+
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_CLEANUP
+#
+# This callback function is only called if the harness execution mode is 'AT_INDEPENDENT'
+#
+# This callback restores the target system to the state it was in before the TC
+# was run. It rolls back changes made by callbacks tc_setup() and tc_test()
+#
+# Return or exit codes:
+#  0    success
+# >0    failure
+
+tc_cleanup() {
+
+        #rm -f *.out
+        return 0
+
+}
+

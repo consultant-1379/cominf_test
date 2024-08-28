@@ -1,0 +1,252 @@
+#!/bin/bash
+
+# TEST CASE SPEC FILE
+# This file is generated/updated using the test framework web interface.
+# Manual updates on test servers are lost when the test package is re-installed.
+#
+# Last modified: Monday 16th of December 2013 10:43:25
+#
+
+# These settings must be in BASH script format, they are sourced by other scripts.
+SPEC_FA_NAME="SOLARIS10INSTALL"
+SPEC_UC_NAME="SOLARIS10INSTALL_DHCP_Failover"
+SPEC_TC_ID=1420
+SPEC_TC_SLOGAN="Verify IPv4 DHCP configuration files transfer between Active DHCP Slave server and non-active DHCP Master server as defined by cronjob "
+SPEC_TC_TYPE="FT"
+SPEC_TC_POLARITY="positive"
+SPEC_TC_PRIORITY="high"
+SPEC_TC_AUTOMATED=1
+SPEC_TC_DEPENDENT_ONLY=0
+SPEC_TC_TIMEOUT=300
+SPEC_TC_TEST_PASSCODE=0
+SPEC_TC_AUTHOR="xsripin"
+SPEC_TC_AUTOMATOR="xsripin"
+# this parameter is not interpreted by harness
+SPEC_TC_DISABLED=0
+
+# Please do not remove the comment lines below.
+# They are used as section locators by the test harness.
+
+# BEGIN_PRE_CONDITIONS
+#<path under "Verification Specification for Cominf Feature Test for 14.0 ":
+#Initial Installation/DHCP Failover/ISC DHCP IPv4 Failover
+#>  
+#
+#Verify that the relevant IPv4 DHCP files are copied from the DHCP active server to the correct location on the non-active DHCP server as defined by the cronjob.
+#
+#Precondition: 
+#MWS , 
+#OSS MS,
+#om_serv_master , om_serv_slave
+#MWS, profile for om_serv_master configured for IPv4 and IPv6(Dualstack).
+#MWS, profile for om_serv_slave configured for IPv4 and IPv6(Dualstack).
+#MWS configured with latest Solaris, Solaris O&M media, COMInf media
+#‘om_serv_master’, ‘om_serv_slave’ successfully jumpstarted with COMInf media using MWS.
+#IPv4 daemon only running on Master server. 
+#IPv6 interface file , /etc/hostname6.<interface>, has been renamed. Server restarted to disable IPv6 daemon.
+#A cronjob exists on both the master server and slave server for the script ‘/ericsson/ocs/bin/dhcp_check.sh’, to transfer the IPv4 DHCP files between the Master active DHCP server and the non-active slave server.
+#
+#
+# END_PRE_CONDITIONS
+
+
+# BEGIN_MANUAL_STEPS
+#Action 1: 
+#Execute the command ‘crontab –l’ to verify the time of the next DHCP file transfer between active DHCP server and non-active DHCP server.
+#The default time is for file transfer is ‘01,31’ past the hour.
+#
+#Note: The default time can be changed for test purposes using the command ‘crontab –e’ to a shorter time interval.
+#
+#
+#Action 2: 
+#Verify the DHCP IPv4 daemon is only running on the master server. This can be verified by using the command, 
+#ps -ef | grep -i dhcp
+#
+#
+#Action 3: 
+#Wait until the next cronjob time has elapsed.
+#
+#Action 4: 
+#On the Slave (non-active) server, verify the IPv4 DHCP configuration files have been copied to the /var/tmp/ directory.
+#Verify the following files are copied from the Master (active) DHCP server to the Slave (non-active) DHCP server:
+#
+#/var/lib/dhcp/dhcpd.leases to /var/tmp/ on Slave server
+#/usr/local/etc/dhcpd.conf_subnet to /var/tmp/ on Slave server
+#/usr/local/etc/dhcpd.conf to /var/tmp/ on Slave server
+#/usr/local/etc/dhcpd.conf_static to /var/tmp/ on Slave server
+#/ericsson/ocs/etc/aif_hosts to /var/tmp/ on Slave server
+#
+#Execute the command ‘ls-ltr’ on the directory /var/tmp/ on the Slave server.
+#Note the time the DHCP configuration files have been copied to the server.
+#
+#
+#
+#Action 5: 
+#On both the Master and Slave servers verify a file ,’ sys_dhcp_copied_file.log’, exists in the directory , ‘/ericsson/ocs/log/’
+#
+#Verify the file contains the latest information relating to the latest IPv4 DHCP configuration file transfer between the DHCP (active) Master server and the (non-active) Slave server.
+#
+#Verify the files are identical on both the Master and Slave server.
+#
+#
+#
+#Action 6: 
+#On the Master server (DHCP active server) , modify the following file, '/usr/local/etc/dhcpd.conf_static’.
+#
+#On the Master server(DHCP active server) , modify the following file, '/usr/local/etc/dhcpd.conf_subnet’.
+#
+#On the Master server(DHCP active server) , modify the following file, '‘/var/lib/dhcp/dhcpd.leases'.
+#
+#On the Master server(DHCP active server) , modify the following file, ‘/ericsson/ocs/etc/aif_hosts'.
+#
+#
+#Action 7: 
+#Wait until the next cronjob for DHCP file transfer has occurred.
+#The cronjob executes the script, 'ericsson/ocs/bin/dhcp_check.sh'
+#Verify with ‘crontab –l’ command.
+#Note time on server.
+#
+#
+#Action 8: 
+#On the Slave (non-active) server, verify the IPv4 DHCP configuration files have been copied to the /var/tmp/ directory.
+#Verify the following files are copied from the Master (active) DHCP server to the Slave (non-active) DHCP server:
+#
+#/var/lib/dhcp/dhcpd.leases to /var/tmp/ on Slave server
+#/usr/local/etc/dhcpd.conf_subnet to /var/tmp/ on Slave server
+#/usr/local/etc/dhcpd.conf to /var/tmp/ on Slave server
+#/usr/local/etc/dhcpd.conf_static to /var/tmp/ on Slave server
+#/ericsson/ocs/etc/aif_hosts to /var/tmp/ on Slave server
+#
+#Execute the command ‘ls-ltr’ on the directory /var/tmp/ on the Slave server.
+#Note the time the IPv4 DHCP configuration files were transferred.
+#
+#Verify the files modified on the Master server in Step 6 have been copied correctly to the Slave server:
+#dhcpd.conf_static
+#dhcpd.conf_subnet
+#dhcpd.leases
+#aif_hosts'
+#
+#Action 9: 
+#On both the Master and Slave servers verify a file ,’ sys_dhcp_copied_file.log’, exists in the directory , ‘/ericsson/ocs/log/’
+#
+#Verify the file contains the latest information relating to the latest DHCP file transfer between the DHCP (active) Master server and the non-active Slave DHCP server.
+#
+#Verify the files are identical on both the Master and Slave server.
+#
+#Verify the logfile contains an entry for the files previously modified on the Master server in Step 6.
+#
+#
+# END_MANUAL_STEPS
+
+# BEGIN_POST_CONDITIONS
+#Result 1:
+#The default time for the cronjob is ’01,31’.
+#
+#Result 2:
+#The DHCP IPv4 daemon is running on the master server.
+#A printout similiar to below is received.
+#
+#bash-3.00# ps -ef | grep -i dhcp
+#root 644 1 0 16:30:27 ? 0:01 /usr/local/sbin/dhcpd -q -lf /var/lib/dhcp/dhcpd.leases -cf /usr/local/etc/dhcp
+#
+#
+#Result 3:
+#The next cronjob time interval has elapsed.
+#
+#
+#Result 4:
+#The DHCP IPv4 configuration files are successfully copied to the /var/tmp/ directory on the Slave server. 
+#The DHCP IPv4 configuration files have been copied at the time corresponding to the cronjob interval on the Master server.
+#
+#A printout similar to below is received.
+#
+#bash-3.00# ls -ltr
+#total 26
+#-rw------- 1 root sys 0 Oct 12 14:38 regcred-http-pwp.hra4yd
+#-rw------- 1 root sys 0 Oct 12 14:38 regcred-http-pwe.jraazd
+#drwxr-xr-x 7 root root 512 Oct 12 14:38 eric_bootstrap
+#-rw------- 1 root sys 16 Oct 12 14:38 regcred-config.fraWyd
+#-rw-r--r-- 1 root root 7 Oct 12 15:29 cominf_stage
+#-rw-r--r-- 1 root root 154 Oct 12 16:39 brlog
+#-rw-r--r-- 1 root root 216 Oct 12 16:40 brerr
+#-rw------- 1 root root 395 Oct 12 16:40 wscon-:0-DYaizb
+#drwx------ 2 root root 512 Oct 12 16:40 gconfd-root
+#drwx------ 2 root root 512 Oct 12 16:40 orbit-root
+#-rw-r--r-- 1 root root 186 Oct 12 22:31 dhcpd.leases
+#-rw-r--r-- 1 root root 288 Oct 12 22:31 dhcpd.conf_subnet
+#-rwxr-xr-x 1 root root 147 Oct 12 22:31 dhcpd.conf
+#-rw-r--r-- 1 root root 246 Oct 12 22:31 dhcpd.conf_static
+#-rw-r--r-- 1 root root 5 Oct 12 22:31 aif_hosts
+#-rw-r--r-- 1 ctxlsadm lmadmin 0 Oct 12 22:39 lockCITRIX
+#bash-3.00# pwd
+#/var/tmp
+#
+#Result 5:
+#The logfile ,’ sys_dhcp_copied_file.log’ exists in the directory , /ericsson/ocs/log/ , on both the Master and Slave server. The logfile is identical on both servers.
+#
+#The logfile contains information relating to the IPv4 DHCP configuration files transferred between the Master (active) DHCP server and the Slave (non-active) DHCP server.
+#
+#An example of the logfile contents is listed below.
+#
+#File /var/lib/dhcp/dhcpd.leases has been copied on the om_serv_slave at 2011-10-12_22:31:06
+#File /usr/local/etc/dhcpd.conf_subnet has been copied on the om_serv_slave at 2011-10-12_22:31:07
+#File /usr/local/etc/dhcpd.conf has been copied on the om_serv_slave at 2011-10-12_22:31:07
+#File /usr/local/etc/dhcpd.conf_static has been copied on the om_serv_slave at 2011-10-12_22:31:08
+#File /ericsson/ocs/etc/aif_hosts has been copied on the om_serv_slave at 2011-10-12_22:31:09
+#
+#
+#
+#
+#Result 6:
+#All the files are successfully modified on the Master (DHCP active) server.
+#
+#
+#Result 7:
+#The next cronjob has completed successfully.
+#
+#Result 8:
+#The IPv4 DHCP configuration files are successfully copied to the /var/tmp/ directory on the Slave server.
+#The DHCP IPv4 configuration files have been copied at the time corresponding to the cronjob interval on the Master server.
+#
+#A printout similar to below is received.
+#
+#bash-3.00# ls -ltr
+#total 26
+#-rw------- 1 root sys 0 Oct 12 14:38 regcred-http-pwp.hra4yd
+#-rw------- 1 root sys 0 Oct 12 14:38 regcred-http-pwe.jraazd
+#drwxr-xr-x 7 root root 512 Oct 12 14:38 eric_bootstrap
+#-rw------- 1 root sys 16 Oct 12 14:38 regcred-config.fraWyd
+#-rw-r--r-- 1 root root 7 Oct 12 15:29 cominf_stage
+#-rw-r--r-- 1 root root 154 Oct 12 16:39 brlog
+#-rw-r--r-- 1 root root 216 Oct 12 16:40 brerr
+#-rw------- 1 root root 395 Oct 12 16:40 wscon-:0-DYaizb
+#drwx------ 2 root root 512 Oct 12 16:40 gconfd-root
+#drwx------ 2 root root 512 Oct 12 16:40 orbit-root
+#-rw-r--r-- 1 root root 186 Oct 12 22:31 dhcpd.leases
+#-rw-r--r-- 1 root root 288 Oct 12 22:31 dhcpd.conf_subnet
+#-rwxr-xr-x 1 root root 147 Oct 12 22:31 dhcpd.conf
+#-rw-r--r-- 1 root root 246 Oct 12 22:31 dhcpd.conf_static
+#-rw-r--r-- 1 root root 5 Oct 12 22:31 aif_hosts
+#-rw-r--r-- 1 ctxlsadm lmadmin 0 Oct 12 22:39 lockCITRIX
+#bash-3.00# pwd
+#/var/tmp
+#
+#Listing the contents of the previously modified files on the Master server verifies that the modified files successfully copied to the Slave server.
+#
+#
+#Result 9:
+#The logfile ,’ sys_dhcp_copied_file.log’ exists in the directory , /ericsson/ocs/log/ , on both the Master and Slave server. The logfile is identical on both servers.
+#
+#The logfile contains information relating to the IPv4 DHCP configuration files transferred between the Master (active) DHCP server and the Slave (non-active) DHCP server.
+#
+#The logfile contains an entry for the files modified on the Master server in Step 6.
+#
+#An example of the logfile contents is listed below.
+#
+#File /var/lib/dhcp/dhcpd.leases has been copied on the om_serv_slave at 2011-10-12_22:31:06
+#File /usr/local/etc/dhcpd.conf_subnet has been copied on the om_serv_slave at 2011-10-12_22:31:07
+#File /usr/local/etc/dhcpd.conf has been copied on the om_serv_slave at 2011-10-12_22:31:07
+#File /usr/local/etc/dhcpd.conf_static has been copied on the om_serv_slave at 2011-10-12_22:31:08
+#File /ericsson/ocs/etc/aif_hosts has been copied on the om_serv_slave at 2011-10-12_22:31:09
+#
+# END_POST_CONDITIONS

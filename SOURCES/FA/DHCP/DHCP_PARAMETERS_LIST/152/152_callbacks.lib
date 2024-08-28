@@ -1,0 +1,184 @@
+#!/bin/bash
+#################################################################################
+#
+#
+#       COPYRIGHT (C) ERICSSON RADIO SYSTEMS AB, Sweden
+#
+#       The copyright to the document(s) herein is the property of
+#       Ericsson Radio Systems AB, Sweden.
+#
+#       The document(s) may be used and/or copied only with the written
+#       permission from Ericsson Radio Systems AB or in accordance with
+#       the terms and conditions stipulated in the agreement/contract
+#       under which the document(s) have been supplied.
+#
+#################################################################################
+
+
+# ATCOMINF Test Callback Library
+
+# Revision History
+# 2012-08-09    xfeldan    Initial version
+
+# Complete the callbacks in this library to automate the test case.
+#
+# Callbacks are stateless, it is not possible to set a global variable in one callback 
+# and access it it in another.
+#
+# Callbacks are called by the test harness in the following order:
+#
+# tc_setup() 		# Called only for independent TC execution mode to setup TC
+# tc_precon()		# Conditions that should exist before TC can run
+# tc_test()		# Runs the test for this TC
+# tc_postcon()		# Conditions that should/should not exist after successful TC 
+# tc_cleanup()		# Called only for independent TC execution mode to clenup after TC
+
+# All callbacks must PASS for a TC PASS result
+
+#################################################################################
+#
+# CALLBACK: TC_SETUP
+#
+# This callback function is only called if the harness execution mode is 'AT_INDEPENDENT'
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_setup() {
+
+	return 0
+
+}
+#################################################################################
+
+#################################################################################
+#
+# CALLBACK: TC_PRECON
+#
+# This callback function checks the correct conditions exist to run the TC.
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+ 
+tc_precon() {
+
+	DHCP_SERVER_INSTALLED || {
+		echo "DHCP server not installed"
+		return 1
+	}
+
+	DHCP_SERVER_RUNNING &>/dev/null || {
+		echo "DHCP server not running"
+		return 2
+	}
+
+	return 0
+
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_TEST
+#
+# This callback function runs the test.
+# The harness compares the return code to the SPEC_TC_TEST_PASSCODE value set in the test spec.
+#
+# Return or exit codes:
+#    SPEC_TC_TEST_PASSCODE 	success
+# != SPEC_TC_TEST_PASSCODE 	failure
+ 
+tc_test() {
+
+	# Run ai_manager.sh with no arguments
+	echo "Test 1: Run ai_manager.sh with no arguments"
+	/ericsson/ocs/bin/ai_manager.sh 2>output.txt
+	grep ai_manager.sh\: output.txt > /dev/null || {
+		echo "Execution of ai_manager.sh with no parameters did not return error code"
+		return 1
+	}
+
+	# Run ai_manager.sh with -h parameter
+	echo "Test 2: Run ai_manager.sh with -h parameter"
+	/ericsson/ocs/bin/ai_manager.sh -h 2>output2.txt
+	grep ai_manager.sh\: output2.txt > /dev/null || {
+		echo "Execution of ai_manager.sh with -h option did not show usage statement"
+		return 2
+	}
+
+	# Execute list command with invalid type
+	echo "Test 3: Run list command with invalid types"
+	/ericsson/ocs/bin/ai_manager.sh -list invalidtype 2>output3.txt
+	grep ai_manager.sh\: output3.txt > /dev/null || {
+		echo "Execution of list command with missing parameters did not return error code"
+		return 3
+	}
+
+# The next two tests are commented out because the ai_manager.sh script currently ignores
+# any parameters after the list argument - this may be intentional
+#
+#	# Execute list command with extra parameters
+#	/ericsson/ocs/bin/ai_manager.sh -list nets -w invalidparameter && {
+#		echo "Execution of list command with invalid parameters did not return error code"
+#		return 4
+#	}
+#
+#	# Try to list network with additional invalid parameter
+#	/ericsson/ocs/bin/ai_manager.sh -list nets -l hosts || {
+#		echo "Execution of list command with multiple list options returned error code $?"
+#		return 5
+#	}
+#
+	# Try to list network/hosts/all
+	code=6
+	for LISTTYPE in nets hosts all; do
+		/ericsson/ocs/bin/ai_manager.sh -list $LISTTYPE > /dev/null || {
+			echo "Execution of list $LISTTYPE command returned error code $?"
+			return $code
+		}
+		let code=code+1
+	done
+
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_POSTCON
+#
+# This callback function checks expected results.
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_postcon() {
+
+	return 0
+
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_CLEANUP
+#
+# This callback function is only called if the harness execution mode is 'AT_INDEPENDENT'
+# 
+# This callback restores the target system to the state it was in before the TC 
+# was run. It rolls back changes made by callbacks tc_setup() and tc_test()
+# 
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_cleanup() {
+
+	return 0
+
+}

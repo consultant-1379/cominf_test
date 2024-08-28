@@ -1,0 +1,15 @@
+#!/bin/bash
+
+# TEST SUITE SPEC FILE
+# This file is generated/updated using the test framework web interface.
+# Manual updates on test servers are lost when the test package is re-installed.
+#
+# Last modified: Tuesday 24th of September 2013 10:50:02
+#
+SPEC_TS_NAME=X86_FT_Staming_TS
+SPEC_TS_ID=70
+SPEC_TS_SLOGAN="Server Sanity Check"
+SPEC_TS_TIMEOUT=1800
+SPEC_TS_AUTHOR="xrampan"
+SPEC_TS_INDEPENDENT=1
+SPEC_TS_TC_IDS=(416 754 762 606 784 796 956 955 920 783 954 794)

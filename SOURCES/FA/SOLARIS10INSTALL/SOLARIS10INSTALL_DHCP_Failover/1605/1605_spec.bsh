@@ -1,0 +1,90 @@
+#!/bin/bash
+
+# TEST CASE SPEC FILE
+# This file is generated/updated using the test framework web interface.
+# Manual updates on test servers are lost when the test package is re-installed.
+#
+# Last modified: Tuesday 17th of December 2013 5:07:34
+#
+
+# These settings must be in BASH script format, they are sourced by other scripts.
+SPEC_FA_NAME="SOLARIS10INSTALL"
+SPEC_UC_NAME="SOLARIS10INSTALL_DHCP_Failover"
+SPEC_TC_ID=1605
+SPEC_TC_SLOGAN="Verify the startup of the IPv4 and IPv6 daemons on the Master server following the removal of the ‘alias name’ of the Slave server in the ‘hosts’ file. "
+SPEC_TC_TYPE="FT"
+SPEC_TC_POLARITY="positive"
+SPEC_TC_PRIORITY="high"
+SPEC_TC_AUTOMATED=0
+SPEC_TC_DEPENDENT_ONLY=0
+SPEC_TC_TIMEOUT=300
+SPEC_TC_TEST_PASSCODE=0
+SPEC_TC_AUTHOR="xgansre"
+SPEC_TC_AUTOMATOR="xgansre"
+# this parameter is not interpreted by harness
+SPEC_TC_DISABLED=0
+
+# Please do not remove the comment lines below.
+# They are used as section locators by the test harness.
+
+# BEGIN_PRE_CONDITIONS
+#Verify the startup of the IPv4 and IPv6 daemons on the Master server following the removal of the ‘alias name’ of the Slave server in the ‘hosts’ file.
+#
+#Precondition: 
+#MWS , 
+#OSS MS,
+#om_serv_master , om_serv_slave
+#MWS, profile for om_serv_master configured for IPv4 and IPv6(Dualstack).
+#MWS, profile for om_serv_slave configured for IPv4 and IPv6(Dualstack).
+#MWS configured with latest Solaris, Solaris O&M media, COMInf media
+#‘om_serv_master’, ‘om_serv_slave’ successfully jumpstarted with COMInf media using MWS.
+#
+#Master server is the active DHCP server.
+#IPv4 and IPv6 daemons running on Master server. 
+#
+#A cronjob exists on both the master server and slave server for the script ‘/ericsson/ocs/bin/dhcp_check.sh’, to transfer the IPv4 and IPv6 DHCP files between the active DHCP server and the non-active server.
+#
+#Mars Path <Initial Installation/DHCP Failover/ISC DHCP IPv6 Failover >
+#
+# END_PRE_CONDITIONS
+
+
+# BEGIN_MANUAL_STEPS
+#Action 1: 
+#On the Master server execute the following command to stop the IPv4 and IPv6 daemons on the Master server.
+#/etc/rc2.d/S96dhcpd stop
+#
+#Action 2: 
+#On the Master server,modify the /etc/hosts file to remove the IP address / alias of the Slave server.
+#
+#Action 3: 
+#On the Master server execute the following command to start the IPv4 and IPv6 daemon on the Master server.
+#/etc/rc2.d/S96dhcpd start
+#
+#Action 4: 
+#On the Master server, execute the following command to verify the IPv4 and IPv6 DHCP daemons are running on the Master server.
+#ps -ef | grep -i dhcp
+#
+#
+# END_MANUAL_STEPS
+
+# BEGIN_POST_CONDITIONS
+#Result 1:
+#The IPv4 and IPv6 DHCP daemons are successfully stopped.
+#
+#Action 2: 
+#Result 2:
+#The /etc/hosts file is successfully modified.
+#
+#Result 3:
+#The IPv4 and IPv6 DHCP daemons are successfully started.
+#
+#Result 4:
+#The IPv4 and IPv6 daemons are running on the Master server.
+#A printout similar to below is received.
+#
+#ps -ef | grep -i dhcp
+#root 15144 1 0 13:03:02 ? 0:00 /usr/local/sbin/dhcpd -q -lf /var/lib/dhcp/dhcpd.leases -cf /usr/local/etc/dhcp
+#root 15147 1 0 13:03:02 ? 0:00 /usr/local/sbin/dhcpd -6 -q -lf /var/lib/dhcp/dhcpd6.leases -cf /usr/local/etc/
+# 
+# END_POST_CONDITIONS

@@ -1,0 +1,72 @@
+#!/bin/bash
+
+# TEST CASE SPEC FILE
+# This file is generated/updated using the test framework web interface.
+# Manual updates on test servers are lost when the test package is re-installed.
+#
+# Last modified: Tuesday 14th of May 2013 14:09:09
+#
+
+# These settings must be in BASH script format, they are sourced by other scripts.
+SPEC_FA_NAME="LDAP"
+SPEC_UC_NAME="LDAP_COM_PRIV_ALIAS_REMOVE"
+SPEC_TC_ID=593
+SPEC_TC_SLOGAN="Delete alias with invalid options"
+SPEC_TC_TYPE="FT"
+SPEC_TC_POLARITY="negative"
+SPEC_TC_PRIORITY="low"
+SPEC_TC_AUTOMATED=1
+SPEC_TC_DEPENDENT_ONLY=0
+SPEC_TC_TIMEOUT=300
+SPEC_TC_TEST_PASSCODE=0
+SPEC_TC_AUTHOR="xamamcg"
+SPEC_TC_AUTOMATOR="xamamcg"
+# this parameter is not interpreted by harness
+SPEC_TC_DISABLED=0
+
+# Please do not remove the comment lines below.
+# They are used as section locators by the test harness.
+
+# BEGIN_PRE_CONDITIONS
+#1. user u593 exists
+#2. alias a593a exists with role r593a
+#3. alias a593b exists with role r593b
+#4. alias a593c exists with role r593c
+#5. user u593 has target1 and target2
+#6. user u593 has a593a added
+#7. user u593 has target3:a593b
+#8. user u593 has r593c added
+# END_PRE_CONDITIONS
+
+
+# BEGIN_MANUAL_STEPS
+#1. !manage_COM_privs.bsh -r alias -u u593 -A a593c -y
+#2. !manage_COM_privs.bsh -r alias -u u593 -A a593NotExist -y
+#3. !manage_COM_privs.bsh -r alias -u u593 -A target2:a593b -y
+#4. !manage_COM_privs.bsh -r alias -u u593 -A target2:a593a -y
+#5. !manage_COM_privs.bsh -r alias -u u593 -A a593%a -y
+#6. !manage_COM_privs.bsh -r alias -u u593Not -A a593a -y
+#7. !manage_COM_privs.bsh -r alias -u u593 -A target3:a593b -y -e
+#8. !manage_COM_privs.bsh -r alias -u u593 -A target3:a593b -n
+#9. !manage_COM_privs.bsh -r alias -u u593 -T target3:a593b -y
+#10. !manage_COM_privs.bsh -r aliases -u u593 -A target3:a593b -y
+#11. !manage_COM_privs.bsh -r alias -u u593 -A target3:a593b -d wrong.com -y
+#12. !manage_COM_privs.bsh -r alias -u u593 -A target3:a593b -y -d 1%com
+#9. !manage_COM_privs.bsh -r alias -u u593 -T target3 -y
+#9. !manage_COM_privs.bsh -r alias -u u593 -A a593b:target3:a593b -y
+#10. !manage_COM_privs.bsh -r alias -u u593 -A r593c -y
+# END_MANUAL_STEPS
+
+# BEGIN_POST_CONDITIONS
+#1. user u593 exists
+#2. alias a593a exists with role r593a
+#3. alias a593b exists with role r593b
+#4. alias a593c exists with role r593c
+#5. user u593 has target1 and target2
+#6. user u593 has a593a added
+#7. user u593 has target3:a593b
+#8. user u593 has r593c added
+#
+#CONSOLE_OUTPUT_CONTAINS
+#CONSOLE_OUTPUT_COUNT "Usage" 3
+# END_POST_CONDITIONS

@@ -1,0 +1,24 @@
+DNS Domain Name <e.g. dns.companyname.com>*
+
+Enter a unique name for the masterservice of the OSS RC system using this LDAP domain:
+oss2
+Enter IP address for the masterservice of the OSS RC system using this LDAP Domain:
+10.44.194.175
+New LDAP domain name <e.g. ldap.companyname.com>*
+2.com
+LDAP Directory Manager password:
+PASSWD
+LDAP name service data migration password:
+password
+Re-enter password:
+password
+LDAP name service data maintenence password:
+password
+Re-enter password:
+password
+LDAP name service proxyagent password:
+password
+Re-enter password:
+password
+Are the values ok*
+y

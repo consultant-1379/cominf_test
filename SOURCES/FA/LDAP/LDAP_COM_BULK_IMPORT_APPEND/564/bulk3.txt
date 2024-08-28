@@ -1,0 +1,5 @@
+DOMAIN 1.com
+# comments are allowed
+
+#comments are allowed
+

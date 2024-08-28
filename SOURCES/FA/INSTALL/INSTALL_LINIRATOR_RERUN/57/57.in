@@ -1,0 +1,62 @@
+Enter Deployment type: (basic standard)
+standard
+Enter IP address of the NTP Source:
+1.1.1.1
+Do you want to setup DHCP on this server? (y n)
+y
+Enter password for BSIM user bsim:
+password
+Confirm password for BSIM user bsim:
+password
+Do you want to setup DHCP for IPv6 on this server? (y n)
+y
+IPv6 address for
+0001::
+IPv6 subnet for
+1234::/8
+Enter DNS Domain Name <e.g. dns.companyname.com>:
+x.com
+Enter the host name of the O&M Services Secondary:
+ab
+Enter the IP address of the O&M Services Secondary:
+1.1.1.1
+Enter IPv6 address of the O&M Services Secondary:
+2001:1b70:82a1:b:0:3008:36:1
+Enter the installation type (inst_type) of the O&M Services Secondary: (cominf security)
+cominf
+Enter root password of the O&M Services Secondary:
+12345678
+Confirm root password of the O&M Services Secondary:
+12345678
+Enter LDAP Directory Manager DN:
+
+Enter LDAP Directory Manager DN password
+12345678
+Confirm LDAP Directory Manager DN password
+12345678
+Enter password for LDAP replication user repladm:
+12345678
+Confirm password for LDAP replication user repladm:
+12345678
+Enter password for LDAP user ldapadm:
+12345678
+Confirm password for LDAP user ldapadm:
+12345678
+Enter number of LDAP domains to be configured (max=8):
+9
+Enter number of LDAP domains to be configured (max=8):
+0
+Enter number of LDAP domains to be configured (max=8):
+a
+Enter number of LDAP domains to be configured (max=8):
+1
+Enter LDAP Domain Name #1:
+X.COM
+Enter LDAP Domain Name #1:
+abc def
+Enter LDAP Domain Name #1:
+globaldomain
+Enter LDAP Domain Name #1:
+a.com
+Enter a unique name (lowercase) for the masterservice of the OSS RC system using
+\003

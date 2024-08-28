@@ -1,0 +1,12 @@
+/opt/ericsson/smrs/etc/smrs_config
+/etc/exports
+/etc/hosts
+/etc/sysconfig/network-scripts
+/etc/fstab
+/etc/passwd
+/etc/shadow
+/etc/group
+/etc/xinetd.d/tftp
+/etc/ntp.conf
+/etc/logrotate.d/syslog
+/etc/rsyslog.conf

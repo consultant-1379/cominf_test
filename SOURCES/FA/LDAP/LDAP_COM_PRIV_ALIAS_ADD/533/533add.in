@@ -1,0 +1,10 @@
+LDAP Directory Manager password
+PASSWD
+Enter user name:
+u533a
+Enter COM alias names to add as a comma separated list:
+target1:a533a, target2:a533b
+Enter COM alias names to add as a comma separated list:
+target1:a533a,target2:a533b
+Please confirm that you want to proceed with requested actions
+Yes

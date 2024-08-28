@@ -1,0 +1,26 @@
+LDAP Directory Manager password:
+ldapadmin
+Start of uidNumber search range
+1000
+End of uidNumber search range
+59999
+New local user uidNumber
+1008
+New local user type:
+OSS_ONLY
+New local user gidNumber:
+205
+New local user home directory:
+/home/usr971_1
+New local user login shell:
+/usr/bin/tcsh
+New local user password:
+password
+Re-enter password:
+password
+New local user category
+ass_ope
+New local user description
+OSS-RC user
+Continue to create local user
+y

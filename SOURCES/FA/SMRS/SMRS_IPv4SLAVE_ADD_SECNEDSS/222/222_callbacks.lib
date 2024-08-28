@@ -1,0 +1,346 @@
+#!/bin/bash
+#################################################################################
+#
+#
+#       COPYRIGHT (C) ERICSSON RADIO SYSTEMS AB, Sweden
+#
+#       The copyright to the document(s) herein is the property of
+#       Ericsson Radio Systems AB, Sweden.
+#
+#       The document(s) may be used and/or copied only with the written
+#       permission from Ericsson Radio Systems AB or in accordance with
+#       the terms and conditions stipulated in the agreement/contract
+#       under which the document(s) have been supplied.
+#
+#################################################################################
+
+
+# ATCOMINF Test Callback Library
+
+# Revision History
+# <date>	<signum>	<details>
+
+# Complete the callbacks in this library to automate the test case.
+#
+# Callbacks are stateless, it is not possible to set a global variable in one callback 
+# and access it it in another.
+#
+# Callbacks are called by the test harness in the following order:
+#
+# tc_setup() 		# Called only for independent TC execution mode to setup TC
+# tc_precon()		# Conditions that should exist before TC can run
+# tc_test()		# Runs the test for this TC
+# tc_postcon()		# Conditions that should/should not exist after successful TC 
+# tc_cleanup()		# Called only for independent TC execution mode to clenup after TC
+
+# All callbacks must PASS for a TC PASS result
+
+#################################################################################
+#
+# CALLBACK: TC_SETUP
+#
+# This callback function is only called if the harness execution mode is 'AT_INDEPENDENT'
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+tc_setup() {
+
+	return 0
+
+}
+#################################################################################
+
+#################################################################################
+#
+# CALLBACK: TC_PRECON
+#
+# This callback function checks the correct conditions exist to run the TC.
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+tc_precon() {
+
+	# Select config file to use and copy it
+	cp "smrs_slave_config.$(hostname)" smrs_slave_config
+
+
+	# Check that test is running on a Solaris machine
+	TEST_SOLARIS || {
+		echo "Not running on Solaris OS"
+		return 1
+	}
+
+	# Check that the smrs_slave_config file exist in the test directory for this machine
+	filename="smrs_slave_config.$(hostname)"
+	[ -r $filename ] || {
+		echo "SMRS config file, $filename does not exist"
+		return 2
+	}
+
+	primary_nedss_ip=$(awk -F= '$1~/SMRS_SLAVE_NEDSS_IP/{print $2;exit}' smrs_slave_config)
+	ssh smrs_master "ping -c4 $primary_nedss_ip" &>/dev/null|| {
+		echo "SMRS slave ($primary_nedss_ip) is not alive"
+		return 3
+	}
+
+	return 0
+
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_TEST
+#
+# This callback function runs the test.
+# The harness compares the return code to the SPEC_TC_TEST_PASSCODE value set in the test spec.
+#
+# Return or exit codes:
+#    SPEC_TC_TEST_PASSCODE 	success
+# != SPEC_TC_TEST_PASSCODE 	failure
+tc_test() {
+
+	# Record location of log file in global variable array
+	LOG_MARK_STATUS /var/opt/ericsson/log/bismrs_events.log 1
+
+	# Create and run expect script to add smrs slave (on OM primary)
+	${AT_BIN}/con_ex.bsh -d add_smrs_slave.in -o expect.exp -c "/opt/ericsson/nms_bismrs_mc/bin/configure_smrs.sh add slave_service -f smrs_slave_config"
+	/usr/local/bin/expect expect.exp || {
+		echo "add slave_service failed with return code $?"
+		return 1
+	}
+
+	# Check log for errors
+	LOG_SEARCH_FROM_MARK /var/opt/ericsson/log/bismrs_events.log error 1
+	retval=$?
+	if [ $retval -eq 0 ]; then
+		echo "Error found in bismrs_events.log $retval"
+		# Ignore errors in bismrs_events.log
+		#return 2
+	elif [ $retval -ne 1 ]; then
+		echo "Search failed in bismrs_events.log $retval"
+		return 3
+	fi
+	LOG_SEARCH_FROM_MARK /var/opt/ericsson/log/bismrs_events.log warning 1
+	retval=$?
+	if [ $retval -eq 0 ]; then
+		echo "Warning found in bismrs_events.log $retval"
+		return 4
+	elif [ $retval -ne 1 ]; then
+		echo "Search failed in bismrs_events.log $retval"
+		return 5
+	fi
+
+	return 0
+
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_POSTCON
+#
+# This callback function checks expected results.
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+tc_postcon() {
+
+	# Wait for some time for mounts to appear
+	echo "Waitng 51 seconds for mounts to appear"
+	sleep 51
+
+	slave_service_name=nedssv4
+	# Check contents of /var/opt/ericsson/log/add_smrs_slave.sh_log_<date>
+	# Assume the most recent one that matches the pattern is the correct file
+	filename=$(ls -rt /var/opt/ericsson/log/add_smrs_slave.sh_log_*|tail -1)
+	# Ignore error about ARNE validation of XML
+	grep -v "ARNE" | grep ERROR $filename && {
+		echo "Error in $(basename $filename) log"
+		return 1
+	}
+	# Ignore warnings about permanently added ip address to known hosts
+	grep -v "Warning: Permanently added" | grep WARNING $filename >/dev/null&& {
+		echo "Warning in $(basename $filename)"
+		# Ignore warnings ("failed to delete account")
+		#return 2
+	}
+
+	# mount command shows gran_, core_, lran_ and wran_$slave_service_name file
+	# systems mounted on OSS master, OM primary and secondary NEDSS
+
+	# OSS Master
+	i=3
+	om_primary_ip=$(awk '$2~/smrs_master/{print $1;exit}' /etc/inet/hosts)
+
+	
+	for fs in GRAN LRAN WRAN CORE; do
+		count=1
+		while ! mount | grep /var/opt/ericsson/smrsstore/$fs/$slave_service_name; do
+			echo "/var/opt/ericsson/smrsstore/$fs mount not on OSS master, attempt $count"
+			mount | grep "/var/opt/ericsson/smrsstore/"
+			[ $count -eq 9 ] && return $i
+			let count=count+1
+			sleep 10
+		done
+		let i=i+1
+	done
+
+	secondary_nedss_ip=$(awk -F= '$1~/SMRS_SLAVE_NEDSS_IP/{print $2;exit}' smrs_slave_config)
+	# Check file systems are mounted on the O&M primary and on the secondary NEDSS
+	for ip in smrs_master =$secondary_nedss_ip; do
+		for fs in GRAN LRAN WRAN CORE; do
+			count=1
+			while ! ssh smrs_master "mount | grep /export/$fs/$slave_service_name"; do
+				echo "$fs mount not on $ip, attempt $count"
+				[ $count -eq 9 ] && return $i
+				let count=count+1
+				sleep 10
+			done
+			let i=i+1
+		done
+	done
+
+	# /etc/vfstab has new filesystems in on OM primary and secondary NEDSS
+	for fs in GRAN LRAN WRAN CORE; do
+		ssh smrs_master "grep /export/$fs/$slave_service_name /etc/vfstab>/dev/null"&>/dev/null || {
+			echo "$fs mount not in /etc/vfstab on OM primary"
+			return $i
+		}
+		let i=i+1
+	done
+
+	for fs in GRAN LRAN WRAN CORE; do
+		ssh smrs_master "ssh $secondary_nedss_ip grep /export/$fs/$slave_service_name /etc/vfstab"&>/dev/null || {
+			echo "$fs mount not in /etc/vfstab on secondary NEDSS"
+			return $i
+		}
+		let i=i+1
+	done
+
+	# /etc/mnttab has new filesystems in on OSS master
+	for fs in GRAN LRAN WRAN CORE; do
+		numMounts=$(grep "/var/opt/ericsson/smrsstore/$fs/$slave_service_name" /etc/mnttab|wc -l)
+		[ "$numMounts" -lt 1 ] && {
+			echo "Incorrect number of $fs mounts on OSS master: expected 1, found: $numMounts"
+			return $i
+		}
+		let i=i+1
+	done
+
+	#shane
+	## Auto mounts in /etc/auto* have new filesystems in on OM primary and primary NEDSS
+	#for fs in GRAN LRAN WRAN CORE; do
+	#	ssh smrs_master "grep \"/export/${fs}\" /etc/auto*"&>/dev/null || {
+	#		echo "$fs mount not in /etc/auto* on OM primary"
+	#		return $i
+	#	}
+	#	let i=i+1
+	#done
+
+	#echo List of auto\*
+	#	ssh smrs_master ssh $secondary_nedss_ip ls -l /etc/auto\\\*
+	#echo Contents of auto\*
+	#	ssh smrs_master ssh $secondary_nedss_ip grep . /etc/auto\\\*
+	#echo End list
+	#for fs in GRAN LRAN WRAN CORE; do
+	#	# Don't need any quotes here - no strings have spaces in them - *do* need to escape *
+	#	ssh smrs_master "ssh $secondary_nedss_ip grep \"/export/${fs}\" /etc/auto\\*" || {
+	#		echo "$fs mount not in /etc/auto* on primary NEDSS"
+	#		return $i
+	#	}
+	#		let i=i+1
+	#done
+
+	# FTP Services are created
+	/opt/ericsson/nms_cif_cs/etc/unsupported/bin/cstest -s ONRM_CS -ns masterservice lt FtpService | grep "SubNetwork=ONRM_ROOT_MO,FtpServer=SMRSSLAVE-">output.tmp|| {
+		echo "FTP services have not been created"
+		return $i
+	}
+	# Check individually:
+	while read line; do
+		grep $line output.tmp && {
+			echo "Found unexpected line, $line in ouptut from cstest"
+			return $i
+		}
+	done < output.txt
+
+	# SMRS_MC is online
+	let i=i+1
+	status=$(/opt/ericsson/nms_cif_sm/bin/smtool -l BI_SMRS_MC|awk '{print $2}')
+	[ "$status" = started ] || {
+		echo "BI_SMRS_MC not started"
+		return $i
+	}
+
+#	# Check FTPServices using cstest:
+#	/opt/ericsson/nms_cif_cs/etc/unsupported/bin/cstest -s ONRM_CS -ns masterservice lt FtpService>cstest.tmp
+#	grep "SMRSSLAVE-$slave_service_name" cstest.tmp||{
+#		echo "Failed to find GRAN entry in cstest"
+#		return $i
+#	}
+#	for fs in wran lran core; do
+#		grep "SMRSSLAVE-$fs-$slave_service_name"||{
+#			echo "Failed to find $fs entry in cstest"
+#			return $i
+#		}
+#		let i=i+1
+#	done
+
+	# Check slave service UNIX user accounts on OSS master
+	let i=i+1
+	CHECK_SLAVE_USERS GRAN,LRAN,WRAN,CORE $slave_service_name || return $i
+	# Check slave service UNIX user accounts on OM primary
+	let i=i+1
+	CHECK_SLAVE_USERS GRAN,LRAN,WRAN,CORE $slave_service_name smrs_master || return $i
+	# Check slave service UNIX user accounts on secondary NEDSS
+	let i=i+1
+	CHECK_SLAVE_USERS GRAN,LRAN,WRAN,CORE $slave_service_name z$secondary_nedss_ip|| return $i
+
+	# The following SMO FTP Services file exist in /var/opt/ericsson/arne/FTPServices
+	let i=i+1
+	for fs in GRAN LRAN WRAN CORE; do
+		[ -e /var/opt/ericsson/arne/FTPServices/FTPService${fs}_${slave_service_name}.xml ] || {
+			echo "SMO FTP Services file, FTPService${fs}_${slave_service_name}.xml not found"
+			return $i
+		}
+		let i=i+1
+	done
+
+
+	# smtool action BI_SMRS_MC printCache file <tmpfile>. <tmpfile> should contain $slave_service_name service.
+	/opt/ericsson/nms_cif_sm/bin/smtool action BI_SMRS_MC printCache file /var/tmp/output.tmp
+	grep $slave_service_name /var/tmp/output.tmp || {
+		echo "$slave_service_name service name not found in output from smtool"
+		return $i
+	}
+	return 0
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_CLEANUP
+#
+# This callback function is only called if the harness execution mode is 'AT_INDEPENDENT'
+# 
+# This callback restores the target system to the state it was in before the TC 
+# was run. It rolls back changes made by callbacks tc_setup() and tc_test()
+# 
+# Return or exit codes:
+#  0	success
+# >0 	failure
+tc_cleanup() {
+
+	# Remove temporary files
+	rm -f smrs_slave_config /var/tmp/output.tmp
+	rm -f *.exp *.tmp
+	return 0
+
+}

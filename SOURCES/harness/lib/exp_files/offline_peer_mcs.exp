@@ -1,0 +1,68 @@
+#!./expect -- 
+
+set timeout 120 
+#log_user 0
+log_file /tmp/offline_mcs.log
+
+set ADMIN1 [lindex $argv 0]
+set ADMIN2 [lindex $argv 1]
+
+#main
+
+spawn ssh -oUserKnownHostsFile=/dev/null -ostricthostkeychecking=no root@${ADMIN2}.athtem.eei.ericsson.se
+#exp_internal 1
+while 1 {
+	expect {
+		"Are you sure you want to continue connecting" {
+			send "yes\r"}
+		"login: " {
+			send "root\r"}
+
+		"Password:" {
+			send "shroot\r"
+			break}
+		eof {
+			puts "warning: timed out"
+
+			exit 5}
+ 		timeout {
+			puts "warning: timed out"
+			exit 5}
+		}
+	}
+expect "#"
+send "smtool -l | grep fth | cut -d' ' -f1  | grep -v fth_controller\r"
+expect -re "^fth(.*)" 
+puts "$expect_out(1,string)"
+set mclist $expect_out(0,string)
+expect "#"
+send "echo $mclist"
+#expect "#"
+#send "echo $mclist"
+#foreach mc $mclist {
+#expect "#"
+#send "echo $mc"
+#}
+
+#expect "#"
+#expect -re "^fth(.*)" {
+#send "echo $expect_out(1, string)"
+#send "echo $expect_out(2, string)"
+#}
+#send_user "$expect_out(0,string)"
+#set file [open /tmp/offline_mcs.log r]
+#while {![eof $file]} {
+#set buf [read $file 30]
+#expect "#"
+#send "echo $buf\r"
+#}
+
+#close $file
+
+#send -- "smtool -offline $mc -reason=upgrade -reasontext=Offline_FTH"
+#expect ">"
+#send -- "done"
+#expect "#"
+#send -- "ps -ef |grep fth"
+expect "#"
+exit 0

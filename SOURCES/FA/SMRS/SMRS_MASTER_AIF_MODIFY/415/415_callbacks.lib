@@ -1,0 +1,240 @@
+#!/bin/bash
+#################################################################################
+#
+#
+#	   COPYRIGHT (C) ERICSSON RADIO SYSTEMS AB, Sweden
+#
+#	   The copyright to the document(s) herein is the property of
+#	   Ericsson Radio Systems AB, Sweden.
+#
+#	   The document(s) may be used and/or copied only with the written
+#	   permission from Ericsson Radio Systems AB or in accordance with
+#	   the terms and conditions stipulated in the agreement/contract
+#	   under which the document(s) have been supplied.
+#
+#################################################################################
+
+
+# ATCOMINF Test Callback Library
+
+# Revision History
+# 17/09/2012	xsimrea		Run "configure_smrs.sh modify aif.bsh" as root with valid but unusual passwords
+
+# Complete the callbacks in this library to automate the test case.
+#
+# Callbacks are stateless, it is not possible to set a global variable in one callback 
+# and access it it in another.
+#
+# Callbacks are called by the test harness in the following order:
+#
+# tc_setup()		# Called only for independent TC execution mode to setup TC
+# tc_precon()		# Conditions that should exist before TC can run
+# tc_test()		# Runs the test for this TC
+# tc_postcon()		# Conditions that should/should not exist after successful TC 
+# tc_cleanup()		# Called only for independent TC execution mode to clenup after TC
+
+# All callbacks must PASS for a TC PASS result
+
+# global Variables for this test
+AIFUSR=saraif
+AIFPASSWD1=shroot12
+AIFPASSWD2=passw0rd
+
+OUTFILE=pswdout.tmp
+
+#################################################################################
+#
+# CALLBACK: TC_SETUP
+#
+# This callback function is only called if the harness execution mode is 'AT_INDEPENDENT'
+#
+# Return or exit codes:
+#  0	success
+# >0	failure
+
+tc_setup() {
+
+	return 0
+
+}
+#################################################################################
+
+#################################################################################
+#
+# CALLBACK: TC_PRECON
+#
+# This callback function checks the correct conditions exist to run the TC.
+#
+# Return or exit codes:
+#  0	success
+# >0	failure
+ 
+tc_precon() {
+
+	grep smrs_master "/etc/inet/hosts" || { echo "No smrs_master created"; return 1; }
+
+	# Force the password on the pre-existing AIF user
+	/opt/ericsson/nms_bismrs_mc/bin/modify_aif.sh -a $AIFUSR -p $AIFPASSWD1 || { echo "Failed to initialise password for AIF user $AIFUSR, rc $?"; return 2; }
+
+	# Get NEDSS IP value for this slave
+	NEDSS_IP=$(GET_SLAVE_SUBENTRY nedssv4 NEDSS_IP) || { echo "Problem, $NEDSS_IP, rc $?"; return 4; }
+
+	# Check that AIF user exists
+	#CHECK_SFTP_AIF smrs_master $AIFUSR $AIFPASSWD1 $NEDSS_IP || { echo "Cannot SFTP as AIF user $AIFUSR to smrs_master/nedss, error $SFTP_AIF_ERR, rc $?"; return 3; }
+
+	return 0
+
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_TEST
+#
+# This callback function runs the test.
+# The harness compares the return code to the SPEC_TC_TEST_PASSCODE value set in the test spec.
+#
+# Return or exit codes:
+#	SPEC_TC_TEST_PASSCODE	success
+# != SPEC_TC_TEST_PASSCODE	failure
+ 
+tc_test() {
+	# Mark output of smlog so can see if done restart
+	SMLOG_MARK_STATUS
+
+	# Create password file
+	cat > 415_passwds.tmp <<\EOF
+spa ce
+ leadspc
+trlspc 
+mid$ollar
+$leaddoll
+dolltrail$
+EOF
+
+	cmd='/opt/ericsson/nms_bismrs_mc/bin/configure_smrs.sh modify aif'
+	PREVPW=$AIFPASSWD1
+
+	> $OUTFILE
+
+	# Get NEDSS IP value for this slave
+	NEDSS_IP=$(GET_SLAVE_SUBENTRY nedssv4 NEDSS_IP) || { echo "Problem, $NEDSS_IP, rc $?"; return 4; }
+
+	OIFS=$IFS
+	IFS=""
+	while read PW; do
+
+		IFS=$OIFS
+
+		# Run modify command to change password
+		echo "Testing password [${PW}]"
+		cat > 415.modaif.tmp <<EOF
+What is the name for this user
+$AIFUSR
+What is the new password for this user
+$PW
+Please confirm the new password for this user
+$PW
+EOF
+		${AT_BIN}/con_ex.bsh -d 415.modaif.tmp -o 415.modaif.exp -c "${cmd}" || {
+			echo "Failed to create expect script, rc $?"; return 2
+		}
+		
+		/usr/local/bin/expect 415.modaif.exp > 415.modout.tmp || {
+			echo "Failed to run expect script for password [${PW}], rc $?, output:" >> $OUTFILE; cat 415.modout.tmp >> $OUTFILE; : return 3
+		}
+
+		# make sure we can sftp with the new password
+		CHECK_SFTP_AIF smrs_master $AIFUSR "$PW" $NEDSS_IP || { echo "Cannot SFTP as AIF user $AIFUSR to smrs_master/nedss, with password [$PW], error $SFTP_AIF_ERR, rc $?" >> $OUTFILE; : return 5; }
+
+		# make sure we cannot sftp with the old password
+		CHECK_SFTP_AIF smrs_master $AIFUSR "$PREVPW" $NEDSS_IP && { echo "Can still SFTP as AIF user $AIFUSR to smrs_master/nedss, with old password [$PREVPW]" >> $OUTFILE; : return 6; }
+
+		PREVPW="$PW"
+		IFS=""
+	done < 415_passwds.tmp
+
+	return 0
+
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_POSTCON
+#
+# This callback function checks expected results.
+#
+# Return or exit codes:
+#  0	success
+# >0	failure
+
+tc_postcon() {
+
+	rc=0
+
+	[ -s $OUTFILE ] && { echo Errors in password checks; cat $OUTFILE; echo End errors; rc=18; }
+
+	# Check for errors or warnings
+	# Check contents of /var/opt/ericsson/log/modify_aif.sh_log_<date>
+	# Assume the last one that matches the pattern is our file
+	filename=$(ls -rt /var/opt/ericsson/log/modify_aif.sh_log_* | tail -1)
+	grep -i "Cannot SFTP as AIF user saraif to smrs_master/nedss, with password [spa ce]," $filename
+	retval=$?
+	[ $retval -eq 0 ] && { echo "No error in modify_aif log, see above $retval"; rc=19; }
+	
+	grep -i "Cannot SFTP as AIF user saraif to smrs_master/nedss, with password [ leadspc]," $filename
+	retval=$?
+	[ $retval -eq 0 ] && { echo "No error in modify_aif log, see above $retval"; rc=20; }
+	
+	grep -i "Cannot SFTP as AIF user saraif to smrs_master/nedss, with password [trlspc ]," $filename
+	retval=$?
+	[ $retval -eq 0 ] && { echo "No error in modify_aif log, see above $retval"; rc=21; }
+	
+	grep -i "Cannot SFTP as AIF user saraif to smrs_master/nedss, with password [mid$ollar]," $filename
+	retval=$?
+	[ $retval -eq 0 ] && { echo "No error in modify_aif log, see above $retval"; rc=22; }
+	
+	grep -i "Cannot SFTP as AIF user saraif to smrs_master/nedss, with password [$leaddoll]," $filename
+	retval=$?
+	[ $retval -eq 0 ] && { echo "No error in modify_aif log, see above $retval"; rc=23; }
+	
+	
+	
+	# Don't want warnings except the ones about permanently added ip address to
+	# known hosts
+	#grep -v "Warning: Permanently added" $filename | grep -i warning
+	#retval=$?
+	#[ $retval -eq 0 ] || { echo "Warning in modify_aif log, see above $retval"; rc=24; }
+
+	POSIX_USER_EXISTS $AIFUSR && { echo "User should not exist on OSS"; rc=22; }
+
+	CONSOLE_OUTPUT_CONTAINS "Attempting a cold restart of BI_SMRS_MC" && { echo "Log indicates restart of BI_SMRS"; rc=22; }
+
+	# Leave the AIF user $AIFUSER in place - later tests will re-use it
+
+	return $rc
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_CLEANUP
+#
+# This callback function is only called if the harness execution mode is 'AT_INDEPENDENT'
+# 
+# This callback restores the target system to the state it was in before the TC 
+# was run. It rolls back changes made by callbacks tc_setup() and tc_test()
+# 
+# Return or exit codes:
+#  0	success
+# >0	failure
+
+tc_cleanup() {
+
+	return 0
+
+}

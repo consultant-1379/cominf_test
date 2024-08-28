@@ -1,0 +1,152 @@
+#!/bin/bash
+
+# TEST CASE SPEC FILE
+# This file is generated/updated using the test framework web interface.
+# Manual updates on test servers are lost when the test package is re-installed.
+#
+# Last modified: Monday 16th of December 2013 7:01:28
+#
+
+# These settings must be in BASH script format, they are sourced by other scripts.
+SPEC_FA_NAME="SOLARIS10SUNDS"
+SPEC_UC_NAME="SOLARIS10SUNDS_Mgmt_role_alias_proxy"
+SPEC_TC_ID=1181
+SPEC_TC_SLOGAN="Adding COM Roles to ldap domain"
+SPEC_TC_TYPE="FT"
+SPEC_TC_POLARITY="positive"
+SPEC_TC_PRIORITY="high"
+SPEC_TC_AUTOMATED=1
+SPEC_TC_DEPENDENT_ONLY=0
+SPEC_TC_TIMEOUT=300
+SPEC_TC_TEST_PASSCODE=0
+SPEC_TC_AUTHOR="xvinkat"
+SPEC_TC_AUTOMATOR="xvinkat"
+# this parameter is not interpreted by harness
+SPEC_TC_DISABLED=0
+
+# Please do not remove the comment lines below.
+# They are used as section locators by the test harness.
+
+# BEGIN_PRE_CONDITIONS
+#<path to the testcase>
+#
+#SUN-DS/COM LDAP - User Management for 
+#COM-Enabled Nodes/Management of role/role alias/proxy agents
+#
+#Following servers are successfully configured for 13.0.x version.
+#1.O&M primary
+#2.O&M secondary
+#3.OSS
+#4.UAS 
+# END_PRE_CONDITIONS
+
+
+# BEGIN_MANUAL_STEPS
+#1.Execute the script manage_com with -h option.
+#
+#2.Execute the script manage_com with -h and -R option.
+#
+#3.Execute the script manage_com without any options
+#
+#4.Add COM role(s) to an LDAP domain
+#Execute manage_com.bsh to add roles by using command line arguments which is mentioned in the script usage.
+#
+#5.Execute manage_com.bsh with -l option to list the roles added.
+#
+#
+#6.List all the role names added to the ldap domain using ldap search command:
+#
+#bash-3.2# ldapsearch -D "cn=directory manager" -w shroot11 -b "ou=role,ou=com,dc=apg,dc=com" "objectclass=*"
+# END_MANUAL_STEPS
+
+# BEGIN_POST_CONDITIONS
+#1.Execute the script manage_com with -h option.
+#
+#2.Execute the script manage_com with -h and -R option.
+#
+#3.Execute the script manage_com without any options
+#
+#4.Add COM role(s) to an LDAP domain
+#Execute manage_com.bsh to add roles by using command line arguments which is mentioned in the script usage.
+#
+#5.Execute manage_com.bsh with -l option to list the roles added.
+#
+#
+#6.List all the role names added to the ldap domain using ldap search command:
+#
+#bash-3.2# ldapsearch -D "cn=directory manager" -w shroot11 -b "ou=role,ou=com,dc=apg,dc=com" "objectclass=*"
+#
+#
+#1. script should display the usage.
+#
+#2. script should display the usage.
+#
+#3.script should display an error message saying An action must be specified. Please select one of the following [-a, -l, -m or -r].
+#
+#4.roles are added successfully.
+#Ex:bash-3.2# ./manage_COM.bsh -a role -R hyd20,hyd22 -d atrcus879.com
+#
+#LDAP Directory Manager password:
+#
+#Please confirm that you want to proceed with requested actions - Yes or No [No] Yes
+#
+#bash-3.2#
+#
+#Note: Script should ask for role names when script is executed in prompt mode.
+#
+#
+#5.Command execute successfully and all the roles are listed for that particular domain.
+#Ex: bash-3.2# ./manage_COM.bsh -l role
+#LDAP Directory Manager password:
+#
+#Roles for domain [atrcus879.com].
+#tcs1
+#tcs2
+#bash-3.2#
+#
+#
+#6.Command is executed successfully and all the roles added to the ldap domain are listed.
+#version: 1
+#dn: ou=role,ou=com,dc=apg,dc=com
+#ou: role
+#objectClass: top
+#objectClass: organizationalUnit
+#
+#dn: cn=role4,ou=role,ou=com,dc=apg,dc=com
+#objectClass: groupOfUniqueNames
+#objectClass: top
+#cn: role4
+#
+#dn: cn=role3,ou=role,ou=com,dc=apg,dc=com
+#objectClass: groupOfUniqueNames
+#objectClass: top
+#cn: role3
+#
+#dn: cn=mtf,ou=role,ou=com,dc=apg,dc=com
+#objectClass: groupOfUniqueNames
+#objectClass: top
+#cn: mtf
+#
+#dn: cn=test4,ou=role,ou=com,dc=apg,dc=com
+#objectClass: groupOfUniqueNames
+#objectClass: top
+#cn: test4
+#
+#dn: cn=test5,ou=role,ou=com,dc=apg,dc=com
+#objectClass: groupOfUniqueNames
+#objectClass: top
+#cn: test5
+#
+#dn: cn=test6,ou=role,ou=com,dc=apg,dc=com
+#objectClass: groupOfUniqueNames
+#objectClass: top
+#cn: test6
+#
+#dn: cn=test7,ou=role,ou=com,dc=apg,dc=com
+#objectClass: groupOfUniqueNames
+#objectClass: top
+#cn: test7 
+#
+#
+#
+# END_POST_CONDITIONS

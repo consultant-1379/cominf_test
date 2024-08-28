@@ -1,0 +1,269 @@
+#!/bin/bash
+#################################################################################
+#
+#
+#       COPYRIGHT (C) ERICSSON RADIO SYSTEMS AB, Sweden
+#
+#       The copyright to the document(s) herein is the property of
+#       Ericsson Radio Systems AB, Sweden.
+#
+#       The document(s) may be used and/or copied only with the written
+#       permission from Ericsson Radio Systems AB or in accordance with
+#       the terms and conditions stipulated in the agreement/contract
+#       under which the document(s) have been supplied.
+#
+#################################################################################
+#SOURCE ENVIRONMENT FILE for GLOBAL variables
+. ${AT_ROOT}/*.env
+
+# ATCOMINF Test Callback Library
+
+# Revision History
+# <date>	<signum>	<details>
+
+# Complete the callbacks in this library to automate the test case.
+#
+# Callbacks are stateless, it is not possible to set a global variable in one callback 
+# and access it it in another.
+#
+# Callbacks are called by the test harness in the following order:
+#
+# tc_setup() 		# Called only for independent TC execution mode to setup TC
+# tc_precon()		# Conditions that should exist before TC can run
+# tc_test()		# Runs the test for this TC
+# tc_postcon()		# Conditions that should/should not exist after successful TC 
+# tc_cleanup()		# Called only for independent TC execution mode to cleanup after TC
+
+# All callbacks must PASS for a TC PASS result
+
+#################################################################################
+#
+# CALLBACK: TC_SETUP
+#
+# This callback function is only called if the harness execution mode is 'AT_INDEPENDENT'
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_setup() {
+
+	# Coded to fail in case TC_AUTOMATED=1 before automation completed
+	# Change return code as required
+
+	return 0
+
+}
+#################################################################################
+
+#################################################################################
+#
+# CALLBACK: TC_PRECON
+#
+# This callback function checks the correct conditions exist to run the TC.
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+ 
+tc_precon() {
+
+	# Coded to fail in case TC_AUTOMATED=1 before automation completed
+	# Change return code as required
+
+	return 0
+
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_TEST
+#
+# This callback function runs the test.
+# The harness compares the return code to the SPEC_TC_TEST_PASSCODE value set in the test spec.
+#
+# Return or exit codes:
+#    SPEC_TC_TEST_PASSCODE 	success
+# != SPEC_TC_TEST_PASSCODE 	failure
+ 
+tc_test() {
+
+	# Coded to fail in case TC_AUTOMATED=1 before automation complete
+	# Change return code as required
+echo "Admin1 server is :$CI_ADMIN1_HOSTNAME"
+echo "Admin2 server is :$CI_ADMIN2_HOSTNAME"
+echo "BASH DIR:$G_BASH_DIR"
+admin1=$CI_ADMIN1_HOSTNAME
+admin2=$CI_ADMIN2_HOSTNAME
+
+for serv in $admin1 $admin2
+do
+
+$EXPECT << EOF
+spawn scp ${G_BASH_DIR}/node_hardening_log_failures.sh root@${serv}.athtem.eei.ericsson.se:/var/tmp
+#exp_internal 1
+while 1 {
+        expect {
+                "Are you sure you want to continue connecting" {
+                        send "yes\r"}
+                "Password:" {
+                        send "shroot\r"}
+                "Password:" {
+                        send "shroot\r"
+                        break}
+                }
+                break
+        }
+expect "#"
+send -- "bash\r"
+expect " #"
+send "exit\r"
+exit 0
+expect closed
+EOF
+done
+
+$EXPECT << EOF
+spawn ssh root@${admin1}.athtem.eei.ericsson.se
+#exp_internal 1
+while 1 {
+        expect {
+                "Are you sure you want to continue connecting" {
+                        send "yes\r"}
+                "Password:" {
+                        send "shroot\r"
+                        break}
+                }
+                break
+        }
+expect "#"
+send -- "bash\r"
+expect " #"
+send -- "/opt/SUNWjass/bin/eric-hardening-audit.sh\r"
+sleep 60
+expect " #"
+send "exit\r"
+exit 0
+expect closed
+EOF
+
+if [ $? -eq 0 ]
+then
+        echo "sucessfully executed the script /opt/SUNWjass/bin/eric-hardening-audit.sh"
+else
+        echo "Error found in the script /opt/SUNWjass/bin/eric-hardening-audit.sh"
+fi
+
+$EXPECT << EOF
+spawn ssh root@${admin2}.athtem.eei.ericsson.se
+#exp_internal 1
+while 1 {
+        expect {
+                "Are you sure you want to continue connecting" {
+                        send "yes\r"}
+                "Password:" {
+                        send "shroot\r"
+                        break}
+                }
+                break
+        }
+expect "#"
+send -- "bash\r"
+expect " #"
+send -- "/opt/SUNWjass/bin/eric-hardening-audit.sh\r"
+sleep 60
+expect " #"
+send "exit\r"
+exit 0
+expect closed
+EOF
+if [ $? -eq 0 ]
+then
+        echo "sucessfully executed the script /opt/SUNWjass/bin/eric-hardening-audit.sh"
+else
+        echo "Error found in the script /opt/SUNWjass/bin/eric-hardening-audit.sh"
+fi
+
+
+########################
+#checking error logs
+########################
+for servers in $admin1  $admin2
+do
+
+$EXPECT << EOF
+spawn ssh root@${servers}.athtem.eei.ericsson.se
+#exp_internal 1
+while 1 {
+        expect {
+                "Are you sure you want to continue connecting" {
+                        send "yes\r"}
+                "Password:" {
+                        send "shroot\r"
+                        break}
+                }
+                break
+        }
+expect "#"
+send -- "bash\r"
+expect " #"
+send -- "chmod a+x /var/tmp/node_hardening_log_failures.sh\r"
+expect " #"
+send -- "/var/tmp/node_hardening_log_failures.sh $servers\r"
+expect " #"
+send "exit\r"
+exit 0
+expect closed
+EOF
+done
+
+	return 0
+
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_POSTCON
+#
+# This callback function checks expected results.
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_postcon() {
+
+	# Coded to fail in case TC_AUTOMATED=1 before automation complete.
+	# Change return code as required
+
+	return 0
+
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_CLEANUP
+#
+# This callback function is only called if the harness execution mode is 'AT_INDEPENDENT'
+# 
+# This callback restores the target system to the state it was in before the TC 
+# was run. It rolls back changes made by callbacks tc_setup() and tc_test()
+# 
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_cleanup() {
+
+	# Coded to fail in case TC_AUTOMATED=1 before automation complete
+	# Change return code as required
+
+	return 0
+
+}

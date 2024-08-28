@@ -1,0 +1,182 @@
+#!/bin/bash
+
+# TEST CASE SPEC FILE
+# This file is generated/updated using the test framework web interface.
+# Manual updates on test servers are lost when the test package is re-installed.
+#
+# Last modified: Monday 16th of December 2013 9:25:18
+#
+
+# These settings must be in BASH script format, they are sourced by other scripts.
+SPEC_FA_NAME="SOLARIS10SUNDS"
+SPEC_UC_NAME="SOLARIS10SUNDS_Mgmt_role_alias_proxy"
+SPEC_TC_ID=1341
+SPEC_TC_SLOGAN="Modifying,Listing and Removing COM rolealias from the ldap domain "
+SPEC_TC_TYPE="FT"
+SPEC_TC_POLARITY="positive"
+SPEC_TC_PRIORITY="high"
+SPEC_TC_AUTOMATED=1
+SPEC_TC_DEPENDENT_ONLY=0
+SPEC_TC_TIMEOUT=300
+SPEC_TC_TEST_PASSCODE=0
+SPEC_TC_AUTHOR="xvinkat"
+SPEC_TC_AUTOMATOR="xvinkat"
+# this parameter is not interpreted by harness
+SPEC_TC_DISABLED=0
+
+# Please do not remove the comment lines below.
+# They are used as section locators by the test harness.
+
+# BEGIN_PRE_CONDITIONS
+#<path to the testcase>
+#
+#SUN-DS/COM LDAP - User Management for 
+#COM-Enabled Nodes/Management of role/role alias/proxy agents
+#
+#
+# END_PRE_CONDITIONS
+
+
+# BEGIN_MANUAL_STEPS
+#Modifying COM role alias in ldap domain
+#
+#1. Add the roles to the existing role alias using command line option -i
+#
+#
+#2. Try to add the roles to the existing role alias which doesn't exist in the COM role branch.
+#
+#
+#3. Remove the roles to the existing role alias using command line option -x
+#
+#4. Try to remove the role from the role alias which doesn't exist in the given role alias.
+#
+#5. Remove the last role from the role alias and check whether any waring is dispaled or not.
+#
+#
+#Removing role alias from the ldap domain
+#
+#6. Remove the role alias from the domain using manage_COM.bsh -r alias -A <role alias name>
+#
+#7. List all role aliases which are presented in the ldap domain.
+#
+#
+# END_MANUAL_STEPS
+
+# BEGIN_POST_CONDITIONS
+#1. Roles are added to the alias successfully.
+#
+#Ex: bash-3.2# ./manage_COM.bsh -m alias -i -A alias1 -R hyd1
+#
+#LDAP Directory Manager password:
+#
+#Please confirm that you want to proceed with requested actions - Yes or No [No] Yes
+#
+#
+#
+#2. Script should throw an error message.
+#
+#Ex: bash-3.2# ./manage_COM.bsh -m alias -i -A alias1 -R hyd98
+#
+#LDAP Directory Manager password:
+#ERROR : [hyd98] does not exist as a role in this domain
+#ERROR : Script terminated with errors. No updates have been made.
+#
+#
+#3. Roles are removed from the alias successfully.
+#
+#Ex:
+#bash-3.2# ./manage_COM.bsh -m alias -x -A alias1 -R hyd1
+#
+#LDAP Directory Manager password:
+#
+#Please confirm that you want to proceed with requested actions - Yes or No [No] Yes
+#
+#4 Script should throw an error message.
+#
+#Ex: 
+#bash-3.2# ./manage_COM.bsh -l alias -A alias1
+#
+#LDAP Directory Manager password:
+#
+#Roles assigned to alias [alias1] in domain [atrcus879.com].
+#tcs4
+#tcs3
+#
+#bash-3.2#
+#bash-3.2#
+#bash-3.2# ./manage_COM.bsh -m alias -x -A alias1 -R hyd11
+#
+#LDAP Directory Manager password:
+#ERROR : [hyd11] does not exist as a role in this domain
+#ERROR : Script terminated with errors. No updates have been made.
+#
+#5. Role is not removed from the role alias and warning message is displayed to the user by asking him to 
+#
+#remove the alias manually.
+#
+#Ex: 
+#
+#LDAP Directory Manager password:
+#
+#Roles assigned to alias [alias1] in domain [atrcus879.com].
+#tcs3
+#
+#bash-3.2#
+#bash-3.2#
+#bash-3.2#
+#bash-3.2# ./manage_COM.bsh -m alias -x -A alias1 -R tcs3
+#
+#LDAP Directory Manager password:
+#
+#Please confirm that you want to proceed with requested actions - Yes or No [No] Yes
+#
+#WARNING : modifyCOMalias: This action will remove the last role from alias [alias1]. Run the following 
+#
+#command instead -
+#WARNING : modifyCOMalias: manage_COM.bsh -r alias -d atrcus879.com -A alias1
+#
+#bash-3.2#
+#
+#6. Role alias is removed from the ldap domain.
+#
+#Ex: bash-3.2# ./manage_COM.bsh -r alias -A alias11
+#
+#LDAP Directory Manager password:
+#
+#Please confirm that you want to proceed with requested actions - Yes or No [No] Yes
+#
+#bash-3.2#
+#
+#
+#Listing role aliases in the ldap domain.
+#
+#7. All role aliases are listed.
+#Ex: bash-3.2# ./manage_COM.bsh -l alias
+#
+#LDAP Directory Manager password:
+#
+#Aliases for domain [atrcus879.com].
+#alias1
+#alias2
+#alias3
+#alias10
+#tcs1
+#
+#bash-3.2#
+#
+#Action: List only one role alias with roles 
+#Result: Role alias is listed with roles.
+#Ex: bash-3.2# ./manage_COM.bsh -l alias -A alias1
+#
+#LDAP Directory Manager password:
+#
+#Roles assigned to alias [alias1] in domain [atrcus879.com].
+#tcs4
+#tcs3
+#
+#
+#
+#
+#
+#
+# END_POST_CONDITIONS

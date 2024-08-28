@@ -1,0 +1,42 @@
+#!/bin/bash
+
+# TEST CASE SPEC FILE
+# This file is generated/updated using the test framework web interface.
+# Manual updates on test servers are lost when the test package is re-installed.
+#
+# Last modified: Sunday 31st of March 2013 20:37:23
+#
+
+# These settings must be in BASH script format, they are sourced by other scripts.
+SPEC_FA_NAME="SMRS"
+SPEC_UC_NAME="SMRS_MASTER_AIF_ADD"
+SPEC_TC_ID=305
+SPEC_TC_SLOGAN="Add AIF using configure_smrs add aif when no smrs_master "
+SPEC_TC_TYPE="FT"
+SPEC_TC_POLARITY="negative"
+SPEC_TC_PRIORITY="low"
+SPEC_TC_AUTOMATED=1
+SPEC_TC_DEPENDENT_ONLY=0
+SPEC_TC_TIMEOUT=300
+SPEC_TC_TEST_PASSCODE=0
+SPEC_TC_AUTHOR="xkalbha"
+SPEC_TC_AUTOMATOR="xkalbha"
+# this parameter is not interpreted by harness
+SPEC_TC_DISABLED=0
+
+# Please do not remove the comment lines below.
+# They are used as section locators by the test harness.
+
+# BEGIN_PRE_CONDITIONS
+#1. smrs_master does NOT exist in /etc/inet/hosts
+# END_PRE_CONDITIONS
+
+
+# BEGIN_MANUAL_STEPS
+#1. As root: /opt/ericsson/nms_bismrs_mc/bin/configure_smrs add aif
+#2. $? -ne 0
+# END_MANUAL_STEPS
+
+# BEGIN_POST_CONDITIONS
+#1. CONSOLE_OUTPUT_CONTAINS <error message indicating no smrs_master configured>
+# END_POST_CONDITIONS

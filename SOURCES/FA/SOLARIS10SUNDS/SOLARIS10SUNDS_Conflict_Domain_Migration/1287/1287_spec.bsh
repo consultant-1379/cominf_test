@@ -1,0 +1,50 @@
+#!/bin/bash
+
+# TEST CASE SPEC FILE
+# This file is generated/updated using the test framework web interface.
+# Manual updates on test servers are lost when the test package is re-installed.
+#
+# Last modified: Monday 16th of December 2013 9:03:04
+#
+
+# These settings must be in BASH script format, they are sourced by other scripts.
+SPEC_FA_NAME="SOLARIS10SUNDS"
+SPEC_UC_NAME="SOLARIS10SUNDS_Conflict_Domain_Migration"
+SPEC_TC_ID=1287
+SPEC_TC_SLOGAN="Verify that an isolated domain NAME does match a GD domain entry. Then the Match conflict is detected and resolved"
+SPEC_TC_TYPE="FT"
+SPEC_TC_POLARITY="positive"
+SPEC_TC_PRIORITY="high"
+SPEC_TC_AUTOMATED=0
+SPEC_TC_DEPENDENT_ONLY=0
+SPEC_TC_TIMEOUT=300
+SPEC_TC_TEST_PASSCODE=0
+SPEC_TC_AUTHOR="xlaxain"
+SPEC_TC_AUTOMATOR="xlaxain"
+# this parameter is not interpreted by harness
+SPEC_TC_DISABLED=0
+
+# Please do not remove the comment lines below.
+# They are used as section locators by the test harness.
+
+# BEGIN_PRE_CONDITIONS
+#Path in Mars:- SUN-DS/Conflict Resolution & Global Domain Migration 
+#
+#1) A base domain already with the following usernames and uids:
+#U10 10000
+#2) An isolated domain (e.g.2.com) already with the following username and uid:
+#U10 2001 
+# END_PRE_CONDITIONS
+
+
+# BEGIN_MANUAL_STEPS
+#When resolve_conflicts.bsh is run on e.g. 2.com, it should report the Name match conflict and it should prompt for a new name, isolated domain (e.g.2.com). 
+# END_MANUAL_STEPS
+
+# BEGIN_POST_CONDITIONS
+#/ericsson/sdee/bin/resolve_conflicts.bsh -r -u -d 2.com
+#
+#resolve_conflicts should detect the Name match conflict and propose to change the Uid of U10 of the isolated domain to a FREE one
+#
+#This test case will test for a Name match conflict with the GD when an isolated domain is to be migrated. Refer to the SUN-DS SAG for terminology.
+# END_POST_CONDITIONS

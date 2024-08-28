@@ -1,0 +1,15 @@
+#!/bin/bash
+
+# TEST SUITE SPEC FILE
+# This file is generated/updated using the test framework web interface.
+# Manual updates on test servers are lost when the test package is re-installed.
+#
+# Last modified: Monday 27th of May 2013 10:32:30
+#
+SPEC_TS_NAME=x86_cluster_UG_sol_only
+SPEC_TS_ID=65
+SPEC_TS_SLOGAN="Solaris Live Upgrade on x86 cluster"
+SPEC_TS_TIMEOUT=1500
+SPEC_TS_AUTHOR="ebatric"
+SPEC_TS_INDEPENDENT=0
+SPEC_TS_TC_IDS=(843 845 852 861)

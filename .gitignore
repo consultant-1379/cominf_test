@@ -1,0 +1,6 @@
+# Ignore these directories when looking for updates to commit
+BUILD/
+BUILDROOT/
+RPMS/
+SRPMS/
+*.swp

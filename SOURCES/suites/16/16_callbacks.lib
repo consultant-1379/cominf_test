@@ -1,0 +1,124 @@
+#!/bin/bash
+#################################################################################
+#
+#
+#       COPYRIGHT (C) ERICSSON RADIO SYSTEMS AB, Sweden
+#
+#       The copyright to the document(s) herein is the property of
+#       Ericsson Radio Systems AB, Sweden.
+#
+#       The document(s) may be used and/or copied only with the written
+#       permission from Ericsson Radio Systems AB or in accordance with
+#       the terms and conditions stipulated in the agreement/contract
+#       under which the document(s) have been supplied.
+#
+#################################################################################
+
+
+# ATCOMINF Test Suite Callback Library
+
+# Revision History
+# 18/10/2012    xbahzam    SMRS test suite for non-blade
+
+# Complete the callbacks in this library if required to setup/cleanup before/after 
+# running suite test cases.
+#
+# Callbacks are stateless, it is not possible to set a global variable in one callback
+# and access it it in another.
+#
+# Callbacks are called by the test harness in the following order:
+#
+# ts_setup()
+# ts_cleanup()
+
+# Source the SMRS lib
+echo "Going to source ${AT_LIB}/tst_cominf.lib"
+. ${AT_LIB}/tst_cominf.lib
+echo "Going to source ${AT_LIB}/tst_SMRS.lib"
+. ${AT_LIB}/tst_SMRS.lib
+
+#################################################################################
+#
+# CALLBACK: TS_SETUP
+# 
+# Called before the first test case in the suite is run
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+ts_setup() {
+	# Check that there is a file primIP.<hostname> file for this OSS master
+	primfile="primIP.$(hostname)"
+	[ -r ${primfile} ] || { echo "No $primfile found"; return 1; }
+
+	# Replace PASSWD with the correct credentials
+	for ii in *.in; do
+		sed "s/^PASSWD$/$SMRS_MASTER_ROOTPW/" $ii > $ii.tmp
+	done
+
+	PRIM_ip=$(cat "primIP.$(hostname)")
+
+	# Create SMRS directories on OM primary
+	${AT_BIN}/con_ex.bsh -d ssh.in.tmp -o expect.exp -c "ssh root@$PRIM_ip \" mkdir -p /opt/ericsson/smrs/lib; mkdir -p /opt/ericsson/smrs/etc; mkdir -p /opt/ericsson/smrs/log\""
+	/usr/local/bin/expect expect.exp || {
+		echo "Failed to create SMRS directories on OM primary with IP $PRIM_ip"
+		return 2
+	}
+
+	# Now copy the required files to create SMRS volume group and logical volumes to the OM pirmary machine
+	PRIM_ip=$(cat "primIP.$(hostname)")
+	echo "Copying create_vg.sh FROM OSS Mater to OM primary with IP $PRIM_ip"
+	${AT_BIN}/con_ex.bsh -d ssh.in.tmp -o expect.exp -c "scp /opt/ericsson/nms_bismrs_mc/bin/create_vg.sh root@$PRIM_ip:/tmp/"
+	/usr/local/bin/expect expect.exp || {
+		echo "Failed to copy create_vg.sh to $PRIM_ip"
+		return 3
+	}
+	echo "Copying create_lv.sh FROM OSS Mater to OM primary with IP $PRIM_ip"
+	${AT_BIN}/con_ex.bsh -d ssh.in.tmp -o expect.exp -c "scp /opt/ericsson/nms_bismrs_mc/bin/create_lv.sh root@$PRIM_ip:/tmp/"
+	/usr/local/bin/expect expect.exp || {
+		echo "Failed to copy create_lv.sh to $PRIM_ip"
+		return 3
+	}
+
+	echo "Copying common_functions.lib FROM OSS Mater to OM primary with IP $PRIM_ip"
+	${AT_BIN}/con_ex.bsh -d ssh.in.tmp -o expect.exp -c "scp /opt/ericsson/nms_bismrs_mc/lib/common_functions.lib root@$PRIM_ip:/opt/ericsson/smrs/lib/"
+	/usr/local/bin/expect expect.exp || {
+		echo "Failed to copy common_functions.lib to $PRIM_ip"
+		return 4
+	}
+
+	echo "Copying bismrs.properties FROM OSS Mater to OM primary with IP $PRIM_ip"
+	${AT_BIN}/con_ex.bsh -d ssh.in.tmp -o expect.exp -c "scp /etc/opt/ericsson/nms_bismrs_mc/bismrs.properties root@$PRIM_ip:/opt/ericsson/smrs/etc/"
+	/usr/local/bin/expect expect.exp || {
+		echo "Failed to copy bismrs.properties to $PRIM_ip"
+		return 5
+	}
+
+
+	#PREPARE_SMRS
+	return 0
+
+}
+#################################################################################
+
+#################################################################################
+#
+# CALLBACK: TS_CLEANUP
+#
+# Called after the last test case in the suite has run
+# 
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+ts_cleanup() {
+
+	# From tests like 
+
+	# From setup
+	rm -f *.exp *.tmp
+
+	return 0
+
+}

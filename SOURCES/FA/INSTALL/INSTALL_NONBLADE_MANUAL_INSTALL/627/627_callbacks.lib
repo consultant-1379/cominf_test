@@ -1,0 +1,155 @@
+#!/bin/bash
+#################################################################################
+#
+#
+#	   COPYRIGHT (C) ERICSSON RADIO SYSTEMS AB, Sweden
+#
+#	   The copyright to the document(s) herein is the property of
+#	   Ericsson Radio Systems AB, Sweden.
+#
+#	   The document(s) may be used and/or copied only with the written
+#	   permission from Ericsson Radio Systems AB or in accordance with
+#	   the terms and conditions stipulated in the agreement/contract
+#	   under which the document(s) have been supplied.
+#
+#################################################################################
+
+
+# ATCOMINF Test Callback Library
+
+# Revision History
+# 11/10/12	xamamcg	Initial test for params.cfg questions on primary
+
+# Complete the callbacks in this library to automate the test case
+# Callbacks are called by the test harness in the following order:
+#
+# tc_setup() 		# Called only for independent TC execution mode to setup TC
+# tc_precon()		# Conditions that should exist before TC can run
+# tc_test()		# Runs the test for this TC
+# tc_postcon()		# Conditions that should/should not exist after successful TC 
+# tc_cleanup()		# Called only for independent TC execution mode to clenup after TC
+
+
+#################################################################################
+#
+# CALLBACK: TC_SETUP
+#
+# This callback function is only called if the harness execution mode is 'AT_INDEPENDENT'
+# In this mode, a TC should set up its own inputs, i.e. it does not depend on outputs 
+# from another TC. 
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_setup() {
+	return 0
+}
+#################################################################################
+
+#################################################################################
+#
+# CALLBACK: TC_PRECON
+#
+# This callback function checks the correct conditions exist to run the TC.
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+ 
+tc_precon() {
+
+	[ -f /ericsson/config/build/params.cfg ] || { echo "params.cfg does not exist"; return 1; }
+
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_TEST
+#
+# This callback function runs the test.
+# The harness compares the return code to the SPEC_TC_TEST_PASSCODE value set in the test spec.
+#
+# Return or exit codes:
+#	SPEC_TC_TEST_PASSCODE 	success
+# != SPEC_TC_TEST_PASSCODE 	failure
+ 
+tc_test() {
+
+
+	# Copy config.ini
+	cp /opt/ericsson/config/config.ini config.ini.bak
+	# Move params.cfg out of way
+	mv /ericsson/config/build/params.cfg params.cfg.bak
+	# Check linirator exists
+	linfile=/opt/ericsson/cominf_core/bin/cominf_inirator.bsh
+	[ -r ${linfile} ] || { echo "${linfile} does not exist"; return 1; }
+
+	# Run con_ex.bsh to create expect script
+	# 627.in is checked into GIT and has the name and prompt values
+	${AT_BIN}/con_ex.bsh -d 627.in -o 627.exp -c "${linfile} -i"
+	retval=$?
+	[ $retval -ne 0 ] && { echo Failed to create expect script $retval; return 2; }
+
+	# Run linirator with expect script
+	expect 627.exp || { echo Failed to run expect script $?; return 3; }
+
+	return 0
+
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_POSTCON
+#
+# This callback function checks expected results.
+# The return code decides the final test case verdict.
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_postcon() {
+
+	# Expect no difference in params.cfg
+	diff /ericsson/config/build/params.cfg params.cfg.bak || { echo "params.cfg differed"; return 1; }
+	# Expect no difference in config.ini
+	#First line is date created
+	echo tail -n+2 /opt/ericsson/config/config.ini \| diff - config.ini.bak || { echo "config.ini differed"; return 2; }
+	# And verify contents of params.cfg
+	grep "^inst_type=cominf$" /ericsson/config/build/params.cfg  || { echo "No inst_type line"; return 3; }
+	grep "^config=om_serv_master$" /ericsson/config/build/params.cfg  || { echo "No config line"; return 4; }
+	grep "^export DDC=YES$" /ericsson/config/build/params.cfg  || { echo "No DDC line"; return 5; }
+	grep "^export HYPERIC=YES$" /ericsson/config/build/params.cfg  || { echo "No HYPERIC line"; return 6; }
+
+	
+
+	return 0
+
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_CLEANUP
+# 
+# This callback restores the target system to the state it was in before the TC 
+# was run. It rolls back changes made by callbacks tc_setup() and tc_test()
+# 
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_cleanup() {
+	[ -r params.cfg.bak ] && { cp params.cfg.bak /ericsson/config/build/params.cfg; }
+	[ -r config.ini.bak ] && { cp config.ini.bak /opt/ericsson/config/config.ini; }
+	rm -f config.ini.bak
+	rm -f params.cfg.bak
+	return 0
+
+}

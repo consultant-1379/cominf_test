@@ -1,0 +1,47 @@
+#!/bin/bash
+
+# TEST CASE SPEC FILE
+# This file is generated/updated using the test framework web interface.
+# Manual updates on test servers are lost when the test package is re-installed.
+#
+# Last modified: Sunday 31st of March 2013 20:37:24
+#
+
+# These settings must be in BASH script format, they are sourced by other scripts.
+SPEC_FA_NAME="TEMP"
+SPEC_UC_NAME="TEMP_Ready_For_Review"
+SPEC_TC_ID=884
+SPEC_TC_SLOGAN="post upgrade check for the schema update success or failure in logs"
+SPEC_TC_TYPE="FT"
+SPEC_TC_POLARITY="positive"
+SPEC_TC_PRIORITY="high"
+SPEC_TC_AUTOMATED=1
+SPEC_TC_DEPENDENT_ONLY=0
+SPEC_TC_TIMEOUT=900
+SPEC_TC_TEST_PASSCODE=0
+SPEC_TC_AUTHOR="xyekmad"
+SPEC_TC_AUTOMATOR="xyekmad"
+# this parameter is not interpreted by harness
+SPEC_TC_DISABLED=0
+
+# Please do not remove the comment lines below.
+# They are used as section locators by the test harness.
+
+# BEGIN_PRE_CONDITIONS
+#1. Check whether Upgrade is complete or not
+#2. Check whether "WRAN Schema Update" stage is completed
+# END_PRE_CONDITIONS
+
+
+# BEGIN_MANUAL_STEPS
+#Check the status of "WRAN Schema Update"
+#
+## tail -f /var/opt/ericsson/nms_umts_wranmom/upgrade_CS
+#_schema.log
+#Check for the following line:
+#Finished upgradeWRANSchema.sh successfully <--------"..
+# END_MANUAL_STEPS
+
+# BEGIN_POST_CONDITIONS
+#Report whether "WRAN Schema Update" is pass or fail
+# END_POST_CONDITIONS

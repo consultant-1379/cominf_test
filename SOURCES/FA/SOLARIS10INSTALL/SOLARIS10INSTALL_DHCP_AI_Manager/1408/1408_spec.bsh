@@ -1,0 +1,72 @@
+#!/bin/bash
+
+# TEST CASE SPEC FILE
+# This file is generated/updated using the test framework web interface.
+# Manual updates on test servers are lost when the test package is re-installed.
+#
+# Last modified: Monday 16th of December 2013 10:21:32
+#
+
+# These settings must be in BASH script format, they are sourced by other scripts.
+SPEC_FA_NAME="SOLARIS10INSTALL"
+SPEC_UC_NAME="SOLARIS10INSTALL_DHCP_AI_Manager"
+SPEC_TC_ID=1408
+SPEC_TC_SLOGAN="combinations"
+SPEC_TC_TYPE="FT"
+SPEC_TC_POLARITY="positive"
+SPEC_TC_PRIORITY="high"
+SPEC_TC_AUTOMATED=0
+SPEC_TC_DEPENDENT_ONLY=0
+SPEC_TC_TIMEOUT=300
+SPEC_TC_TEST_PASSCODE=0
+SPEC_TC_AUTHOR="xgansre"
+SPEC_TC_AUTOMATOR="xgansre"
+# this parameter is not interpreted by harness
+SPEC_TC_DISABLED=0
+
+# Please do not remove the comment lines below.
+# They are used as section locators by the test harness.
+
+# BEGIN_PRE_CONDITIONS
+#Mars Path <Initial Installation/DHCP/AI Manager/ai_manager/DNS/initial installation  >
+# END_PRE_CONDITIONS
+
+
+# BEGIN_MANUAL_STEPS
+#Action 1:
+#Add DNS server to a network using /ericsson/ocs/bin/ai_manager script in infra/o&m server on which DHCP service is active by using "-add range" with giving n <subnet mask> -r <router> -b <range beginning ip> -e <range ending ip> -s <SMRS server address> -t "<Primary NTP time server> <Secondary NTP server>" -w "<Primary web server> <Secondary 
+#web server>" -d "<DNS name servers>" and without giving "-l <lease-time in seconds>"
+#
+#Action2:
+#Add Dns server to a network using /ericsson/ocs/bin/ai_manager script in infra/o&m server on which DHCP service is active by using "-add range" with giving -n <subnet mask> -r <router> -b <range beginning ip> -e <range ending ip> -l <lease-time in seconds> -s <SMRS server address> -t "<Primary NTP time server> <Secondary NTP server>" -w "<Primary web server> <Secondary web server>" -d "<DNS name servers>" 
+#
+#Action 3:
+#Add Dns server to a network using /ericsson/ocs/bin/ai_manager script in infra/o&m server on which DHCP service is active by using "-add range" with -d "<DNS name servers>" and by giving an invalid IP as DNS server
+#
+#Action 4:
+#Add Multiple DNS servers to a network using /ericsson/ocs/bin/ai_manager script in infra/o&m server on which DHCP service is active by using "-add range" with -d "<DNS name server1,DNS name server2>".
+#
+#Action 5:
+#Add DNS servers to a network using /ericsson/ocs/bin/ai_manager script in infra/o&m server on which DHCP service is active by using "-add range" with -d "<DNS name server1,DNS name server2>" by giving invalid IP's as DNS servers
+#
+#
+# END_MANUAL_STEPS
+
+# BEGIN_POST_CONDITIONS
+#Result 1 :
+#Dns server must be added successfully added and /usr/local/etc/dhcpd.conf_subnet file must be updated with the given DNS servers details
+#
+#
+#Result 2:
+#Dns server must be added successfully and /usr/local/etc/dhcpd.conf_subnet file must be updated with the given DNS servers details
+#
+#Result 3:
+#An error messgae should be displayed as " INVALID IP ADDRESS" and DNS server should not be added and /usr/local/etc/dhcpd.conf_subnet file should not be updated with the given DNS server details
+#
+#Result 4:
+#Multiple DNS servers must be added successfully and /usr/local/etc/dhcpd.conf_subnet file must be updated with the given DNS servers details
+#
+#Result 5:
+#An error messgae should be displayed as " INVALID IP'S" and DNS servers must not be added and 
+#/usr/local/etc/dhcpd.conf_subnet file should not be updated with the given DNS servers details 
+# END_POST_CONDITIONS

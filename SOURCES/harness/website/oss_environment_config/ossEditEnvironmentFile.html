@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="utf-8" />
+		<?php 
+			include_once "../inc/globals.inc";
+			#include_once "../inc/utils.inc";
+			include 'header.php'; 
+			include_once "../inc/git_functions.php";
+			//$cominf_test_repo_clone="/var/lib/jenkins/cominf_build/workspace/cominf_test";
+			//$cominf_build_repo_clone="/var/lib/jenkins/cominf_build/";				
+
+		?>	
+		<title>Test Harness Configuration</title>
+		<link rel="stylesheet" type="text/css" href="../css/styles.css" />
+		<script type="text/javascript" src="js/atnfdlib.js" defer></script>
+	</head>
+	<body>
+	<?php  
+	
+	
+	/* This webpage edits the selected env file that has been passed to it from some previous web page (eg. ossenvfiles.php)
+		see DESCRIPTION: below for further information.
+	*/
+	/* Determine if all keys in array 1 are contained in array 2.
+	Returns TRUE|FALSE 
+	*/
+	function compareArraysKeys($array1,$array2){
+		$different_keys_array = array_diff_key($array1,$array2);
+		$result = count(array_diff_key($array1,$array2));
+		if ( $result == 0 ) {
+			return TRUE;
+		}
+		else {	
+			return FALSE;
+		}
+	}
+	function errorChecking($ENV_FILE_PATH,$ENV_FILE_NAME,$REPO_PATH) {
+			//	Check to determine if cominf_test repo was selected.  
+		$pos = strpos($ENV_FILE_PATH,"cominf_test/SOURCES");
+		if($pos === false) {
+			 exit ("ERROR: 'cominf_test/SOURCES' not part of $ENV_FILE_PATH " );
+		}
+		if ( ! file_exists( $ENV_FILE_PATH) ) 
+			exit ("ERROR:Directory $ENV_FILE_PATH does not exist" );
+		if ( ! file_exists( $ENV_FILE_PATH . $ENV_FILE_NAME) ) 
+			echo ("ERROR:File $ENV_FILE_PATH$ENV_FILE_NAME does not exist" );
+		// only one copy of .template.env exists 
+		//if ( ! file_exists($WEBSITE['REPO_PATH'] .  "/SOURCES/build_scripts/nfd/etc/.template.env" ) ) 
+		if ( ! file_exists($REPO_PATH) ) 
+			exit ("ERROR:File " . $WEBSITE['REPO_PATH'] .  "nfd/etc/.template.env does not exist" );
+	}
+	/* return the keys that are not in array2
+	*/
+	function getDifferentArraysKeys($array1,$array2){
+		
+		$different_keys_array = array_diff_key($array1,$array2);
+		//result = array();
+		//$result= var_dump($different_keys_array)
+		return $different_keys_array;
+	}
+	/*Function to return the difference of two arrays
+	*/
+	function array_unique_diff_key ($array1, $array2) 	{ 
+	  if (is_array($array1) && is_array($array2)) 
+		return array_diff_key($array1, $array2) + array_diff_key($array2, $array1); 
+	  else if (is_array($array1)) return $array1; 
+	  else if (is_array($array2)) return $array2; 
+	  else return array(); 
+	} 
+		
+		
+	/*  read variables and their values from an env file specified by $filename.
+		name value pair is separated by $separator, e.g. $separator='=';
+		returns and array the contents of which are in the $fields array"
+		usage: $env_current_array = get_name_value_pairs($ENV_FILE_PATH . $ENV_FILE_NAME, '=');
+	*/
+	function get_name_value_pairs($filename, $separator){
+		$fh = fopen($filename, 'r');
+		$i = 0;
+		$fields = array();
+		//debug: 		echo "$filename<br>";
+		for ($line = fgets($fh); ! feof($fh); $line = fgets($fh)) {
+			$line = trim($line);
+			$pattern = "/^#/";
+			if ( ! preg_match($pattern, $line)) {
+				$bits = explode($separator, $line);
+				$field_name = array_shift($bits);
+				$field_contents = implode('=', $bits);
+				$fields[$field_name] = $field_contents;
+
+			}
+		}
+		fclose($fh);
+		return $fields;
+	}
+
+	/* returns the $value of the specified $key for $array
+		usage: if ( _getArrayValue($env_current_array,'G_HARNESS_HOST') == "targetserver" ) { ....}
+	*/
+	function _getArrayValue($array, $key, $default = null){
+        if (isset($array[$key])) return $array[$key];
+        return $default;
+    }
+	/* 	DESCRIPTION: env file description
+		There should be 15 name=value pairs.
+		template.env contains the reference variables this file will be used to compare and validate against.
+
+		Ignore lines begining with a '#' or a  ';' i.e. a comment.
+		Name 1 must be on first line in the env file. (i.e. non commented line)
+		Name 2 must be on the second line in the env file, etc.
+		Perform validation check:
+			read in template.env names into reference_array
+			read in <hostname>.env into  env_current_array
+			check that all the keys in template.env are in <hostname>.env
+			check that all the keys in <hostname>.env are in template.env
+		Display editable form with the text fields fields containing the values from the <hostname>.env
+		Save updates to git repo.
+	*/	
+		//MAIN
+		echo "<p><a href=http://" . $WEBSITE['HOMEURL'] . ">Home</a>&gt;<a href='../harness.php'>Harness&gt;</a><a href='ossenvfiles.php'\">Select Environment File&gt;</a>\n";
+
+		if ( ! isset($_GET['mode']) ) {
+			exit("Error: mode variable not set.  should be eg. view, new, edit or delete.<br>"); 
+		} 
+		else {
+			$mode=$_GET['mode'];
+			if ( $mode == "edit" ) {
+				$ENV_FILE_PATH = $_GET['env_file_path'];
+				$ENV_FILE_NAME = $_GET['env_file_name'];
+				
+				if ( ! git_pull($ENV_FILE_PATH)) {
+					exit ("ERROR:Unsuccessful git_pull function. Returned FALSE. " );
+				}
+				
+				errorChecking($ENV_FILE_PATH,$ENV_FILE_NAME,$WEBSITE['REPO_PATH'] .  "/SOURCES/build_scripts/nfd/etc/.template.env");
+				$env_reference_array = get_name_value_pairs($WEBSITE['REPO_PATH'] .  "/SOURCES/build_scripts/nfd/etc/.template.env", '=');
+				//debug: print_r($env_reference_array);
+				$env_current_array = get_name_value_pairs($ENV_FILE_PATH . $ENV_FILE_NAME, '=');
+				//print_r($env_current_array);
+				print "<hr>";
+				//Validate that the environment file contains valid variables.
+				//debug: print "file $ENV_FILE_NAME "; var_dump(array_diff_key($env_reference_array,$env_current_array));
+				$unsupported_variables=array();
+				//foreach($unsupported_variables as $paramName)
+				//		echo $paramName . "=<br>";
+				if ($env_current_array['CI_PLATFORM'] == "SPARC") {
+					//rebuild $env_reference_array() with just SPARC Specific variables
+					unset($env_reference_array['CI_ADMIN2_IPV4_ADDRESS']);
+					unset($env_reference_array['CI_ADMIN2_HOSTNAME']);
+					unset($env_reference_array['CI_ADMIN2_ROOTPW']);
+					unset($env_reference_array['CI_ADMIN2_ILO_NAME']);
+					unset($env_reference_array['CI_ADMIN2_ILO_ROOTPW']);
+					//unset($env_reference_array['CI_ADMIN2']);
+				}
+				if (  compareArraysKeys($env_reference_array,$env_current_array) == FALSE ) {
+					echo "<h1>ERROR: file $ENV_FILE_NAME does not contain all required variables</h1><br>";
+					echo "<p> <em>List of missing variables: </em><b></br>" ;
+					foreach(array_keys(getDifferentArraysKeys($env_reference_array,$env_current_array)) as $paramName)
+						echo $paramName . "=<br>";
+					echo "</p>";
+					exit ("Exited Edit of $$ENV_FILE_NAME ");
+				}
+				elseif ( ! (compareArraysKeys($env_current_array,$env_reference_array))) {
+					print "<h1>WARNING: file $ENV_FILE_NAME contains unsupported variables!</h1><br>";
+					print "<p> if these are new variables please contact administrator to get website updated to cater for changes.<br></p>";
+					$unsupported_variables = getDifferentArraysKeys($env_current_array,$env_reference_array);
+					/* debug:
+					print_r($env_reference_array);
+					echo "<hr>";
+					print_r($env_current_array);
+					echo "<hr>";
+					*/
+					foreach($unsupported_variables as $key => $value)
+						echo $key . "=" . $value . "<br>";
+						//$unsupported_variables .= array($key
+					//echo ("Exited Edit of $ENV_FILE_NAME ");
+
+				}	
+				else {
+					print "<h1>Successfully validated $ENV_FILE_NAME </h1><br>";
+				}
+				$serialized_unsupported_variables=base64_encode(serialize($unsupported_variables));
+				// now create a new array ($edited_env_array) which will be used to contain the edited values.
+				//	it is assumed that at this point the array contains all the correct keys.
+				$edited_env_array = $env_current_array;
+				/*	Define variable for radio buttons (G_HARNESS_HOST) to set appropriate button to be "checked". 
+					Use the targetserver value to indicate that the harness will be unpacked and run directly on the targetserver.
+					The target server is the system under test, unit tests run on the target server (e.g. oss).
+				*/
+				if ( _getArrayValue($env_current_array,'G_HARNESS_HOST') == "targetserver" ) {
+						$harnesshost_targetserver="checked";
+						$harnesshost_localhost='';
+				}
+				/*	Use the localhost value to indicate that the harness will be unpacked and run on the Jenkins slave.
+					i.e. the test control server. (integration tests like reboots or upgrades are not directly on the target 
+					server but are run from the jenkins slave.
+				*/
+				elseif ( _getArrayValue($env_current_array,'G_HARNESS_HOST') == "localhost" ) {
+					$harnesshost_targetserver='';
+					$harnesshost_localhost='checked';
+				}
+				else {
+					print "<h1>Error with G_HARNESS_HOST variable value in file : $ENV_FILE_NAME </h1><br>";
+					
+				}
+				
+				$G_TEST_HARNESS_COMMAND = _getArrayValue($env_current_array,'G_TEST_HARNESS_COMMAND');
+				//debug: print "$G_TEST_HARNESS_COMMAND : $ENV_FILE_NAME <br>";
+				//define variable for radio buttons (CI_ENVIRONMENT) to set appropriate button to be "checked". 
+				switch(_getArrayValue($env_current_array,'CI_ENVIRONMENT'))
+				{
+					case "hp" 	: $CI_ENVIRONMENT_HP="checked"; $CI_ENVIRONMENT_SUN="";break;
+					case "sun" 	: $CI_ENVIRONMENT_HP=""; $CI_ENVIRONMENT_SUN="checked"; break;
+					default 	: $CI_ENVIRONMENT_HP=""; $CI_ENVIRONMENT_SUN="";
+				}
+				switch(_getArrayValue($env_current_array,'CI_PLATFORM'))
+				{
+					case "i386" 	: $CI_PLATFORM_i386="checked"; $CI_PLATFORM_SPARC=""; $CI_PLATFORM="X86"; break;
+					case "SPARC" 	: $CI_PLATFORM_i386=""; $CI_PLATFORM_SPARC="checked"; $CI_PLATFORM="SPARC";break;
+					default 		: $CI_PLATFORM_i386=""; $CI_PLATFORM_SPARC="";
+				}
+				//debug: echo _getArrayValue($env_current_array,'CI_PLATFORM') . "<br>"; 				echo $env_current_array['CI_ADMIN1_IPV4_ADDRESS'] . "<br>"; 				echo $env_current_array['CI_ADMIN2_IPV4_ADDRESS'] . "<br>"; 
+			} //if mode == edit
+		}
+		//$Edit_Environment_File_action = $_SERVER['PHP_SELF'] . "?mode=edit&env_file_path=". $ENV_FILE_PATH . "&env_file_name=" . $ENV_FILE_NAME;
+		//$Edit_Environment_File_action = "submitForm($ENV_FILE_PATH,$ENV_FILE_NAME,)";
+
+	?>
+	<!--
+	<form name="Edit_Environment_File" action="<?php echo $Edit_Environment_File_action; ?>" method="post">
+
+	-->
+		<form name="Edit_Environment_File" action="ossEditEnvironmentOutput.php" method="post">
+	<fieldset>
+		<legend>Environment File</legend>
+		<p><label>Specify path to environment file : <input type="text" name="ENV_FILE_PATH" id="ENV_FILE_PATH" value="<?php echo $ENV_FILE_PATH ?>" size="100"
+		required/></label></p>
+		<p><label>Specify environment file name: <input type="text" name="ENV_FILE_NAME" id="ENV_FILE_NAME" value="<?php echo $ENV_FILE_NAME ?>" size="35" 
+		required/></label></p>
+		<input type="button" id="edit_file" value="Save as" onclick='alert("function saveAsNewEnvFileName() not defined yet")' >
+		<!-- function saveAsNewEnvFileName(document.Edit_Environment_File.ENV_FILE_PATH,document.Edit_Environment_File.ENV_FILE_NAME)" not defined yet -->
+	</fieldset>
+
+
+
+	<fieldset>
+		<legend>Harness Host Configuration</legend>
+		<p><b>Run test harness on:</b><br> 
+			<input type="radio" name="G_HARNESS_HOST" value="targetserver" <?php echo $harnesshost_targetserver ?> required/>Target OSS Server
+			<input type="radio" name="G_HARNESS_HOST" value="localhost" <?php echo $harnesshost_localhost ?> required/>Jenkins Slave<br>
+		</p>
+		<!-- not needed in EDIT Form, full command is shown in id="testselection"
+		<b>Choose test case grouping:</b><br>
+		<input type="radio" name="harnessparam" value="testcases" >Individual Test Cases
+		<input type="radio" name="harnessparam" value="testsuites">Test Suites  
+		<input type="radio" name="harnessparam" value="usecases">Use Cases <br>
+		-->
+		<b>Test Harness command:</b> <br>   
+		<!-- This next input differs in name from the Create webpage since this contains the full command and not just the testselection-->
+		<input type="text" name="G_TEST_HARNESS_COMMAND" id="testselection" value="<?php  echo htmlentities($G_TEST_HARNESS_COMMAND);  ?>" size=200><br>
+	</fieldset>
+	<fieldset>
+		<legend>Architecture</legend>
+		<b>Vendor&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;:</b>
+		<label for="hp">hp</label> 
+		<input type="radio" name="CI_ENVIRONMENT" id="hp" value="hp"  <?php echo $CI_ENVIRONMENT_HP; ?> />
+		<label for="sun">sun</label> 
+		<input type="radio" name="CI_ENVIRONMENT" id="sun" value="sun" <?php echo $CI_ENVIRONMENT_SUN ?> /><br>
+		<b>Architecture&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;:</b>
+		<label for="i386">i386</label> 
+		<input type="radio" name="CI_PLATFORM" id="i386" value="i386" <?php echo $CI_PLATFORM_i386;  ?>  />
+		<label for="SPARC">SPARC</label> 
+		<input type="radio" name="CI_PLATFORM" id="SPARC" value="SPARC" <?php echo $CI_PLATFORM_SPARC;  ?> /><br>
+		<!-- not needed in EDIT Form.
+		<p id="message">Please check one of the architecture boxes above.  </p>
+		<input type="button" id="read_values" value="Continue" onclick="message = document.getElementById('message');loadFile('<?php echo $CI_PLATFORM;  ?>');readX86Variables();" > -->
+	</fieldset>
+	<p id="restOfEditValues"></p>
+	<?php
+	if ( $env_current_array['CI_PLATFORM'] == "i386" ) {
+		echo "<fieldset>\n";
+		echo "<legend>Harness Host Configuration</legend>";			
+		echo "<b>Admin1 IPV4 Address&nbsp;&nbsp;:</b>";
+		echo '<input type="text" name="CI_ADMIN1_IPV4_ADDRESS" id="ci_admin1_ipv4_address" value="' . $env_current_array['CI_ADMIN1_IPV4_ADDRESS'] . '" size=30>';
+		echo '<span id="ip_address_help1" class="help"></span><br>';
+		echo "<b>Admin2 IPV4 Address&nbsp;&nbsp;:</b>";
+		echo '<input type="text" name="CI_ADMIN2_IPV4_ADDRESS" id="ci_admin2_ipv4_address" value="' . $env_current_array['CI_ADMIN2_IPV4_ADDRESS'] . '" size=30><br>';
+		echo '<b>Admin1 Hostname&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;:</b>';
+		echo '<input type="text" name="CI_ADMIN1_HOSTNAME" id="CI_ADMIN1_HOSTNAME" value="' . $env_current_array['CI_ADMIN1_HOSTNAME'] . '" size=30><br>';
+		echo '<b>Admin2 Hostname&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;:</b>';
+		echo '<input type="text" name="CI_ADMIN2_HOSTNAME" id="CI_ADMIN2_HOSTNAME" value="' . $env_current_array['CI_ADMIN2_HOSTNAME'] . '" size=30><br>';
+		echo '<b>Admin1 Root Password:</b>';
+		echo '<input type="text" name="CI_ADMIN1_ROOTPW" id="CI_ADMIN1_ROOTPW" value="' . $env_current_array['CI_ADMIN1_ROOTPW'] . '" size=30><br>';
+		echo '<b>Admin2 Root Password:</b>';
+		echo '<input type="text" name="CI_ADMIN2_ROOTPW" id="CI_ADMIN2_ROOTPW" value="' . $env_current_array['CI_ADMIN2_ROOTPW'] . '" size=30><br>';
+		echo '<b>Admin1 ILO Name&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;:</b>';
+		echo '<input type="text" name="CI_ADMIN1_ILO_NAME" value="' . $env_current_array['CI_ADMIN1_ILO_NAME'] . '" size=30><br>';
+		echo '<b>Admin2 ILO Name&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;:</b>';
+		echo '<input type="text" name="CI_ADMIN2_ILO_NAME" value="' . $env_current_array['CI_ADMIN2_ILO_NAME'] . '" size=30><br>';
+		echo '<b>Admin1 ILO Root Password:</b>';
+		echo '<input type="text" name="CI_ADMIN1_ILO_ROOTPW" value="' . $env_current_array['CI_ADMIN1_ILO_ROOTPW'] . '" size=30><br>';
+		echo '<b>Admin2 ILO Root Password:</b>';
+		echo '<input type="text" name="CI_ADMIN2_ILO_ROOTPW" value="' . $env_current_array['CI_ADMIN2_ILO_ROOTPW'] . '" size=30><br>';
+		echo '</fieldset>';
+
+	} elseif ( $env_current_array['CI_PLATFORM'] == "SPARC" ) {
+		echo "<legend>Harness Host Configuration</legend>";			
+		echo '<b>Admin1 Hostname&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;:</b>';
+		echo '<input type="text" name="CI_ADMIN1_HOSTNAME" id="CI_ADMIN1_HOSTNAME" value="' . $env_current_array['CI_ADMIN1_HOSTNAME'] . '" size=30><br>';
+		echo "<b>Admin1 IPV4 Address&nbsp;&nbsp;:</b>";
+		echo '<input type="text" name="CI_ADMIN1_IPV4_ADDRESS" id="ci_admin1_ipv4_address" value="' . $env_current_array['CI_ADMIN1_IPV4_ADDRESS'] . '" size=30>';
+		echo '<span id="ip_address_help1" class="help"></span><br>';
+		echo '<b>Admin1 Root Password:</b>';
+		echo '<input type="text" name="CI_ADMIN1_ROOTPW" id="CI_ADMIN1_ROOTPW" value="' . $env_current_array['CI_ADMIN1_ROOTPW'] . '" size=30><br>';
+		echo '<b>Admin1 ILO Name&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;:</b>';
+		echo '<input type="text" name="CI_ADMIN1_ILO_NAME" value="' . $env_current_array['CI_ADMIN1_ILO_NAME'] . '" size=30><br>';
+		echo '<b>Admin1 ILO Root Password:</b>';
+		echo '<input type="text" name="CI_ADMIN1_ILO_ROOTPW" value="' . $env_current_array['CI_ADMIN1_ILO_ROOTPW'] . '" size=30><br>';
+		echo '</fieldset>';
+	}	else {
+			echo "ERROR with CI_PLATFORM "; //=$env_current_array['CI_PLATFORM']";
+	}
+
+	echo '<fieldset>';
+		echo '<legend>Product Information</legend>';
+		echo '<b>Target Release, e.g. "O13_2"&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;:</b>';
+		echo '<input type="text" name="CI_RELEASE" value="' . $env_current_array['CI_RELEASE'] . '" size=30><br>';
+		echo '<b>Target Shipment, e.g. "13.2.7"&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;:</b>';
+		echo '<input type="text" name="CI_SHIPMENT" value="' . $env_current_array['CI_SHIPMENT'] . '" size=30><br>';
+
+		echo '<b>Type of build&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;:</b>';
+		echo '<label for="II">II</label> ';
+		echo '<input type="radio" name="CI_TYPE" id="II" value="II"  checked="yes" />';
+		echo  '<label for="UG">UG</label>';
+		echo '<input type="radio" name="CI_TYPE" id="UG" value="UG" /><br>';
+
+		echo '<b>typeii&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;:</b>';
+		echo '<label for="II">II</label> ';
+		echo '<input type="radio" name="CI_BUILD_TYPE" id="II" value="II" />';
+		echo '<label for="CU">CU</label> ';
+		echo '<input type="radio" name="CI_BUILD_TYPE" id="CU" value="CU"  checked="yes"/><br>';
+		echo '<b>OSS Product Number&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;:</b>';
+		echo '<input type="text" name="CI_OSS_PROD_NUM" value="' . $env_current_array['CI_OSS_PROD_NUM'] . '" size=30><br>';
+		echo '<b>OSS Product Revision&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;:</b>';
+		echo '<input type="text" name="CI_OSS_PROD_REV" value="' . $env_current_array['CI_OSS_PROD_REV'] . '" size=30><br>';
+		echo '</fieldset>';
+		echo '<input type="hidden" name="unsupported_variables" value="' .  $serialized_unsupported_variables . '" />';
+		echo '<input type="submit" value="Submit Data">';
+	?>
+
+		<!-- <input type="reset" value="Clear Data">
+		<input type="button" id="validate" value="Validate Ips" onclick="validateIpAddress(document.Edit_Environment_File.CI_ADMIN1_IPV4_ADDRESS)">
+		<button id="sendToServer">Submit me</button> -->
+	</form>
+	</body>
+
+</html>
+
+

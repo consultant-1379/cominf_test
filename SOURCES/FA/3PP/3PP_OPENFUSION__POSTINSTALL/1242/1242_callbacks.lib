@@ -1,0 +1,267 @@
+#!/bin/bash
+#################################################################################
+#
+#
+#       COPYRIGHT (C) ERICSSON RADIO SYSTEMS AB, Sweden
+#
+#       The copyright to the document(s) herein is the property of
+#       Ericsson Radio Systems AB, Sweden.
+#
+#       The document(s) may be used and/or copied only with the written
+#       permission from Ericsson Radio Systems AB or in accordance with
+#       the terms and conditions stipulated in the agreement/contract
+#       under which the document(s) have been supplied.
+#
+#################################################################################
+
+
+# ATCOMINF Test Callback Library
+
+# Revision History
+# <21/01/2013>	<epatnat>	<details>
+
+# Complete the callbacks in this library to automate the test case.
+#
+# Callbacks are stateless, it is not possible to set a global variable in one callback 
+# and access it it in another.
+#
+# Callbacks are called by the test harness in the following order:
+#
+# tc_setup() 		# Called only for independent TC execution mode to setup TC
+# tc_precon()		# Conditions that should exist before TC can run
+# tc_test()		# Runs the test for this TC
+# tc_postcon()		# Conditions that should/should not exist after successful TC 
+# tc_cleanup()		# Called only for independent TC execution mode to cleanup after TC
+
+# All callbacks must PASS for a TC PASS result
+
+#################################################################################
+#
+# CALLBACK: TC_SETUP
+#
+# This callback function is only called if the harness execution mode is 'AT_INDEPENDENT'
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_setup() {
+
+	# Coded to fail in case TC_AUTOMATED=1 before automation completed
+	# Change return code as required
+
+	return 0
+
+}
+#################################################################################
+
+#################################################################################
+#
+# CALLBACK: TC_PRECON
+#
+# This callback function checks the correct conditions exist to run the TC.
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+ 
+tc_precon() {
+
+	# Coded to fail in case TC_AUTOMATED=1 before automation completed
+	# Change return code as required
+
+	return 0
+
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_TEST
+#
+# This callback function runs the test.
+# The harness compares the return code to the SPEC_TC_TEST_PASSCODE value set in the test spec.
+#
+# Return or exit codes:
+#    SPEC_TC_TEST_PASSCODE 	success
+# != SPEC_TC_TEST_PASSCODE 	failure
+ 
+tc_test() {
+
+	# Coded to fail in case TC_AUTOMATED=1 before automation complete
+	# Change return code as required
+        #nit --------------------------------------------
+RETURN_STATUS=0
+
+while getopts ":d" option
+do
+    case $option in
+        d) DEBUG=1;;
+   esac
+done
+
+if [ $DEBUG ]; then
+    set -x
+fi
+# -------------------------------------------------
+
+
+# Mandatory information ---------------------------
+echo [OUTPUT:TESTCASENAME:Openf_3PP_TC_21]
+echo [OUTPUT:TESTCASEDESCRIPTION:Test to see if the notification service can filter sent events correctly]
+echo [OUTPUT:SCRIPTVERSION:PA1]
+# -------------------------------------------------
+
+
+# Do the test -------------------------------------
+#
+echo $PATH
+set -a
+. /etc/opt/ericsson/system.env
+
+PATH=$PATH\:/opt/prismtech/openfusion/bin:/usr/local/bin ; export PATH
+echo  $PATH
+
+#server -start NotificationServic 
+#pwd
+#ls -l
+#dtterm -display v2012b0:0.0 -geometry 100x24 -l -lf /var/tmp/pc_filter.log -e /pus
+
+screen -L -S local -d -m  run  com.prismt.cos.CosNotification.examples.Push.MyPushConsumer &
+
+echo $?
+run com.prismt.cos.CosNotification.examples.Filter.PushSupplier > /var/tmp/ps_filter.log
+echo $?
+
+more /var/tmp/pc_filter.log  | grep 99
+if [ $? -ne 0 ]; then
+
+sleep 30
+fi
+echo "will move info from screenlog to pc_filter"
+mv /var/tmp/platform_taf/FA/3PP/3PP_OPENFUSION__POSTINSTALL/1242/screenlog.0   /var/tmp/pc_filter.log
+
+
+grep "Pushed event" /var/tmp/ps_filter.log > /var/tmp/pushed_events
+#rm /var/tmp/ps_filter.log
+cat /dev/null > /var/tmp/valid_heights
+cat /dev/null > /var/tmp/valid_heights_and_lengths
+
+NUMBER_OF_LINES=`wc -l /var/tmp/pushed_events | awk '{print $1}'`
+LINE_NUMBER=1
+
+while [ $LINE_NUMBER -le $NUMBER_OF_LINES ]
+do
+        HEIGHT=`awk NR==$LINE_NUMBER /var/tmp/pushed_events | awk '{print $7}'`
+        if [ $HEIGHT -gt 10 -a $HEIGHT -lt 20 ]; then
+                awk NR==$LINE_NUMBER /var/tmp/pushed_events >> /var/tmp/valid_heights
+        fi
+        LINE_NUMBER=$LINE_NUMBER+1
+       echo ${LINE_NUMBER}
+done
+
+#rm /var/tmp/pushed_events
+
+NUMBER_OF_LINES=`wc -l /var/tmp/valid_heights | awk '{print $1}'`
+LINE_NUMBER=1
+
+while [ $LINE_NUMBER -le $NUMBER_OF_LINES ]
+do
+        LENGTH=`awk NR==$LINE_NUMBER /var/tmp/valid_heights | awk '{print $5}'`
+        if [ $LENGTH -gt 20 -a $LENGTH -lt 40 ]; then
+                awk NR==$LINE_NUMBER /var/tmp/valid_heights >> /var/tmp/valid_heights_and_lengths
+        fi
+        LINE_NUMBER=$((LINE_NUMBER+1))
+done
+
+#rm /var/tmp/valid_heights
+
+grep "Received event" /var/tmp/pc_filter.log > /var/tmp/received_events
+#rm /var/tmp/pc_filter.log
+
+cat /var/tmp/received_events | sed -e 's/^ *[^ ]* //' > /var/tmp/received_events
+cat /var/tmp/valid_heights_and_lengths | sed -e 's/^ *[^ ]* //' > /var/tmp/valid_heights_and_lengths
+
+#sed "s/
+#//" /var/tmp/received_events > /var/tmp/received_events2
+#sed "s/
+#//" /var/tmp/received_events2 > /var/tmp/received_events
+SCREEN_ID=`ps -aef | grep -i screen | grep -v grep | nawk '{print $2}'`
+echo $SCREEN_ID
+OUT=$?
+#PROCESS_ID=`ps -aef | grep -i screen | nawk '{print $2}'`
+
+if [ ${OUT} -eq 0 ] ; then
+       screen -S ${SCREEN_ID}.local -p 0 -X quit
+fi
+
+DIFFERENCE=`cmp /var/tmp/received_events /var/tmp/valid_heights_and_lengths`
+
+#rm /var/tmp/received_events /var/tmp/valid_heights_and_lengths
+
+if [ ! -z $DIFFERENCE ]; then
+        RETURN_STATUS=1
+        RETURN_STATUS_REASON="Invalid events found"
+fi
+# -------------------------------------------------
+
+
+
+# Return status and reason ------------------------
+if [ "$RETURN_STATUS_REASON" ]; then
+  echo [OUTPUT:REASON:$RETURN_STATUS_REASON]
+fi
+
+ return $RETURN_STATUS
+# -------------------------------------------------
+
+
+#	return 0
+
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_POSTCON
+#
+# This callback function checks expected results.
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_postcon() {
+
+	# Coded to fail in case TC_AUTOMATED=1 before automation complete.
+	# Change return code as required
+
+	return 0
+
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_CLEANUP
+#
+# This callback function is only called if the harness execution mode is 'AT_INDEPENDENT'
+# 
+# This callback restores the target system to the state it was in before the TC 
+# was run. It rolls back changes made by callbacks tc_setup() and tc_test()
+# 
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_cleanup() {
+
+	# Coded to fail in case TC_AUTOMATED=1 before automation complete
+	# Change return code as required
+
+	return 0
+
+}

@@ -1,0 +1,132 @@
+#!/bin/bash
+
+# TEST CASE SPEC FILE
+# This file is generated/updated using the test framework web interface.
+# Manual updates on test servers are lost when the test package is re-installed.
+#
+# Last modified: Monday 16th of December 2013 11:01:37
+#
+
+# These settings must be in BASH script format, they are sourced by other scripts.
+SPEC_FA_NAME="SOLARIS10SUNDS"
+SPEC_UC_NAME="SOLARIS10SUNDS_Managing_target_role_alias"
+SPEC_TC_ID=1457
+SPEC_TC_SLOGAN="Adding targets/roles/alias to a COM user entry "
+SPEC_TC_TYPE="FT"
+SPEC_TC_POLARITY="positive"
+SPEC_TC_PRIORITY="high"
+SPEC_TC_AUTOMATED=1
+SPEC_TC_DEPENDENT_ONLY=0
+SPEC_TC_TIMEOUT=300
+SPEC_TC_TEST_PASSCODE=0
+SPEC_TC_AUTHOR="xvinkat"
+SPEC_TC_AUTOMATOR="xvinkat"
+# this parameter is not interpreted by harness
+SPEC_TC_DISABLED=0
+
+# Please do not remove the comment lines below.
+# They are used as section locators by the test harness.
+
+# BEGIN_PRE_CONDITIONS
+#<path to the testcase>
+#
+#
+#SUN-DS/COM LDAP - User Management for 
+#COM-Enabled Nodes/Managing COM targets 
+#,role, role alias attributes for COM user entries >  
+#
+#
+#Following servers are successfully configured for 13.0.x version.
+#1.O&M primary
+#2.O&M secondary
+#3.OSS
+#4.UAS
+#Precondition: COM_ONLY,COM_OSS,COM_APP users exists in ldap database 
+# END_PRE_CONDITIONS
+
+
+# BEGIN_MANUAL_STEPS
+#1. Try to add the target which is exceeded 49 characters/zero length.
+#
+#
+#2. Try to add the target name with special characters.
+#
+#3. Add the first target to the OSS_ONLY user and check whether user type is changed from OSS_ONLY to COM_OSS or not.
+#
+#4.Add COM free standing roles/alias to the user.
+#
+#5.Add COM roles/alias by prefixed with targets .
+#
+#Note: Add roles/alises/targets to the user entry in prompt mode as well.
+# 
+# END_MANUAL_STEPS
+
+# BEGIN_POST_CONDITIONS
+#1. Script should throw an error message.
+#
+#Ex: bash-3.2# ./manage_COM_privs.bsh -a target -T uyetruweytruwyteruwyetruywteruiywteruywteruytweurtuyteiyeri -u user1
+#
+#LDAP Directory Manager password:
+#
+#INFO : User [user1] is type OSS_ONLY.
+#ERROR : Targets cannot contain more than 49 characters.
+#ERROR : Script terminated with errors. No updates have been made.
+#
+#2.Script should throw an error message.
+#
+#Ex: bash-3.2# ./manage_COM_privs.bsh -a target -T Eric@123 -u user1
+#
+#LDAP Directory Manager password:
+#
+#INFO : User [user1] is type OSS_ONLY.
+#ERROR : Invalid target name [Eric@123]; target names may only contain alphanumeric characters, hyphen(-), underscore(_) or dot(.)
+#ERROR : Script terminated with errors. No updates have been made.
+#
+#3.Target is added to the user and the user type is changed from OSS_ONLY to COM_OSS.
+#
+#Ex: bash-3.2# ./manage_COM_privs.bsh -a target -T target1 -u user1
+#
+#LDAP Directory Manager password:
+#
+#INFO : User [user1] is type OSS_ONLY.
+#
+#Please confirm that you want to proceed with requested actions - Yes or No [No] Yes
+#
+#INFO : User [user1] has been updated to type COM_OSS.
+#INFO : Successfully added COM target [target1] to user [user1].
+#
+#4.COM roles are added successfully to the user.
+#
+#Ex: bash-3.2# ./manage_COM_privs.bsh -a role -R HYD4,HYD5 -u user1
+#
+#LDAP Directory Manager password:
+#
+#INFO : User [user1] is type COM_OSS.
+#
+#Please confirm that you want to proceed with requested actions - Yes or No [No] Yes
+#
+#INFO : Successfully added COM role [HYD4] to user [user1].
+#INFO : Successfully added COM role [HYD5] to user [user1].
+#
+#5.Target is added to the user and role/alias is added to the user as <t1:r1>
+#
+#Ex:bash-3.2# ./manage_COM_privs.bsh -a role -R target2:tcs16 -u user1
+#
+#LDAP Directory Manager password:
+#
+#INFO : User [user1] is type COM_OSS.
+#
+#Please confirm that you want to proceed with requested actions - Yes or No [No] Yes
+#
+#INFO : Successfully added COM authentication target [target2] to user [user1]
+#INFO : Successfully added COM role [target2:tcs16] to user [user1].
+#
+#
+#
+#
+#
+#
+#
+#
+#
+# END_POST_CONDITIONS

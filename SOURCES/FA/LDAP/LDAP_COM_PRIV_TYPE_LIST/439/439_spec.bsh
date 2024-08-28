@@ -1,0 +1,47 @@
+#!/bin/bash
+
+# TEST CASE SPEC FILE
+# This file is generated/updated using the test framework web interface.
+# Manual updates on test servers are lost when the test package is re-installed.
+#
+# Last modified: Tuesday 14th of May 2013 14:12:07
+#
+
+# These settings must be in BASH script format, they are sourced by other scripts.
+SPEC_FA_NAME="LDAP"
+SPEC_UC_NAME="LDAP_COM_PRIV_TYPE_LIST"
+SPEC_TC_ID=439
+SPEC_TC_SLOGAN="manage_COM_priv.bsh only lists com_app users, and doesn\'t list com_only users, when \"-t com_app\" is specified"
+SPEC_TC_TYPE="FT"
+SPEC_TC_POLARITY="positive"
+SPEC_TC_PRIORITY="high"
+SPEC_TC_AUTOMATED=1
+SPEC_TC_DEPENDENT_ONLY=0
+SPEC_TC_TIMEOUT=300
+SPEC_TC_TEST_PASSCODE=0
+SPEC_TC_AUTHOR="xbahzam"
+SPEC_TC_AUTOMATOR="xbahzam"
+# this parameter is not interpreted by harness
+SPEC_TC_DISABLED=0
+
+# Please do not remove the comment lines below.
+# They are used as section locators by the test harness.
+
+# BEGIN_PRE_CONDITIONS
+#1. create user1 and user2 as com_app type and user3 as com_only
+#2. add target1 to user1
+#3. add role and alias without target to user1
+#4. add role & alias with target2 to user2
+#5. add role/alias/target to user3
+# END_PRE_CONDITIONS
+
+
+# BEGIN_MANUAL_STEPS
+#1. run  /ericsson/sdee/bin/manage_COM_privs.bsh -l -d 1.com -t com_app 
+#2. run  /ericsson/sdee/bin/manage_COM_privs.bsh -l -d 1.com -t com_only
+# END_MANUAL_STEPS
+
+# BEGIN_POST_CONDITIONS
+#1. The output of above commands are compared to files containing what we /usr/local/bin/expect which lists only the users with com_app type. 
+#2. The output of above commands are compared to files containing what we /usr/local/bin/expect which lists only the users with com_only type. 
+# END_POST_CONDITIONS

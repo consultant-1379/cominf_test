@@ -1,0 +1,49 @@
+#!/bin/bash
+
+# TEST CASE SPEC FILE
+# This file is generated/updated using the test framework web interface.
+# Manual updates on test servers are lost when the test package is re-installed.
+#
+# Last modified: Thursday 29th of August 2013 9:30:19
+#
+
+# These settings must be in BASH script format, they are sourced by other scripts.
+SPEC_FA_NAME="SCK"
+SPEC_UC_NAME="SCK_X86_MS_VERIFY_HARDENING"
+SPEC_TC_ID=942
+SPEC_TC_SLOGAN="Node Hardening "
+SPEC_TC_TYPE="FT"
+SPEC_TC_POLARITY="positive"
+SPEC_TC_PRIORITY="high"
+SPEC_TC_AUTOMATED=1
+SPEC_TC_DEPENDENT_ONLY=0
+SPEC_TC_TIMEOUT=4000
+SPEC_TC_TEST_PASSCODE=0
+SPEC_TC_AUTHOR="xlohjay"
+SPEC_TC_AUTOMATOR="xramhar"
+# this parameter is not interpreted by harness
+SPEC_TC_DISABLED=0
+
+# Please do not remove the comment lines below.
+# They are used as section locators by the test harness.
+
+# BEGIN_PRE_CONDITIONS
+#Initial Install should had been completed
+#The latest Jass custom package should be placed under /var/tmp of  CI_MWS_HOSTNAME server
+#Download the JASScustm package from the below URL:
+#http://clearcase-oss.lmera.ericsson.se/view/www_ossrc/vobs/ossrc/del-mgt/html/
+# END_PRE_CONDITIONS
+
+
+# BEGIN_MANUAL_STEPS
+#Installing Security package(Jasscustm) on Admin1 and Admin2
+#Applying Node hardening script on both Admin 1 and Admin 2 
+#Restart cluster with hatool
+#
+#
+# END_MANUAL_STEPS
+
+# BEGIN_POST_CONDITIONS
+#Node hardening successfully applied.
+#Prompt for password change
+# END_POST_CONDITIONS

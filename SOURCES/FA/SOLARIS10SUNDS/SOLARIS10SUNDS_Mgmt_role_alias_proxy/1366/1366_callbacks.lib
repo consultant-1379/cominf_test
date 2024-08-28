@@ -1,0 +1,271 @@
+#!/bin/bash
+#################################################################################
+#
+#
+#       COPYRIGHT (C) ERICSSON RADIO SYSTEMS AB, Sweden
+#
+#       The copyright to the document(s) herein is the property of
+#       Ericsson Radio Systems AB, Sweden.
+#
+#       The document(s) may be used and/or copied only with the written
+#       permission from Ericsson Radio Systems AB or in accordance with
+#       the terms and conditions stipulated in the agreement/contract
+#       under which the document(s) have been supplied.
+#
+#################################################################################
+
+
+# ATCOMINF Test Callback Library
+
+# Revision History
+# <date>	<signum>	<details>
+
+# Complete the callbacks in this library to automate the test case.
+#
+# Callbacks are stateless, it is not possible to set a global variable in one callback 
+# and access it it in another.
+#
+# Callbacks are called by the test harness in the following order:
+#
+# tc_setup() 		# Called only for independent TC execution mode to setup TC
+# tc_precon()		# Conditions that should exist before TC can run
+# tc_test()		# Runs the test for this TC
+# tc_postcon()		# Conditions that should/should not exist after successful TC 
+# tc_cleanup()		# Called only for independent TC execution mode to cleanup after TC
+
+# All callbacks must PASS for a TC PASS result
+
+#################################################################################
+#
+# CALLBACK: TC_SETUP
+#
+# This callback function is only called if the harness execution mode is 'AT_INDEPENDENT'
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+. ${AT_LIB}/tst_LDAP.lib
+LDAP_DOMAIN=$(grep "LDAP_DOMAIN" /ericsson/config/config.ini | awk -F"=" '{print $2}')
+
+pkginfo ERICodj 2> /dev/null
+ret=$?
+if [[ $ret == 0 ]]; then
+      	PATH_COM=/ericsson/opendj/bin/manage_COM.bsh
+else
+       	PATH_COM=/ericsson/sdee/bin/manage_COM.bsh
+fi
+
+
+tc_setup() {
+
+    # Left blank intentionally, as derz nothing to setup
+    
+	return 0
+}
+#################################################################################
+
+#################################################################################
+#
+# CALLBACK: TC_PRECON
+#
+# This callback function checks the correct conditions exist to run the TC.
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+ 
+tc_precon() {
+
+        templates=`ls *.tmpl 2>/dev/null | wc -l`
+        if [ ${templates} -eq 0 ] ; then
+                echo "There are no templates to process"
+                return 1
+        fi
+		
+		templ=1366-02.tmpl
+		expfile=1366-02.exp
+		infile=1366-02.in
+		sed -e "s/^PPPPPPPP/${LDAP_SUPERUSER_PASSWD}/" < ${templ} > ${infile}
+		${AT_BIN}/con_ex.bsh -d ${infile} -o ${expfile} -c "${PATH_COM} -r proxy -P proxy136601 -d vts.com " || {
+                    echo "Could not create $expfile from $infile  : retval $?"
+                    return 1
+                    }
+		echo "######################################################"
+		echo "Deleting proxyagent proxy136601 "
+		echo "######################################################"
+		/usr/local/bin/expect  ${expfile} >/dev/null || {
+                    echo "No proxyagent proxy136601"
+                    
+                    }
+
+        LDAP_SERVER_UP || {
+                echo "LDAP server is not runningi: $?"
+                return 1
+        }
+
+        LDAP_DOMAIN_EXISTS $LDAP_DOMAIN || {
+                echo "$LDAP_DOMAIN does not exist"
+                return 1
+        }
+
+        return 0
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_TEST
+#
+# This callback function runs the test.
+# The harness compares the return code to the SPEC_TC_TEST_PASSCODE value set in the test spec.
+#
+# Return or exit codes:
+#    SPEC_TC_TEST_PASSCODE 	success
+# != SPEC_TC_TEST_PASSCODE 	failure
+ 
+tc_test() {
+
+	
+	templ=1366-01.tmpl
+	expfile=1366-01.exp
+    infile=1366-01.in
+    sed -e "s/^PPPPPPPP/${LDAP_SUPERUSER_PASSWD}/" < ${templ} > ${infile}
+    ${AT_BIN}/con_ex.bsh -d ${infile} -o ${expfile} -c "${PATH_COM} -a proxy -P proxy136601 -d vts.com " || {
+                    echo "Could not create $expfile from $infile  : retval $?"
+                    return 1
+                    }
+    echo "######################################################"
+    echo "Creating proxyagent proxy136601 for the testcase"
+    echo "######################################################"
+    /usr/local/bin/expect  ${expfile} >/dev/null || {
+                    echo "Creating proxyagent proxy136601 Failed : retval $?"
+                    return 1
+                    }
+	
+	# Action 1 Try to add the proxy agent which exceeded 25 characters/zero length.
+	
+	${AT_BIN}/con_ex.bsh -d ${infile} -o ${expfile} -c "${PATH_COM} -a proxy -P hgtuweytruwyetruywetruwyterwkeyrikwherkjh -d vts.com " || {
+                    echo "Could not create $expfile from $infile  : retval $?"
+                    return 1
+                    }
+    echo "######################################################"
+    echo "Creating proxyagent which exceeded 25 characters"
+    echo "######################################################"
+    /usr/local/bin/expect  ${expfile} >/dev/null || {
+                    echo "Creating proxyagent which exceeded 25 characters Failed: Expected : retval $?"
+                    
+                    }
+	
+	# Action 2 Try to add the proxy agent with special characters in the proxy agent name
+	
+	${AT_BIN}/con_ex.bsh -d ${infile} -o ${expfile} -c "${PATH_COM} -a proxy -P eric@123 -d vts.com " || {
+                    echo "Could not create $expfile from $infile  : retval $?"
+                    return 1
+                    }
+    echo "######################################################"
+    echo "Creating proxyagent with special chars in proxy name"
+    echo "######################################################"
+    /usr/local/bin/expect  ${expfile} >/dev/null || {
+                    echo "Creating proxyagent with special chars in proxy name Failed: Expected : retval $?"
+                    
+                    }
+	
+	# Action 3 Try to add the same proxy agent which exists in the COM proxy agent branch
+	
+	${AT_BIN}/con_ex.bsh -d ${infile} -o ${expfile} -c "${PATH_COM} -a proxy -P proxy136601 -d vts.com " || {
+                    echo "Could not create $expfile from $infile  : retval $?"
+                    return 1
+                    }
+    echo "######################################################"
+    echo "Creating proxyagent proxy136601 again"
+    echo "######################################################"
+    /usr/local/bin/expect  ${expfile} >/dev/null || {
+                    echo "Creating proxyagent proxy136601 again Failed: Expected : retval $?"
+                    
+                    }
+	
+	# Action 4 Try to two proxy agents at a time in to the ldap domain.
+	
+	${AT_BIN}/con_ex.bsh -d ${infile} -o ${expfile} -c "${PATH_COM} -a proxy -P proxy136602 -P proxy136603 -d vts.com " || {
+                    echo "Could not create $expfile from $infile  : retval $?"
+                    return 1
+                    }
+    echo "######################################################"
+    echo "Creating proxyagents proxy136602,proxy136603 at a time"
+    echo "######################################################"
+    /usr/local/bin/expect  ${expfile} >/dev/null || {
+                    echo "Creating two proxyagents at a time Failed: Expected : retval $?"
+                    
+                    }
+	
+	
+	return 0
+
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_POSTCON
+#
+# This callback function checks expected results.
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_postcon() {
+
+	# Coded to fail in case TC_AUTOMATED=1 before automation complete.
+	# Change return code as required
+
+	return 0
+
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_CLEANUP
+#
+# This callback function is only called if the harness execution mode is 'AT_INDEPENDENT'
+# 
+# This callback restores the target system to the state it was in before the TC 
+# was run. It rolls back changes made by callbacks tc_setup() and tc_test()
+# 
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_cleanup() {
+	
+	templ=1366-02.tmpl
+	expfile=1366-02.exp
+    infile=1366-02.in
+    sed -e "s/^PPPPPPPP/${LDAP_SUPERUSER_PASSWD}/" < ${templ} > ${infile}
+    ${AT_BIN}/con_ex.bsh -d ${infile} -o ${expfile} -c "${PATH_COM} -r proxy -P proxy136601 -d vts.com " || {
+                    echo "Could not create $expfile from $infile  : retval $?"
+                    return 1
+                    }
+    echo "######################################################"
+    echo "Deleting proxyagent proxy136601 "
+    echo "######################################################"
+    /usr/local/bin/expect  ${expfile} >/dev/null || {
+                    echo "Deleting proxyagent proxy136601 Failed : retval $?"
+                    return 1
+                    }
+	
+	rm -f *.in *.exp || {
+                echo "Problems removing temporary files"
+                return 1
+        }
+    if ! LDAP_SERVER_UP ; then
+        echo "LDAP server is not running"
+		return 1
+    fi
+	return 0
+}

@@ -1,0 +1,17 @@
+01^/ericsson/sdee/bin/add_user.sh -d testdom^Allowed to add to none existent domain
+02^/ericsson/sdee/bin/add_user.sh -d globaldomain^Allowed -d globaldomain. No migration has taken place
+03^/ericsson/sdee/bin/add_user.sh -s 1500 -e 1400^Allowed specified end UID less than start UID
+04^/ericsson/sdee/bin/add_user.sh -s 800 -e 1500^Allowed specified start UID less than 1000
+05^/ericsson/sdee/bin/add_user.sh -s 1000 -e 75000^Allowed end UID greater than 59999
+06^/ericsson/sdee/bin/add_user.sh -i 800^Allowed specific UID less than 1000
+07^/ericsson/sdee/bin/add_user.sh -i 61000^Allowed specific UID greater than 59999
+08^/ericsson/sdee/bin/add_user.sh -t COM_ONLY -c sys_adm^Allowed -c option with COM_ONLY user type
+09^/ericsson/sdee/bin/add_user.sh com_app -c sys_adm^Allowed -c option with COM_APP user type
+10^/ericsson/sdee/bin/add_user.sh -c turnip^Allowed -c option with incorrect category
+11^/ericsson/sdee/bin/add_user.sh com_app -u test9999 -y^Allowed create user that already exists
+12^/ericsson/sdee/bin/add_user.sh -C^Allowed -C with no input
+13^/ericsson/sdee/bin/add_user.sh -i^Allowed -i with no input
+14^/ericsson/sdee/bin/add_user.sh -s^Allowed -s with no input
+15^/ericsson/sdee/bin/add_user.sh -e^Allowed -e with no input
+16^/ericsson/sdee/bin/add_user.sh -t COM_ONLY -S /bin/bash^Allowed -S option with COM_ONLY user
+17^/ericsson/sdee/bin/add_user.sh com_app -S /bin/bash^Allowed -S option with COM_APP user

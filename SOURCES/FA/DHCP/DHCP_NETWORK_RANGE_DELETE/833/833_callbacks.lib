@@ -1,0 +1,240 @@
+#!/bin/bash
+#################################################################################
+#
+#
+#       COPYRIGHT (C) ERICSSON RADIO SYSTEMS AB, Sweden
+#
+#       The copyright to the document(s) herein is the property of
+#       Ericsson Radio Systems AB, Sweden.
+#
+#       The document(s) may be used and/or copied only with the written
+#       permission from Ericsson Radio Systems AB or in accordance with
+#       the terms and conditions stipulated in the agreement/contract
+#       under which the document(s) have been supplied.
+#
+#################################################################################
+
+
+# ATCOMINF Test Callback Library
+
+# Revision History
+# 2012-12-14    xamamcg    Initial version
+
+# Complete the callbacks in this library to automate the test case.
+#
+# Callbacks are stateless, it is not possible to set a global variable in one callback 
+# and access it it in another.
+#
+# Callbacks are called by the test harness in the following order:
+#
+# tc_setup() 		# Called only for independent TC execution mode to setup TC
+# tc_precon()		# Conditions that should exist before TC can run
+# tc_test()		# Runs the test for this TC
+# tc_postcon()		# Conditions that should/should not exist after successful TC 
+# tc_cleanup()		# Called only for independent TC execution mode to clenup after TC
+
+# All callbacks must PASS for a TC PASS result
+
+#################################################################################
+#
+# CALLBACK: TC_SETUP
+#
+# This callback function is only called if the harness execution mode is 'AT_INDEPENDENT'
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_setup() {
+	cp /usr/local/etc/dhcpd.conf ./dhcpd.conf.bak
+	if [ -r /etc/dhcp/dhcpd.conf_subnet ]; then
+		cp /usr/local/etc/dhcpd.conf_subnet ./dhcpd.conf_subnet.bak
+	fi
+	# Need to add network first
+	echo "Test 1: Adding network, 114.41.95.0"
+	/ericsson/ocs/bin/ai_manager.sh -add net -a 114.41.95.0 -m 255.255.255.0 -r 114.41.95.1 -d conservapedia.org -n "1.1.1.1" || {
+		echo "Error creating test network, error code $?"
+		return 1
+	}
+
+	echo "Test 2: Adding range to network"
+	/ericsson/ocs/bin/ai_manager.sh -add range -n 255.255.255.0 -r 114.41.95.1 -b 114.41.95.10 -e 114.41.95.15 -s 10.45.201.45 -l 3500 -t "10.42.52.99,10.42.52.100" -w "10.42.52.101,10.42.52.102"  -q || {
+		echo "Error creating test network, error code $?"
+		return 2
+	}
+
+	# Add another network with no ranges
+	echo "Test 3: Adding network, 114.41.96.0"
+	/ericsson/ocs/bin/ai_manager.sh -add net -a 114.41.96.0 -m 255.255.255.0 -r 114.41.96.1 -d misc.org -n "1.1.1.1" || {
+		echo "Error creating test network, error code $?"
+		return 3
+	}
+	return 0
+
+}
+#################################################################################
+
+#################################################################################
+#
+# CALLBACK: TC_PRECON
+#
+# This callback function checks the correct conditions exist to run the TC.
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+ 
+tc_precon() {
+
+	DHCP_SERVER_INSTALLED || {
+		echo "DHCP server not installed"
+		return 1
+	}
+
+	DHCP_SERVER_RUNNING || {
+		echo "DHCP server not running"
+		return 2
+	}
+
+	return 0
+
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_TEST
+#
+# This callback function runs the test.
+# The harness compares the return code to the SPEC_TC_TEST_PASSCODE value set in the test spec.
+#
+# Return or exit codes:
+#    SPEC_TC_TEST_PASSCODE 	success
+# != SPEC_TC_TEST_PASSCODE 	failure
+ 
+tc_test() {
+	echo "Test 1 - delete range missing -n" 
+	/ericsson/ocs/bin/ai_manager.sh -delete range -b 114.41.95.10 -q && {
+		echo "Error allowed to delete range no -n, error code $?"
+		return 10
+	}
+
+	echo "Test 1 - delete range missing -b" 
+	/ericsson/ocs/bin/ai_manager.sh -delete range -n 255.255.255.0 -q && {
+		echo "Error allowed to delete range no -b, error code $?"
+		return 11
+	}
+
+	echo "Test 1 - delete range extra -e" 
+	/ericsson/ocs/bin/ai_manager.sh -delete range -n 255.255.255.0 -b 114.41.95.10 -e 114.41.95.15 -q && {
+		echo "Error allowed to delete range with -e, error code $?"
+		return 12
+	}
+
+	echo "Test 1 - delete range invalid -n" 
+	/ericsson/ocs/bin/ai_manager.sh -delete range -n 255.255.256.0 -b 114.41.95.10 -q && {
+		echo "Error allowed to delete range invalid -n, error code $?"
+		return 13
+	}
+
+	echo "Test 1 - delete range invalid -b" 
+	/ericsson/ocs/bin/ai_manager.sh -delete range -n 255.255.255.0 -b 114.41.0095.10 -q && {
+		echo "Error allowed to delete range invalid -b, error code $?"
+		return 14
+	}
+
+
+	echo "Test 2a - delete range from network that doesn't have one" 
+	/ericsson/ocs/bin/ai_manager.sh -delete range -n 255.255.255.0 -b 114.41.96.10 && {
+		echo "Error allowed to delete range that doesn't exist, error code $?"
+		return 2
+	}
+
+	echo "Test 2b - delete range but use wrong start value" 
+	/ericsson/ocs/bin/ai_manager.sh -delete range -n 255.255.255.0 -b 114.41.95.12 -q && {
+		echo "Error allowed to delete range with wrong start, error code $?"
+		return 3
+	}
+
+	echo "Test 2c - delete range but use wrong subnet value" 
+	/ericsson/ocs/bin/ai_manager.sh -delete range -n 255.255.0.0 -b 114.41.95.10 -q && {
+		echo "Error allowed to delete range with wrong subnet, error code $?"
+		return 4
+	}
+
+	echo "Test 2d - delete range from non-existing network " 
+	/ericsson/ocs/bin/ai_manager.sh -delete range -n 255.255.255.0 -b 114.41.97.10 && {
+		echo "Error allowed to delete range for network that does not exist, error code $?"
+		return 5
+	}
+
+	return 0
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_POSTCON
+#
+# This callback function checks expected results.
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_postcon() {
+
+	# Prove subnet file is as expected
+        diff range.txt /usr/local/etc/dhcpd.conf_subnet && { echo "Subnet file not as expected"; return 1; }
+	/ericsson/ocs/bin/ai_manager.sh -list nets 2> err.tmp 1> nets.tmp || { echo "Failed to list networks"; return 2; }
+
+	# Check range is in output
+	grep "range 114.41.95.10 114.41.95.15" nets.tmp || { echo "List networks doesn't contain range"; cat nets.tmp; return 3; }
+
+	# Check for expected error messages
+	CONSOLE_OUTPUT_CONTAINS "Range beginning ip [114.41.96.10] is not defined for network [114.41.96.0]" || { echo "No 96 network msg"; return 10; }
+	CONSOLE_OUTPUT_CONTAINS "Range beginning ip [114.41.95.12] is not defined for network [114.41.95.0]" || { echo "No 96 network msg"; return 11; }
+	CONSOLE_OUTPUT_CONTAINS "Network [114.41.0.0] does not exist" || { echo "No 96 network msg"; return 12; }
+	CONSOLE_OUTPUT_CONTAINS "Network [114.41.97.0] does not exist" || { echo "No 97 network msg"; return 13; }
+	CONSOLE_OUTPUT_CONTAINS "ERROR: You must specify a subnet mask address using the -n paramter" || { echo "No -n missing msg"; return 14; }
+	CONSOLE_OUTPUT_CONTAINS "ERROR: You must specify a beginning IP for the range using the -b parameter" || { echo "No -b missing msg"; return 15; }
+	CONSOLE_OUTPUT_CONTAINS "illegal option -- e" || { echo "No -e msg"; return 16; }
+	CONSOLE_OUTPUT_CONTAINS "Out of range in the IP Address [255.255.256.0]" || { echo "No 256 msg"; return 17; }
+	CONSOLE_OUTPUT_CONTAINS "Invalid IP address [114.41.0095.10]" || { echo "No 0095 msg"; return 18; }
+	return 0
+
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_CLEANUP
+#
+# This callback function is only called if the harness execution mode is 'AT_INDEPENDENT'
+# 
+# This callback restores the target system to the state it was in before the TC 
+# was run. It rolls back changes made by callbacks tc_setup() and tc_test()
+# 
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_cleanup() {
+
+	/ericsson/ocs/bin/ai_manager.sh -delete net -a 114.41.95.0 -q
+	/ericsson/ocs/bin/ai_manager.sh -delete net -a 114.41.96.0 -q
+
+	if [ -r ./dhcpd.conf_subnet.bak ]; then 
+		cat ./dhcpd.conf_subnet.bak > /usr/local/etc/dhcpd.conf_subnet
+	else
+		rm /usr/local/etc/dhcpd.conf_subnet
+	fi
+
+	rm -f *.tmp
+	rm -f *.bak
+	return 0
+
+}

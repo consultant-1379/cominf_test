@@ -1,0 +1,15 @@
+#!/bin/bash
+
+# TEST SUITE SPEC FILE
+# This file is generated/updated using the test framework web interface.
+# Manual updates on test servers are lost when the test package is re-installed.
+#
+# Last modified: Tuesday 6th of November 2012 12:07:45
+#
+SPEC_TS_NAME=DUMMY_X86_MS_POSTINSTALL_TESTS
+SPEC_TS_ID=18
+SPEC_TS_SLOGAN="Test cases for postinstall on X86 with DPASS PPASS"
+SPEC_TS_TIMEOUT=300
+SPEC_TS_AUTHOR="xjithbv"
+SPEC_TS_INDEPENDENT=1
+SPEC_TS_TC_IDS=(637 641 642 643 672 674 686 687 688 689 690 720)

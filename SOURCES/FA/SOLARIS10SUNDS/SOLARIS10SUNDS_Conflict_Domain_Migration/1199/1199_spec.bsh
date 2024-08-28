@@ -1,0 +1,56 @@
+#!/bin/bash
+
+# TEST CASE SPEC FILE
+# This file is generated/updated using the test framework web interface.
+# Manual updates on test servers are lost when the test package is re-installed.
+#
+# Last modified: Monday 16th of December 2013 7:13:02
+#
+
+# These settings must be in BASH script format, they are sourced by other scripts.
+SPEC_FA_NAME="SOLARIS10SUNDS"
+SPEC_UC_NAME="SOLARIS10SUNDS_Conflict_Domain_Migration"
+SPEC_TC_ID=1199
+SPEC_TC_SLOGAN="Verify the rejection of the proposal of the“resolve_conflicts.bsh” script"
+SPEC_TC_TYPE="FT"
+SPEC_TC_POLARITY="positive"
+SPEC_TC_PRIORITY="high"
+SPEC_TC_AUTOMATED=0
+SPEC_TC_DEPENDENT_ONLY=0
+SPEC_TC_TIMEOUT=300
+SPEC_TC_TEST_PASSCODE=0
+SPEC_TC_AUTHOR="xlaxain"
+SPEC_TC_AUTOMATOR="xlaxain"
+# this parameter is not interpreted by harness
+SPEC_TC_DISABLED=0
+
+# Please do not remove the comment lines below.
+# They are used as section locators by the test harness.
+
+# BEGIN_PRE_CONDITIONS
+#Path in Mars:- SUN-DS/Conflict Resolution & Global Domain Migration       
+#
+#Make sure you have created user/group conflicts per domain. 
+# END_PRE_CONDITIONS
+
+
+# BEGIN_MANUAL_STEPS
+#Execute /ericsson/sdee/bin/resolve_conflicts.bsh -p -u -d “ldap-domain”
+#“ldap-domain” is to be replaced with the domain you are going to migrate e.g. 1.com
+#Answer “n” to the message instructing to accept proposals to resolve the conflicts, to get the exact message please refer to SUN-DS SAG. 
+# END_MANUAL_STEPS
+
+# BEGIN_POST_CONDITIONS
+#If user accepts the proposals the “user_accepted_proposals.jobs” file will be created as below:
+#
+#/ericsson/sdee/GDmig/<domain>/conflicts/propose/user/user_rejected_proposals.jobs
+#The script will archive the last set of files to time-stamped backups under:
+#/ericsson/sdee/GDmig/<domain>/conflicts/propose/user/archive 
+#
+#Once the user has answered ‘n’ to “Accept proposals to the conflict type, the resolve_conflicts.bsh script will record the decisions to job
+#files. The rejected proposals job file must be processed manually before the domain can be migrated.
+#
+#Please refer to the “COMInf SUN Directory Server, System Administration Guide” for examples and to learn about the Conflict resolution proposal types (if needed).
+#  
+#   
+# END_POST_CONDITIONS

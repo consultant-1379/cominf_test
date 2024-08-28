@@ -1,0 +1,159 @@
+#!/bin/bash
+#################################################################################
+#
+#
+#	   COPYRIGHT (C) ERICSSON RADIO SYSTEMS AB, Sweden
+#
+#	   The copyright to the document(s) herein is the property of
+#	   Ericsson Radio Systems AB, Sweden.
+#
+#	   The document(s) may be used and/or copied only with the written
+#	   permission from Ericsson Radio Systems AB or in accordance with
+#	   the terms and conditions stipulated in the agreement/contract
+#	   under which the document(s) have been supplied.
+#
+#################################################################################
+
+
+# ATCOMINF Test Callback Library
+
+# Revision History
+# 07/09/12	xkalbha		Add AIF user with same name as POSIX user on NEDSS
+
+# Complete the callbacks in this library to automate the test case.
+#
+# Callbacks are stateless, it is not possible to set a global variable in one callback 
+# and access it it in another.
+#
+# Callbacks are called by the test harness in the following order:
+#
+# tc_setup() 		# Called only for independent TC execution mode to setup TC
+# tc_precon()		# Conditions that should exist before TC can run
+# tc_test()		# Runs the test for this TC
+# tc_postcon()		# Conditions that should/should not exist after successful TC 
+# tc_cleanup()		# Called only for independent TC execution mode to clenup after TC
+
+# All callbacks must PASS for a TC PASS result
+
+#################################################################################
+#
+# CALLBACK: TC_SETUP
+#
+# This callback function is only called if the harness execution mode is 'AT_INDEPENDENT'
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_setup() {
+
+	return 0
+
+}
+#################################################################################
+
+#################################################################################
+#
+# CALLBACK: TC_PRECON
+#
+# This callback function checks the correct conditions exist to run the TC.
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+ 
+tc_precon() {
+
+	grep smrs_master "/etc/inet/hosts" || { echo "No smrs_master created"; return 1; }
+
+	# Check slave on smrs_master
+	
+	# Check account on NEDSS
+	name=`hostname`
+	nedssfile="../../nedssIP."${name}
+	[ -r ${nedssfile} ] || { echo "No $nedssfile found"; return 3; }
+	NEDSSIP=$(cat $nedssfile)
+
+	# Check aif401 does not exist anywhere
+	
+	POSIX_USER_EXISTS aif401 z${NEDSSIP} && { echo "aif401 exists on NEDSS"; return 3; }
+
+	CHECK_SLAVE_EXISTS nedssv4 || { echo "nedssv4 does not exist in smrs_config"; return 4; }
+	return 0
+
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_TEST
+#
+# This callback function runs the test.
+# The harness compares the return code to the SPEC_TC_TEST_PASSCODE value set in the test spec.
+#
+# Return or exit codes:
+#	SPEC_TC_TEST_PASSCODE 	success
+# != SPEC_TC_TEST_PASSCODE 	failure
+ 
+tc_test() {
+
+	
+	# Create POSIX account on NEDSS
+	name=`hostname`
+	nedssfile="../../nedssIP."${name}
+	[ -r ${nedssfile} ] || { echo "No $nedssfile found"; return 3; }
+	NEDSSIP=$(cat $nedssfile)
+	ssh root@smrs_master ssh root@$NEDSSIP 'useradd aif401' || { echo "Failed to create POSIX user $?"; return 1; }
+
+	/opt/ericsson/nms_bismrs_mc/bin/add_aif.sh -n LRAN -a aif401 -p passwo12 -s nedssv4
+	retval=$?
+	[ $retval -eq 1 ] || { echo "Wrong error when added aif401 $retval"; return 2; }
+
+
+	return 0
+
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_POSTCON
+#
+# This callback function checks expected results.
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_postcon() {
+
+	# Check aif401 does not exist on the smrs_master
+	#POSIX_REMOTE_USER_EXISTS aif401 smrs_master && { echo "aif401 exists on smrs_master"; return 3; }
+	#ssh smrs_master "cat /etc/passwd | grep aif401" && { echo "aif401 exists on smrs_master"; return 3; }
+	return 0
+
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_CLEANUP
+#
+# This callback function is only called if the harness execution mode is 'AT_INDEPENDENT'
+# 
+# This callback restores the target system to the state it was in before the TC 
+# was run. It rolls back changes made by callbacks tc_setup() and tc_test()
+# 
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_cleanup() {
+
+
+	return 0
+
+}

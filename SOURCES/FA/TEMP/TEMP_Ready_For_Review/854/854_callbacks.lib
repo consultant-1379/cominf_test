@@ -1,0 +1,208 @@
+#!/bin/bash
+#################################################################################
+#
+#
+#       COPYRIGHT (C) ERICSSON RADIO SYSTEMS AB, Sweden
+#
+#       The copyright to the document(s) herein is the property of
+#       Ericsson Radio Systems AB, Sweden.
+#
+#       The document(s) may be used and/or copied only with the written
+#       permission from Ericsson Radio Systems AB or in accordance with
+#       the terms and conditions stipulated in the agreement/contract
+#       under which the document(s) have been supplied.
+#
+#################################################################################
+
+
+# ATCOMINF Test Callback Library
+
+# Revision History
+# <date>	<signum>	<details>
+
+# Complete the callbacks in this library to automate the test case.
+#
+# Callbacks are stateless, it is not possible to set a global variable in one callback 
+# and access it it in another.
+#
+# Callbacks are called by the test harness in the following order:
+#
+# tc_setup() 		# Called only for independent TC execution mode to setup TC
+# tc_precon()		# Conditions that should exist before TC can run
+# tc_test()		# Runs the test for this TC
+# tc_postcon()		# Conditions that should/should not exist after successful TC 
+# tc_cleanup()		# Called only for independent TC execution mode to cleanup after TC
+
+# All callbacks must PASS for a TC PASS result
+
+#################################################################################
+#
+# CALLBACK: TC_SETUP
+#
+# This callback function is only called if the harness execution mode is 'AT_INDEPENDENT'
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_setup() {
+
+	# Coded to fail in case TC_AUTOMATED=1 before automation completed
+	# Change return code as required
+
+	return 0
+
+}
+#################################################################################
+
+#################################################################################
+#
+# CALLBACK: TC_PRECON
+#
+# This callback function checks the correct conditions exist to run the TC.
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+ 
+tc_precon() {
+
+	# Coded to fail in case TC_AUTOMATED=1 before automation completed
+	# Change return code as required
+
+        ${G_SMTOOL} -list | grep -v started > /var/tmp/mc_tc_854
+        if [ -f /ericsson/config/ossrc.p12 ]; then
+                echo "ossrc.p12 found"
+        else
+                echo "copying ossrc.p12 from remote server"
+                scp /net/159.107.177.22/NFD_Store/ossrc.p12 /ericsson/config
+                if [[ $? -ne 0 ]]; then
+                        echo "Failed to copy .p12 file"
+                        return 1
+                fi
+        fi
+
+        return 0
+
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_TEST
+#
+# This callback function runs the test.
+# The harness compares the return code to the SPEC_TC_TEST_PASSCODE value set in the test spec.
+#
+# Return or exit codes:
+#    SPEC_TC_TEST_PASSCODE 	success
+# != SPEC_TC_TEST_PASSCODE 	failure
+ 
+tc_test() {
+
+	# Coded to fail in case TC_AUTOMATED=1 before automation complete
+	# Change return code as required
+                
+        /opt/ericsson/saoss/bin/security.ksh -status |head -2 |tail -1 |grep OFF
+        if [[ $? -eq 0 ]]; then
+
+                echo "Checking the trusted certificates..."
+                /opt/ericsson/saoss/bin/security.ksh -viewTrustCerts |grep empty
+                if [[ $? -eq 0 ]]; then
+                         echo "y" >> san.$$
+                fi
+
+                echo "Turning security setting on";
+                echo "y" >> san.$$
+
+                /opt/ericsson/saoss/bin/security.ksh -change < san.$$
+                rm san.$$
+        else
+                echo "Security is already on";
+        fi
+
+	return 0
+
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_POSTCON
+#
+# This callback function checks expected results.
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_postcon() {
+
+	# Coded to fail in case TC_AUTOMATED=1 before automation complete.
+	# Change return code as required
+
+        /opt/ericsson/saoss/bin/security.ksh -status |head -2 |tail -1 |grep ON
+        if [[ $? -ne 0 ]]; then
+                echo "Problem found in setting the security ON"
+                return 1
+        fi
+
+        echo -e  "\n\nNew Status:"
+        /opt/ericsson/saoss/bin/security.ksh -status
+
+
+        ${G_SMTOOL} -progress
+        sleep 120
+        ${G_SMTOOL} -progress
+
+        ##Checking if all the Managed Components are Online##
+        echo "Checking if all the Managed Components are Online"
+        echo "-------------------------------------------------"
+
+        areAllManagedComponents -online -except BI_SMRS_MC,eam_handlerMtp,eam_handlerText,netop_ems 
+        if [[ $? -ne 0 ]]; then
+                echo "All expected MCs are not online"
+                ${G_SMTOOL} -list | grep -v started > /var/tmp/mc2.$$
+                while read  line ;
+                        do
+                                MC=$(echo $line |awk '{print $1}');
+                                MCSTATE=$(echo $line |awk '{print $2}');
+                                grep  $MC /var/tmp/mc_tc_854 >/dev/null;
+                                if [ $? -ne 0 ]; then
+                                        echo "ERROR: ${MC} was started prior to security change now it is ${MCSTATE}";
+                                        ERR=YES
+                                fi ;
+                        done < /var/tmp/mc2.$$
+                rm /var/tmp/mc_tc_854
+                rm /var/tmp/mc2.$$
+                [[ $ERR == "YES" ]] && return 1
+        fi
+
+	return 0
+
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_CLEANUP
+#
+# This callback function is only called if the harness execution mode is 'AT_INDEPENDENT'
+# 
+# This callback restores the target system to the state it was in before the TC 
+# was run. It rolls back changes made by callbacks tc_setup() and tc_test()
+# 
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_cleanup() {
+
+	# Coded to fail in case TC_AUTOMATED=1 before automation complete
+	# Change return code as required
+	return 0
+
+}

@@ -1,0 +1,47 @@
+#!/bin/bash
+
+# TEST CASE SPEC FILE
+# This file is generated/updated using the test framework web interface.
+# Manual updates on test servers are lost when the test package is re-installed.
+#
+# Last modified: Friday 28th of March 2014 11:24:58
+#
+
+# These settings must be in BASH script format, they are sourced by other scripts.
+SPEC_FA_NAME="3PP"
+SPEC_UC_NAME="3PP_VISI_POSTINSTALL"
+SPEC_TC_ID=1431
+SPEC_TC_SLOGAN="TR HR27195 and HQ25181: check variables and start syntax"
+SPEC_TC_TYPE="FT"
+SPEC_TC_POLARITY="positive"
+SPEC_TC_PRIORITY="high"
+SPEC_TC_AUTOMATED=1
+SPEC_TC_DEPENDENT_ONLY=0
+SPEC_TC_TIMEOUT=300
+SPEC_TC_TEST_PASSCODE=0
+SPEC_TC_AUTHOR="epatnat"
+SPEC_TC_AUTOMATOR="epatnat"
+# this parameter is not interpreted by harness
+SPEC_TC_DISABLED=0
+
+# Please do not remove the comment lines below.
+# They are used as section locators by the test harness.
+
+# BEGIN_PRE_CONDITIONS
+#check if ERICbrlnd and EXTRbrlnd packages are installed ok
+# END_PRE_CONDITIONS
+
+
+# BEGIN_MANUAL_STEPS
+#check /ericsson/bes/etc/borland.env:
+# 
+#OSAGENT_ADDR_FILE exists
+#/ericsson/bes/etc/addrFile is created 
+#/ericsson/bes/etc/addrFile has non zero filesize and correct masterservice ip
+#
+#
+# END_MANUAL_STEPS
+
+# BEGIN_POST_CONDITIONS
+#n/a
+# END_POST_CONDITIONS

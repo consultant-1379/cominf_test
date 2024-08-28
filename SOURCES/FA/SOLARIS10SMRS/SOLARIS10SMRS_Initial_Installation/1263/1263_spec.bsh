@@ -1,0 +1,62 @@
+#!/bin/bash
+
+# TEST CASE SPEC FILE
+# This file is generated/updated using the test framework web interface.
+# Manual updates on test servers are lost when the test package is re-installed.
+#
+# Last modified: Monday 16th of December 2013 8:40:34
+#
+
+# These settings must be in BASH script format, they are sourced by other scripts.
+SPEC_FA_NAME="SOLARIS10SMRS"
+SPEC_UC_NAME="SOLARIS10SMRS_Initial_Installation"
+SPEC_TC_ID=1263
+SPEC_TC_SLOGAN="Verify SMRS NFS monitor SMF service in blade/non blade "
+SPEC_TC_TYPE="FT"
+SPEC_TC_POLARITY="positive"
+SPEC_TC_PRIORITY="high"
+SPEC_TC_AUTOMATED=1
+SPEC_TC_DEPENDENT_ONLY=0
+SPEC_TC_TIMEOUT=300
+SPEC_TC_TEST_PASSCODE=0
+SPEC_TC_AUTHOR="xnavema"
+SPEC_TC_AUTOMATOR="xnavema"
+# this parameter is not interpreted by harness
+SPEC_TC_DISABLED=0
+
+# Please do not remove the comment lines below.
+# They are used as section locators by the test harness.
+
+# BEGIN_PRE_CONDITIONS
+#<PATH Under "Verification Specification for Cominf Feature Test for 14.0":Bi-directional SMRS Initial Installation/Server Installation>
+# END_PRE_CONDITIONS
+
+
+# BEGIN_MANUAL_STEPS
+#To verify that SMRS NFS monitor SMF service monitors NFS connections between the OSS Master and the . Tests requirement 105 65-0580/01806
+#
+#One (1) server(preferably blade). One SMRS Master(NESS) server, connected to server.
+#Conditional Test
+#
+#On the server, issue the command "umount -a -f /var/opt/ericsson/smrsstore/< network type>" then issue the command "tail /var/adm/messages"
+#
+# END_MANUAL_STEPS
+
+# BEGIN_POST_CONDITIONS
+#Acceptance Criteria
+#
+#Output similar to the following should be observed:
+#Nov 21 13:12:57 atrcxb1390 smrs_nfs: [ID 702911 daemon.notice] 10.44.194.136:/export/GRAN not mounted. Attempting to mount.
+#Nov 21 13:12:58 atrcxb1390 smrs_nfs: [ID 702911 daemon.notice] Successfully mounted 10.44.194.136:/export/GRAN.
+#Where 10.44.194.136 represents the IP address of the SMRS Master(NESS) and atrcxb1390 represents the hostname of the server.
+#
+#For Blade we are using sfs output should be 
+#10.45.29.8:/vx/atrcxb1194-gran_common /var/opt/ericsson/smrsstore/GRAN nfs rw,xattr,dev=4fc00ca 1348503643
+#10.45.29.8:/vx/atrcxb1194-core_common /var/opt/ericsson/smrsstore/CORE nfs rw,xattr,dev=4fc00cb 1348503644
+#10.45.29.8:/vx/atrcxb1194-lran_common /var/opt/ericsson/smrsstore/LRAN nfs rw,xattr,dev=4fc00cc 1348503646
+#10.45.29.8:/vx/atrcxb1194-wran_common /var/opt/ericsson/smrsstore/WRAN nfs rw,xattr,dev=4fc00cd 1348503648
+#10.45.29.8:/vx/atrcxb1194-gran_clvm382ss /var/opt/ericsson/smrsstore/GRAN/clvm382ss nfs rw,xattr,dev=4fc00ce 1348503649
+#10.45.29.8:/vx/atrcxb1194-core_clvm382ss /var/opt/ericsson/smrsstore/CORE/clvm382ss nfs rw,xattr,dev=4fc00cf 1348503650
+#10.45.29.8:/vx/atrcxb1194-lran_clvm382ss /var/opt/ericsson/smrsstore/LRAN/clvm382ss nfs rw,xattr,dev=4fc00d0 1348503652
+#
+# END_POST_CONDITIONS

@@ -1,0 +1,112 @@
+#!/bin/bash
+
+# TEST CASE SPEC FILE
+# This file is generated/updated using the test framework web interface.
+# Manual updates on test servers are lost when the test package is re-installed.
+#
+# Last modified: Tuesday 14th of May 2013 14:09:54
+#
+
+# These settings must be in BASH script format, they are sourced by other scripts.
+SPEC_FA_NAME="LDAP"
+SPEC_UC_NAME="LDAP_COM_BULK_IMPORT_OVERWRITE"
+SPEC_TC_ID=598
+SPEC_TC_SLOGAN="Test invalid files to bulk import overwrite"
+SPEC_TC_TYPE="FT"
+SPEC_TC_POLARITY="negative"
+SPEC_TC_PRIORITY="low"
+SPEC_TC_AUTOMATED=1
+SPEC_TC_DEPENDENT_ONLY=0
+SPEC_TC_TIMEOUT=300
+SPEC_TC_TEST_PASSCODE=0
+SPEC_TC_AUTHOR="xamamcg"
+SPEC_TC_AUTOMATOR="xamamcg"
+# this parameter is not interpreted by harness
+SPEC_TC_DISABLED=0
+
+# Please do not remove the comment lines below.
+# They are used as section locators by the test harness.
+
+# BEGIN_PRE_CONDITIONS
+#1. Role r598 exists
+#2. Alias a598 exists containing role r598
+#3. 598a.import contains:
+#ROLE r598b
+#ALIAS a598b r598
+#4. 598b.import contains
+#DOMAIN 1.com
+#ROLE r598b
+#ALIAS a598b r598
+#5. 598c.import contains
+#DOMAIN 1.com
+#ALIAS a598b r598b
+#6. 598d.import contains
+#DOMAIN 1.com
+#DOMAIN 1.com
+#ALIAS a598b r598
+#7. 598e.import contains
+#DOMAIN 1.com
+#DOMAIN 2.com
+#ALIAS a598b r598
+#8. 598f.import contains
+#DOMAIN 1.com
+#ROLE r598b
+#ALIAS a598b r598 r598b
+#9. 598g.import contains
+#DOMAIN 1.com
+#ROLE r598b r598c
+#ALIAS a598b r598
+#9. 598h.import contains
+#DOMAIN 1.com
+#ROLE r598%b
+#ALIAS a598b r598
+#10. 598i.import contains
+#DOMAIN 1.com
+#ROLE r598
+#10. 598j.import contains
+#DOMAIN 1.com
+#ROLE r598b
+#ROLE r598c
+#11. 598k.import contains
+#DOMAIN 1.com
+#ROLES r598b
+#12. 598l.import contains
+#DOMAIN 1.com,2.com
+#ROLE r598b
+#13. 598m.import contains
+#DOMAIN wrong.com
+#ROLE r598b
+#14. 598n.import contains
+#DOMAIN 1.com
+#ROLE r598b
+#ALIAS a598c r598b
+#ALIAS a598b
+#
+# END_PRE_CONDITIONS
+
+
+# BEGIN_MANUAL_STEPS
+#1. !manage_COM.bsh -a import -f 598a.import -o -y -d 1.com
+#2. !manage_COM.bsh -a import -f 598a.import -o -y
+#3. !manage_COM.bsh -a import -f 598b.import -o -d 2.com -y
+#4. !manage_COM.bsh -a import -f 598c.import -o -d 1.com -y
+#5. !manage_COM.bsh -a import -f 598d.import -o -d 1.com -y
+#6. !manage_COM.bsh -a import -f 598e.import -o -d 1.com -y
+#7. !manage_COM.bsh -a import -f 598f.import -o -d 1.com -y
+#8. !manage_COM.bsh -a import -f 598g.import -o -d 1.com -y
+#9. !manage_COM.bsh -a import -f 598h.import -o -d 1.com -y
+#10. !manage_COM.bsh -a import -f 598i.import -o -d 1.com -y
+#11. !manage_COM.bsh -a import -f 598j.import -o -d 1.com -y
+#12. !manage_COM.bsh -a import -f 598k.import -o -d 1.com -y
+#13. !manage_COM.bsh -a import -f 598l.import -o -d 1.com -y
+#14. !manage_COM.bsh -a import -f 598l.import -o -d 1.com,2.com -y
+#15. !manage_COM.bsh -a import -f 598m.import -o -d 1.com -y
+#16. !manage_COM.bsh -a import -f 598m.import -o -d wrong.com -y
+#17. !manage_COM.bsh -a import -f 598n.import -o -d 1.com -y
+# END_MANUAL_STEPS
+
+# BEGIN_POST_CONDITIONS
+#1. alias a598b and a598c do not exist
+#2. role r598b and r598c do not exist
+#3. Alias a598 exists containing just role r598
+# END_POST_CONDITIONS

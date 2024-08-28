@@ -1,0 +1,85 @@
+#!/bin/bash
+
+# TEST CASE SPEC FILE
+# This file is generated/updated using the test framework web interface.
+# Manual updates on test servers are lost when the test package is re-installed.
+#
+# Last modified: Tuesday 17th of December 2013 9:48:09
+#
+
+# These settings must be in BASH script format, they are sourced by other scripts.
+SPEC_FA_NAME="SOLARIS10INSTALL"
+SPEC_UC_NAME="SOLARIS10INSTALL_SUNDS_Replication"
+SPEC_TC_ID=1756
+SPEC_TC_SLOGAN="Verify replication set-up for Infra Primary/Secondary"
+SPEC_TC_TYPE="FT"
+SPEC_TC_POLARITY="positive"
+SPEC_TC_PRIORITY="high"
+SPEC_TC_AUTOMATED=1
+SPEC_TC_DEPENDENT_ONLY=0
+SPEC_TC_TIMEOUT=300
+SPEC_TC_TEST_PASSCODE=0
+SPEC_TC_AUTHOR="xgansre"
+SPEC_TC_AUTOMATOR="xlaxain"
+# this parameter is not interpreted by harness
+SPEC_TC_DISABLED=0
+
+# Please do not remove the comment lines below.
+# They are used as section locators by the test harness.
+
+# BEGIN_PRE_CONDITIONS
+#Precondition: 
+#Two Infra Servers
+#
+#Mars path <Initial Installation/SUN-DS Replication>
+# END_PRE_CONDITIONS
+
+
+# BEGIN_MANUAL_STEPS
+#Action 1: 
+#Follow section " 10.2 Setting Up Multi-Master LDAP Replication for Standard Deployment" of the COMInf SUN Directory Server System Administration to set up LDAP replication on the primary and secondary infra and then initialize replication from the Primary to secondary Infra.
+#
+#Action 2: 
+#On both Infra Primary and Secondary, execute option 3 of /ericsson/sdee/bin/prepReplication.sh to check replication status between machines
+#
+#Action 3: 
+#On both Infra Primary and Secondary, execute option 6 of /ericsson/sdee/bin/prepReplication.sh to list existing replication agreements
+#
+#
+# END_MANUAL_STEPS
+
+# BEGIN_POST_CONDITIONS
+#Result 1: 
+#All necessary values are entered without any error. There are no errors reported in /ericsson/sdee/log/replication_<timestamp>.log on both the Infra Primary/Secondary.
+#
+#Result 2: 
+#Replication Status is enabled on both Infras
+#Configuration Status : OK
+#Authentication Status : OK
+#Initialization Status : OK
+#Status : Enabled
+#Last Update Date : Apr 21, 2010 12:16:07 PM
+#-----------------------------------------
+#Check replication status ran successfully
+#-----------------------------------------
+#
+#Result 3: 
+#Replication agreements are listed displaying the LDAP Domain name and FQDN of replicated server.
+#
+#Infra Primary...
+#---------------------------------------
+#listing existing replication agreements
+#---------------------------------------
+#dc=atrcus771,dc=athtem,dc=eei,dc=ericsson,dc=se atrcus763.athtem.eei.ericsson.se:636
+#--------------------------------------------
+#listing replication agreement was successful
+#--------------------------------------------
+#Infra Secondary...
+#---------------------------------------
+#listing existing replication agreements
+#---------------------------------------
+#dc=atrcus771,dc=athtem,dc=eei,dc=ericsson,dc=se atx807vm9.athtem.eei.ericsson.se:636
+#--------------------------------------------
+#listing replication agreement was successful
+#-------------------------------------------- 
+# END_POST_CONDITIONS

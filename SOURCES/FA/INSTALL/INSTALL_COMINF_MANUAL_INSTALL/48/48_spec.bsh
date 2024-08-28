@@ -1,0 +1,66 @@
+#!/bin/bash
+
+# TEST CASE SPEC FILE
+# This file is generated/updated using the test framework web interface.
+# Manual updates on test servers are lost when the test package is re-installed.
+#
+# Last modified: Sunday 31st of March 2013 20:37:23
+#
+
+# These settings must be in BASH script format, they are sourced by other scripts.
+SPEC_FA_NAME="INSTALL"
+SPEC_UC_NAME="INSTALL_COMINF_MANUAL_INSTALL"
+SPEC_TC_ID=48
+SPEC_TC_SLOGAN="Basic install, but NO NTP and no DHCP (manual ran not reviewed)"
+SPEC_TC_TYPE="FT"
+SPEC_TC_POLARITY="positive"
+SPEC_TC_PRIORITY="high"
+SPEC_TC_AUTOMATED=0
+SPEC_TC_DEPENDENT_ONLY=0
+SPEC_TC_TIMEOUT=300
+SPEC_TC_TEST_PASSCODE=0
+SPEC_TC_AUTHOR="xamamcg"
+SPEC_TC_AUTOMATOR="ecoophi"
+# this parameter is not interpreted by harness
+SPEC_TC_DISABLED=0
+
+# Please do not remove the comment lines below.
+# They are used as section locators by the test harness.
+
+# BEGIN_PRE_CONDITIONS
+#1. MWS has latest software
+#2. Boot server as om_serv_master
+# END_PRE_CONDITIONS
+
+
+# BEGIN_MANUAL_STEPS
+#1. Answer questions from inirator as follows:
+#a. deployment type: BASIC
+#b. answer N to whether want NTP
+#d. n to DHCP
+#e. valid DNS domain name
+#g. valid LDAP domain name in lowercase
+#h. valid LDAP directory manager DN
+#i. valid masterservice name for LDAP
+#j. valid masterserivce ip for LDAP
+#k. valid LDAP directory manager password
+#l. valid LDAP migration password
+#m. valid LDAP maintanence password
+#n. valid LDAP proxyagent password
+#o. Y to confirm values
+#
+# END_MANUAL_STEPS
+
+# BEGIN_POST_CONDITIONS
+#1. diff console.ini console.expect
+#2. validate iptables -L output
+#3. POSIX_USER_EXISTS ldapadm
+#4. java -version = 1.6
+#5. DNS configuration attempted
+#6. NTP configuration not attempted
+#7. LDAP configuration attempted
+#8. DHCP configuration not attempted
+#9. !POSIX_USER_EXISTS bsim
+#
+#Run successfully on 5 Jul
+# END_POST_CONDITIONS

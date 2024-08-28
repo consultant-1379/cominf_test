@@ -1,0 +1,78 @@
+#!/bin/bash
+
+# TEST CASE SPEC FILE
+# This file is generated/updated using the test framework web interface.
+# Manual updates on test servers are lost when the test package is re-installed.
+#
+# Last modified: Sunday 31st of March 2013 20:37:23
+#
+
+# These settings must be in BASH script format, they are sourced by other scripts.
+SPEC_FA_NAME="SMRS"
+SPEC_UC_NAME="SMRS_IPV6SLAVE_ADD_SECNEDSS"
+SPEC_TC_ID=229
+SPEC_TC_SLOGAN="Add IPv6 slave service to secondary NEDSS (all network types)"
+SPEC_TC_TYPE="FT"
+SPEC_TC_POLARITY="positive"
+SPEC_TC_PRIORITY="high"
+SPEC_TC_AUTOMATED=1
+SPEC_TC_DEPENDENT_ONLY=0
+SPEC_TC_TIMEOUT=900
+SPEC_TC_TEST_PASSCODE=0
+SPEC_TC_AUTHOR="xkalbha"
+SPEC_TC_AUTOMATOR="xfeldan"
+# this parameter is not interpreted by harness
+SPEC_TC_DISABLED=0
+
+# Please do not remove the comment lines below.
+# They are used as section locators by the test harness.
+
+# BEGIN_PRE_CONDITIONS
+#1. TEST_SOLARIS
+#2. gran_6slaveN2, core_6slaveN2, lran_6slaveN2, wran_6slaveN2 filesystems configured on the NASConfig file is present
+#3. NB. Slave name may be V6SlaveN2
+# END_PRE_CONDITIONS
+
+
+# BEGIN_MANUAL_STEPS
+#1. Create config file for OSS master with all 4 network types enabled, and IPv6 slave called 6slaveN2, SMRS_SLAVE_NESS_IP and SMRS_SLAVE_NEDSS_IPV6 set to secondary NEDSS, NAS_SHARE_NAMES specified for all filesystems, PERFORM_ARNEIMPORTS yes, RESTART_BISMRS_MC yes
+#2. configure_smrs add smrs_slave -f <config file>
+#3. $? -eq 0
+# END_MANUAL_STEPS
+
+# BEGIN_POST_CONDITIONS
+#1. No errors in /var/opt/ericsson/log/add_smrs_slave.sh_log_<date> latest log file
+#2. No warnings in /var/opt/ericsson/log/add_smrs_slave.sh_log_<date> latest log file
+#3. mount command shows gran_6slaveN2, core_6slaveN2, lran_6slaveN2, wran_6slaveN2 filesystems mounted on OSS master and OM primary and secondary NEDSS
+#4. /export/CORE/6slaveN2, /export/GRAN/6slaveN2, /export/LRAN/6slaveN2, /export/WRAN/6slaveN2 exists on OM primary
+#5. /etc/vfstab has new filesystems in on OM primary and secondary NEDSS
+#6. /etc/mnttab has new filesystems in on OSS master
+#7. Auto mounts in /etc/auto* have new filesystems in on OM primary?
+#8. FTP Services are created, i.e output from:
+#/opt/ericsson/nms_cif_cs/etc/unsupported/bin/cstest -s ONRM_CS -ns masterservice lt FtpService contains:
+#SubNetwork=ONRM_ROOT_MO,FtpServer=SMRSSLAVE-LRAN-6slaveN2,FtpService=l-sws-6slaveN2
+#SubNetwork=ONRM_ROOT_MO,FtpServer=SMRSSLAVE-LRAN-6slaveN2,FtpService=l-key-6slaveN2
+#SubNetwork=ONRM_ROOT_MO,FtpServer=SMRSSLAVE-LRAN-6slaveN2,FtpService=l-back-6slaveN2
+#SubNetwork=ONRM_ROOT_MO,FtpServer=SMRSSLAVE-6slaveN2,FtpService=swstore-6slaveN2
+#SubNetwork=ONRM_ROOT_MO,FtpServer=SMRSSLAVE-6slaveN2,FtpService=pmup-6slaveN2
+#SubNetwork=ONRM_ROOT_MO,FtpServer=SMRSSLAVE-6slaveN2,FtpService=cmup-6slaveN2
+#SubNetwork=ONRM_ROOT_MO,FtpServer=SMRSSLAVE-6slaveN2,FtpService=cmdown-6slaveN2
+#SubNetwork=ONRM_ROOT_MO,FtpServer=SMRSSLAVE-6slaveN2,FtpService=backup-6slaveN2
+#SubNetwork=ONRM_ROOT_MO,FtpServer=SMRSSLAVE-6slaveN2,FtpService=keystore-6slaveN2
+#SubNetwork=ONRM_ROOT_MO,FtpServer=SMRSSLAVE-CORE-6slaveN2,FtpService=corepmu-6slaveN2
+#SubNetwork=ONRM_ROOT_MO,FtpServer=SMRSSLAVE-WRAN-6slaveN2,FtpService=w-sws-6slaveN2
+#SubNetwork=ONRM_ROOT_MO,FtpServer=SMRSSLAVE-WRAN-6slaveN2,FtpService=w-key-6slaveN2
+#SubNetwork=ONRM_ROOT_MO,FtpServer=SMRSSLAVE-WRAN-6slaveN2,FtpService=w-back-6slaveN2
+#12. SMRS_MC is online, i.e.
+#/opt/ericsson/nms_cif_sm/bin/smtool -l BI_SMRS_MC 
+#indicates its online (started state)
+#13. Following user accounts exist on OSS master, OM primary and secondary NEDSS :
+#l-sws-6slaveN2,l-key-6slaveN2,l-back-6slaveN2,
+#swstore-6slaveN2, pmup-6slaveN2, cmup-6slaveN2, cmdown-6slaveN2 backup-6slaveN2, keystore-6slaveN2, corepmu-6slaveN2, w-sws-6slaveN2, w-key-6slaveN2, w-back-6slaveN2
+#13. Following SMO FTP Services file exist in /var/opt/ericsson/arne/FTPServices:
+#SMO_FTPServiceLRAN_6slaveN2.xml
+#SMO_FTPServiceWRAN_6slaveN2.xml
+#SMO_FTPServiceGRAN_6slaveN2.xml
+#SMO_FTPServiceCORE_6slaveN2.xml
+#14. smtool action BI_SMRS_MC printCache file <tmpfile>. <tmpfile> should contain 6slaveN2 service.
+# END_POST_CONDITIONS

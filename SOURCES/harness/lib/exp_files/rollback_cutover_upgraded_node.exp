@@ -1,0 +1,37 @@
+set force_conservative 1
+set BUIP1 [lindex $argv 0]
+set MWSHN [lindex $argv 1]
+set MWSPW [lindex $argv 2]
+set timeout 54
+set D "\$"
+#exp_internal 1
+
+spawn ssh root@${MWSHN}
+expect "assword:"
+send "${MWSPW}\r"
+expect "#"
+send "ssh ${BUIP1}\r"
+
+while 1 {
+expect {
+ "Are you sure you want to continue connecting" {send "yes\r"}
+ "assword" {
+                send "shroot\r"
+                break }
+ timeout        {exit 1}
+ }
+}
+expect "#"
+set timeout 3600
+
+
+
+send "/opt/ericsson/sck/bin/split_cluster cutover_system\r"
+while 1 {
+expect {
+        "ERROR" { exit 1 }
+        " #"    {break}
+        timeout {exit 1}
+        }
+}
+sleep 10

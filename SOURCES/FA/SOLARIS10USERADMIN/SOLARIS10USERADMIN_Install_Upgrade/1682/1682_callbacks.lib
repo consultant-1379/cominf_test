@@ -1,0 +1,166 @@
+#!/bin/bash
+#################################################################################
+#
+#
+#       COPYRIGHT (C) ERICSSON RADIO SYSTEMS AB, Sweden
+#
+#       The copyright to the document(s) herein is the property of
+#       Ericsson Radio Systems AB, Sweden.
+#
+#       The document(s) may be used and/or copied only with the written
+#       permission from Ericsson Radio Systems AB or in accordance with
+#       the terms and conditions stipulated in the agreement/contract
+#       under which the document(s) have been supplied.
+#
+#################################################################################
+
+
+# ATCOMINF Test Callback Library
+
+# Revision History
+# <date>	xsougha		First Version
+
+# Complete the callbacks in this library to automate the test case.
+#
+# Callbacks are stateless, it is not possible to set a global variable in one callback 
+# and access it it in another.
+#
+# Callbacks are called by the test harness in the following order:
+#
+# tc_setup() 		# Called only for independent TC execution mode to setup TC
+# tc_precon()		# Conditions that should exist before TC can run
+# tc_test()		# Runs the test for this TC
+# tc_postcon()		# Conditions that should/should not exist after successful TC 
+# tc_cleanup()		# Called only for independent TC execution mode to cleanup after TC
+
+# All callbacks must PASS for a TC PASS result
+
+#################################################################################
+#
+# CALLBACK: TC_SETUP
+#
+# This callback function is only called if the harness execution mode is 'AT_INDEPENDENT'
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_setup() {
+	return 0
+}
+#################################################################################
+
+#################################################################################
+#
+# CALLBACK: TC_PRECON
+#
+# This callback function checks the correct conditions exist to run the TC.
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+ 
+tc_precon() {
+	return 0
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_TEST
+#
+# This callback function runs the test.
+# The harness compares the return code to the SPEC_TC_TEST_PASSCODE value set in the test spec.
+#
+# Return or exit codes:
+#    SPEC_TC_TEST_PASSCODE 	success
+# != SPEC_TC_TEST_PASSCODE 	failure
+ 
+tc_test() {
+        # Adding a user u1682
+        ${AT_BIN}/con_ex.bsh -d 1682_add_user_u1682.in -o 1682_add_user_u1682.exp -c "/ericsson/sdee/bin/add_user.sh"
+        /usr/local/bin/expect 1682_add_user_u1682.exp
+        CONSOLE_OUTPUT_CONTAINS "INFO: successfully added u1682" || {
+                echo "Failed to add new user u1682"
+                return 1
+        }
+
+	# Inactivating the user account u1682
+	/opt/SUNWdsee/ds6/bin/ns-inactivate -D "cn=directory manager" -w ldappass -I "uid=u1682,ou=people,dc=vts,dc=com"
+	CONSOLE_OUTPUT_CONTAINS "uid=u1682,ou=people,dc=vts,dc=com inactivated." || {
+		echo "Failed to inactivate user account u1682"
+		return 1
+	}
+
+	return 0
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_POSTCON
+#
+# This callback function checks expected results.
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_postcon() {
+	# Try logging in with inactivated user account
+        ${AT_BIN}/con_ex.bsh -d 1682_login_inactivated_u1682.in -o 1682_login_inactivated_u1682.exp -c "ssh u1682@ossmaster"
+        /usr/local/bin/expect 1682_login_inactivated_u1682.exp
+        CONSOLE_OUTPUT_CONTAINS "Your password has expired." || {
+                echo "Failed to verify whether user u1682 got successfully inactivated"
+                return 1
+        }
+
+        # Activate the inactivated user account u1682
+        /opt/SUNWdsee/ds6/bin/ns-activate -D "cn=directory manager" -w ldappass -I "uid=u1682,ou=people,dc=vts,dc=com"
+        CONSOLE_OUTPUT_CONTAINS "uid=u1682,ou=people,dc=vts,dc=com inactivated." || {
+                echo "Failed to activate user account u1682"
+                return 1
+        }
+
+        # Try logging in with re-activated user account
+        ${AT_BIN}/con_ex.bsh -d 1682_login_activated_u1682.in -o 1682_login_activated_u1682.exp -c "ssh u1682@ossmaster"
+        /usr/local/bin/expect 1682_login_activated_u1682.exp
+        CONSOLE_OUTPUT_CONTAINS "u1682@ossmaster" || {
+                echo "Failed to verify whether user u1682 got successfully inactivated"
+                return 1
+        }
+
+
+	return 0
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_CLEANUP
+#
+# This callback function is only called if the harness execution mode is 'AT_INDEPENDENT'
+# 
+# This callback restores the target system to the state it was in before the TC 
+# was run. It rolls back changes made by callbacks tc_setup() and tc_test()
+# 
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_cleanup() {
+	# Deleting user u1682
+        ${AT_BIN}/con_ex.bsh -d 1682_del_user_u1682.in -o 1682_del_user_u1682.exp -c "/ericsson/sdee/bin/del_user.sh"
+        /usr/local/bin/expect 1682_del_user_u1682.exp
+        CONSOLE_OUTPUT_CONTAINS "OK: Account deleted" || {
+                echo "Failed to delete user u1682"
+                return 1
+        }
+	# Removing any temporary files used
+	rm -rf *.exp
+
+	return 0
+}

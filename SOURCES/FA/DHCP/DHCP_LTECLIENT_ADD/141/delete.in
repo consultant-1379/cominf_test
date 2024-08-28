@@ -1,0 +1,2 @@
+All clients on the current network will no longer be supported. Remove all clients on this network using ai_manager.sh -delete. Continue
+y

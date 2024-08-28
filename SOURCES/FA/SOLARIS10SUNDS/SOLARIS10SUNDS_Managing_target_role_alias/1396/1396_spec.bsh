@@ -1,0 +1,157 @@
+#!/bin/bash
+
+# TEST CASE SPEC FILE
+# This file is generated/updated using the test framework web interface.
+# Manual updates on test servers are lost when the test package is re-installed.
+#
+# Last modified: Monday 16th of December 2013 10:08:54
+#
+
+# These settings must be in BASH script format, they are sourced by other scripts.
+SPEC_FA_NAME="SOLARIS10SUNDS"
+SPEC_UC_NAME="SOLARIS10SUNDS_Managing_target_role_alias"
+SPEC_TC_ID=1396
+SPEC_TC_SLOGAN="Removing targets/roles/alias from the COM user entry "
+SPEC_TC_TYPE="FT"
+SPEC_TC_POLARITY="positive"
+SPEC_TC_PRIORITY="high"
+SPEC_TC_AUTOMATED=1
+SPEC_TC_DEPENDENT_ONLY=0
+SPEC_TC_TIMEOUT=300
+SPEC_TC_TEST_PASSCODE=0
+SPEC_TC_AUTHOR="xvinkat"
+SPEC_TC_AUTOMATOR="xvinkat"
+# this parameter is not interpreted by harness
+SPEC_TC_DISABLED=0
+
+# Please do not remove the comment lines below.
+# They are used as section locators by the test harness.
+
+# BEGIN_PRE_CONDITIONS
+#<path to the testcase>
+#
+#
+#SUN-DS/COM LDAP - User Management for 
+#COM-Enabled Nodes/Managing COM targets 
+#,role, role alias attributes for COM user entries  
+#
+#
+# END_PRE_CONDITIONS
+
+
+# BEGIN_MANUAL_STEPS
+#1. Remove free standing role/alias from the user entry.
+#
+#2. Remove roles/aliases which are defined with specific target.
+#
+#3. Remove the target from the user entry.
+#
+#4.Remove the last target from the user entry and check whether all roles/aliases which exists in the user entry are removed or not.
+#
+#5. Remove the last target from the COM_OSS user entry and check whether the user type is changed from COM_OSS to OSS_ONLY or not.
+#
+# END_MANUAL_STEPS
+
+# BEGIN_POST_CONDITIONS
+#1.Result: COM roles/aliases are removed from the user entry.
+#
+#Ex: bash-3.2# ./manage_COM_privs.bsh -l -u user1
+#
+#LDAP Directory Manager password:
+#
+#COM privileges for user [user1], type [COM_OSS], in domain [atrcus879.com]:
+#Target | target1
+#Target | target2
+#Role | HYD4
+#Role | HYD5
+#Role | target2:tcs16
+#bash-3.2#
+#bash-3.2#
+#bash-3.2#
+#bash-3.2# ./manage_COM_privs.bsh -r role -R HYD4,HYD5
+#
+#LDAP Directory Manager password:
+#
+#Enter user name: user1
+#INFO : User [user1] is type COM_OSS.
+#
+#Please confirm that you want to proceed with requested actions - Yes or No [No] Yes
+#
+#INFO : Successfully deleted COM authorization scope [HYD4] from user [user1]
+#INFO : Successfully deleted COM authorization scope [HYD5] from user [user1]
+#
+#2.COM role/aliases which are defined with target information are removed from the user entry.
+#
+#Ex: bash-3.2# ./manage_COM_privs.bsh -l -u user1
+#
+#LDAP Directory Manager password:
+#
+#COM privileges for user [user1], type [COM_OSS], in domain [atrcus879.com]:
+#Target | target1
+#Target | target2
+#Role | target2:tcs16
+#bash-3.2#
+#bash-3.2#
+#bash-3.2# ./manage_COM_privs.bsh -r role -R target2:tcs16 -u user1
+#
+#LDAP Directory Manager password:
+#
+#INFO : User [user1] is type COM_OSS.
+#
+#Please confirm that you want to proceed with requested actions - Yes or No [No] Yes
+#
+#INFO : Successfully deleted COM authorization scope [target2:tcs16] from user [user1]
+#
+#
+#3.Target is removed from the user entry.
+#
+#Ex: bash-3.2# ./manage_COM_privs.bsh -r target -T target2 -u user1
+#
+#LDAP Directory Manager password:
+#
+#INFO : User [user1] is type COM_OSS.
+#
+#Please confirm that you want to proceed with requested actions - Yes or No [No] Yes
+#
+#INFO : Successfully deleted COM authentication scope [target2] from user [user1].
+#bash-3.2#
+#
+#4.All roles/aliases which existed in the user entry are removed when last target is removed.
+#
+#5.Last target is removed from the user entry and the user type is changed from COM_OSS to OSS_ONLY.
+#
+#Ex: 
+#
+#bash-3.2# ./manage_COM_privs.bsh -l -u user1
+#
+#LDAP Directory Manager password:
+#
+#COM privileges for user [user1], type [COM_OSS], in domain [atrcus879.com]:
+#Target | target1
+#Role | HYD4
+#Role | HYD5
+#bash-3.2#
+#
+#
+#bash-3.2# ./manage_COM_privs.bsh -r target -T target1 -u user1
+#
+#LDAP Directory Manager password:
+#
+#INFO : User [user1] is type COM_OSS.
+#WARNING : This action will remove the last target from this user. This will also remove any remaining roles or aliases assigned to this user.
+#WARNING : This action will revert this COM_OSS user to an OSS_ONLY user.
+#
+#Continue - Yes or No [No] Yes
+#
+#INFO : Successfully deleted COM authentication scope [target1] from user [user1].
+#INFO : Successfully deleted remaining COM authorization scope [HYD4] from user [user1].
+#INFO : Successfully deleted remaining COM authorization scope [HYD5] from user [user1].
+#INFO : User [user1] has been reverted to type OSS_ONLY.
+#bash-3.2#
+#
+#Note: Try to remove role/aliases/targets from the user entry in prompt mode as well. 
+#
+#
+#
+#
+# END_POST_CONDITIONS

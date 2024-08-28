@@ -1,0 +1,90 @@
+#!/bin/bash
+
+# TEST CASE SPEC FILE
+# This file is generated/updated using the test framework web interface.
+# Manual updates on test servers are lost when the test package is re-installed.
+#
+# Last modified: Monday 16th of December 2013 11:26:25
+#
+
+# These settings must be in BASH script format, they are sourced by other scripts.
+SPEC_FA_NAME="SOLARIS10SUNDS"
+SPEC_UC_NAME="SOLARIS10SUNDS_Importing_privileges"
+SPEC_TC_ID=1516
+SPEC_TC_SLOGAN="Negative: Adding roles/aliases "
+SPEC_TC_TYPE="FT"
+SPEC_TC_POLARITY="positive"
+SPEC_TC_PRIORITY="high"
+SPEC_TC_AUTOMATED=1
+SPEC_TC_DEPENDENT_ONLY=0
+SPEC_TC_TIMEOUT=300
+SPEC_TC_TEST_PASSCODE=0
+SPEC_TC_AUTHOR="xvinkat"
+SPEC_TC_AUTOMATOR="xvinkat"
+# this parameter is not interpreted by harness
+SPEC_TC_DISABLED=0
+
+# Please do not remove the comment lines below.
+# They are used as section locators by the test harness.
+
+# BEGIN_PRE_CONDITIONS
+#<path to the testcase>
+#
+#
+#SUN-DS/COM LDAP - User Management for 
+#COM-Enabled Nodes/Managing COM targets 
+#,role, role alias attributes for COM user entries/
+#Importing privileges (role/aliases/targets)        
+# END_PRE_CONDITIONS
+
+
+# BEGIN_MANUAL_STEPS
+#1. Specify more than 20 roles/role aliases in the export file and try to add them to the user entry.
+#
+#Ex:
+#
+#bash-3.2# cat /var/tmp/import1
+#DOMAIN atrcus879.com
+#ACTION add
+#OBJECT alias
+#
+#ossonly1 alias1,alias2,alias3,alias4,ali5,ali6,ali7,ali9,ali8,ali10,ali11,ali12,ali13,ali14,ali15,ali16,ali17,ali19,ali12,ali20,ali23,ali45
+#bash-3.2#
+#
+#
+#bash-3.2# ./manage_COM_privs.bsh -a alias -f /var/tmp/import1 -d atrcus879.com
+#
+#LDAP Directory Manager password:
+#
+#ERROR: Invalid line 5; lines can have max 20 comma-separated objects
+#Line 5: [ossonly1 alias1,alias2,alias3,alias4,ali5,ali6,ali7,ali9,ali8,ali10,ali11,ali12,ali13,ali14,ali15,ali16,ali17,ali19,ali12,ali20,ali23,ali45 ]
+#ERROR : runUserCOMbatchfile: Found [1] invalid lines in batch file [/var/tmp/import1]
+#bash-3.2#
+#
+#2. Try to add the roles/role aliases to the user which doesn't exist in the COM role branch.
+#
+#Ex:
+#
+#bash-3.2# ./manage_COM_privs.bsh -a alias -f /var/tmp/import1 -d atrcus879.com
+#
+#LDAP Directory Manager password:
+#
+#INFO : LDAP Domain [atrcus879.com]
+#INFO : ACTION: [add]
+#INFO : OBJECT: [alias]
+#
+#Continue to add COM user alias(s) from file [/var/tmp/import1] - Yes or No [No] Yes
+#
+#INFO : User [ossonly1] has type COM_OSS.
+#WARNING : [alia] does not exist in atrcus879.com's alias list - ignored
+#ERROR : No valid alias supplied
+#ERROR : Batch file processing stopped at user [ossonly1]. Please correct the batch file and rerun the script to continue.
+#
+# END_MANUAL_STEPS
+
+# BEGIN_POST_CONDITIONS
+#1. Script should throw an error message.
+#
+#2. Script should throw an error message.
+#
+# END_POST_CONDITIONS

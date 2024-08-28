@@ -1,0 +1,44 @@
+#!/bin/bash
+
+# TEST CASE SPEC FILE
+# This file is generated/updated using the test framework web interface.
+# Manual updates on test servers are lost when the test package is re-installed.
+#
+# Last modified: Friday 31st of May 2013 9:44:22
+#
+
+# These settings must be in BASH script format, they are sourced by other scripts.
+SPEC_FA_NAME="LDAP"
+SPEC_UC_NAME="LDAP_COM_ALIAS_MODIFY_ADD"
+SPEC_TC_ID=582
+SPEC_TC_SLOGAN="Add role to non-existing alias, and non-existing role to valid alias"
+SPEC_TC_TYPE="FT"
+SPEC_TC_POLARITY="negative"
+SPEC_TC_PRIORITY="low"
+SPEC_TC_AUTOMATED=1
+SPEC_TC_DEPENDENT_ONLY=0
+SPEC_TC_TIMEOUT=300
+SPEC_TC_TEST_PASSCODE=0
+SPEC_TC_AUTHOR="xamamcg"
+SPEC_TC_AUTOMATOR="xbahzam"
+# this parameter is not interpreted by harness
+SPEC_TC_DISABLED=0
+
+# Please do not remove the comment lines below.
+# They are used as section locators by the test harness.
+
+# BEGIN_PRE_CONDITIONS
+#1. Create role r582
+#2. Create alias a582 containing r582
+# END_PRE_CONDITIONS
+
+
+# BEGIN_MANUAL_STEPS
+#1. ! manage_COM.bsh -m alias -d 1.com -A nonExistAlias -R r582 -i -y
+#2. ! manage_COM.bsh -m alias -d 1.com -A a582 -R nonExistRole -i -y
+# END_MANUAL_STEPS
+
+# BEGIN_POST_CONDITIONS
+#1. CONSOLE_OUTPUT_CONTAINS <suitable error message indicating alias does not exist>
+#2.CONSOLE_OUTPUT_CONTAINS <suitable error message indicating role does not exist> 
+# END_POST_CONDITIONS

@@ -1,0 +1,75 @@
+#!/bin/bash
+
+# TEST CASE SPEC FILE
+# This file is generated/updated using the test framework web interface.
+# Manual updates on test servers are lost when the test package is re-installed.
+#
+# Last modified: Tuesday 17th of December 2013 7:28:18
+#
+
+# These settings must be in BASH script format, they are sourced by other scripts.
+SPEC_FA_NAME="SOLARIS10USERADMIN"
+SPEC_UC_NAME="SOLARIS10USERADMIN_Install_Upgrade"
+SPEC_TC_ID=1736
+SPEC_TC_SLOGAN="Change the directory manager password "
+SPEC_TC_TYPE="FT"
+SPEC_TC_POLARITY="positive"
+SPEC_TC_PRIORITY="high"
+SPEC_TC_AUTOMATED=0
+SPEC_TC_DEPENDENT_ONLY=0
+SPEC_TC_TIMEOUT=300
+SPEC_TC_TEST_PASSCODE=0
+SPEC_TC_AUTHOR="xlaxain"
+SPEC_TC_AUTOMATOR="xlaxain"
+# this parameter is not interpreted by harness
+SPEC_TC_DISABLED=0
+
+# Please do not remove the comment lines below.
+# They are used as section locators by the test harness.
+
+# BEGIN_PRE_CONDITIONS
+#Path in Mars:- User Administration/Initial Install/Upgrade User Administration Test Cases 
+#
+#To verify that Directory ManagerâEuro s password was successfully changed.
+#This test case is applicable to both initial installation and upgrade.
+#Precondition: 
+#
+#Infra Server with SUN-DS
+#
+# END_PRE_CONDITIONS
+
+
+# BEGIN_MANUAL_STEPS
+#Action 1:
+#
+#Following the administration guide, COMInf SUN Directory Server System Administration Guide), execute the script /ericsson/sdee/bin/chg_ds_admin_password.sh to reset the directory manager password.
+#Action 2: 
+#
+#Run a ldapsearch command with the new password to verify that it is active: ldapsearch âEuro D "cn=directory manager" âEuro w <new_password> -b "<LDAP DOMAIN>" "objectclass=*"
+#.
+#Action 3:
+#
+#Following the administration guide, COMInf SUN Directory Server System Administration Guide), execute the script /ericsson/sdee/bin/chg_ds_admin_password.sh âEuro d <ldap_domain> to reset the directory manager password for a specific domain.
+#Action 4: 
+#
+#Run an ldapsearch command with the new password to verify that it is active: ldapsearch âEuro D "cn=directory manager" âEuro w <new_password> -b "<LDAP DOMAIN>" "objectclass=*"
+#.
+# END_MANUAL_STEPS
+
+# BEGIN_POST_CONDITIONS
+#Result 1: 
+#
+#Directory manager password changed successfully.
+#
+#Result 2:
+#
+#The LDAP directory query is successful
+#
+#Result 3: 
+#
+#Directory manager password changed successfully for a specific domain
+#
+#Result 4:
+#
+#The LDAP directory query is successful
+# END_POST_CONDITIONS

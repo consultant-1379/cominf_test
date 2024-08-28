@@ -1,0 +1,274 @@
+#!/bin/bash
+#################################################################################
+#
+#
+#       COPYRIGHT (C) ERICSSON RADIO SYSTEMS AB, Sweden
+#
+#       The copyright to the document(s) herein is the property of
+#       Ericsson Radio Systems AB, Sweden.
+#
+#       The document(s) may be used and/or copied only with the written
+#       permission from Ericsson Radio Systems AB or in accordance with
+#       the terms and conditions stipulated in the agreement/contract
+#       under which the document(s) have been supplied.
+#
+#################################################################################
+
+
+# ATCOMINF Test Callback Library
+
+# Revision History
+# <date>	<signum>	<details>
+
+# Complete the callbacks in this library to automate the test case.
+#
+# Callbacks are stateless, it is not possible to set a global variable in one callback 
+# and access it it in another.
+
+PASSED_TESTS='/var/tmp/Passed_Tests_log.txt'
+FAILED_TESTS='/var/tmp/Failed_tests_log.txt'
+
+
+# Callbacks are called by the test harness in the following order:
+#
+# tc_setup() 		# Called only for independent TC execution mode to setup TC
+# tc_precon()		# Conditions that should exist before TC can run
+# tc_test()		# Runs the test for this TC
+# tc_postcon()		# Conditions that should/should not exist after successful TC 
+# tc_cleanup()		# Called only for independent TC execution mode to cleanup after TC
+
+# All callbacks must PASS for a TC PASS result
+
+#################################################################################
+#
+# CALLBACK: TC_SETUP
+#
+# This callback function is only called if the harness execution mode is 'AT_INDEPENDENT'
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_setup() {
+
+	# Coded to fail in case TC_AUTOMATED=1 before automation completed
+	# Change return code as required
+
+	return 0
+
+}
+#################################################################################
+
+#################################################################################
+#
+# CALLBACK: TC_PRECON
+#
+# This callback function checks the correct conditions exist to run the TC.
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+ 
+tc_precon() {
+
+	# Coded to fail in case TC_AUTOMATED=1 before automation completed
+	# Change return code as required 
+   RELEASE=$(awk '/CP_STATUS/ {print $2}' /var/opt/ericsson/sck/data/cp.status | cut -d "_" -f1,2,3)
+   SHIPMENT=$(awk '/CP_STATUS/ {print $2}' /var/opt/ericsson/sck/data/cp.status | cut -d "_" -f5-)
+   serverHostName2="atmws5-ossserv.athtem.eei.ericsson.se"
+   serverHostName=""
+   PASSWORD="shroot12"
+   FILE='*.pkg'
+$EXPECT << EOF1
+   spawn ssh root@$serverHostName2 "ls -l /NFD_Store/${RELEASE}/${SHIPMENT}/smoke_test/ERICatoss* >/dev/null 2>&1; echo \$?"
+   expect {
+       Password: {send "shroot12\r"; exp_continue}
+   }
+   if {"\$expect_out(buffer)" == "0"} {
+      spawn ftp 10.44.192.247
+      set timeout 100
+      expect "Name (10.44.192.247:root):"
+      send -- "root\r"
+      expect "*assword: "
+      send -- "$PASSWORD\r"
+      expect "ftp>"
+      send "bin\r"
+      expect "ftp>"
+      send -- "cd /NFD_Store/${RELEASE}/${SHIPMENT}/smoke_test\r"
+      expect "ftp>"
+      send -- "lcd /var/tmp\r"
+      expect "ftp>"
+      send -- "mget $FILE\r"
+      expect -re " ERICatoss(.)*" {
+      send -- "y\r"
+      }	
+      sleep 10 
+      #expect " bytes received"
+      expect "ftp>"
+      send -- "quit\r"
+      expect "*#" 
+      set timeout 420
+      spawn /usr/sbin/pkgadd -d /var/tmp/ERICatoss.pkg
+      expect "all packages). "
+      send "all\r"
+      expect "Do you want to continue with the installation of <ERICatoss> "
+      send "y\r"
+      sleep 300 
+      expect "Installation of <ERICatoss> was successful."
+      expect "*#"
+   } else {
+           puts "ERICatoss Package Not Found"
+           puts "Please Copy the ERICatoss Package Particular Path.." 
+           return 1
+ }
+EOF1
+	return 0
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_TEST
+#
+# This callback function runs the test.
+# The harness compares the return code to the SPEC_TC_TEST_PASSCODE value set in the test spec.
+#
+# Return or exit codes:
+#    SPEC_TC_TEST_PASSCODE 	success
+# != SPEC_TC_TEST_PASSCODE 	failure
+ 
+tc_test() {
+
+	# Coded to fail in case TC_AUTOMATED=1 before automation complete
+	# Change return code as required
+
+       /bin/pkginfo -l ERICatoss > /dev/null 
+       pretval=$?
+       if [ $pretval -eq 0 ];then
+$EXPECT << EOF3
+             puts "---------Please wait Smoke Test Script is running"
+             set timeout 600  
+             spawn /opt/ericsson/atoss/master/bin/atoss.sh -a CCNFD_SCK -m SMOKE_GROUP -p 1
+             sleep 300 
+             expect "*#"
+EOF3
+             echo " Smoke Test Script Execution Successfully Completed"
+             echo ""
+             LOGDIR=$( ls -ltr /atoss/CCNFD_SCK/results|tail -1|awk '{ print $9 }')
+             echo""
+             LOGPATH=/atoss/CCNFD_SCK/results/$LOGDIR
+  
+             echo "Smoke Test logs present in $LOGPATH "
+   
+             echo "Verify The Smoke Test Logs"
+             echo ""
+awk -F"=" '{print "Test: " $3 "\t" $7}' $LOGPATH/index.html|awk -F"[" '{print $1,$2}'|awk -F">" '{print $2,$3}'|awk -F"]" '{print $1,$2}'|\
+awk -F"</" '{print $1,$2}'|sed 's/a//g'|awk -F"/" '{print "Test :" "\t" $1 "\t" $2}'|grep -i pass > $PASSED_TESTS
+
+            if [ -s "$PASSED_TESTS" ]
+            then
+                 echo "--------------------------------------------------------------------"
+                 echo "                      Passed Tests "
+                 echo "--------------------------------------------------------------------"
+                 cat $PASSED_TESTS
+             fi
+
+awk -F"=" '{print "Test: " $3 "\t" $7}' $LOGPATH/index.html|awk -F"[" '{print $1,$2}'|awk -F">" '{print $2,$3}'|awk -F"]" '{print $1,$2}'|\
+awk -F"</" '{print $1,$2}'|sed 's/a//g'|awk -F"/" '{print "Test :" "\t" $1 "\t" $2}'|egrep -i "Not Executed|FAIL" > $FAILED_TESTS
+awk '/Not running/'  $LOGPATH/index.html |awk -F":" '{print $2}'|cut -d"-" -f1|grep -v gui >> $FAILED_TESTS
+
+            if [ -s "$FAILED_TESTS" ]
+            then
+                 echo "--------------------------------------------------------------------"
+                 echo "                   Failed And Not Excuted Tests "
+                 echo "--------------------------------------------------------------------"
+                 cat $FAILED_TESTS
+                 echo "--------------------------------------------------------------------"
+                 echo "Please Verify the logs $LOGPATH" 
+                 echo "Please Verify the logs $LOGPATH " 
+                 return 1
+             fi
+         else
+               echo " ERICatoss Not installed "
+               return 1
+         fi
+     return 0 
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_POSTCON
+#
+# This callback function checks expected results.
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+tc_postcon() {
+
+	# Coded to fail in case TC_AUTOMATED=1 before automation complete.
+	# Change return code as required
+      return 0
+
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_CLEANUP
+#
+# This callback function is only called if the harness execution mode is 'AT_INDEPENDENT'
+# 
+# This callback restores the target system to the state it was in before the TC 
+# was run. It rolls back changes made by callbacks tc_setup() and tc_test()
+# 
+# Return or exit codes:
+#  0	success
+# >0 	failure
+tc_cleanup() {
+
+	# Coded to fail in case TC_AUTOMATED=1 before automation complete
+	# Change return code as required
+       /bin/pkginfo -l ERICatoss > /dev/null
+       preVal=$?
+       if [ $preVal -eq 0 ]
+       then
+           echo " Removing the ERICatoss Please Wait"   
+$EXPECT << EOF4
+           set timeout 420
+           spawn pkgrm ERICatoss
+           expect "Do you want to remove this package? "
+           send "y\r"
+           sleep 2
+           expect "Do you want to continue with the removal of this package "
+           send "y\r"
+           sleep 300
+           expect "Removal of <ERICatoss> was successful."
+           expect "*#"
+EOF4
+       echo " ERICatoss Package Uninstall Successful."
+       rm /var/tmp/ERICatoss.pkg
+       else
+           echo " ERICatoss Not installed.."
+       fi
+
+       if [ -z $PASSED_TESTS ]
+       then
+          echo "Not Found $PASSED_TESTS "
+       else
+            rm $PASSED_TESTS
+       fi
+
+       if [ -z $FAILED_TESTS ]
+       then
+          echo "Not Found $FAILED_TESTS "
+       else
+            rm $FAILED_TESTS
+       fi
+return 0
+
+}

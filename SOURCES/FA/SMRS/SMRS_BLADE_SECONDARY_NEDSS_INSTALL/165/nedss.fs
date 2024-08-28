@@ -1,0 +1,10 @@
+/export/GRAN/AIF
+/export/GRAN/CommonPersistent
+/export/GRAN/syslog
+/export/GRAN/tftp
+/export/WRAN/AIF
+/export/WRAN/CommonPersistent
+/export/WRAN/smrs_master
+/export/LRAN/AIF
+/export/LRAN/CommonPersistent
+/export/LRAN/smrs_master

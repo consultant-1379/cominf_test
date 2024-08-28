@@ -1,0 +1,240 @@
+#!/bin/bash
+#################################################################################
+#
+#
+#	   COPYRIGHT (C) ERICSSON RADIO SYSTEMS AB, Sweden
+#
+#	   The copyright to the document(s) herein is the property of
+#	   Ericsson Radio Systems AB, Sweden.
+#
+#	   The document(s) may be used and/or copied only with the written
+#	   permission from Ericsson Radio Systems AB or in accordance with
+#	   the terms and conditions stipulated in the agreement/contract
+#	   under which the document(s) have been supplied.
+#
+#################################################################################
+
+
+# ATCOMINF Test Callback Library
+
+# Revision History
+# 04/09/12	xkalbha		Add WRAN AIF user to primary NEDSS
+
+# Complete the callbacks in this library to automate the test case.
+#
+# Callbacks are stateless, it is not possible to set a global variable in one callback 
+# and access it it in another.
+#
+# Callbacks are called by the test harness in the following order:
+#
+# tc_setup() 		# Called only for independent TC execution mode to setup TC
+# tc_precon()		# Conditions that should exist before TC can run
+# tc_test()		# Runs the test for this TC
+# tc_postcon()		# Conditions that should/should not exist after successful TC 
+# tc_cleanup()		# Called only for independent TC execution mode to clenup after TC
+
+# All callbacks must PASS for a TC PASS result
+
+#################################################################################
+#
+# CALLBACK: TC_SETUP
+#
+# This callback function is only called if the harness execution mode is 'AT_INDEPENDENT'
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_setup() {
+
+	return 0
+
+}
+#################################################################################
+
+#################################################################################
+#
+# CALLBACK: TC_PRECON
+#
+# This callback function checks the correct conditions exist to run the TC.
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+ 
+tc_precon() {
+
+	grep smrs_master "/etc/inet/hosts" || { echo "No smrs_master created"; return 1; }
+
+	
+	name=`hostname`
+	nedssfile="../../nedssIP."${name}
+	[ -r ${nedssfile} ] || { echo "No $nedssfile found"; return 3; }
+	NEDSSIP=$(cat $nedssfile)
+	
+
+	CHECK_SLAVE_EXISTS nedssv4 || { echo "nedssv4 does not exist in smrs_config"; return 4; }
+
+	return 0
+
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_TEST
+#
+# This callback function runs the test.
+# The harness compares the return code to the SPEC_TC_TEST_PASSCODE value set in the test spec.
+#
+# Return or exit codes:
+#	SPEC_TC_TEST_PASSCODE 	success
+# != SPEC_TC_TEST_PASSCODE 	failure
+ 
+tc_test() {
+	# Delete aif group on oss master
+	groupdel aif 
+
+	# Mark output of smlog so can see if done restart
+	SMLOG_MARK_STATUS
+
+
+   # Run con_ex.bsh to create expect script
+	# 336.in is checked into GIT and has the name and prompt values
+	cmd='/opt/ericsson/nms_bismrs_mc/bin/configure_smrs.sh add aif'
+	${AT_BIN}/con_ex.bsh -d 336.in -o 336.exp -c "${cmd}"
+	retval=$?
+	[ $retval -ne 0 ] && { echo Failed to create expect script $retval; return 2; }
+
+	/usr/local/bin/expect 336.exp || { echo "Failed to run expect script $retval"; return 3; }
+
+	# Add wait to see if now we see its been restarted
+	sleep 60
+
+	# Prove BI_SMRS_MC has been restarted 
+	SMLOG_SEARCH_FROM_MARK "SMRS reconfig" || { echo "Either smlog search failed or bismsrs NOT restarted $?"; return 4; }
+
+	return 0
+
+
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_POSTCON
+#
+# This callback function checks expected results.
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_postcon() {
+	
+	name=`hostname`
+	nedssfile="../../nedssIP."${name}
+	[ -r ${nedssfile} ] || { echo "No $nedssfile found"; return 3; }
+	NEDSSIP=$(cat $nedssfile)
+
+	# Check user created on $NEDSSIP
+	#POSIX_REMOTE_USER_EXISTS aif336 z$NEDSSIP || { echo "User not created"; return 1; }
+	# Check account on NEDSS
+		POSIX_USER_EXISTS aif336 z$NEDSSIP || { echo "aif336 dooes not exist on smrs_slave"; return 1; }
+	CHECK_AIF aif336 WRAN $NEDSSIP || { echo "aif user exists with wrong values"; return 1; }
+
+	# Check aif group on OSS and smrs_master
+	grep '^aif:' /etc/group || { echo "AIF group does not exist on OSS"; return 2; }
+	ssh smrs_master ssh $NEDSSIP "\"grep '^aif:' /etc/group\"" || { echo "AIF group does not exist on smrs_master"; return 3; }
+
+	# Check cannot login as user
+#shane
+	cmd="ssh aif336@$NEDSSIP 'ls'"
+	${AT_BIN}/con_ex.bsh -d login.in -o 336l.exp -c "${cmd}"
+	retval=$?
+	[ $retval -ne 0 ] && { echo Failed to create expect script for login $retval; return 4; }
+	/usr/local/bin/expect 336l.exp && { echo "Error managed to login as user $?"; return 5; }
+
+	# Check sftp access is to WRAN as the top level directory
+	# Put a file into the /export/WRAN directory
+	date > /var/opt/ericsson/smrsstore/WRAN/336.txt
+	# Prove its not there
+	rm -f 336.txt
+	[ -r 336.txt ] && { echo "Should have deleted 336.txt"; return 6; }
+	# Now retrieve file
+#shane
+	cmd="sftp aif336@$NEDSSIP:336.txt"
+	${AT_BIN}/con_ex.bsh -d login.in -o 336sftp.exp -c "${cmd}"
+	retval=$?
+	[ $retval -ne 0 ] && { echo Failed to create expect script for sftp $retval; return 7; }
+	/usr/local/bin/expect 336sftp.exp || { echo "Error sftp failure as user $?"; return 8; }
+	# Prove we now have file 
+	[ -r 336.txt ] || { echo "Failed to retrieve file"; return 9; }
+
+
+	# Check autointegration
+	CHECK_AIF_FTP_SERVICE aif336 WRAN nedssv4 || { echo "AutoIntegration user does not exist"; return 7; }
+
+	# Prove user can't access /GRAN
+#shane
+	cmd="sftp aif336@$NEDSSIP:../GRAN"
+	${AT_BIN}/con_ex.bsh -d login.in -o 336sftp2.exp -c "${cmd}"
+	retval=$?
+	[ $retval -ne 0 ] && { echo Failed to create expect script for sftp2 $retval; return 11; }
+	# Although the sftp will fail, it will still return success error code
+	# But error message will be in the .out file
+	/usr/local/bin/expect 336sftp2.exp > 336gran.out || { echo "Error sftp2 failure as user $?"; return 12; }
+	grep 'File "/../GRAN" not found' 336gran.out || { echo "Accessed GRAN ok"; return 13; }
+
+	# Prove user can't access /LRAN
+	cmd="sftp aif336@$NEDSSIP:../LRAN"
+	${AT_BIN}/con_ex.bsh -d login.in -o 336sftp3.exp -c "${cmd}"
+	retval=$?
+	[ $retval -ne 0 ] && { echo Failed to create expect script for sftp3 $retval; return 14; }
+	# Although the sftp will fail, it will still return success error code
+	# But error message will be in the .out file
+	/usr/local/bin/expect 336sftp3.exp > 336lran.out || { echo "Error sftp3 failure as user $?"; return 15; }
+	grep 'File "/../LRAN" not found' 336lran.out || { echo "Accessed LRAN ok"; return 16; }
+
+	# Check for errors or warnings
+	# Check contents of /var/opt/ericsson/log/add_aif.sh_log_<date>
+	# Assume the last one that matches the pattern is our file
+	filename=$(ls -rt /var/opt/ericsson/log/add_aif.sh_log_* | tail -1)
+	grep -i error $filename
+	retval=$?
+	[ $retval -ne 1 ] && { echo "Error in add_aif log, see above $retval"; return 19; }
+	# Don't want warnings except the ones about permanently added ip address to
+	# known hosts
+	grep -v "Warning: Permanently added" $filename | grep -i warning
+	retval=$?
+	[ $retval -ne 1 ] && { echo "Warning in add_aif log, see above $retval"; return 20; }
+
+	CONSOLE_OUTPUT_CONTAINS "(2) nedssv4" || { echo "Will have chosen wrong slave"; return 21; }
+	CONSOLE_OUTPUT_CONTAINS "Attempting a cold restart of BI_SMRS_MC" || { echo "No log indicating restart of BI_SMRS"; return 22; }
+
+	return 0
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_CLEANUP
+#
+# This callback function is only called if the harness execution mode is 'AT_INDEPENDENT'
+# 
+# This callback restores the target system to the state it was in before the TC 
+# was run. It rolls back changes made by callbacks tc_setup() and tc_test()
+# 
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_cleanup() {
+
+
+	return 0
+
+}

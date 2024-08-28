@@ -1,0 +1,12 @@
+Password
+abcd@1234
+>
+oex > /var/tmp/oex.txt
+>
+scp -o StrictHostKeyChecking=no /var/tmp/oex.txt root@omsrvm:/var/tmp
+Password
+shroot
+>
+rm /var/tmp/oex.txt
+>
+exit

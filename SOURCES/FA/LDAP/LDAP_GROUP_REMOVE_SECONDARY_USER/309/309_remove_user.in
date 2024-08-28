@@ -1,0 +1,8 @@
+LDAP Directory Manager password:
+PASSWD
+User name:
+test1
+Group name:
+testgrp
+Remove local user .test1.
+Yes

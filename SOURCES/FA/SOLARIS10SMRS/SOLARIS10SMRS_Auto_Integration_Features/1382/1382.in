@@ -1,0 +1,12 @@
+Enter Network Type
+CORE
+What is the name for this user
+c_user3
+What is the password for this user
+shroot@1
+Please confirm the password for this user
+shroot@1
+Would you like to create autoIntegration FtpService for that user
+no
+Please enter number of required option
+/[^C]

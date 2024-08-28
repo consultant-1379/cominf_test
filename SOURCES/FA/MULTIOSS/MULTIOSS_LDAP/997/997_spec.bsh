@@ -1,0 +1,71 @@
+#!/bin/bash
+
+# TEST CASE SPEC FILE
+# This file is generated/updated using the test framework web interface.
+# Manual updates on test servers are lost when the test package is re-installed.
+#
+# Last modified: Monday 7th of October 2013 7:02:24
+#
+
+# These settings must be in BASH script format, they are sourced by other scripts.
+SPEC_FA_NAME="MULTIOSS"
+SPEC_UC_NAME="MULTIOSS_LDAP"
+SPEC_TC_ID=997
+SPEC_TC_SLOGAN="Verify adding an already existing local group to another referral domain "
+SPEC_TC_TYPE="FT"
+SPEC_TC_POLARITY="positive"
+SPEC_TC_PRIORITY="high"
+SPEC_TC_AUTOMATED=1
+SPEC_TC_DEPENDENT_ONLY=0
+SPEC_TC_TIMEOUT=300
+SPEC_TC_TEST_PASSCODE=0
+SPEC_TC_AUTHOR="xsougha"
+SPEC_TC_AUTOMATOR="xsougha"
+# this parameter is not interpreted by harness
+SPEC_TC_DISABLED=0
+
+# Please do not remove the comment lines below.
+# They are used as section locators by the test harness.
+
+# BEGIN_PRE_CONDITIONS
+#Presence of a referral domain
+# END_PRE_CONDITIONS
+
+
+# BEGIN_MANUAL_STEPS
+#/ericsson/sdee/bin/add_group.sh -d 2.com
+#Using LDAP domain settings file [/ericsson/sdee/ldap_domain_settings/2.com.settings]
+#LDAP domain: [2.com]
+#LDAP Directory Manager DN: [cn=directory manager]
+#LDAP Directory Manager password:
+#OSS-RC masterservice: [atrcxb989]
+#The selected domain [2.com] is using the GD.
+#New local group name: CS
+#A local group [CS] already exists in domain [1.com] with gidNumber [1900].
+#Continue to create account for local group [CS] with gidNumber [1900] in domain [2.com] (y/n)? [y] n
+#New local group name: PM
+#Start of gidNumber search range [1000]: 8930
+#End of gidNumber search range [59999]: 9000
+#New local group gidNumber [8930]:
+#Continue to create local group [PM] with gidNumber [8930] in domain [2.com] (y/n)? [y]
+#Adding new local group [PM] with gidNumber [8930] to domain [2.com] ... OK  
+#   Exclusion Reason    
+#   Logfile    
+#   URL    
+#   TC Tag  Multi-OSS System LDAP Administration (MOSS)  
+#   Note    
+#   
+#Basics   
+#   Owner eeijmae  
+#   Originated 2012-10-3 12:45:31 MEST  
+#   Modified 2013-2-8 15:21:35 MET  
+#   State APPR  
+#   Description The add_group.sh script first creates the
+#group entry in the local LDAP domain. Both group name and gidNumber
+#must be globally unique across all referral domains and the GD. The
+#script offers the lowest available gidNumber meeting this requirement.
+# END_MANUAL_STEPS
+
+# BEGIN_POST_CONDITIONS
+#None
+# END_POST_CONDITIONS

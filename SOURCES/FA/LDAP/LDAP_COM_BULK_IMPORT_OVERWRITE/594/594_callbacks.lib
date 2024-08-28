@@ -1,0 +1,369 @@
+#!/bin/bash
+#################################################################################
+#
+#
+#	   COPYRIGHT (C) ERICSSON RADIO SYSTEMS AB, Sweden
+#
+#	   The copyright to the document(s) herein is the property of
+#	   Ericsson Radio Systems AB, Sweden.
+#
+#	   The document(s) may be used and/or copied only with the written
+#	   permission from Ericsson Radio Systems AB or in accordance with
+#	   the terms and conditions stipulated in the agreement/contract
+#	   under which the document(s) have been supplied.
+#
+#################################################################################
+
+
+# ATCOMINF Test Callback Library
+
+# Revision History
+# 04/10/12	xamamcg		Initial test for bulk overwrite
+
+# Complete the callbacks in this library to automate the test case.
+#
+# Callbacks are stateless, it is not possible to set a global variable in one callback 
+# and access it it in another.
+#
+# Callbacks are called by the test harness in the following order:
+#
+# tc_setup() 		# Called only for independent TC execution mode to setup TC
+# tc_precon()		# Conditions that should exist before TC can run
+# tc_test()		# Runs the test for this TC
+# tc_postcon()		# Conditions that should/should not exist after successful TC 
+# tc_cleanup()		# Called only for independent TC execution mode to clenup after TC
+
+# All callbacks must PASS for a TC PASS result
+LDAP_BIN="/ericsson/sdee/bin"
+#################################################################################
+#
+# CALLBACK: TC_SETUP
+#
+# This callback function is only called if the harness execution mode is 'AT_INDEPENDENT'
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_setup() {
+
+
+
+	
+	# Replace PASSWD with the correct credentials or data
+	for ii in *.in; do
+		sed -e "s/^PASSWD$/$LDAP_SUPERUSER_PASSWD/" $ii > $ii.tmp || {
+			echo "Failed to replace LDAP superuser password holder etc in /usr/local/bin/expect input file $ii, rc $?"
+			return 2
+		}
+	done
+
+#-------------------------------------------------------------------------------
+# Create a test role
+#-------------------------------------------------------------------------------
+
+	CMD='/ericsson/sdee/bin/manage_COM.bsh -a role -d 1.com -R r594a -y'
+	${AT_BIN}/con_ex.bsh -d 594.in.tmp -o 594role.exp -c "$CMD" || {
+		echo "Failed to generate /usr/local/bin/expect script, $?"
+		return 3
+	}
+
+	/usr/local/bin/expect 594role.exp || {
+		echo "Failed to create role, error code $?"
+		return 4
+	}
+#-------------------------------------------------------------------------------
+# Create a 2nd test role
+#-------------------------------------------------------------------------------
+
+	CMD='/ericsson/sdee/bin/manage_COM.bsh -a role -d 1.com -R R594b -y'
+	${AT_BIN}/con_ex.bsh -d 594.in.tmp -o 594role.exp -c "$CMD" || {
+		echo "Failed to generate /usr/local/bin/expect script, $?"
+		return 5
+	}
+
+	/usr/local/bin/expect 594role.exp || {
+		echo "Failed to create role, error code $?"
+		return 6
+	}
+#-------------------------------------------------------------------------------
+# Create a test alias
+#-------------------------------------------------------------------------------
+
+	CMD='/ericsson/sdee/bin/manage_COM.bsh -a alias -d 1.com -A a594a -R r594a,r594b -y'
+	${AT_BIN}/con_ex.bsh -d 594.in.tmp -o 594role.exp -c "$CMD" || {
+		echo "Failed to generate /usr/local/bin/expect script, $?"
+		return 7
+	}
+
+	/usr/local/bin/expect 594role.exp || {
+		echo "Failed to create alias, error code $?"
+		return 8
+	}
+#-------------------------------------------------------------------------------
+# Create a 2nd test alias
+#-------------------------------------------------------------------------------
+
+	CMD='/ericsson/sdee/bin/manage_COM.bsh -a alias -d 1.com -A A594b -R r594a,r594b -y'
+	${AT_BIN}/con_ex.bsh -d 594.in.tmp -o 594role.exp -c "$CMD" || {
+		echo "Failed to generate /usr/local/bin/expect script, $?"
+		return 9
+	}
+
+	/usr/local/bin/expect 594role.exp || {
+		echo "Failed to create alias, error code $?"
+		return 10
+	}
+#-------------------------------------------------------------------------------
+# Create a 3rd test alias
+#-------------------------------------------------------------------------------
+
+	CMD='/ericsson/sdee/bin/manage_COM.bsh -a alias -d 1.com -A a594c -R r594a,r594b -y'
+	${AT_BIN}/con_ex.bsh -d 594.in.tmp -o 594role.exp -c "$CMD" || {
+		echo "Failed to generate /usr/local/bin/expect script, $?"
+		return 11
+	}
+
+	/usr/local/bin/expect 594role.exp || {
+		echo "Failed to create alias, error code $?"
+		return 12
+	}
+#-------------------------------------------------------------------------------
+# Create a 4th test alias
+#-------------------------------------------------------------------------------
+
+	CMD='/ericsson/sdee/bin/manage_COM.bsh -a alias -d 1.com -A a594d -R r594a -y'
+	${AT_BIN}/con_ex.bsh -d 594.in.tmp -o 594role.exp -c "$CMD" || {
+		echo "Failed to generate /usr/local/bin/expect script, $?"
+		return 13
+	}
+
+	/usr/local/bin/expect 594role.exp || {
+		echo "Failed to create alias, error code $?"
+		return 14
+	}
+	return 0
+}
+#################################################################################
+
+#################################################################################
+#
+# CALLBACK: TC_PRECON
+#
+# This callback function checks the correct conditions exist to run the TC.
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+ 
+tc_precon() {
+
+#-------------------------------------------------------------------------------
+#  Check LDAP is running
+#-------------------------------------------------------------------------------
+
+	LDAP_SERVER_UP || {
+		echo "LDAP server not running"
+		return 1
+	}
+
+#-------------------------------------------------------------------------------
+#  Test role is present
+#-------------------------------------------------------------------------------
+
+	/usr/bin/ldapsearch -D 'cn=Directory Manager' -w $LDAP_SUPERUSER_PASSWD -b cn=r594a,ou=role,ou=com,dc=1,dc=com objectclass=* || {
+		echo "No role r594a"
+		return 1
+	}
+	/usr/bin/ldapsearch -D 'cn=Directory Manager' -w $LDAP_SUPERUSER_PASSWD -b cn=R594b,ou=role,ou=com,dc=1,dc=com objectclass=* || {
+		echo "No role r594b"
+		return 2
+	}
+#-------------------------------------------------------------------------------
+#  Test alias is present
+#-------------------------------------------------------------------------------
+	/usr/bin/ldapsearch -D 'cn=Directory Manager' -w $LDAP_SUPERUSER_PASSWD -b role=a594a,ou=rolealias,ou=com,dc=1,dc=com objectclass=* | grep 'ericssonUserAuthorizationScope: r594a' || {
+		echo "No alias a594a with role r594a"
+		return 3
+	}
+	/usr/bin/ldapsearch -D 'cn=Directory Manager' -w $LDAP_SUPERUSER_PASSWD -b role=a594a,ou=rolealias,ou=com,dc=1,dc=com objectclass=* | grep 'ericssonUserAuthorizationScope: R594b' || {
+		echo "No alias a594a with role R594b"
+		return 4
+	}
+	/usr/bin/ldapsearch -D 'cn=Directory Manager' -w $LDAP_SUPERUSER_PASSWD -b role=A594b,ou=rolealias,ou=com,dc=1,dc=com objectclass=* | grep 'ericssonUserAuthorizationScope: r594a' || {
+		echo "No alias a594b with role r594a"
+		return 5
+	}
+	/usr/bin/ldapsearch -D 'cn=Directory Manager' -w $LDAP_SUPERUSER_PASSWD -b role=A594b,ou=rolealias,ou=com,dc=1,dc=com objectclass=* | grep 'ericssonUserAuthorizationScope: R594b' || {
+		echo "No alias a594b with role R594b"
+		return 6
+	}
+	/usr/bin/ldapsearch -D 'cn=Directory Manager' -w $LDAP_SUPERUSER_PASSWD -b role=a594c,ou=rolealias,ou=com,dc=1,dc=com objectclass=* | grep 'ericssonUserAuthorizationScope: r594a' || {
+		echo "No alias a594c with role r594a"
+		return 7
+	}
+	/usr/bin/ldapsearch -D 'cn=Directory Manager' -w $LDAP_SUPERUSER_PASSWD -b role=a594c,ou=rolealias,ou=com,dc=1,dc=com objectclass=* | grep 'ericssonUserAuthorizationScope: R594b' || {
+		echo "No alias a594c with role R594b"
+		return 8
+	}
+	/usr/bin/ldapsearch -D 'cn=Directory Manager' -w $LDAP_SUPERUSER_PASSWD -b role=a594d,ou=rolealias,ou=com,dc=1,dc=com objectclass=* | grep 'ericssonUserAuthorizationScope: r594a' || {
+		echo "No alias a594d with role r594a"
+		return 9
+	}
+	return 0
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_TEST
+#
+# This callback function runs the test.
+# The harness compares the return code to the SPEC_TC_TEST_PASSCODE value set in the test spec.
+#
+# Return or exit codes:
+#	SPEC_TC_TEST_PASSCODE 	success
+# != SPEC_TC_TEST_PASSCODE 	failure
+ 
+tc_test() {
+
+	CMD='/ericsson/sdee/bin/manage_COM.bsh -a import -d 1.com -f 594.import -o'
+	${AT_BIN}/con_ex.bsh -d 594Yes.in.tmp -o 594bulkload.exp -c "$CMD" || {
+		echo "Failed to generate /usr/local/bin/expect script, $?"
+		return 1
+	}
+
+	/usr/local/bin/expect 594bulkload.exp || {
+		echo "Failed to bulk load, error code $?"
+		return 2
+	}
+
+	
+
+	return 0
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_POSTCON
+#
+# This callback function checks expected results.
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_postcon() {
+
+#-------------------------------------------------------------------------------
+#  Test role is present
+#-------------------------------------------------------------------------------
+
+	/usr/bin/ldapsearch -D 'cn=Directory Manager' -w $LDAP_SUPERUSER_PASSWD -b cn=r594a,ou=role,ou=com,dc=1,dc=com objectclass=* || {
+		echo "No role r594a"
+		return 1
+	}
+	/usr/bin/ldapsearch -D 'cn=Directory Manager' -w $LDAP_SUPERUSER_PASSWD -b cn=R594b,ou=role,ou=com,dc=1,dc=com objectclass=* || {
+		echo "No role r594b"
+		return 2
+	}
+	/usr/bin/ldapsearch -D 'cn=Directory Manager' -w $LDAP_SUPERUSER_PASSWD -b cn=r594c,ou=role,ou=com,dc=1,dc=com objectclass=* || {
+		echo "No role r594c"
+		return 3
+	}
+	/usr/bin/ldapsearch -D 'cn=Directory Manager' -w $LDAP_SUPERUSER_PASSWD -b cn=R594d,ou=role,ou=com,dc=1,dc=com objectclass=* || {
+		echo "No role r594d"
+		return 4
+	}
+#-------------------------------------------------------------------------------
+#  Test alias is present
+#-------------------------------------------------------------------------------
+	/usr/bin/ldapsearch -D 'cn=Directory Manager' -w $LDAP_SUPERUSER_PASSWD -b role=a594a,ou=rolealias,ou=com,dc=1,dc=com objectclass=* | grep 'ericssonUserAuthorizationScope: r594a' && {
+		echo "alias a594a should not have role r594a"
+		return 5
+	}
+	/usr/bin/ldapsearch -D 'cn=Directory Manager' -w $LDAP_SUPERUSER_PASSWD -b role=a594a,ou=rolealias,ou=com,dc=1,dc=com objectclass=* | grep 'ericssonUserAuthorizationScope: R594b' || {
+		echo "No alias a594a with role R594b"
+		return 6
+	}
+	/usr/bin/ldapsearch -D 'cn=Directory Manager' -w $LDAP_SUPERUSER_PASSWD -b role=a594a,ou=rolealias,ou=com,dc=1,dc=com objectclass=* | grep 'ericssonUserAuthorizationScope: r594c' || {
+		echo "No alias a594a with role r594c"
+		return 7
+	}
+	/usr/bin/ldapsearch -D 'cn=Directory Manager' -w $LDAP_SUPERUSER_PASSWD -b role=A594b,ou=rolealias,ou=com,dc=1,dc=com objectclass=* | grep 'ericssonUserAuthorizationScope: R594d' || {
+		echo "No alias a594b with role R594d"
+		return 8
+	}
+	/usr/bin/ldapsearch -D 'cn=Directory Manager' -w $LDAP_SUPERUSER_PASSWD -b role=A594b,ou=rolealias,ou=com,dc=1,dc=com objectclass=* | grep -v 'ericssonUserAuthorizationScope: R594d' | grep ericssonUserAuthorizationScope && {
+		echo " alias a594b has unexpected role"
+		return 9
+	}
+	/usr/bin/ldapsearch -D 'cn=Directory Manager' -w $LDAP_SUPERUSER_PASSWD -b role=a594c,ou=rolealias,ou=com,dc=1,dc=com objectclass=* | grep 'ericssonUserAuthorizationScope: r594a' || {
+		echo "No alias a594c with role r594a"
+		return 10
+	}
+	/usr/bin/ldapsearch -D 'cn=Directory Manager' -w $LDAP_SUPERUSER_PASSWD -b role=a594c,ou=rolealias,ou=com,dc=1,dc=com objectclass=* | grep 'ericssonUserAuthorizationScope: R594b' || {
+		echo "No alias a594c with role R594b"
+		return 11
+	}
+	/usr/bin/ldapsearch -D 'cn=Directory Manager' -w $LDAP_SUPERUSER_PASSWD -b role=a594d,ou=rolealias,ou=com,dc=1,dc=com objectclass=* | grep 'ericssonUserAuthorizationScope: r594a' || {
+		echo "No alias a594d with role r594a"
+		return 12
+	}
+	/usr/bin/ldapsearch -D 'cn=Directory Manager' -w $LDAP_SUPERUSER_PASSWD -b role=a594e,ou=rolealias,ou=com,dc=1,dc=com objectclass=* | grep 'ericssonUserAuthorizationScope: r594a' || {
+		echo "No alias a594e with role r594a"
+		return 13
+	}
+	/usr/bin/ldapsearch -D 'cn=Directory Manager' -w $LDAP_SUPERUSER_PASSWD -b role=a594e,ou=rolealias,ou=com,dc=1,dc=com objectclass=* | grep 'ericssonUserAuthorizationScope: r594c' || {
+		echo "No alias a594e with role r594c"
+		return 14
+	}
+	/usr/bin/ldapsearch -D 'cn=Directory Manager' -w $LDAP_SUPERUSER_PASSWD -b role=a594f,ou=rolealias,ou=com,dc=1,dc=com objectclass=* | grep 'ericssonUserAuthorizationScope: r594c' || {
+		echo "No alias a594f with role r594c"
+		return 15
+	}
+	/usr/bin/ldapsearch -D 'cn=Directory Manager' -w $LDAP_SUPERUSER_PASSWD -b role=a594f,ou=rolealias,ou=com,dc=1,dc=com objectclass=* | grep 'ericssonUserAuthorizationScope: R594d' || {
+		echo "No alias a594f with role R594d"
+		return 16
+	}
+	return 0
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_CLEANUP
+#
+# This callback function is only called if the harness execution mode is 'AT_INDEPENDENT'
+# 
+# This callback restores the target system to the state it was in before the TC 
+# was run. It rolls back changes made by callbacks tc_setup() and tc_test()
+# 
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_cleanup() {
+
+
+	# Add desired roles to specified domain
+    ${AT_BIN}/con_ex.bsh -d justpasswd.in.tmp -o remove_role.exp -c "$LDAP_BIN/manage_COM.bsh -r role -d 1.com -R r594a,R594b,r594c,R594d -y " -r
+    /usr/local/bin/expect remove_role.exp || {
+        # Failed to add roles
+        echo "Remove role ldaprole 1 through 4 to 2.com domain failed - rc $?"
+		return 8
+    }
+        # remove the generated /usr/local/bin/expect files
+        rm -f *tmp *exp ${EXPECT_WRKNG} $OUTFILE || {
+                echo "Failed to remove the generated working files"
+                return 1
+        }
+	rm -f *.exp
+	rm -f *.out
+	rm -f *.in.tmp
+	return 0
+}

@@ -1,0 +1,68 @@
+#!/bin/bash
+
+# TEST CASE SPEC FILE
+# This file is generated/updated using the test framework web interface.
+# Manual updates on test servers are lost when the test package is re-installed.
+#
+# Last modified: Tuesday 14th of May 2013 8:06:36
+#
+
+# These settings must be in BASH script format, they are sourced by other scripts.
+SPEC_FA_NAME="LDAP"
+SPEC_UC_NAME="LDAP_DOMAIN_RESTORE"
+SPEC_TC_ID=817
+SPEC_TC_SLOGAN="Check for bad inputs to migrate_ldap.bsh run in import mode"
+SPEC_TC_TYPE="FT"
+SPEC_TC_POLARITY="positive"
+SPEC_TC_PRIORITY="high"
+SPEC_TC_AUTOMATED=1
+SPEC_TC_DEPENDENT_ONLY=0
+SPEC_TC_TIMEOUT=300
+SPEC_TC_TEST_PASSCODE=0
+SPEC_TC_AUTHOR="edavmax"
+SPEC_TC_AUTOMATOR="edavmax"
+# this parameter is not interpreted by harness
+SPEC_TC_DISABLED=0
+
+# Please do not remove the comment lines below.
+# They are used as section locators by the test harness.
+
+# BEGIN_PRE_CONDITIONS
+#- OpenDJ server is up
+#- LDAP domain 1.com exists 
+#- LDAP domain foo.com does not exist
+# END_PRE_CONDITIONS
+
+
+# BEGIN_MANUAL_STEPS
+#- try to import non-existing file:
+#
+#migrate_ldap.bsh -i -d 1.com -f <non-existing-file>
+#
+#CONSOLE_OUTPUT_CONTAINS "Unable to read <non-existing-file>"
+#
+#- try to import into non-existing domain foo.com
+#
+#CONSOLE_OUTPUT_CONTAINS "ERROR : Domain [foo.com] does not exist"
+#
+#- try to import domain backup file 2.com into domain 1.com
+#
+#migrate_ldap.bsh -i -d 1.com -f /var/tmp/2.com_04-12-2012_09-03-21.ldif
+#
+#CONSOLE_OUTPUT_CONTAINS "ERROR : LDIF domain [2.com] does not match selected domain [1.com]"
+#
+#-try to import backup file generated from Sun-DS
+#
+#migrate_ldap.bsh -i -d 1.com -f <sun-ds generated ldif>
+#
+#CONSOLE_OUTPUT_CONTAINS "ERROR : This appears to be an LDIF file from Sun DSEE. This file cannot be
+#imported directly into LDAP"
+#
+#
+#
+#
+# END_MANUAL_STEPS
+
+# BEGIN_POST_CONDITIONS
+#as above
+# END_POST_CONDITIONS

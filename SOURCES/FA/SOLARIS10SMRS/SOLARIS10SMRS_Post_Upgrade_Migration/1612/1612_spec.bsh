@@ -1,0 +1,45 @@
+#!/bin/bash
+
+# TEST CASE SPEC FILE
+# This file is generated/updated using the test framework web interface.
+# Manual updates on test servers are lost when the test package is re-installed.
+#
+# Last modified: Tuesday 17th of December 2013 5:10:53
+#
+
+# These settings must be in BASH script format, they are sourced by other scripts.
+SPEC_FA_NAME="SOLARIS10SMRS"
+SPEC_UC_NAME="SOLARIS10SMRS_Post_Upgrade_Migration"
+SPEC_TC_ID=1612
+SPEC_TC_SLOGAN="Verify the smo ftp user for WRAN still exists "
+SPEC_TC_TYPE="FT"
+SPEC_TC_POLARITY="positive"
+SPEC_TC_PRIORITY="high"
+SPEC_TC_AUTOMATED=1
+SPEC_TC_DEPENDENT_ONLY=0
+SPEC_TC_TIMEOUT=300
+SPEC_TC_TEST_PASSCODE=0
+SPEC_TC_AUTHOR="xlaxain"
+SPEC_TC_AUTOMATOR="xlaxain"
+# this parameter is not interpreted by harness
+SPEC_TC_DISABLED=0
+
+# Please do not remove the comment lines below.
+# They are used as section locators by the test harness.
+
+# BEGIN_PRE_CONDITIONS
+#Path in Mars:- Bi-directional SMRS Upgrade/Migration/Post Upgrade/Migration Steps  
+#
+#Verify the smo ftp user for WRAN still exists
+#
+# END_PRE_CONDITIONS
+
+
+# BEGIN_MANUAL_STEPS
+#Check that the smoftpwran account still exists on the and NEDSS in etc/passwd and /etc/shadow
+#
+# END_MANUAL_STEPS
+
+# BEGIN_POST_CONDITIONS
+#smoftpwran account exists in etc/passwd and /etc/shadow on the and NEDSS
+# END_POST_CONDITIONS

@@ -1,0 +1,101 @@
+#!/bin/bash
+
+# TEST CASE SPEC FILE
+# This file is generated/updated using the test framework web interface.
+# Manual updates on test servers are lost when the test package is re-installed.
+#
+# Last modified: Monday 16th of December 2013 9:27:37
+#
+
+# These settings must be in BASH script format, they are sourced by other scripts.
+SPEC_FA_NAME="SOLARIS10INSTALL"
+SPEC_UC_NAME="SOLARIS10INSTALL_UAS_Installation"
+SPEC_TC_ID=1344
+SPEC_TC_SLOGAN="Verify new Ericsson theme "
+SPEC_TC_TYPE="FT"
+SPEC_TC_POLARITY="positive"
+SPEC_TC_PRIORITY="high"
+SPEC_TC_AUTOMATED=0
+SPEC_TC_DEPENDENT_ONLY=0
+SPEC_TC_TIMEOUT=300
+SPEC_TC_TEST_PASSCODE=0
+SPEC_TC_AUTHOR="xnavsur"
+SPEC_TC_AUTOMATOR="xnavsur"
+# this parameter is not interpreted by harness
+SPEC_TC_DISABLED=0
+
+# Please do not remove the comment lines below.
+# They are used as section locators by the test harness.
+
+# BEGIN_PRE_CONDITIONS
+#<path under "Verification Specification for Cominf Feature Test for 14.0 ":
+#Initial Installation/UAS Installation 
+#>  
+#
+#The test-case ensures that JDS is deployed as default GUI.This TC applies to initial install and upgrade where the upgrade was from old theme to new theme.
+#Precondition: 
+#
+#connection to UAS configured. User"jdsuser"is created. The Unix Application Server Document is available.
+#
+#
+# END_PRE_CONDITIONS
+
+
+# BEGIN_MANUAL_STEPS
+#Action 1:
+#
+#Verify that initial install of the UAS is sucessfull and the server is installed with the new ericsson theme.
+#
+#Action 2: 
+#
+#Verify that new ericsson theme is the default theme.
+#
+#Action 3:
+#Verify that its not possible to switch between different themes.
+#
+#Action 4:
+#Verify the new desktop wallpaper
+#
+#Action 5:
+#Configure an connection to the UAS following section 6.1 of the Unix Application Server Document.
+#
+#Action 6: 
+#
+#Connect to the UAS as "jdsuser" using the newly created connection.
+#
+#Action 7 :
+#
+#Verify that prototype "Launch" button replaces the "Start" button as a part of OS
+#
+#
+#
+#
+#
+# END_MANUAL_STEPS
+
+# BEGIN_POST_CONDITIONS
+#Result 1:
+#
+#UAS is installed successfully and the default theme for JDS is the new ericsson theme.
+#
+#Result 2:
+#
+#The new theme is the default theme.
+#
+#Result 3:
+#Though its not a restriction, but the changed theme wont be compatible with the guis.
+#
+#Result 4:
+#New desktop wallpaper is available.
+#
+#Result 5: 
+#
+#The configuration of the connection is successful.
+#
+#Result 6: 
+#
+#The connection is successful and JDS GUI is launched.
+#
+#Result 7:
+#Launch button is available. 
+# END_POST_CONDITIONS

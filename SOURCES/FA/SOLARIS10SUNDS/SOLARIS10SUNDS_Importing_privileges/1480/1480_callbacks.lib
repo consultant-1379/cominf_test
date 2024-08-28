@@ -1,0 +1,271 @@
+#!/bin/bash
+#################################################################################
+#
+#
+#       COPYRIGHT (C) ERICSSON RADIO SYSTEMS AB, Sweden
+#
+#       The copyright to the document(s) herein is the property of
+#       Ericsson Radio Systems AB, Sweden.
+#
+#       The document(s) may be used and/or copied only with the written
+#       permission from Ericsson Radio Systems AB or in accordance with
+#       the terms and conditions stipulated in the agreement/contract
+#       under which the document(s) have been supplied.
+#
+#################################################################################
+
+
+# ATCOMINF Test Callback Library
+
+# Revision History
+# <date>	<signum>	<details>
+
+# Complete the callbacks in this library to automate the test case.
+#
+# Callbacks are stateless, it is not possible to set a global variable in one callback 
+# and access it it in another.
+#
+# Callbacks are called by the test harness in the following order:
+#
+# tc_setup() 		# Called only for independent TC execution mode to setup TC
+# tc_precon()		# Conditions that should exist before TC can run
+# tc_test()		# Runs the test for this TC
+# tc_postcon()		# Conditions that should/should not exist after successful TC 
+# tc_cleanup()		# Called only for independent TC execution mode to cleanup after TC
+
+# All callbacks must PASS for a TC PASS result
+
+#################################################################################
+#
+# CALLBACK: TC_SETUP
+#
+# This callback function is only called if the harness execution mode is 'AT_INDEPENDENT'
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+. ${AT_LIB}/tst_LDAP.lib
+LDAP_DOMAIN=$(grep "LDAP_DOMAIN" /ericsson/config/config.ini | awk -F"=" '{print $2}')
+pkginfo ERICodj 2> /dev/null 
+if [[ $? -eq 0 ]]; then
+        TEST_COMMANDS=cmds1.cat 
+	PATH_MANAGE=/ericsson/opendj/bin/manage_COM_privs.bsh	 
+else
+        TEST_COMMANDS=cmds.cat
+	PATH_MANAGE=/ericsson/sdee/bin/manage_COM_privs.bsh	
+fi
+
+
+tc_setup() {
+
+	 while read tlin; do
+                OIFS=$IFS
+                IFS="^"
+                # field 0=test number, 1=command, 2=error message
+                tflds=($tlin)
+                IFS=$OIFS
+                tuser=t1480${tflds[0]}
+                                LDAP_USER_EXISTS $LDAP_DOMAIN $tuser && {
+                        echo "user $tuser already exists"
+                        LDAP_DELETE_USER $LDAP_DOMAIN $tuser || {
+                                echo "Error while deleting user $tuser"
+                                return 1
+                        }
+                }
+        done < $TEST_COMMANDS
+        return 0
+
+}
+#################################################################################
+
+#################################################################################
+#
+# CALLBACK: TC_PRECON
+#
+# This callback function checks the correct conditions exist to run the TC.
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+ 
+tc_precon() {
+
+	templates=`ls *.tmpl 2>/dev/null | wc -l`
+        if [ ${templates} -eq 0 ] ; then
+                echo "There are no templates to process"
+                return 1
+        fi
+
+        LDAP_SERVER_UP || {
+                echo "LDAP server is not runningi: $?"
+                return 1
+        }
+
+        LDAP_DOMAIN_EXISTS $LDAP_DOMAIN || {
+                echo "$LDAP_DOMAIN does not exist"
+                return 1
+        }
+        return 0
+
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_TEST
+#
+# This callback function runs the test.
+# The harness compares the return code to the SPEC_TC_TEST_PASSCODE value set in the test spec.
+#
+# Return or exit codes:
+#    SPEC_TC_TEST_PASSCODE 	success
+# != SPEC_TC_TEST_PASSCODE 	failure
+ 
+tc_test() {
+
+	while read tlin; do
+                OIFS=$IFS
+                IFS="^"
+                # field 0=test number, 1=command, 2=error message
+                tflds=($tlin)
+                IFS=$OIFS
+                tpref=1480-${tflds[0]}
+                templ=${tpref}.tmpl
+		tuser=t1480${tflds[0]}
+                [ -f $templ ] || {
+                echo "Cannot find template file $templ for ${tpref} test"
+                continue
+                }
+                expfile="${tpref}.exp"
+                infile="${tpref}.in"
+                sed -e "s/^PPPPPPPP/${LDAP_SUPERUSER_PASSWD}/" < ${templ} > ${infile}
+                ${AT_BIN}/con_ex.bsh -d ${infile} -o ${expfile} -c "${tflds[1]}" || {
+                        echo "Could not create $expfile from $infile to run ${tflds[1]} : retval $?"
+                        continue
+                        }
+
+                echo "Running - ${tflds[1]}"
+                echo "######################################################"
+
+                # Run the test
+                echo "Adding user $tuser..."
+                /usr/local/bin/expect  ${expfile} >/dev/null || {
+                        echo "${tflds[2]}: retval $?"
+                        continue
+                        }
+        done < $TEST_COMMANDS
+	
+	templ=1480-001.tmpl			
+	expfile=1480-001.exp
+	infile=1480-001.in
+	sed -e "s/^PPPPPPPP/${LDAP_SUPERUSER_PASSWD}/" < ${templ} > ${infile}
+	#ACTION 1
+	${AT_BIN}/con_ex.bsh -d ${infile} -o ${expfile} -c "${PATH_MANAGE} -a target -f import_action1 -d vts.com" || {
+                        echo "Could not create $expfile from $infile to run ${tflds[1]} : retval $?"
+                        }
+	echo "######################################################"
+	echo "Running action 1"
+	echo "######################################################"
+	echo "Adding multiple targets to multiple users..."
+	/usr/local/bin/expect  ${expfile} >/dev/null || {
+                        echo "ACTION 1: retval $?"
+                        }
+
+	#ACTION 2
+        ${AT_BIN}/con_ex.bsh -d ${infile} -o ${expfile} -c "${PATH_MANAGE} -a target -f import_action2 -d vts.com" || {
+                        echo "Could not create $expfile from $infile to run ${tflds[1]} : retval $?"
+                        }
+        echo "######################################################"
+        echo "Running action 2"
+        echo "######################################################"
+        echo "Adding multiple targets to oss type of user..."
+        /usr/local/bin/expect  ${expfile} >/dev/null || {
+                        echo "ACTION 2: retval $?"
+                        }	
+
+	#ACTION 3
+        ${AT_BIN}/con_ex.bsh -d ${infile} -o ${expfile} -c "${PATH_MANAGE} -a target -f import_action3 -d vts.com" || {
+                        echo "Could not create $expfile from $infile to run ${tflds[1]} : retval $?"
+                        }
+        echo "######################################################"
+        echo "Running action 3"
+        echo "######################################################"
+        echo "Adding multiple targets to com type of user..."
+        /usr/local/bin/expect  ${expfile} >/dev/null || {
+                        echo "ACTION 3: retval $?"
+                        }
+        return 0
+
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_POSTCON
+#
+# This callback function checks expected results.
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_postcon() {
+	local cnt_oss=0
+	local cnt_com=0	
+
+	cnt_oss=$(ldapsearch -p 389 -M -T -D "cn=Directory Manager" -w ldappass -b "uid=t148001,ou=people,dc=vts,dc=com" "ericssonUserAuthenticationScope=*" ericssonUserAuthenticationScope |grep ericssonUserAuthenticationScope | wc -l )
+	cnt_com=$(ldapsearch -p 389 -M -T -D "cn=Directory Manager" -w ldappass -b "uid=t148002,ou=people,dc=vts,dc=com" "ericssonUserAuthenticationScope=*" ericssonUserAuthenticationScope |grep ericssonUserAuthenticationScope | wc -l )
+	ssh ossmaster "id -a t148001" |awk '{print $3}' |grep 609 > /dev/null
+	ret=$?
+	if [[ $cnt_oss -ne 4  ||  $cnt_com -ne 4  || $oss2comFlag -ne 0 ]]; then
+		return 1
+	fi
+	return 0
+
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_CLEANUP
+#
+# This callback function is only called if the harness execution mode is 'AT_INDEPENDENT'
+# 
+# This callback restores the target system to the state it was in before the TC 
+# was run. It rolls back changes made by callbacks tc_setup() and tc_test()
+# 
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_cleanup() {
+	
+	rm -f *.in *.exp || {
+                echo "Problems removing temporary files"
+                return 1
+        }
+	if ! LDAP_SERVER_UP ; then
+                echo "LDAP server is not running"
+        fi
+ #	while read tlin; do
+ #               OIFS=$IFS
+ #               IFS="^"
+                # field 0=test number, 1=command, 2=error message
+ #               tflds=($tlin)
+ #               IFS=$OIFS
+ #               tuser=t1480${tflds[0]}
+ #               LDAP_USER_EXISTS $LDAP_DOMAIN $tuser && {
+ #                       echo "Deleting user $tuser"
+ #                       LDAP_DELETE_USER $LDAP_DOMAIN $tuser || {
+ #                               echo "Error while deleting user $tuser"
+ #                               return 1
+ #                       }
+ #               }
+ #       done < $TEST_COMMANDS
+	echo "Intentionally left without cleaning the created users and targets for testcase 1494"
+	return 0
+
+}

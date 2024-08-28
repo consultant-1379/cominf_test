@@ -1,0 +1,302 @@
+#!/bin/bash
+#################################################################################
+#
+#
+#       COPYRIGHT (C) ERICSSON RADIO SYSTEMS AB, Sweden
+#
+#       The copyright to the document(s) herein is the property of
+#       Ericsson Radio Systems AB, Sweden.
+#
+#       The document(s) may be used and/or copied only with the written
+#       permission from Ericsson Radio Systems AB or in accordance with
+#       the terms and conditions stipulated in the agreement/contract
+#       under which the document(s) have been supplied.
+#
+#################################################################################
+
+
+# ATCOMINF Test Callback Library
+
+# Revision History
+# 12/07/12	xkalbha		Initial version testing with GENERIC_NAS
+
+# Complete the callbacks in this library to automate the test case.
+#
+# Callbacks are stateless, it is not possible to set a global variable in one callback 
+# and access it it in another.
+#
+# Callbacks are called by the test harness in the following order:
+#
+# tc_setup() 		# Called only for independent TC execution mode to setup TC
+# tc_precon()		# Conditions that should exist before TC can run
+# tc_test()		# Runs the test for this TC
+# tc_postcon()		# Conditions that should/should not exist after successful TC 
+# tc_cleanup()		# Called only for independent TC execution mode to clenup after TC
+
+# All callbacks must PASS for a TC PASS result
+
+# Determine what type of environment we are in and check that we have an smrs_user_config file for this box
+smrs_config_filename="smrs_user_config.$(hostname)"
+[ ! -z $DEPLOYMENT_TYPE ] && {
+	[ $DEPLOYMENT_TYPE == NON_BLADE ] && smrs_config_filename="smrs_user_config_non_blade.$(hostname)"
+}
+
+#################################################################################
+#
+# CALLBACK: TC_SETUP
+#
+# This callback function is only called if the harness execution mode is 'AT_INDEPENDENT'
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_setup() {
+	#PREPARE_SMRS
+	${AT_BIN}/con_ex.bsh -d add_smrs.in -o expect.exp -c "ssh omsrvm rm -rf /GRAN/CommonPersistent "
+	/usr/local/bin/expect expect.exp 
+	return 0
+
+}
+#################################################################################
+
+#################################################################################
+#
+# CALLBACK: TC_PRECON
+#
+# This callback function checks the correct conditions exist to run the TC.
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+ 
+tc_precon() {
+
+	TEST_SOLARIS || { echo "Not Solaris"; return 1; }
+	
+	[ -r $smrs_config_filename ] || { echo "SMRS config $smrs_config_filename does not exist"; return 2; }
+
+	return 0
+
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_TEST
+#
+# This callback function runs the test.
+# The harness compares the return code to the SPEC_TC_TEST_PASSCODE value set in the test spec.
+#
+# Return or exit codes:
+#    SPEC_TC_TEST_PASSCODE 	success
+# != SPEC_TC_TEST_PASSCODE 	failure
+ 
+tc_test() {
+
+	${AT_BIN}/con_ex.bsh -d add_smrs.in -o expect.exp -c "ssh omsrvm mkdir /export/GRAN/nedssv4 "
+	/usr/local/bin/expect expect.exp  
+	${AT_BIN}/con_ex.bsh -d add_smrs.in -o expect.exp -c "ssh omsrvm mkdir /export/CORE/nedssv4"
+	/usr/local/bin/expect expect.exp  
+	
+	${AT_BIN}/con_ex.bsh -d add_smrs.in -o expect.exp -c "ssh omsrvm mkdir /export/LRAN/nedssv4"
+	/usr/local/bin/expect expect.exp 
+	
+	svcadm enable smrs_nfs
+	# Mark the bismrs_events.log so know if errors occur
+	LOG_MARK_STATUS /var/opt/ericsson/log/bismrs_events.log 1
+
+	#name=`hostname`
+	#smrs_config_filename="smrs_user_config.$name"
+	cp $smrs_config_filename smrs_user_config
+	#echo "Config file using is: $smrs_user_config.$name "
+	#cat smrs_user_config
+
+    # Run con_ex.bsh to create expect script
+    # 91.in is checked into GIT and has the name and prompt values
+	cmd='/opt/ericsson/nms_bismrs_mc/bin/configure_smrs.sh add smrs_master -f smrs_user_config'
+    ${AT_BIN}/con_ex.bsh -b 700 -d 91.in -o 91.exp -c "${cmd}"
+    retval=$?
+    [ $retval -ne 0 ] && { echo Failed to create expect script $retval; return 2; }
+
+	/usr/local/bin/expect 91.exp
+	retval=$?
+	[ $retval -ne 0 ] && { echo "add_smrs_master failed $retval. Attempting again.";
+		/usr/local/bin/expect 91.exp || { echo "add_smrs_master failed twice." ; }
+	
+	return 3; }
+
+	# Check for errors
+	LOG_SEARCH_FROM_MARK /var/opt/ericsson/log/bismrs_events.log error 1
+	retval=$?
+	[ $retval -eq 0 ] && { echo "error found in bismrs_events.log $retval"; return 4; }
+	[ $retval -ne 1 ] && { echo "Search failed in bismrs_events.log $retval"; return 4; }
+	LOG_SEARCH_FROM_MARK /var/opt/ericsson/log/bismrs_events.log warning 1
+	retval=$?
+	[ $retval -eq 0 ] && { echo "warning found in bismrs_events.log $retval"; return 5; }
+	[ $retval -ne 1 ] && { echo "Search failed in bismrs_events.log $retval"; return 5; }
+
+	return 0
+
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_POSTCON
+#
+# This callback function checks expected results.
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_postcon() {
+
+	name=`hostname`
+	# Test smrs_nfs service is enabled on the OSS master
+	SERVICE_ENABLED smrs_nfs || { echo "SMRS_NFS not enabled $?"; return 1; }
+
+	ls -l /opt/ericsson/nms_bismrs_mc/etc | grep xml.template || { echo "Unable to find XML template files" ; return 1;}
+
+	# Test filesystems on the OSS Master - this box under /var/opt/ericsson/smrsstore/
+	CHECK_MOUNT_EXISTS /var/opt/ericsson/smrsstore/GRAN || { echo "GRAN mount not on OSS master $?"; return 2; }
+	CHECK_MOUNT_EXISTS /var/opt/ericsson/smrsstore/LRAN || { echo "LRAN mount not on OSS master $?"; return 3; }
+	CHECK_MOUNT_EXISTS /var/opt/ericsson/smrsstore/WRAN || { echo "WRAN mount not on OSS master $?"; return 4; }
+	CHECK_MOUNT_EXISTS /var/opt/ericsson/smrsstore/CORE || { echo "CORE mount not on OSS master $?"; return 5; }
+
+	# Check cat /etc/mnttab | grep /var/opt/ericsson/smrsstore/
+	numSmrsMounts=$(grep /var/opt/ericsson/smrsstore/ /etc/mnttab | wc -l)
+	# Assign back to self to remove leading tabs
+	numSmrsMounts=$(echo $numSmrsMounts)
+	[ "$numSmrsMounts" -lt 4 ] && { echo "Incorrect number of local /var/opt/ericsson/smrsstore/ mounts $numSmrsMounts"; return 6; }
+
+	# Check /etc/mnttab for GRAN
+	numGranMounts=$(grep '/var/opt/ericsson/smrsstore/GRAN' /etc/mnttab | wc -l)
+	numGranMounts=$(echo $numGranMounts)
+	[ "$numGranMounts" -lt 1 ] && { echo "Incorrect number of local gran mounts $numGranMounts"; return 7; }
+
+	# Check /etc/mnttab for LRAN
+	numLranMounts=$(grep '/var/opt/ericsson/smrsstore/LRAN' /etc/mnttab | wc -l)
+	numLranMounts=$(echo $numLranMounts)
+	[ "$numLranMounts" -lt 1 ] && { echo "Incorrect number of local lran mounts $numLranMounts"; return 8; }
+
+	# Check /etc/mnttab for WRAN
+	numWranMounts=$(grep '/var/opt/ericsson/smrsstore/WRAN' /etc/mnttab | wc -l)
+	numWranMounts=$(echo $numWranMounts)
+	[ "$numWranMounts" -lt 1 ] && { echo "Incorrect number of local wran mounts $numWranMounts"; return 9; }
+
+	# Check /etc/mnttab for CORE
+	numCoreMounts=$(grep '/var/opt/ericsson/smrsstore/CORE' /etc/mnttab | wc -l)
+	numCoreMounts=$(echo $numCoreMounts)
+	[ "$numCoreMounts" -lt 1 ] && { echo "Incorrect number of local core mounts $numCoreMounts"; return 10; }
+
+	# Test filesystems are mounted on the O&M primary
+	#CHECK_REMOTE_MOUNT_EXISTS smrs_master /export/GRAN || { echo "GRAN mount not on OM primary $?"; return 11; }
+	#CHECK_REMOTE_MOUNT_EXISTS smrs_master /export/LRAN || { echo "LRAN mount not on OM primary $?"; return 12; }
+	#CHECK_REMOTE_MOUNT_EXISTS smrs_master /export/WRAN || { echo "WRAN mount not on OM primary $?"; return 13; }
+	#CHECK_REMOTE_MOUNT_EXISTS smrs_master /export/CORE || { echo "CORE mount not on OM primary $?"; return 14; }
+
+	cmd='mount | grep /export/LRAN'
+	ssh smrs_master "$cmd" || { echo "LRAN mount not on OM primary $?"; return 12; }
+	
+	cmd='mount | grep /export/WRAN'
+	ssh smrs_master "$cmd" || { echo "WRAN mount not on OM primary $?"; return 13; }
+	
+	cmd='mount | grep /export/CORE'
+	ssh smrs_master "$cmd" || { echo "CORE mount not on OM primary $?"; return 14; }
+	
+	# Check filesystems on remote box have been added to /etc/vfstab
+	cmd='grep /export/GRAN /etc/vfstab'
+	ssh smrs_master "$cmd" || { echo "GRAN mount not in /etc/vfstab $?"; return 15; }
+
+	cmd='grep /export/LRAN /etc/vfstab'
+	ssh smrs_master "$cmd" || { echo "LRAN mount not in /etc/vfstab $?"; return 16; }
+
+	cmd='grep /export/WRAN /etc/vfstab'
+	ssh smrs_master "$cmd" || { echo "WRAN mount not in /etc/vfstab $?"; return 17; }
+
+	cmd='grep /export/CORE /etc/vfstab'
+	ssh smrs_master "$cmd" || { echo "CORE mount not in /etc/vfstab $?"; return 18; }
+
+	
+
+	# Check FtpServices
+	CHECK_SMO_FTP_SERVICE_MASTER oss1 y y y y || return $?
+
+	# shane - auto.smrs no longer exists so these tests are invalid for now
+	# Check directory structure of SMRS filesystems
+	CHECK_GRAN_FILESYSTEM smrs_master || return $?
+	CHECK_WRAN_FILESYSTEM smrs_master || return $?
+	CHECK_LRAN_FILESYSTEM smrs_master || return $?
+
+	# Check crontab for stn_cleanup setup
+    ssh smrs_master crontab -l | grep -i stn_cleanup.sh
+	retval=$?
+	[ $retval -ne 0 ] && { echo "No crontab entry for stn_cleanup $retval"; return 70; }
+
+	# Check LRAN_USERS
+	CHECK_LRAN_USERS smrs_master oss1 || return $?
+	# Check WRAN_USERS
+	CHECK_WRAN_USERS smrs_master oss1 || return $?
+	# Check coresmo
+	SMRS_USER_EXISTS coresmo smrs_master || return $?
+	# Check gransmo
+	SMRS_USER_EXISTS gransmo smrs_master || return $?
+
+	# Prove can ssh using smrs_master as nodename
+	ssh smrs_master 'ls' || { echo "Failed to ssh to smrs_master $?"; return 71; }
+
+	# Prove can login as l-smoconfig-oss1 on smrs_master
+    # Run con_ex.bsh to create expect script
+	cmd="ssh l-smoconfig-oss1@smrs_master"
+    ${AT_BIN}/con_ex.bsh -b 700 -d test.in -o 91l.exp -c "$cmd"
+    retval=$?
+    [ $retval -ne 0 ] && { echo Failed to create expect script for login $retval; return 72; }
+
+	/usr/local/bin/expect 91l.exp
+	retval=$?
+    [ $retval -ne 0 ] && { echo Failed to login as l-smoconfig-oss1 $retval; return 73; }
+
+	ssh smrs_master "zpool list | grep smrs" || { echo "Failed to find the smrspool on smrs_master" ; retrun 74;}
+	ssh smrs_master "zfs list -r smrspool" || { echo "Failed to find the smrspool on smrs_master" ; retrun 75;}
+	
+	
+	return 0
+
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_CLEANUP
+#
+# This callback function is only called if the harness execution mode is 'AT_INDEPENDENT'
+# 
+# This callback restores the target system to the state it was in before the TC 
+# was run. It rolls back changes made by callbacks tc_setup() and tc_test()
+# 
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_cleanup() {
+
+	# Cleanup the system so nolonger a SMRS master
+	retval=0
+
+    	#PRIMIP=$(awk -F= '$1~/SMRS_MASTER_IP/{print $2}' smrs_user_config.$(hostname) 2>/dev/null)
+    	PRIMIP=$(awk -F= '$1~/SMRS_MASTER_IP/{print $2}' smrs_config_filename 2>/dev/null)
+	##CLEANUP_SMRS  smrs_master oss1 y y y y
+	#retval=$?
+
+	# Remove temporary files
+	#rm -f smrs_user_config
+	#rm -f 91.exp
+	#rm -f 91l.exp
+	return $retval
+
+}

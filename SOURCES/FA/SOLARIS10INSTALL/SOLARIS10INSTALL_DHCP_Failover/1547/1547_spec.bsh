@@ -1,0 +1,101 @@
+#!/bin/bash
+
+# TEST CASE SPEC FILE
+# This file is generated/updated using the test framework web interface.
+# Manual updates on test servers are lost when the test package is re-installed.
+#
+# Last modified: Monday 16th of December 2013 11:58:53
+#
+
+# These settings must be in BASH script format, they are sourced by other scripts.
+SPEC_FA_NAME="SOLARIS10INSTALL"
+SPEC_UC_NAME="SOLARIS10INSTALL_DHCP_Failover"
+SPEC_TC_ID=1547
+SPEC_TC_SLOGAN="Verify the ‘sys_dhcp_check_<timestamp>.log’, logfile is created and contains correct information relating to DHCP daemons. "
+SPEC_TC_TYPE="FT"
+SPEC_TC_POLARITY="positive"
+SPEC_TC_PRIORITY="high"
+SPEC_TC_AUTOMATED=1
+SPEC_TC_DEPENDENT_ONLY=0
+SPEC_TC_TIMEOUT=300
+SPEC_TC_TEST_PASSCODE=0
+SPEC_TC_AUTHOR="xsripin"
+SPEC_TC_AUTOMATOR="xsripin"
+# this parameter is not interpreted by harness
+SPEC_TC_DISABLED=0
+
+# Please do not remove the comment lines below.
+# They are used as section locators by the test harness.
+
+# BEGIN_PRE_CONDITIONS
+#<path under "Verification Specification for Cominf Feature Test for 14.0 ":
+#Initial Installation/DHCP Failover/ISC DHCP IPv4 Failover
+#> 
+#
+#Verify the ‘sys_dhcp_check_<timestamp>.log’, logfile is created and contains correct information relating to DHCP daemons.
+#
+#Precondition: 
+#MWS , 
+#OSS MS,
+#om_serv_master , om_serv_slave
+#MWS, profile for om_serv_master configured for IPv4 and IPv6(Dualstack).
+#MWS, profile for om_serv_slave configured for IPv4 and IPv6(Dualstack).
+#MWS configured with latest Solaris, Solaris O&M media, COMInf media
+#‘om_serv_master’, ‘om_serv_slave’ successfully jumpstarted with COMInf media using MWS.
+#IPv6 interface file , /etc/hostname6.<interface>, has been renamed. Server restarted to disable IPv6 daemon.
+#
+#Master server is the active DHCP server.
+#IPv4 daemon only running on Master server. 
+#
+#A cronjob exists on both the master server and slave server for the script ‘/ericsson/ocs/bin/dhcp_check.sh’, to transfer the IPv4 DHCP files between the active DHCP server and the non-active server.
+#
+#
+# END_PRE_CONDITIONS
+
+
+# BEGIN_MANUAL_STEPS
+#Action 1: 
+#On the Master server execute the following command to stop the IPv4 daemon on the Master server.
+#/etc/rc2.d/S96dhcpd stop
+#
+#Action 2: 
+#Check the time of the next cronjob DHCP File transfer (/ericsson/ocs/bin/dhcp_check.sh)
+#Use the command , ‘crontab –l’.
+#Wait until the time for the next cronjob has completed.
+#
+#Action 3: 
+#Verify a logfile , ‘sys_dhcp_check_<timestamp >.log’ is created in the directory ,/ericsson/ocs/log/.
+#Verify the logfile contains information in relation to the DHCP server is not running.
+#
+#Action 4: 
+#Verify the logfile , ‘sys_dhcp_copied_file.log’ in the directory /ericsson/ocs/log/ on both the Master and Slave is not updated with DHCP file transfer details.
+#Verify no DHCP file transfer occurred.
+#
+#
+# END_MANUAL_STEPS
+
+# BEGIN_POST_CONDITIONS
+#Result 1:
+#The IPv4 DHCP daemon is successfully stopped.
+#
+#Result 2:
+#The time of the next (/ericsson/ocs/bin/dhcp_check.sh) cronjob is noted.
+#The next cronjob has successfully completed.
+#
+#Result 3:
+#A logfile , ‘sys_dhcp_check_<timestamp >.log’ is created in the directory, /ericsson/ocs/log/
+#
+#The logfile contains information similar to the following logfile.
+#
+#bash-3.00# more sys_dhcp_check_2011-10-13_16:31:00.log
+#2011-10-13 16:31:00 INFO Script /ericsson/ocs/bin/dhcp_check.sh started
+#2011-10-13 16:31:00 ERROR DHCP server is not running
+#2011-10-13 16:31:00 INFO Script /ericsson/ocs/bin/dhcp_check.sh has completed
+#2011-10-13 16:31:00 ERROR See log file /ericsson/ocs/log/sys_dhcp_check_2011-10-13_16:31:00.log
+#
+#Result 4:
+#The logfile , ‘sys_dhcp_copied_file.log’ in the directory /ericsson/ocs/log/ on both the Master and Slave server is not updated with DHCP file transfer details.
+#Verify no DHCP file transfer occurred.
+#
+#
+# END_POST_CONDITIONS

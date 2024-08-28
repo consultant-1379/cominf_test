@@ -1,0 +1,282 @@
+#!/bin/bash
+#################################################################################
+#
+#
+#       COPYRIGHT (C) ERICSSON RADIO SYSTEMS AB, Sweden
+#
+#       The copyright to the document(s) herein is the property of
+#       Ericsson Radio Systems AB, Sweden.
+#
+#       The document(s) may be used and/or copied only with the written
+#       permission from Ericsson Radio Systems AB or in accordance with
+#       the terms and conditions stipulated in the agreement/contract
+#       under which the document(s) have been supplied.
+#
+#################################################################################
+
+
+# ATCOMINF Test Callback Library
+
+# Revision History
+# <date>	<signum>	<details>
+
+# Complete the callbacks in this library to automate the test case.
+#
+# Callbacks are stateless, it is not possible to set a global variable in one callback 
+# and access it it in another.
+#
+# Callbacks are called by the test harness in the following order:
+#
+# tc_setup() 		# Called only for independent TC execution mode to setup TC
+# tc_precon()		# Conditions that should exist before TC can run
+# tc_test()		# Runs the test for this TC
+# tc_postcon()		# Conditions that should/should not exist after successful TC 
+# tc_cleanup()		# Called only for independent TC execution mode to cleanup after TC
+
+# All callbacks must PASS for a TC PASS result
+
+#################################################################################
+#
+# CALLBACK: TC_SETUP
+#
+# This callback function is only called if the harness execution mode is 'AT_INDEPENDENT'
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_setup() {
+
+	# Coded to fail in case TC_AUTOMATED=1 before automation completed
+	# Change return code as required
+
+	return 0 
+
+}
+#################################################################################
+
+#################################################################################
+#
+# CALLBACK: TC_PRECON
+#
+# This callback function checks the correct conditions exist to run the TC.
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+ 
+tc_precon() {
+
+	# Coded to fail in case TC_AUTOMATED=1 before automation completed
+	# Change return code as required
+
+	return 0 
+
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_TEST
+#
+# This callback function runs the test.
+# The harness compares the return code to the SPEC_TC_TEST_PASSCODE value set in the test spec.
+#
+# Return or exit codes:
+#    SPEC_TC_TEST_PASSCODE 	success
+# != SPEC_TC_TEST_PASSCODE 	failure
+ 
+tc_test() {
+
+	# Coded to fail in case TC_AUTOMATED=1 before automation complete
+	# Change return code as required
+       
+cat> all <<"EOF"
+bsmdb   100     50
+cnadb   90      72
+cdmdb   100     50
+pmrdb   100     50
+rndbidb 10      10
+rnxdb   1000    500
+ffaxblrdb       200     100
+comnsd  180     150
+pms     168     25
+telisdb 104     26
+wccdb   250     100
+nsddb   180     150
+ustemplatesdb   40      10
+usgroupingdb    20      5
+usprofilesdb    25      5
+usschedulingdb  120     45
+usrulesdb       40      10
+irathomdb       250     50
+irathomauditdb  250     50
+rrpmdb  50      25
+epcnsddb        120     85
+epcpcpbdb       20      10
+cexdb   180     150
+brfdb   355     375
+smlogdb 500     150
+fmadb_1_1       231     231
+imhdb   100     100
+imocdb  30      30
+latdb   120     60
+activitysupportdatabase 1000    500
+ahwdb   350     100
+smiadb  100     60
+smoaxedb        75      25
+smoisdb 75      25
+smocellodb      75      25
+smodb   150     75
+smogsndb        75      25
+smorbsdb        75      25
+smoj20db        75      25
+shmdb   50      25
+tapdb   50      50
+adb     150     50
+admindb 1500    300
+sybmgmtdb       300     100
+scsdb   20      10
+emsdb   220     75
+lvlogdb 100     30
+topdb   100     50
+audb    100     100
+activitidb      100     100
+pdmdb   500     250
+EOF
+awk '{print $1}' all>data
+awk '{print $2}' all>excel_dbname
+awk '{print $3}' all>excel_dblog
+        
+#/ericsson/syb/util/sybase_info > sybasedata        
+        
+        for dd_ in $(cat data)
+        do
+        grep -i "ddev_$dd_" sybasedata
+        done > finaldata
+
+#To extract only required database names
+        awk '{print $1,$3}' finaldata >finaldata1 
+        awk '{print $2}' finaldata1 > dbname
+        cat dbname | sed 's/\.[0-9]*$//' >dbname1
+
+#To extract ldev log from file
+        for ld in $(cat data)
+        do
+        grep -i "ldev_$ld" sybasedata
+        done>finallog
+
+        #To extract only required logdata
+        awk '{print $3}' finallog > dblog
+        cat dblog | sed 's/\.[0-9]*$//' >dblog1
+
+        cp excel_dbname cpexcel
+        i=0
+        dbcount=`wc -l excel_dbname|awk -F" " '{print $1}'`
+        for db in $(cat dbname1)
+        do
+        x=`echo $db/0.95|bc`
+        y=`echo $db/1.05|bc` 
+        for datas in $(cat cpexcel)
+        do
+        if [[ $datas -le $x && $datas -ge $y ]] || [[ $db -eq $datas ]]
+        then
+        echo "Final Data are equal"
+        break
+        else
+        echo "Final data are not equal $datas"
+        break
+        fi
+done
+        i=`expr $i + 1`
+        count=`expr $dbcount - $i`
+        if [ $count -eq 0 ];then
+        break
+        fi
+        tail -"$count" excel_dbname > cpexcel
+done>dbfinal
+        cp excel_dblog cplog
+        j=0
+        logcount=`wc -l excel_dblog|awk -F" " '{print $1}'`
+        for log in $(cat dblog1)
+        do
+        xy=`echo $log/0.95|bc`
+        yz=`echo $log/1.05|bc` 
+        for numbers in $(cat cplog)
+        do
+        if [[ $log -eq $numbers ]] || [[ $numbers -le $xy && $numbers -ge $yz ]]
+        then
+        echo "Final log are equal "
+        break
+        else
+        echo "Final data not equal $numbers"
+        break
+        fi
+        done
+        j=`expr $j + 1`
+        counting=`expr $ncount - $n` 
+        if [ $logcount -eq 0 ];then
+        break
+        fi
+        tail -"$logcount" excel_dblog > cplog
+        done>logfinal
+
+	return 0 
+
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_POSTCON
+#
+# This callback function checks expected results.
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_postcon() {
+
+	# Coded to fail in case TC_AUTOMATED=1 before automation complete.
+	# Change return code as required
+        
+        f1=/tmp/dbfinal
+        f2=/tmp/logfinal
+        if [[ ! -f $f1 && ! -f $f2 ]] || [[ ! -s $f1 && ! -s $f2 ]]
+        then
+        echo "File system  size not compared"
+        else
+        echo "After comparing file sizes"
+        paste /tmp/data /tmp/dbfinal
+        paste /tmp/data /tmp/logfinal
+        fi
+        return 0
+
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_CLEANUP
+#
+# This callback function is only called if the harness execution mode is 'AT_INDEPENDENT'
+# 
+# This callback restores the target system to the state it was in before the TC 
+# was run. It rolls back changes made by callbacks tc_setup() and tc_test()
+# 
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_cleanup() {
+
+	# Coded to fail in case TC_AUTOMATED=1 before automation complete
+	# Change return code as required
+
+	return 0 
+
+}

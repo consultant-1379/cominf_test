@@ -1,0 +1,85 @@
+#!/bin/bash
+
+# TEST CASE SPEC FILE
+# This file is generated/updated using the test framework web interface.
+# Manual updates on test servers are lost when the test package is re-installed.
+#
+# Last modified: Monday 16th of December 2013 9:26:25
+#
+
+# These settings must be in BASH script format, they are sourced by other scripts.
+SPEC_FA_NAME="SOLARIS10INSTALL"
+SPEC_UC_NAME="SOLARIS10INSTALL_DHCP_AI_Manager"
+SPEC_TC_ID=1339
+SPEC_TC_SLOGAN="Adding IPV4 and IPV6 LTE clients to the DHCP server "
+SPEC_TC_TYPE="FT"
+SPEC_TC_POLARITY="positive"
+SPEC_TC_PRIORITY="high"
+SPEC_TC_AUTOMATED=1
+SPEC_TC_DEPENDENT_ONLY=0
+SPEC_TC_TIMEOUT=300
+SPEC_TC_TEST_PASSCODE=0
+SPEC_TC_AUTHOR="xgansre"
+SPEC_TC_AUTOMATOR="xgansre"
+# this parameter is not interpreted by harness
+SPEC_TC_DISABLED=0
+
+# Please do not remove the comment lines below.
+# They are used as section locators by the test harness.
+
+# BEGIN_PRE_CONDITIONS
+#To verify the LTE addition of clients to the DHCP server is successful.
+#Precondition
+#Infra server is configuredcorrectly for DHCP.IPV4 and IPV6 deamons runnings 
+#
+#
+#Mars Path <Initial Installation/DHCP/AI Manager>
+# END_PRE_CONDITIONS
+
+
+# BEGIN_MANUAL_STEPS
+#Action 1:
+#Add an IPv4 network client to the DHCP server with the following command by changing the parameters as appropriate:
+## /ericsson/ocs/bin/ai_manager.sh -add lte_client -a 192.168.1.2 -h "site1eRBS15" -i "eRBS15_SITE1" -s 10.0.2.111 -p /LRAN/smrsslave1/AIF/Site1eRBS15/summaryFile.xml âEuro t 10.42.52.99 -u 23005253
+#
+#Action 2:
+#Add an IPv6 network client to the DHCP server with the following command by changing the parameters as appropriate:
+#Command to be updated.
+#
+#Action 3:
+#Add a network client to the DHCP server with 2nd NTP server support, use the following command by changing the parameters as appropriate:
+## /ericsson/ocs/bin/ai_manager.sh -add lte_client -a 192.168.1.2 -h "site1eRBS15" -i "eRBS15_SITE1" -s 10.0.2.111-p /LRAN/smrsslave1/AIF/Site1eRBS15/summaryFile.xml -t "10.42.52.99 10.42.52.100" -u 23005253
+#
+#Action 4:
+#Adding a LTE client to the DHCP server with bad/garbage values, negative test:
+##/ericsson/ocs/bin/ai_manager.sh -add lte_client -a 192.ab.1.2 -h "site1eRBS15" -i "eRBS15_SITE1" -s 10.c.2.111 -p /LRAN/smrsslave1/AIF/Site1eRBS15/summaryFile.xml âEuro t 10.42.52.99 -u 23005253
+#
+#Action 5:
+#Execute the following command to list the clients:
+##/ericsson/ocs/bin/ai_manager.sh -list hosts
+#
+#Action 6:
+#Verify only successfully added clients are added to aif_hosts file
+##more /ericsson/ocs/etc/aif_hosts
+#
+# END_MANUAL_STEPS
+
+# BEGIN_POST_CONDITIONS
+#Result 1:
+#A LTE client should be successfully added to the DHCP server.
+#
+#Result 2:
+#A LTE client should be successfully added to the DHCP server.
+#
+#Result 3:
+#The LTE client should not be added to the DHCP server.
+#
+#Result 4:
+#The LTE client should not be added to the DHCP server
+#
+#Result 5:
+#The command should execute successfully and show all the clients that are successfully added, there should be no instance of any network that was being entered with bad values.
+#
+#Result 6:
+#Only successfully added clients are added to aif_hosts file  
+# END_POST_CONDITIONS

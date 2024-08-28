@@ -1,0 +1,14 @@
+Enter Network Type*
+GRAN
+What is the name for this user?
+aif319
+What is the password for this user?
+shroot12
+Please confirm the password for this user?
+shroot12
+Would you like to create autoIntegration FtpService for that user
+yes 
+Please enter number of required option:
+1
+Do you wish to restart BI_SMRS_MC on the OSS master if required
+no

@@ -1,0 +1,161 @@
+#!/bin/bash
+
+# TEST CASE SPEC FILE
+# This file is generated/updated using the test framework web interface.
+# Manual updates on test servers are lost when the test package is re-installed.
+#
+# Last modified: Sunday 31st of March /2013 20:37:23
+#
+
+# These settings must be in BASH script format, they are sourced by other scripts.
+SPEC_FA_NAME="SMRS"
+SPEC_UC_NAME="SMRS_BLADE_INSTALL"
+SPEC_TC_ID=91
+SPEC_TC_SLOGAN="Verify DATADISK_LOCATION GENERIC_NAS, PERFORM_ARNEIMPORTS=yes"
+SPEC_TC_TYPE="FT"
+SPEC_TC_POLARITY="positive"
+SPEC_TC_PRIORITY="high"
+SPEC_TC_AUTOMATED=1
+SPEC_TC_DEPENDENT_ONLY=0
+SPEC_TC_TIMEOUT=600
+SPEC_TC_TEST_PASSCODE=0
+SPEC_TC_AUTHOR="xkalbha"
+SPEC_TC_AUTOMATOR="xkalbha"
+# this parameter is not interpreted by harness
+SPEC_TC_DISABLED=0
+
+# Please do not remove the comment lines below.
+# They are used as section locators by the test harness.
+
+# BEGIN_PRE_CONDITIONS
+#- SMRS file systems have been created on SFS and shared to the OSS master and OM Services
+# END_PRE_CONDITIONS
+
+
+# BEGIN_MANUAL_STEPS
+#- login to OSS master as root
+#- create smrs master config with 
+#
+#DATADISK_LOCATION=GENERIC_NAS
+#NAS1_IP=X.x.x.x
+#GRAN_SHARE_NAME=
+#CORE_SHARE_NAME=
+#WRAN_SHARE_NAME=
+#LRAN_SHARE_NAME=
+#
+#Run :
+#
+#/opt/ericsson/nms_bismrs_mc/bin/configure_smrs.sh add smrs_master -f <smrs master config file>
+# END_MANUAL_STEPS
+
+# BEGIN_POST_CONDITIONS
+#DATADISK_LOCATION=GENERIC_NAS
+#-smrs uses nas1 and share details given by user in smrs master config file
+#-file systems get NFS mounted from SFS on OSS master & OM Services
+#
+#1. On the OSS verify smrs_nfs service is online
+#
+#svcs smrs_nfs
+#
+#2. On the OSS, verify SMRS file systems are mounted under /var/opt/ericsson/smrsstore
+#
+#3. Verify that the output of cat /etc/mnttab | grep smrsstore on the MWS has output with the IP address of the master
+#
+#4. -check that smrs file systems have been mounted from SFS on the OM Services
+#
+#5. check that the mounts have been added to /etc/vfstab
+#
+#6. - verify the following directory structure exists under /export on the SMRS master (use passwordless ssh to gain access to SMRS master i.e. OM :Primary)
+#
+#In general each dir should be 775 and owned by root:nms
+#
+#exceptions:
+#
+#/export/GRAN/CommonPersistent/Software/STN (770, root:aif)
+#/export/GRAN/CommonPersistent/autobind (770, root:aif)
+#/export/LRAN/CommonPersistent/autobind (770, root:aif)
+#/export/WRAN/CommonPersistent/autobind (770, root:aif)
+#
+#
+#
+#/export/GRAN/AIF
+#/export/GRAN/CommonPersistent
+#/export/GRAN/CommonPersistent/autobind
+#/export/GRAN/CommonPersistent/BackupCM
+#/export/GRAN/CommonPersistent/LICENSE
+#/export/GRAN/CommonPersistent/Software
+#/export/GRAN/CommonPersistent/Software/STN
+#/export/GRAN/tftp
+#/export/GRAN/syslog
+#/export/WRAN/CommonPersistent
+#/export/WRAN/CommonPersistent/configuration
+#/export/WRAN/CommonPersistent/Software
+#/export/WRAN/CommonPersistent/Software/RNC
+#/export/WRAN/CommonPersistent/Software/RNC/Up
+#/export/WRAN/CommonPersistent/Software/RANAG
+#/export/WRAN/CommonPersistent/Software/RANAG/Up
+#/export/WRAN/CommonPersistent/Software/RBS
+#/export/WRAN/CommonPersistent/Software/RBS/Up
+#/export/WRAN/CommonPersistent/LICENSE
+#/export/WRAN/CommonPersistent/BACKUP
+#/export/WRAN/CommonPersistent/LICENSE/RNC
+#/export/WRAN/CommonPersistent/BACKUP/RNC
+#/export/WRAN/CommonPersistent/LICENSE/RBS
+#/export/WRAN/CommonPersistent/BACKUP/RBS
+#/export/WRAN/AIF
+#/export/WRAN/$l_smrs_master_alias
+#/export/WRAN/$l_smrs_master_alias/AIF
+#/export/LRAN/CommonPersistent
+#/export/LRAN/CommonPersistent/autobind
+#/export/LRAN/CommonPersistent/configuration
+#/export/LRAN/CommonPersistent/Software
+#/export/LRAN/CommonPersistent/Software/ERBS
+#/export/LRAN/CommonPersistent/Software/ERBS/Up
+#/export/LRAN/CommonPersistent/LICENSE
+#/export/LRAN/CommonPersistent/BACKUP
+#/export/LRAN/CommonPersistent/LICENSE/ERBS
+#/export/LRAN/CommonPersistent/BACKUP/ERBS
+#/export/LRAN/AIF
+#/export/LRAN/$l_smrs_master_alias
+#/export/LRAN/$l_smrs_master_alias/AIF
+#
+#7/ Check cron job for stn_cleanup
+#
+#8/ Check following LRAN users exist on OSS Master with uid 2*, gid 205, description "A ftp account", shell /bin/bash, home directory /var/opt/ericsson/smrsstore//LRAN/CommonPersistent
+#
+#l-smoconfig-oss1
+#l-smoswstore-oss1
+#l-smokeystore-oss1
+#l-smobackup-oss1
+#
+#9/ Check LRAN users also exist on OM Primary but with home directory as /LRAN/CommonPersistent
+#
+#10/ Check following WRAN users exist on OSS Master with uid 2*, gid 205, description "A ftp account", shell /bin/bash, home directory /var/opt/ericsson/smrsstore//WRAN/CommonPersistent
+#
+#smo-config-oss1
+#smo-swstore-oss1
+#smo-keystore-oss1
+#smo-backup-oss1
+#
+#11/ Prove can login as l-smoconfig on the SMRS master:
+#sftp l-smoconfig@<smrs master hostname or IP> using password used on the add command
+#
+#12/ Check existance of XML files in /var/opt/ericsson/arne/FTPServices/
+#SMO_FTPServiceGRAN_oss1.xml
+#SMO_FTPServiceWRAN_oss1.xml
+#SMO_FTPServiceLRAN_oss1.xml
+#SMO_FTPServiceCORE_oss1.xml
+#
+#13/ Check output of 
+#/opt/ericsson/nms_cif_cs/etc/unsupported/bin/cstest -s ONRM_CS -ns masterservice lt FtpService 
+#contains
+#SubNetwork=ONRM_ROOT_MO,FtpServer=SMRSMASTERLRAN-oss1,FtpService=l-smobackup-oss1
+#SubNetwork=ONRM_ROOT_MO,FtpServer=SMRSMASTERLRAN-oss1,FtpService=l-smoconfig-oss1
+#SubNetwork=ONRM_ROOT_MO,FtpServer=SMRSMASTERLRAN-oss1,FtpService=l-smokeystore-oss1
+#SubNetwork=ONRM_ROOT_MO,FtpServer=SMRSMASTERLRAN-oss1,FtpService=l-smoswstore-oss1
+#SubNetwork=ONRM_ROOT_MO,FtpServer=SMRSMASTERWRAN-oss1,FtpService=smo-backup-oss1
+#SubNetwork=ONRM_ROOT_MO,FtpServer=SMRSMASTERWRAN-oss1,FtpService=smo-config-oss1
+#SubNetwork=ONRM_ROOT_MO,FtpServer=SMRSMASTERWRAN-oss1,FtpService=smo-keystore-oss1
+#SubNetwork=ONRM_ROOT_MO,FtpServer=SMRSMASTERWRAN-oss1,FtpService=smo-swstore-oss1-
+#
+# END_POST_CONDITIONS

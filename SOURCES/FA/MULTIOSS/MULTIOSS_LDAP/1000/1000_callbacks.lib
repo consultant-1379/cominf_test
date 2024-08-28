@@ -1,0 +1,166 @@
+#!/bin/bash
+#################################################################################
+#
+#
+#       COPYRIGHT (C) ERICSSON RADIO SYSTEMS AB, Sweden
+#
+#       The copyright to the document(s) herein is the property of
+#       Ericsson Radio Systems AB, Sweden.
+#
+#       The document(s) may be used and/or copied only with the written
+#       permission from Ericsson Radio Systems AB or in accordance with
+#       the terms and conditions stipulated in the agreement/contract
+#       under which the document(s) have been supplied.
+#
+#################################################################################
+
+
+# ATCOMINF Test Callback Library
+
+# Revision History
+# <date>	xsougha		First Version	
+
+# Complete the callbacks in this library to automate the test case.
+#
+# Callbacks are stateless, it is not possible to set a global variable in one callback 
+# and access it it in another.
+#
+# Callbacks are called by the test harness in the following order:
+#
+# tc_setup() 		# Called only for independent TC execution mode to setup TC
+# tc_precon()		# Conditions that should exist before TC can run
+# tc_test()		# Runs the test for this TC
+# tc_postcon()		# Conditions that should/should not exist after successful TC 
+# tc_cleanup()		# Called only for independent TC execution mode to cleanup after TC
+
+# All callbacks must PASS for a TC PASS result
+
+#################################################################################
+#
+# CALLBACK: TC_SETUP
+#
+# This callback function is only called if the harness execution mode is 'AT_INDEPENDENT'
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_setup() {
+	return 0 
+}
+#################################################################################
+
+#################################################################################
+#
+# CALLBACK: TC_PRECON
+#
+# This callback function checks the correct conditions exist to run the TC.
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+ 
+tc_precon() {
+	# Adding a local group in 1.com
+        ${AT_BIN}/con_ex.bsh -d 1000_create_local_group_1_com.in -o 1000_create_local_group_1_com.exp -c "/ericsson/sdee/bin/add_group.sh -d 1.com"
+        /usr/local/bin/expect 1000_create_local_group_1_com.exp
+        CONSOLE_OUTPUT_CONTAINS "Adding new local group" || {
+                echo "Failed to add local group to 1.com"
+                return 1
+        }
+
+        # Adding a local group in 3.com
+        ${AT_BIN}/con_ex.bsh -d 1000_create_local_group_3_com.in -o 1000_create_local_group_3_com.exp -c "/ericsson/sdee/bin/add_group.sh -d 3.com"
+        /usr/local/bin/expect 1000_create_local_group_3_com.exp
+        CONSOLE_OUTPUT_CONTAINS "Adding new local group" || {
+                echo "Failed to add local group to 3.com"
+                return 1
+        }
+
+	# Adding a local user to 1.com
+        ${AT_BIN}/con_ex.bsh -d 1000_create_local_user_1_com.in -o 1000_create_local_user_1_com.exp -c "/ericsson/sdee/bin/add_user.sh -d 1.com"
+        /usr/local/bin/expect 1000_create_local_user_1_com.exp
+        CONSOLE_OUTPUT_CONTAINS "INFO: successfully added u1000l1" || {
+                echo "Failed to add local user to 1.com"
+                return 1
+        }
+
+        # Adding a local user to 3.com
+        ${AT_BIN}/con_ex.bsh -d 1000_create_local_user_3_com.in -o 1000_create_local_user_3_com.exp -c "/ericsson/sdee/bin/add_user.sh -d 3.com"
+        /usr/local/bin/expect 1000_create_local_user_3_com.exp
+        CONSOLE_OUTPUT_CONTAINS "INFO: successfully added u1000l3" || {
+                echo "Failed to add local user to 3.com"
+                return 1
+        }
+ 
+	return 0 
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_TEST
+#
+# This callback function runs the test.
+# The harness compares the return code to the SPEC_TC_TEST_PASSCODE value set in the test spec.
+#
+# Return or exit codes:
+#    SPEC_TC_TEST_PASSCODE 	success
+# != SPEC_TC_TEST_PASSCODE 	failure
+ 
+tc_test() {
+	# Verify adding a local User to a local Group on 1.com 
+        ${AT_BIN}/con_ex.bsh -d 1000_add_local_user_to_local_group_1_com.in -o 1000_add_local_user_to_local_group_1_com.exp -c "/ericsson/sdee/bin/add_user_to_group.sh -d 1.com"
+        /usr/local/bin/expect 1000_add_local_user_to_local_group_1_com.exp
+        CONSOLE_OUTPUT_CONTAINS "Added to local group [g1000lc1]" || {
+                echo "Failed to add local user to local group on 1.com"
+                return 1
+        }
+
+        # Verify adding a local User to a local Group on 3.com
+        ${AT_BIN}/con_ex.bsh -d 1000_add_local_user_to_local_group_3_com.in -o 1000_add_local_user_to_local_group_3_com.exp -c "/ericsson/sdee/bin/add_user_to_group.sh -d 3.com"
+        /usr/local/bin/expect 1000_add_local_user_to_local_group_3_com.exp
+        CONSOLE_OUTPUT_CONTAINS "Added to local group [g1000lc3]" || {
+                echo "Failed to add local user to local group on 3.com"
+                return 1
+        }
+
+	return 0
+}
+############################################################################################################################
+
+
+############################################################################################################################
+# CALLBACK: TC_POSTCON
+#
+# This callback function checks expected results.
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_postcon() {
+	return 0 
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_CLEANUP
+#
+# This callback function is only called if the harness execution mode is 'AT_INDEPENDENT'
+# 
+# This callback restores the target system to the state it was in before the TC 
+# was run. It rolls back changes made by callbacks tc_setup() and tc_test()
+# 
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_cleanup() {
+	rm -rf *.exp
+ 
+	return 0 
+}

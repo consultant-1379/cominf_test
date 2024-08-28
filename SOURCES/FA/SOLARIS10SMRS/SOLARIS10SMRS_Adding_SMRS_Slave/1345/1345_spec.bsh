@@ -1,0 +1,75 @@
+#!/bin/bash
+
+# TEST CASE SPEC FILE
+# This file is generated/updated using the test framework web interface.
+# Manual updates on test servers are lost when the test package is re-installed.
+#
+# Last modified: Monday 16th of December 2013 9:27:43
+#
+
+# These settings must be in BASH script format, they are sourced by other scripts.
+SPEC_FA_NAME="SOLARIS10SMRS"
+SPEC_UC_NAME="SOLARIS10SMRS_Adding_SMRS_Slave"
+SPEC_TC_ID=1345
+SPEC_TC_SLOGAN="Verifying User Check "
+SPEC_TC_TYPE="FT"
+SPEC_TC_POLARITY="positive"
+SPEC_TC_PRIORITY="high"
+SPEC_TC_AUTOMATED=1
+SPEC_TC_DEPENDENT_ONLY=0
+SPEC_TC_TIMEOUT=300
+SPEC_TC_TEST_PASSCODE=0
+SPEC_TC_AUTHOR="xnavema"
+SPEC_TC_AUTOMATOR="xnavema"
+# this parameter is not interpreted by harness
+SPEC_TC_DISABLED=0
+
+# Please do not remove the comment lines below.
+# They are used as section locators by the test harness.
+
+# BEGIN_PRE_CONDITIONS
+#Precondition 
+#
+#OSS Master with and NEDSS with slave services configured
+#
+# END_PRE_CONDITIONS
+
+
+# BEGIN_MANUAL_STEPS
+#Check all the users have been added properly. ( Important Check all the users properly) 105 65-0580/01390 ,105 65-0580/0461,105 65-0580/01464, 105 65-0580/01806
+#Conditional Test
+#
+#OSS Master Server , NEDSS primary and Secondary
+#All users
+#swstore- pmup- cmup-
+#cmdown-
+#backup-
+#keystore-
+#corepmu-
+#l-sws-
+#l-key-
+#l-back-N
+#w-sws-N
+#w-key-
+#w-back-
+#
+#Conditional Test
+#
+#You should be able to login with slave service users( above users)
+#e.g.: cmdown ,backup etc , If you create a slave service on NEDSS
+#you should be able to login to that NEDSS, If you create a slave service
+#on Ness you should be able to login to with slave service users
+#E.g.: ssh cmdown-< slaveservice name>@< IP address of Respective NEDSS>
+#
+# END_MANUAL_STEPS
+
+# BEGIN_POST_CONDITIONS
+#cceptance Criteria
+#
+#All the above users with Respective slave services are added
+#on , NEDSS 1 and NEDSS 2 are added properly.
+#cceptance Criteria
+#
+#you should be able to Login to successfully all the respective users.
+#For a slave service associated with the NESS, you need to make sure that you can login to the as the slave service account
+# END_POST_CONDITIONS

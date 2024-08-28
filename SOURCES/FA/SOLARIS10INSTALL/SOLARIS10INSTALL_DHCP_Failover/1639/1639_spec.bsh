@@ -1,0 +1,181 @@
+#!/bin/bash
+
+# TEST CASE SPEC FILE
+# This file is generated/updated using the test framework web interface.
+# Manual updates on test servers are lost when the test package is re-installed.
+#
+# Last modified: Tuesday 17th of December 2013 5:22:53
+#
+
+# These settings must be in BASH script format, they are sourced by other scripts.
+SPEC_FA_NAME="SOLARIS10INSTALL"
+SPEC_UC_NAME="SOLARIS10INSTALL_DHCP_Failover"
+SPEC_TC_ID=1639
+SPEC_TC_SLOGAN="Verify an IPv6 address is assigned to an IPv6 test client following DHCP failover to Slave server. Interface unplumbed before DHCP failover "
+SPEC_TC_TYPE="FT"
+SPEC_TC_POLARITY="positive"
+SPEC_TC_PRIORITY="high"
+SPEC_TC_AUTOMATED=0
+SPEC_TC_DEPENDENT_ONLY=0
+SPEC_TC_TIMEOUT=300
+SPEC_TC_TEST_PASSCODE=0
+SPEC_TC_AUTHOR="xgansre"
+SPEC_TC_AUTOMATOR="xgansre"
+# this parameter is not interpreted by harness
+SPEC_TC_DISABLED=0
+
+# Please do not remove the comment lines below.
+# They are used as section locators by the test harness.
+
+# BEGIN_PRE_CONDITIONS
+#Verify an IPv6 address is assigned to an IPv6 test client following DHCP failover to Slave server. Interface unplumbed before DHCP failover
+#
+#Precondition: 
+#MWS , 
+#OSS MS,
+#om_serv_master , om_serv_slave
+#MWS, profile for om_serv_master configured for IPv4 and IPv6(Dualstack).
+#MWS, profile for om_serv_slave configured for IPv4 and IPv6(Dualstack).
+#MWS configured with latest Solaris, Solaris O&M media, COMInf media
+#om_serv_master, om_serv_slave successfully jumpstarted with COMInf media using MWS.
+#IPv6 Test Client configured with Solaris only. IPv6 IP address only configured on the test client.
+#Ensure the Profile to jumpstart the IPv6 Test Client is removed from MWS after server is configured.
+#
+#Master server is the active DHCP server.
+#IPv4 and IPv6 daemons running on Master server. 
+#
+#A cronjob exists on both the master server and slave server for the script /ericsson/ocs/bin/dhcp_check.sh, to transfer the IPv4 and IPv6 DHCP files between the active DHCP server and the non-active server.
+#
+#
+#On the DHCP active (master) server. The IP address of the IPv6 test client is stored in the file, /usr/local/etc/dhcpd6.conf_static.
+#
+#bash-3.00# more dhcpd6.conf_static
+#host testclient {
+#host-identifier option dhcp6.client-id 00:50:56:82:00:87 ;
+#fixed-address6 <IPv6 Test client IP address>;
+#} 
+#
+#Communication/messages between active DHCP Master server and IPv6 Test Client is correct.
+#
+#Mars Path <Initial Installation/DHCP Failover/ISC DHCP IPv6 Failover >
+#
+# END_PRE_CONDITIONS
+
+
+# BEGIN_MANUAL_STEPS
+#Action 1: 
+#On the IPv6 test client in another console(2), unplumb the IPv6 interface.
+#
+#Note: Interface example, e1000g0
+#
+#Use command , ifconfig -a to list Interface and IP address.
+#
+#ifconfig <interface> unplumb
+#ifconfig -a (check Interface removed)
+#
+#Action 2: 
+#Activate DHCP on the Slave server using the following command.
+#/ericsson/ocs/bin/activate_isc_dhcp.sh om_serv_slave
+#
+#
+#Action 3: 
+#On the IPv6 test client, using console access (1) , run the DHCP Client in debug mode.
+#
+#pkill -x dhcpagent
+#/sbin/dhcpagent -d1 -f &
+#
+#Action 4: 
+#On the test client in another console(2), plumb the IPv6 DHCP interface again.
+#
+#Note: Interface example, e1000g0
+#
+#ifconfig <interface> plumb
+#
+#Action 5: 
+#On the active DHCP server (Slave), execute the following command:
+#/usr/sbin/snoop -d e1000g0 -o /tmp/snoop<x>.out udp port 547
+#
+#Note: Port 547 corresponds to IPv6.
+#
+#Action 6: 
+#On the IPv6 test client, console 2, execute the following command to start DHCP.
+#
+#ifconfig dhcp start (command will hang for a few seconds)
+#
+#Action 7: 
+#On the IPv6 test client, console 1, See messages , Solicit, Advertise, Request etc., relating to <interface> on test client.
+#
+#Action 8: 
+#On the IPv6 test client, console 2, ifconfig dhcp start (command will finish)
+#Execute the command 
+#ifconfig -a 
+#
+#Interface and IP address should be listed.
+#
+#The IP address assigned to the test client from the DHCP active (slave) server. The IPv6 address stored in the file, /usr/local/etc/dhcpd6.conf_static on DHCP Slave active server.
+#
+#Action 9: 
+#On the active DHCP server, stop the snoop command.
+#Execute the following command to parse the snoop file output.
+#/usr/sbin/snoop -i /tmp/snoop<x>.out -x0 -v > /tmp/snoop<x> 
+#more /tmp/snoop<x>
+#
+#Action 10: 
+#Verify the contents of the snoop output file.
+#Verify the snoop file contains the correct options and messages between the active DHCP server and the IPv6 test client.
+#Verify it contains , Solicit, Advertise, Request, messages
+#
+#Action 11: 
+#Verify the IPv6 test client contains the same address as assigned to it previously.
+#ifconfig -a
+# 
+# END_MANUAL_STEPS
+
+# BEGIN_POST_CONDITIONS
+#Result 1:
+#The IPv6 Test client interface is unplumbed.
+#
+#Result 2:
+#DHCP is successfully activated on the Slave server.
+#The IPv4 and IPv6 daemons are running on the Slave server.
+#
+#
+#Result 3:
+#The DHCP client is running in debug mode on the console.
+#
+#Result 4:
+#The IPv6 interface is successfully unplumbed and plumbed again.
+#The Interface will contain 0.0.0.0 IP address.
+#
+#
+#Note:
+#Alternatively instead of running unplumb, plumb commands, the following command can be executed to drop the DHCP on the configured interface. This will remove the IP address on the I/F, it will be 0.0.0.0
+#
+#ifconfig dhcp drop
+#
+#The IP address will be automatically assigned again fron the DHCP active server following the execution of the ifconfig dhcp start command. 
+#
+#Result 5:
+#The command executes successfully.
+#
+#Result 6:
+#The command executes successfully.
+#
+#Result 7:
+#The messages appear on the console.
+#
+#Result 8:
+#The IP address successfully assigned to the IPv6 Test Client.
+#
+#Result 9:
+#The commands execute successfully.
+#
+#
+#Result 10:
+#The messages / options passed between the active DHCP Master server and the IPv6 test client are correct.
+#
+#Result 11:
+#The IPv6 test client contains the same IP address as assigned to it previously.
+#This verifies the IP address from the /usr/local/etc/dhcp6.conf_static on the (active DHCP server) Slave server is assigned to the IPv6 Test Client
+# 
+# END_POST_CONDITIONS

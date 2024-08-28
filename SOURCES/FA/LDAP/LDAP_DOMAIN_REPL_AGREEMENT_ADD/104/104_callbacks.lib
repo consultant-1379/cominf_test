@@ -1,0 +1,163 @@
+#!/bin/bash
+#################################################################################
+#
+#
+#       COPYRIGHT (C) ERICSSON RADIO SYSTEMS AB, Sweden
+#
+#       The copyright to the document(s) herein is the property of
+#       Ericsson Radio Systems AB, Sweden.
+#
+#       The document(s) may be used and/or copied only with the written
+#       permission from Ericsson Radio Systems AB or in accordance with
+#       the terms and conditions stipulated in the agreement/contract
+#       under which the document(s) have been supplied.
+#
+#################################################################################
+
+
+# ATCOMINF Test Callback Library
+
+# Revision History
+# <date>	<signum>	<details>
+
+# Complete the callbacks in this library to automate the test case.
+#
+# Callbacks are stateless, it is not possible to set a global variable in one callback 
+# and access it it in another.
+#
+# Callbacks are called by the test harness in the following order:
+#
+# tc_setup() 		# Called only for independent TC execution mode to setup TC
+# tc_precon()		# Conditions that should exist before TC can run
+# tc_test()		# Runs the test for this TC
+# tc_postcon()		# Conditions that should/should not exist after successful TC 
+# tc_cleanup()		# Called only for independent TC execution mode to clenup after TC
+
+# All callbacks must PASS for a TC PASS result
+
+LDAP_BIN="/ericsson/sdee/bin"
+EXPECT_TMPLT="104.rep.add.in"
+EXPECT_WRKNG=${EXPECT_TMPLT}.wkg
+
+#################################################################################
+#
+# CALLBACK: TC_SETUP
+#
+# This callback function is only called if the harness execution mode is 'AT_INDEPENDENT'
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_setup() {
+
+	
+	
+
+	# Replace PASSWD with the correct strings in the /usr/local/bin/expect files
+    sed -e "s/^PASSWD$/$LDAP_SUPERUSER_PASSWD/" \
+    	-e "s/^PASSWD$/$LDAP_SUPERUSER_PASSWD/" ${EXPECT_TMPLT}  > ${EXPECT_WRKNG}  || {
+		echo "Failed to replace PASSWD holder in add /usr/local/bin/expect input files"
+		return 1
+	}
+
+    sed -e "s/^PASSWD$/$LDAP_SUPERUSER_PASSWD/" 104.rep.list.in  > 104.rep.list.in.tmp  || {
+		echo "Failed to replace PASSWD holder in list /usr/local/bin/expect input files"
+		return 1
+	}
+	return 0
+
+}
+#################################################################################
+
+#################################################################################
+#
+# CALLBACK: TC_PRECON
+#
+# This callback function checks the correct conditions exist to run the TC.
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+ 
+tc_precon() {
+
+
+	return 0
+
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_TEST
+#
+# This callback function runs the test.
+# The harness compares the return code to the SPEC_TC_TEST_PASSCODE value set in the test spec.
+#
+# Return or exit codes:
+#    SPEC_TC_TEST_PASSCODE 	success
+# != SPEC_TC_TEST_PASSCODE 	failure
+ 
+tc_test() {
+
+#-------------------------------------------------------------------------------
+#  we add a group to domain 1.com by specifying group name and gid
+#-------------------------------------------------------------------------------
+	${AT_BIN}/con_ex.bsh -d ${EXPECT_WRKNG} -o 104_expadd.exp -c "$LDAP_BIN/prepReplication.sh  -d 1.com" -r
+	/usr/local/bin/expect 104_expadd.exp || {
+		echo "Attempted to enable replication, but failed - FAIL"
+		return 1
+	}
+
+	return 0
+
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_POSTCON
+#
+# This callback function checks expected results.
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_postcon() {
+
+	${AT_BIN}/con_ex.bsh -d 104.rep.list.in.tmp -o 104_explist.exp -c "$LDAP_BIN/prepReplication.sh -d 1.com" -r
+	/usr/local/bin/expect 104_explist.exp || {
+		echo "replication agreements are not present - FAIL"
+		return 1
+	}
+
+	return 0
+
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_CLEANUP
+#
+# This callback function is only called if the harness execution mode is 'AT_INDEPENDENT'
+# 
+# This callback restores the target system to the state it was in before the TC 
+# was run. It rolls back changes made by callbacks tc_setup() and tc_test()
+# 
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_cleanup() {
+
+	
+
+	return 0
+
+}

@@ -1,0 +1,24 @@
+#!/usr/local/bin/expect
+
+set RESTORE_SCRIPT /ericsson/syb/backup/syb_dbrestore
+spawn su - sybase -c $RESTORE_SCRIPT
+set timeout 20
+expect "0]?"
+send "0\r"
+expect "l]? "
+send "l\r"
+expect "a]? "
+send "0\r"
+expect "1]?"
+send "1\r"
+expect "yes|no]?"
+send "yes\r"
+set timeout 180 
+expect "yes|no]?"
+send "no\r"
+set timeout 20
+expect "a]? "
+send "q\r" 
+
+
+expect "#"

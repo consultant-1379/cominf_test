@@ -1,0 +1,4 @@
+DOMAIN vts.com
+ROLE role14231,role14232,role14233
+ALIAS alias14231 role14231,role14232
+ALIAS alias14232 role14231,role14233

@@ -1,0 +1,65 @@
+#!/bin/bash
+
+# TEST CASE SPEC FILE
+# This file is generated/updated using the test framework web interface.
+# Manual updates on test servers are lost when the test package is re-installed.
+#
+# Last modified: Tuesday 17th of December 2013 5:22:48
+#
+
+# These settings must be in BASH script format, they are sourced by other scripts.
+SPEC_FA_NAME="SOLARIS10SMRS"
+SPEC_UC_NAME="SOLARIS10SMRS_Modify_Supported_NEs"
+SPEC_TC_ID=1638
+SPEC_TC_SLOGAN="FTP Services from to NEDSS slave services"
+SPEC_TC_TYPE="FT"
+SPEC_TC_POLARITY="positive"
+SPEC_TC_PRIORITY="high"
+SPEC_TC_AUTOMATED=0
+SPEC_TC_DEPENDENT_ONLY=0
+SPEC_TC_TIMEOUT=300
+SPEC_TC_TEST_PASSCODE=0
+SPEC_TC_AUTHOR="xnavema"
+SPEC_TC_AUTOMATOR="xnavema"
+# this parameter is not interpreted by harness
+SPEC_TC_DISABLED=0
+
+# Please do not remove the comment lines below.
+# They are used as section locators by the test harness.
+
+# BEGIN_PRE_CONDITIONS
+#<PATH Under "Verification Specification for Cominf Feature Test for 14.0":Bi-directional SMRS Initial Installation/Modify Supported Network Elements  >
+# END_PRE_CONDITIONS
+
+
+# BEGIN_MANUAL_STEPS
+#Verify changing the FTP services from old to NEW Slave services
+#10565-0580/01805,105 650580/01826 SMRS Access account
+#Precondition
+#FTP services are already configured correctly
+#Conditional Test
+#./configure_smrs.sh modify ftpservices
+#Conditional Test 2
+#verification of node change.
+#/opt/ericsson/nms_cif_cs/etc/unsupported/bin/cstest -s ONRM_CS las SubNetwork=ONRM_ROOT_MO,SubNetwork=GRAN_STN,ManagedElement=STN94
+#
+# END_MANUAL_STEPS
+
+# BEGIN_POST_CONDITIONS
+#Acceptance Criteria 2
+#1] ManagedElement_to_ftpSwStore -->: SubNetwork=ONRM_ROOT_MO,FtpServer=SMRSSLAVE-SMRSND1,FtpService=swstore-SMRSslave
+#[2] ManagedElement_to_neTransientCmDown -->: SubNetwork=ONRM_ROOT_MO,FtpServer=SMRSSLAVE-SMRSND1,FtpService=cmdown-SMRSslave
+#[3] ManagedElement_to_neTransientCmUp -->: SubNetwork=ONRM_ROOT_MO,FtpServer=SMRSSLAVE-SMRSND1,FtpService=cmup-SMRSslave
+#[4] ManagedElement_to_neTransientPm -->: SubNetwork=ONRM_ROOT_MO,FtpServer=SMRSSLAVE-SMRSND1,FtpService=pmup-SMRSslave
+#[5] ManagedElement_to_Site --> : SubNetwork=ONRM_ROOT_MO,Site=GRAN_STN
+#[6] MgmtAssociation --> : SubNetwork=ONRM_ROOT_MO,ManagementNode=ONRM
+#New slave services should be updated.
+#go to following Directory to check the nodes are created under new
+#check the directory for SMRSslave
+#Note : NFS mounts should be checked
+#
+#, After changing the Nodes from NEDSS slave Service to NESS slave Services make sure User accounts are created on SMRS Master with the same UID as account on the 
+#
+#master Server
+#
+# END_POST_CONDITIONS

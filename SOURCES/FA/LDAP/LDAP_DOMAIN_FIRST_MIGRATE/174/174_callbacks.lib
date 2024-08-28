@@ -1,0 +1,247 @@
+#!/bin/bash
+#################################################################################
+#
+#
+#       COPYRIGHT (C) ERICSSON RADIO SYSTEMS AB, Sweden
+#
+#       The copyright to the document(s) herein is the property of
+#       Ericsson Radio Systems AB, Sweden.
+#
+#       The document(s) may be used and/or copied only with the written
+#       permission from Ericsson Radio Systems AB or in accordance with
+#       the terms and conditions stipulated in the agreement/contract
+#       under which the document(s) have been supplied.
+#
+#################################################################################
+
+
+# ATCOMINF Test Callback Library
+
+# Revision History
+# 03-Aug-2012     xfeldan    First pass
+# 06-Aug-2012     xsimrea    Afer review comments
+
+# Complete the callbacks in this library to automate the test case.
+#
+# Callbacks are stateless, it is not possible to set a global variable in one callback 
+# and access it it in another.
+#
+# Callbacks are called by the test harness in the following order:
+#
+# tc_setup() 		# Called only for independent TC execution mode to setup TC
+# tc_precon()		# Conditions that should exist before TC can run
+# tc_test()		# Runs the test for this TC
+# tc_postcon()		# Conditions that should/should not exist after successful TC 
+# tc_cleanup()		# Called only for independent TC execution mode to clenup after TC
+
+# All callbacks must PASS for a TC PASS result
+
+#################################################################################
+#
+# CALLBACK: TC_SETUP
+#
+# This callback function is only called if the harness execution mode is 'AT_INDEPENDENT'
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_setup() {
+
+
+
+	
+	# Replace PASSWD with the correct credentials
+	for ii in *.in; do
+		sed "s/^PASSWD$/$LDAP_SUPERUSER_PASSWD/" $ii > $ii.tmp
+	done
+
+	# If 1.com doesn't exist, create it.
+	LDAP_DOMAIN_EXISTS $G_DOMAIN_NAME_1 || {
+		LDAP_CREATE_DOMAIN_ON_OSS1 $G_DOMAIN_NAME_1 || { echo "ERROR: Failed to create domain $G_DOMAIN_NAME_1" ; return 1; }
+	}
+	echo "Creating test group in test domain"
+	${AT_BIN}/con_ex.bsh -d add_group.in.tmp -o /usr/local/bin/expect.exp -c "/ericsson/sdee/bin/add_group.sh -d 1.com -s 30107 -e 40000 -n tstgroup -y"
+	/usr/local/bin/expect /usr/local/bin/expect.exp || {
+		echo "Test group was not created, error code $?"
+		return 3
+	}
+
+	echo "Creating test user in test domain"
+	${AT_BIN}/con_ex.bsh -d add_user.in.tmp -o /usr/local/bin/expect.exp -c "/ericsson/sdee/bin/add_user.sh -d 1.com -s 30107 -e 40000 -n seth -y"
+	/usr/local/bin/expect /usr/local/bin/expect.exp || {
+		echo "Test user was not created, error code $?"
+		return 4
+	}
+	LDAP_CREATE_USER 1.com seth password || {
+		echo "Test user was not created, error code $?"
+		return 4
+	}
+
+#	# Add user to group
+#	/usr/bin/ldapmodify -h $HOSTNAME -p $LDAP_PORT -D "cn=directory manager" -w $LDAP_SUPERUSER_PASSWD <<EOF
+#dn: cn=tstgroup,ou=group,dc=1,dc=com
+#changetype: modify
+#add: memberUid
+#memberUid: seth
+#EOF
+
+	# Delete link object
+	#/usr/bin/ldapdelete -p $LDAP_PORT -w $LDAP_SUPERUSER_PASSWD -D "cn=directory manager" cn=link,ou=people,dc=1,dc=com
+	#/usr/bin/ldapdelete -p $LDAP_PORT -w $LDAP_SUPERUSER_PASSWD -D "cn=directory manager" cn=link,ou=group,dc=1,dc=com
+
+	return 0
+
+}
+#################################################################################
+
+#################################################################################
+#
+# CALLBACK: TC_PRECON
+#
+# This callback function checks the correct conditions exist to run the TC.
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+ 
+tc_precon() {
+
+	LDAP_SERVER_UP || {
+		echo "LDAP server not running"
+		return 1
+	}
+	return 0
+
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_TEST
+#
+# This callback function runs the test.
+# The harness compares the return code to the SPEC_TC_TEST_PASSCODE value set in the test spec.
+#
+# Return or exit codes:
+#    SPEC_TC_TEST_PASSCODE 	success
+# != SPEC_TC_TEST_PASSCODE 	failure
+ 
+tc_test() {
+
+	# Migrate test domain containing a single user and group (to default domain)
+	${AT_BIN}/con_ex.bsh -d 174_migrate.in.tmp -o 174_expect.exp -c "/ericsson/sdee/bin/migrate_domain.bsh -d 1.com" -r
+	/usr/local/bin/expect 174_expect.exp>output.tmp
+	rc=$?
+	grep "migrate the LDAP data from the OSS-RC" output.tmp && {
+		echo "Could not migrate because LDAP data not yet migrated"
+		return 0
+	}
+	[ $rc -eq 0 ] || {
+		echo "Test domain could not be migrated, error code $rc"
+		cat output.tmp
+		return 1
+	}
+
+	# Verify migration of already isolated domain is not possible
+	${AT_BIN}/con_ex.bsh -d 174_migrate.in.tmp -o 174_expect.exp -c "/ericsson/sdee/bin/migrate_domain.bsh -d 1.com" -r
+	/usr/local/bin/expect 174_expect.exp&& {
+		echo "Migration of test domain twice did not return error code"
+		return 2
+	}
+
+	return 0
+
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_POSTCON
+#
+# This callback function checks expected results.
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_postcon() {
+
+
+
+	# Check that user was migrated
+	/usr/bin/ldapsearch -D "cn=directory manager" -s base -w $LDAP_SUPERUSER_PASSWD -b "uid=seth,ou=people,dc=globaldomain" "objectclass=posixAccount" dn&>/dev/null || {
+		echo "Test user was not migrated"
+		return 1
+	}
+	/usr/bin/ldapsearch -D "cn=directory manager" -s base -w $LDAP_SUPERUSER_PASSWD -b "uid=seth,ou=people,dc=1,dc=com" "objectclass=posixAccount" dn&>/dev/null && {
+		echo "Test user was not removed from test domain"
+		return 2
+	}
+	# Check that group was migrated
+	/usr/bin/ldapsearch -D "cn=directory manager" -s base -w $LDAP_SUPERUSER_PASSWD -b "cn=tstgroup,ou=group,dc=globaldomain" "objectclass=posixGroup" dn&>/dev/null || {
+		echo "Test group was not migrated"
+		return 3
+	}
+	/usr/bin/ldapsearch -D "cn=directory manager" -s base -w $LDAP_SUPERUSER_PASSWD -b "cn=tstgroup,ou=group,dc=1,dc=com" "objectclass=posixGroup" dn&>/dev/null && {
+		echo "Test group was not removed from test domain"
+		return 4
+	}
+
+	# Check that referral exists from test domain to globaldomain
+	${AT_BIN}/con_ex.bsh -d add_user.in.tmp -o /usr/local/bin/expect.exp -c "/ericsson/sdee/bin/add_user.sh -d 1.com -s 42121 -e 44000 -n elwood -y"
+	/usr/local/bin/expect /usr/local/bin/expect.exp&>/dev/null || {
+		echo "Test user was not created, error code $?"
+		return 5
+	}
+#	/usr/bin/ldapsearch -D "cn=directory manager" -s base -w $LDAP_SUPERUSER_PASSWD -b "uid=elwood,ou=people,dc=globaldomain" "objectclass=posixAccount" dn&>/dev/null || {
+#		echo "Referral does not exist between test domain and globaldomain"
+#		return 6
+#	}
+
+	return 0
+
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_CLEANUP
+#
+# This callback function is only called if the harness execution mode is 'AT_INDEPENDENT'
+# 
+# This callback restores the target system to the state it was in before the TC 
+# was run. It rolls back changes made by callbacks tc_setup() and tc_test()
+# 
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_cleanup() {
+
+	rc=0
+
+	# Delete test user - note failures, but some are expected to fail, so not an error
+	/usr/bin/ldapdelete -p $LDAP_PORT -w $LDAP_SUPERUSER_PASSWD -D "cn=directory manager" uid=seth,ou=people,dc=globaldomain || { echo ldapdelete user seth from globaldomain failed; }
+	/usr/bin/ldapdelete -p $LDAP_PORT -w $LDAP_SUPERUSER_PASSWD -D "cn=directory manager" uid=seth,ou=people,$LDAP_DOMAIN_NAME_1 || { echo ldapdelete user seth from $LDAP_DOMAIN_NAME_1 failed; }
+
+	# Delete test group - ditto
+	/usr/bin/ldapdelete -p $LDAP_PORT -w $LDAP_SUPERUSER_PASSWD -D "cn=directory manager" cn=tstgroup,ou=group,dc=globaldomain || { echo ldapdelete group tstgroup from globaldomain failed; }
+
+	/usr/bin/ldapdelete -p $LDAP_PORT -w $LDAP_SUPERUSER_PASSWD -D "cn=directory manager" cn=link,ou=people,dc=1,dc=com || { echo ldapdelete domain link from people failed; }
+	/usr/bin/ldapdelete -p $LDAP_PORT -w $LDAP_SUPERUSER_PASSWD -D "cn=directory manager" cn=link,ou=group,dc=1,dc=com || { echo ldapdelete domain link from group failed; }
+
+	# Delete test domain - should report failure if there were any important failures above
+	LDAP_DELETE_DOMAIN "1.com" || { echo "ERROR: Failed to delete domain 1.com" ; return 1; }
+
+	# Tidy up extra files
+	rm -f *.in.tmp *.exp *.tmp
+
+	
+
+	return $rc
+
+}

@@ -1,0 +1,324 @@
+;#################################################################
+
+;
+
+;  This file is used by the inirator to set variables such that
+
+;  default values from the file are presented for every inirator
+
+;  question.
+
+;
+
+;  Default questions for fencing and data LUNS cannot be set as
+
+;  it is not possible to determine the LUN ids before jumpstart.
+
+;  However, if the correct number and type of LUNs are connected
+
+;  to the server, the the inirator function will figure out the
+
+;  defaults itself. Otherwise the LUNS can be manually changed
+
+;  during inirator execution
+
+;
+
+;  For use by inirator, this file should be used in accordance with the relevant
+
+; Initial Installation documentation and be named preinirate_<hostname>
+
+;
+
+;#################################################################
+
+
+
+[PREINIRATE]
+
+; The autoini variable can be set to yes to complete full automatic installation through
+
+; the inirator phase. Note: Make sure that all default variables are correct before setting
+
+; this value to yes. It is advisable to set the value to no for the first time installation
+
+; to verify that all default values are picked up correctly by the inirator. The value can then
+
+; be set to yes for subsequent installs when default values are verified.
+
+autoini=yes
+
+; The clearscsi3 variable can be set to yes to automatically clear scsi3 registration/reservation
+
+; keys on LUNS. If scsi3 keys are detected on any LUNS connected to the server, core.sh will bail
+
+; out before starting inirator. Setting this variable to yes will prevent bailout of core.sh and
+
+; will automatically clear the scsi3 keys from the LUNs.
+
+;#################################################################
+
+;Cluster Name * Variable Value should contain alpha numeric value only
+clustername=atrcxb1697-98
+;Test IP Address for first Storage VLAN NIC
+storBaseIPP1=10.42.232.91
+;Test IP Address for second Storage VLAN NIC
+storBaseIPP2=10.42.232.92
+;Storage VIP address
+storVIPP1=10.42.232.93
+;Storage VLAN Netmask
+storNETMM=255.255.252.0
+;OSS System Identifier
+OssIDD=xb1697
+;NAS master Password
+nasMasPWW=master
+;NAS support Password
+nasSupPWW=symantec
+;IP address for NAS1 server
+nasServ1IPP=10.42.232.193
+;IP address for NAS2 server
+nasServ2IPP=10.42.232.194
+;IP address for NAS Console
+nasServConn=10.42.232.190
+;Test IP Address for first Public VLAN NIC
+pubBaseIPP1=10.45.224.125
+;Test IP Address for second Public VLAN NIC
+pubBaseIPP2=10.45.224.126
+;Public VLAN Default router IP Address
+pubDRR=10.45.224.1
+;Public VLAN Netmask
+pubNETMM=255.255.248.0
+;IPv6 address for the host itself
+IPv6address_def=none
+;IPv6 subnet prefix length
+ipv6_prefix_len_def=none
+;Default IPv6 router
+ipv6_pub_router_def=none
+;IP address for Private LAN NIC
+privBaseIPP1=200.200.200.15
+;Private LAN Netmask
+privNETMM=255.255.255.0
+;IP address for Backup LAN NIC
+bkupBaseIPP=10.0.2.145
+;Backup LAN Netmask
+bkupNETMM=255.255.255.0
+;Virtual IP address for OSSFS
+ossfsIPP=10.45.224.121
+;Virtual IP address for IPv6 OSSFS
+ossfsIPv6_def=none
+;Virtual IP address for PMS
+pmsIPP=10.45.224.123
+;Virtual IP address for IPv6 PMS
+pmsIPv6_def=none
+;Virtual IP address for CMS
+cmsIPP=10.45.224.124
+;Virtual IP address for IPv6 CMS
+cmsIPv6_def=none
+;Virtual IP address for Sybase
+sybaseIPP=10.45.224.128
+;Virtual IP address for SNMP *The Virtual IP address for SNMP has no function in x86, but must be entered. OSSFS IP is used to receive SNMP traps
+snmpIPP=10.45.224.122
+;Virtual IP address for OSS bkup
+ossbkupIPP=10.0.2.146
+;Virtual IP address for Sybase bkup
+syb1bkupIPP=10.0.2.148
+;Do you want to use Host-Based Mirroring ( YES/NO)
+ossmirror=YES
+;Total number of GSM Cells
+GSMDEF=35
+;Total number of UTRAN Cells
+UTRANDEF=35
+;Total number of LTE Cells
+LTEDEF=50
+;Total number of Core Nodes
+COREDEF=2
+;Total number of RNCs
+RNCDEF=0
+;Number of AXD based nodes *SEE NOTE 4
+AXDnodes=0
+;Use TGR application ( YES/NO )
+OSSTGR=NO
+;Number of TeS nodes  *SEE NOTE 4
+TeSnodes=0
+;Will the one minute GPEH application be used (YES/NO)
+MINUTE_GPEH=NO
+;Will the cell trace application be used (YES/NO)
+CELL_TRACE=NO
+;Allocate space for SGW ( YES/NO )
+ADDSGW=NO
+;Allocate space for PMS ( YES/NO )
+ADDPMS=NO
+;Allocate space for EBSW ( YES/NO )
+ADDEBSW=NO
+;Allocate space for RPMO ( YES/NO )
+ADDRPMO=NO
+;Allocate space for EBS ( YES/NO )
+ADDEBS=NO
+;Allocate space for RTT ( YES/NO )
+ADDRTT=NO
+;Setup RNO Database Export Interface ( YES/NO )
+ADDRNDBI=NO
+;Allocate space for EBS-S ( YES/NO )
+ADDEBSS=NO
+;Is 5 minute ROP collection supported (YES/NO)
+ADD5mROP=NO
+;Number of OSSRC Sites
+NumSites=0
+;Number of CPP MGW nodes in the Core Network
+Nummgw=0
+;Number of IPROUTER Nodes
+Numipr=0
+;Number of CSCF nodes in the Core Network *Must be less than Core Nodes
+Numcscf=0
+;Number of MTAS nodes in the Core Network *Must be less than Core Nodes
+Nummtas=0
+;Number of H2S nodes in the Core Network *Must be less than Core Nodes
+Numh2s=0
+;Number of HSS nodes in the Core Network *Must be less than Core Nodes
+Numhss=0
+;Number of PICO WCDMA cells in the WRAN Network  *SEE NOTE 6
+Numpicowcdmacells=0
+;Number of PICO LTE cells in the LTE Network  *SEE NOTE 7
+Numpicoltecells=0
+;Number of STN nodes OSSRC supports
+Numstn=0
+;Number of EPGSSR nodes in the Core Network
+Numepgssr=0
+;Number of SGSN nodes in the Core Network
+Numsgsn=0
+;Number of SGSN MME nodes in the Core Network
+Numsgsnmme=0
+;Number of GGSN nodes in the Core Network
+Numggsn=0
+;Number of 2G/3G SAUs per OSS-RC
+Num2g3gsaus=0
+;Number of 4G SAUs per OSS-RC
+Num4gsaus=0
+;Combined number of cells on all OSS-RC servers that will be audited by IRATHOM application
+Numirathomcells=0
+;Number of Windows based APG43 equipped nodes in the Network
+Numapg43=0
+;Number of Redback SmartEdge equipped nodes in the  Network
+Numredback=0
+;Number of Redback Nodes which are EdgeRouter Nodes *SEE NOTES 5
+Numegr=0
+;Number of SASN nodes with SARA functionality equipped nodes in the  Network
+Numsasnsara=0
+;Installation type
+INS_TYPE=ii
+;The hostname of the OSS server *Some hostnames are reserved / restricted, see Initial Installation documentation for details.
+HOSTNAME=atrcxb2218
+;Netgroup name
+NETGROUPNAME=atomcoall
+;Default password for the OSS-RC sybase users. Must be 6 or more characters.
+SQL_DEF_USER_PW=sybase11
+;Timezone for your geographical region or offset from GMT
+TIMEZONE=Eire
+;defaultrouter IP address. The address of the gateway to the rest of the network.
+DEFAULTROUTERS=10.45.224.1
+;DNS-server's ip-address. Leave empty if not used. *OPTIONAL
+NAMESERVERS=159.107.173.3
+;DNS-domain e.g company.domain.com
+DNSDOMAIN=athtem.eei.ericsson.se
+;LDAP-domain e.g company.domain.com
+LDAPDOMAIN=athtem.eei.ericsson.se
+;SLS server name e.g https://<slsserver>:8443/ericsson/servlet/sls *OPTIONAL
+SLS_SERVER=https://10.45.224.100:8443/ericsson/servlet/sls
+;Sentinel license file path. Leave value empty if license file is not to be added automatically *OPTIONAL
+SENTINEL_LICENSE_FILE_PATH=
+;Type of xml file installation -  server
+SEC_TYPE=server
+;The Veritas VM license key.
+VXVMLIC="RZPG-PV69-CPF8-779G-S94K-F6OP-4R6"
+;Network Type. This is either GSM1900 or GSM900/1800 depending on the frequencies used by the GSM network.
+NETWORK_TYPE=GSM900/1800
+;Name of the network root object in the information model.
+IM_ROOT=ONRM_ROOT_MO
+;The X29 suffix to be used.
+X29_SUFF=_X29
+;The IP address of the WEBI server. If unknown accept default and change later in /etc/hosts. *OPTIONAL
+NT_SERVER_IPADDRESS=
+;The IP address of the first Windows Application Server. If unknown press enter and add it later. *OPTIONAL
+WAS_IP_1=
+;The IP address of the second Windows Application Server. If unknown press enter and add it later. *OPTIONAL
+WAS_IP_2=
+;The IP address of the third Windows Application Server. If unknown press enter and add it later. *OPTIONAL
+WAS_IP_3=
+;The IP address of the fourth Windows Application Server. If unknown press enter and add it later. *OPTIONAL
+WAS_IP_4=
+;The IP address of the fifth Windows Application Server. If unknown press enter and add it later. *OPTIONAL
+WAS_IP_5=
+;LDAP DS Server IP address *SEE NOTE 3
+LDAPSERVERIP=10.45.224.100
+;LDAP Fully Qualified Hostname *SEE NOTE 3
+PRIMARYFQHN=
+;LDAP Domain Name *SEE NOTE 3
+LDAPDOMAINNAME=
+;LDAP Proxy Password *SEE NOTE 3
+LDAPPROXYPASSWORD=ldapadmin
+;LDAP Client's Certificate Database Password *SEE NOTE 3
+LDAPCLIENTCERTDBPW=ldapadmin
+;LDAP Client Profile *SEE NOTE 3
+LDAPCLIENTPROFILE=default
+;Full path to valid PKS root CA certificate *SEE NOTE 3
+PKSCACERTIFICATE=
+;Do you want to configure a secondary LDAP server now? [Y|N] *SEE NOTE 3
+SECONDARYLDAP=N
+;Secondary LDAP DS Server IP address *SEE NOTE 3
+SECONDARYLDAPSERVERIP=
+;Secondary LDAP Fully Qualified Hostname *SEE NOTE 3
+SECONDARYFQHN=
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

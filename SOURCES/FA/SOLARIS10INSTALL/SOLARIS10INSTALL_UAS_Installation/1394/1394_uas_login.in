@@ -1,0 +1,12 @@
+Password
+shroot
+#
+pkginfo -l SMCossl > /var/tmp/SMCossl.txt
+#
+scp -o StrictHostKeyChecking=no /var/tmp/SMCossl.txt root@omsrvm:/var/tmp/SMCossl.txt
+Password
+shroot
+#
+rm /var/tmp/SMCossl.txt
+#
+exit

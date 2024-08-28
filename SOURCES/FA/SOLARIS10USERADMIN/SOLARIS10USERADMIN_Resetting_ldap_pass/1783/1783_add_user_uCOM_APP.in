@@ -1,0 +1,18 @@
+LDAP Directory Manager password:
+ldappass
+New local user name:
+uCM_APP
+Start of uidNumber search range
+\r
+End of uidNumber search range
+\r
+New local user uidNumber
+\r
+New local user password:
+password
+Re-enter password:
+password
+New local user description
+\r
+Continue to create local user
+y

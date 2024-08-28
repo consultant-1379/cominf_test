@@ -1,0 +1,51 @@
+#!/bin/bash
+
+# TEST CASE SPEC FILE
+# This file is generated/updated using the test framework web interface.
+# Manual updates on test servers are lost when the test package is re-installed.
+#
+# Last modified: Sunday 31st of March 2013 20:37:23
+#
+
+# These settings must be in BASH script format, they are sourced by other scripts.
+SPEC_FA_NAME="INSTALL"
+SPEC_UC_NAME="INSTALL_COMINF_MANUAL_INSTALL"
+SPEC_TC_ID=36
+SPEC_TC_SLOGAN="Perform post-install checks on OA&M primary (automated check)"
+SPEC_TC_TYPE="FT"
+SPEC_TC_POLARITY="positive"
+SPEC_TC_PRIORITY="high"
+SPEC_TC_AUTOMATED=1
+SPEC_TC_DEPENDENT_ONLY=0
+SPEC_TC_TIMEOUT=300
+SPEC_TC_TEST_PASSCODE=0
+SPEC_TC_AUTHOR="esioosb"
+SPEC_TC_AUTOMATOR="esioosb"
+# this parameter is not interpreted by harness
+SPEC_TC_DISABLED=0
+
+# Please do not remove the comment lines below.
+# They are used as section locators by the test harness.
+
+# BEGIN_PRE_CONDITIONS
+#-
+# END_PRE_CONDITIONS
+
+
+# BEGIN_MANUAL_STEPS
+#-
+# END_MANUAL_STEPS
+
+# BEGIN_POST_CONDITIONS
+#- check /ericsson/config/ericsson_use_config has CONFIG_TYPE=om_serv_master
+#- CHECK_CONFIG_INI om_serv_master standard
+#- CHECK_JAVA
+#- OSS_MASTER_NAME = grep config.ini MASTER_SERVER
+#- OSS_MASTER_IP = grep config.ini MASTER_IP
+#- CHECK_HOSTS ${OSS_MASTER_NAME} ${OSS_MASTER_IP}
+#- SECONDARY_NAME = grep config.ini 'O&M Services Secondary_NAME'
+#- SECONDARY_IP = grep config.ini 'O&M Services Secondary_IP'
+#- CHECK_HOSTS ${SECONDARY_NAME} ${SECONDARY_IP}
+#- CHECK_HOSTS ${PRIMARY_NAME} ${PRIMARY_IP}
+#- CHECK_HOSTS ${PRIMARYV6_NAME} ${PRIMARYV6_IP}
+# END_POST_CONDITIONS

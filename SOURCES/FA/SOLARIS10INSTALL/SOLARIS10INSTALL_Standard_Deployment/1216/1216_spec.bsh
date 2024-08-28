@@ -1,0 +1,137 @@
+#!/bin/bash
+
+# TEST CASE SPEC FILE
+# This file is generated/updated using the test framework web interface.
+# Manual updates on test servers are lost when the test package is re-installed.
+#
+# Last modified: Monday 16th of December 2013 7:26:12
+#
+
+# These settings must be in BASH script format, they are sourced by other scripts.
+SPEC_FA_NAME="SOLARIS10INSTALL"
+SPEC_UC_NAME="SOLARIS10INSTALL_Standard_Deployment"
+SPEC_TC_ID=1216
+SPEC_TC_SLOGAN="Verify the SMRS functionality on O&M Master Primary configured for Standard deployment "
+SPEC_TC_TYPE="FT"
+SPEC_TC_POLARITY="positive"
+SPEC_TC_PRIORITY="high"
+SPEC_TC_AUTOMATED=1
+SPEC_TC_DEPENDENT_ONLY=0
+SPEC_TC_TIMEOUT=300
+SPEC_TC_TEST_PASSCODE=0
+SPEC_TC_AUTHOR="xgansre"
+SPEC_TC_AUTOMATOR="xgansre"
+# this parameter is not interpreted by harness
+SPEC_TC_DISABLED=0
+
+# Please do not remove the comment lines below.
+# They are used as section locators by the test harness.
+
+# BEGIN_PRE_CONDITIONS
+#Verify that SMRS functionality works on om_serv_master.
+#Precondition: om_serv_master, NEDSS, OSS MS
+#
+#MarsPath <Initial Installation/OM Services Server Test Cases
+#(Blade Standard Deployment) >
+#
+#
+#
+# END_PRE_CONDITIONS
+
+
+# BEGIN_MANUAL_STEPS
+#Run Automatic Test Suite for SMRS in order to verify the SMRS functionality; if not possible, perform the actions below.
+#Action 1: 
+#
+#Check log files in /ericsson/smrs/log directory. Make sure SMRS is installed.
+#
+#Action 2: 
+#
+#Connect om_serv_master with OSS MS. Run create_tree.sh script.
+#
+#Action 3: 
+#
+#Connect om_serv_master with NEDSS. Run add_smrs_slave.sh script.
+#
+#Action 4: 
+#
+#Add SMO users on om_serv_master
+#
+#Action 5: 
+#
+#Add AIF users on om_serv_master.
+#
+#Action 6: 
+#
+#Add GRAN/WRAN/LRAN/CORE network elements on .
+#
+#Action 7: 
+#
+#Verify that tar files get transferred properly from NEDSS to om_serv_master.
+#
+#Action 8: 
+#
+#Modify GRAN/WRAN/LRAN/CORE network elements on .
+#
+#Action 9: 
+#
+#Delete GRAN/WRAN/LRAN/CORE network elements on .
+#
+#Action 10: 
+#
+#Verify ALD for WRAN works properly on om_serv_master.
+#
+#Action 11: 
+#
+#Verify ALD for LRAN works properly on om_serv_master.
+#
+#Action 12: 
+#
+#Verify itâEuro s possible to disconnect NEDSS (run del_smrs_slave.sh).
+#
+#Action 13: 
+#
+#Verify itâEuro s possible to disconnect (run disconnect_oss_master_server.sh).
+#
+# END_MANUAL_STEPS
+
+# BEGIN_POST_CONDITIONS
+#Result 1: 
+#No errors in SMRS logs, SMRS package installed.
+#
+#Result 2: 
+#connected properly with om_serv_master.
+#
+#Result 3: 
+#NEDSS connected properly with om_serv_master
+#
+#Result 4: 
+#SMO users added properly.
+#
+#Result 5: 
+#AIF users added properly.
+#
+#Result 6: 
+#SMRS configuration changes accordingly
+#
+#Result 7: 
+#tar files get transferred properly from NEDSS to om_serv_master.
+#
+#Result 8: 
+#SMRS configuration changes accordingly.
+#
+#Result 9: 
+#SMRS configuration changes accordingly
+#
+#Result 10: 
+#ALD works properly on om_serv_master.
+#
+#Result 11: 
+#ALD works properly on om_serv_master.
+#
+#Result 12: 
+#NEDSS disconnected properly.
+#
+#Result 13: 
+#disconnected properly. 
+# END_POST_CONDITIONS

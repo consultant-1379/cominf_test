@@ -1,0 +1,14 @@
+	<fieldset>
+		<legend>Harness Host Configuration</legend>		
+		<b>Master Server Hostname&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;:</b>
+		<input type="text" name="CI_ADMIN1_HOSTNAME" required size=30><br>		
+		<b>Master Server IPV4 Address&nbsp;&nbsp;:</b>
+		<input type="text" name="CI_ADMIN1_IPV4_ADDRESS" id="ci_admin1_ipv4_address" onblur="validateIpAddress(this,document.getElementById('ip_address_help1'))" required size=30>
+		<span id="ip_address_help1" class="help"></span><br>
+		<b>Master Server Root Password:</b>
+		<input type="password" name="CI_ADMIN1_ROOTPW" value="shroot" required size=30><br>
+		<b>Master Server ILO Name&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;:</b>
+		<input type="text" name="CI_ADMIN1_ILO_NAME" size=30><br>
+		<b>Master Server ILO Root Password:</b>
+		<input type="password" name="CI_ADMIN1_ILO_ROOTPW" value="shroot12" size=30><br>
+	</fieldset>

@@ -1,0 +1,45 @@
+#!/bin/bash
+
+# TEST CASE SPEC FILE
+# This file is generated/updated using the test framework web interface.
+# Manual updates on test servers are lost when the test package is re-installed.
+#
+# Last modified: Sunday 31st of March 2013 20:37:24
+#
+
+# These settings must be in BASH script format, they are sourced by other scripts.
+SPEC_FA_NAME="SMRS"
+SPEC_UC_NAME="SMRS_MASTER_OMSERVICES_REMOVE"
+SPEC_TC_ID=757
+SPEC_TC_SLOGAN="Delete slave service when master LV is in use"
+SPEC_TC_TYPE="FT"
+SPEC_TC_POLARITY="positive"
+SPEC_TC_PRIORITY="high"
+SPEC_TC_AUTOMATED=0
+SPEC_TC_DEPENDENT_ONLY=0
+SPEC_TC_TIMEOUT=300
+SPEC_TC_TEST_PASSCODE=0
+SPEC_TC_AUTHOR="xkalbha"
+SPEC_TC_AUTOMATOR="xsimrea"
+# this parameter is not interpreted by harness
+SPEC_TC_DISABLED=0
+
+# Please do not remove the comment lines below.
+# They are used as section locators by the test harness.
+
+# BEGIN_PRE_CONDITIONS
+#1. smrs master is installed
+# END_PRE_CONDITIONS
+
+
+# BEGIN_MANUAL_STEPS
+#1. have a process login to the smrs_master and cd to one of the common directories e.g. /export/LRAN
+#2. /opt/ericsson/nms_bismrs_mc/bin/configure_smrs.sh delete smrs_master
+#3. $? -eq 0
+# END_MANUAL_STEPS
+
+# BEGIN_POST_CONDITIONS
+#1. CONSOLE_OUTPUT_CONTAINS <warning indicating that disk was in use and was retrying after killing users>
+#2. CONSOLE_OUTPUT_CONTAINS <info indicating that disk was unmounted successfully>
+#3. smrs_vg has been deleted
+# END_POST_CONDITIONS

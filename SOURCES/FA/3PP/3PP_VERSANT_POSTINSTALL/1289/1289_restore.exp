@@ -1,0 +1,18 @@
+set VERSANT_BIN /ericsson/versant/bin
+set timeout 1800
+spawn  su - nmsadm -c $VERSANT_BIN/vrsnt_admin.sh
+expect "Enter your choice:"
+send "11\r"
+expect "Please enter the database name"
+send "ONRM_CS\r"
+expect "Select dumpset"
+send "DUMPSET_NUMBER\r"
+expect "Select dumpfile"
+send "1\r"
+expect "Prompt:    Continue yes or no :"
+send "yes\r"
+expect "Press <Return> to continue:"
+send "\r"
+expect "Enter your choice:"
+send "0\r"
+send "\r"

@@ -1,0 +1,177 @@
+#!/bin/bash
+#################################################################################
+#
+#
+#	   COPYRIGHT (C) ERICSSON RADIO SYSTEMS AB, Sweden
+#
+#	   The copyright to the document(s) herein is the property of
+#	   Ericsson Radio Systems AB, Sweden.
+#
+#	   The document(s) may be used and/or copied only with the written
+#	   permission from Ericsson Radio Systems AB or in accordance with
+#	   the terms and conditions stipulated in the agreement/contract
+#	   under which the document(s) have been supplied.
+#
+#################################################################################
+
+
+# ATCOMINF Test Callback Library
+
+# Revision History
+# 04/09/12	xkalbha		Check command line options
+
+# Complete the callbacks in this library to automate the test case.
+#
+# Callbacks are stateless, it is not possible to set a global variable in one callback 
+# and access it it in another.
+#
+# Callbacks are called by the test harness in the following order:
+#
+# tc_setup() 		# Called only for independent TC execution mode to setup TC
+# tc_precon()		# Conditions that should exist before TC can run
+# tc_test()		# Runs the test for this TC
+# tc_postcon()		# Conditions that should/should not exist after successful TC 
+# tc_cleanup()		# Called only for independent TC execution mode to clenup after TC
+
+# All callbacks must PASS for a TC PASS result
+
+#################################################################################
+#
+# CALLBACK: TC_SETUP
+#
+# This callback function is only called if the harness execution mode is 'AT_INDEPENDENT'
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_setup() {
+
+	return 0
+
+}
+#################################################################################
+
+#################################################################################
+#
+# CALLBACK: TC_PRECON
+#
+# This callback function checks the correct conditions exist to run the TC.
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+ 
+tc_precon() {
+
+	grep smrs_master "/etc/inet/hosts" || { echo "No smrs_master created"; return 1; }
+
+	# Check slave exists on smrs_master
+	##ssh smrs_master "cat /etc/passwd | grep l-sws-4SlaveM2"  || { echo "l-sws-4SlaveM2 does not exist"; return 2; }
+	CHECK_SLAVE_EXISTS 4SlaveM2 || { echo "4SlaveM2 does not exist in smrs_config"; return 4; }
+	
+	return 0
+
+}
+#################################################################################
+### Function: INV_AIF ###
+#
+#  Calls add_aif with error
+#
+# Arguments:
+#	$1: Arguments to add_aif
+#	$2: Expected error code
+#	$3: Error msg to show on error
+#
+# Return Values:
+# 0 if got expected error code
+# 1 if wrong error code
+function INV_AIF(){
+	/opt/ericsson/nms_bismrs_mc/bin/add_aif.sh $1
+	retval=$?
+	[ $retval -ne $2 ] && { echo "$3 $retval"; return 1; }
+	return 0
+}
+#################################################################################
+#
+# CALLBACK: TC_TEST
+#
+# This callback function runs the test.
+# The harness compares the return code to the SPEC_TC_TEST_PASSCODE value set in the test spec.
+#
+# Return or exit codes:
+#	SPEC_TC_TEST_PASSCODE 	success
+# != SPEC_TC_TEST_PASSCODE 	failure
+ 
+tc_test() {
+
+	INV_AIF " " 1 "no arguments" || { return 1; }
+	INV_AIF "-n LRAN -a aif321 -p passwo12 -s 4SlaveM2 -q" 1 "aif@321 wrong error" || { return 2; }
+	INV_AIF "-n LRAN -a aif321 -p pa -s 4SlaveM2" 4 "password wrong error" || { return 3; }
+	INV_AIF "-n CORE -a aif321 -p passwo12 -s 4SlaveM2" 1 "CORE nw wrong error" || { return 4; }
+	INV_AIF "-n LRAN -a aif@321 -p passwo12 -s 4SlaveM2" 3 "aif@321 wrong error" || { return 5; }
+	INV_AIF "-n LRAN -a aif321 -p passwo12 -s 4SlaveRubbish" 6 "4SlaveRubbish wrong error" || { return 7; }
+	INV_AIF "-a aif321 -p passwo12 -s 4SlaveM2" 1 "Missing network" || { return 8; }
+	INV_AIF "-n LRAN -p passwo12 -s 4SlaveM2" 1 "Missing user" && { return 9; }
+	INV_AIF "-n LRAN -a aif321 -s 4SlaveM2" 1 "Missing password" || { return 10; }
+	INV_AIF "-n LRAN -a aif321 -p passwo12" 1 "Missing slave" && { return 11; }
+	INV_AIF "-n LRAN -a aif321 -p passwo12 -s 4SlaveM2 -b yes" 1 "-b yes wrong error" || { return 12; }
+	INV_AIF "-n LRAN -a aif321 -p passwo12 -s 4SlaveM2 -f yes" 1 "-f yes wrong error" || { return 13; }
+	INV_AIF "-n LRAN -a aif321 -p passwo12 -s 4SlaveM2 -u yes" 1 "-u yes wrong error" || { return 14; }
+	INV_AIF "-n LRAN -a aif321 -p passwo12 -s 4SlaveM2 -u 0" 1 "-u 0 error" || { return 15; }
+	INV_AIF "-n LRAN -a aif321 -p passwo12 -s 4SlaveM2 -u " 1 "-u wrong error" || { return 16; }
+	INV_AIF "-n LRAN -a aif321 -p passwo12 -s 4SlaveM2 -u aif321" 1 "-u aif321 wrong error" || { return 17; }
+	INV_AIF "-n LRAN -a aif321 -p passwo12 -s 4SlaveM2 -g yes" 1 "-g yes wrong error" || { return 18; }
+	INV_AIF "-n LRAN -a aif321 -p passwo12 -s 4SlaveM2 -g 0" 1 "-g 0 error" || { return 19; }
+	INV_AIF "-n LRAN -a aif321 -p passwo12 -s 4SlaveM2 -g " 1 "-g wrong error" || { return 20; }
+	INV_AIF "-n LRAN -a aif321 -p passwo12 -s 4SlaveM2 -g aif" 1 "-g aif321 wrong error" || { return 21; }
+	return 0
+
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_POSTCON
+#
+# This callback function checks expected results.
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_postcon() {
+
+	
+CONSOLE_OUTPUT_CONTAINS "Usage:  add_aif.sh -n <nw type> -a <aif account name> -p <password> [-g <aif gid>] [-s <slave service name>] [-o <oss masterservice ip>] [-b] [-f] [-u]" || { echo "No usage message"; return 1; }
+CONSOLE_OUTPUT_CONTAINS "ERROR: Not a valid Password. By default pasword must be at least 6 characters in length and contain at least 2 alphabetic characters and 1 numeric or special character." || { echo "No password message"; return 2; }
+CONSOLE_OUTPUT_CONTAINS "ERROR add_aif.sh: Network type CORE not enabled on slave service 4SlaveM2.: FATAL: exit code: 1" || { echo "No CORE message"; return 3; }
+	CONSOLE_OUTPUT_CONTAINS "ERROR: Not a valid Username. Username must contain alphabatic or alpha-numeric values." || { echo "No invalid username message"; return 4; }
+	CONSOLE_OUTPUT_CONTAINS "Usage:  add_aif.sh -n " || { echo "No invalid slave message"; return 5; }
+	CONSOLE_OUTPUT_CONTAINS "Not a valid Password" || { echo "No invalid password message"; return 6; }
+
+	return 0
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_CLEANUP
+#
+# This callback function is only called if the harness execution mode is 'AT_INDEPENDENT'
+# 
+# This callback restores the target system to the state it was in before the TC 
+# was run. It rolls back changes made by callbacks tc_setup() and tc_test()
+# 
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_cleanup() {
+
+
+	return 0
+
+}

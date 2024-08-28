@@ -1,0 +1,165 @@
+#!/bin/bash
+#################################################################################
+#
+#
+#	   COPYRIGHT (C) ERICSSON RADIO SYSTEMS AB, Sweden
+#
+#	   The copyright to the document(s) herein is the property of
+#	   Ericsson Radio Systems AB, Sweden.
+#
+#	   The document(s) may be used and/or copied only with the written
+#	   permission from Ericsson Radio Systems AB or in accordance with
+#	   the terms and conditions stipulated in the agreement/contract
+#	   under which the document(s) have been supplied.
+#
+#################################################################################
+
+
+# ATCOMINF Test Callback Library
+
+# Revision History
+# 04/09/12	xkalbha		Add second LRAN AIF user to smrs_master
+
+# Complete the callbacks in this library to automate the test case.
+#
+# Callbacks are stateless, it is not possible to set a global variable in one callback 
+# and access it it in another.
+#
+# Callbacks are called by the test harness in the following order:
+#
+# tc_setup() 		# Called only for independent TC execution mode to setup TC
+# tc_precon()		# Conditions that should exist before TC can run
+# tc_test()		# Runs the test for this TC
+# tc_postcon()		# Conditions that should/should not exist after successful TC 
+# tc_cleanup()		# Called only for independent TC execution mode to clenup after TC
+
+# All callbacks must PASS for a TC PASS result
+
+#################################################################################
+#
+# CALLBACK: TC_SETUP
+#
+# This callback function is only called if the harness execution mode is 'AT_INDEPENDENT'
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_setup() {
+
+	return 0
+
+}
+#################################################################################
+
+#################################################################################
+#
+# CALLBACK: TC_PRECON
+#
+# This callback function checks the correct conditions exist to run the TC.
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+ 
+tc_precon() {
+
+	grep smrs_master "/etc/inet/hosts" || { echo "No smrs_master created"; return 1; }
+
+	#ssh smrs_master "cat /etc/passwd | grep l-sws-4SlaveM2"  || { echo "l-sws-4SlaveM2 does not exist"; return 2; }
+	#POSIX_REMOTE_USER_EXISTS aif307 smrs_master || { echo "AIF User not exists"; return 3; }
+	ssh smrs_master "grep aif307 /etc/passwd"  || { echo "User aif307 not created"; return 3; }
+	CHECK_SLAVE_EXISTS 4SlaveM2 || { echo "4SlaveM2 does not exist in smrs_config"; return 4; }
+	
+	return 0
+
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_TEST
+#
+# This callback function runs the test.
+# The harness compares the return code to the SPEC_TC_TEST_PASSCODE value set in the test spec.
+#
+# Return or exit codes:
+#	SPEC_TC_TEST_PASSCODE 	success
+# != SPEC_TC_TEST_PASSCODE 	failure
+ 
+tc_test() {
+
+   # Run con_ex.bsh to create expect script
+	# 329.in is checked into GIT and has the name and prompt values
+	/opt/ericsson/nms_bismrs_mc/bin/add_aif.sh -n WRAN -a aif307 -p 12345678 -s 4SlaveM2 
+	retval=$?
+	[ $retval -ne 2 ] && { echo "Wrong return code $retval"; return 3; }
+	return 0
+
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_POSTCON
+#
+# This callback function checks expected results.
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_postcon() {
+	CONSOLE_OUTPUT_CONTAINS 'already exists' || { echo "No already exists error message"; return 1; }
+
+	# Check user still exist on smrs_master
+	#POSIX_REMOTE_USER_EXISTS aif307 smrs_master || { echo "User not created"; return 2; }
+	ssh smrs_master "grep aif307 /etc/passwd"  || { echo "User aif307 not created"; return 2; }
+
+	# Check sftp - still access /LRAN
+	# Check sftp access is to LRAN as the top level directory
+	# Put a file into the /export/LRAN directory
+	date > /var/opt/ericsson/smrsstore/LRAN/329.txt
+	# Prove its not there
+	[ -r 329.txt ] && { echo "Should have deleted 329.txt"; return 6; }
+	# Now retrieve file
+	cmd="sftp aif307@smrs_master:329.txt"
+	${AT_BIN}/con_ex.bsh -d test.in -o 329sftp.exp -c "${cmd}"
+	retval=$?
+	[ $retval -ne 0 ] && { echo Failed to create expect script for sftp $retval; return 7; }
+	/usr/local/bin/expect 329sftp.exp || { echo "Error sftp failure as user $?"; return 8; }
+	# Prove we now have file 
+	[ -r 329.txt ] || { echo "Failed to retrieve file"; return 9; }
+															
+	# Check for already exists error
+	# Check contents of /var/opt/ericsson/log/add_aif.sh_log_<date>
+	# Assume the last one that matches the pattern is our file
+	filename=$(ls -rt /var/opt/ericsson/log/add_aif.sh_log_* | tail -1)
+	grep 'AIF user "aif307" already exists' $filename || { echo "No error message in log file"; return 10; }
+
+	return 0
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_CLEANUP
+#
+# This callback function is only called if the harness execution mode is 'AT_INDEPENDENT'
+# 
+# This callback restores the target system to the state it was in before the TC 
+# was run. It rolls back changes made by callbacks tc_setup() and tc_test()
+# 
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_cleanup() {
+
+
+	return 0
+
+}

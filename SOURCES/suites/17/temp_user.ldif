@@ -1,0 +1,51 @@
+dn: uid=tempuser,ou=people,dc=globaldomain
+objectClass: person
+objectClass: inetOrgPerson
+objectClass: organizationalPerson
+objectClass: shadowAccount
+objectClass: posixAccount
+objectClass: top
+uid: tempuser
+description: temporary user
+cn: Temp
+loginShell: /usr/bin/tcsh
+sn: User
+userPassword: password
+homeDirectory: 
+uidNumber: 19988
+gidNumber: 205
+
+dn: uid=tempuser,ou=people,dc=1,dc=com
+objectClass: person
+objectClass: inetOrgPerson
+objectClass: organizationalPerson
+objectClass: shadowAccount
+objectClass: posixAccount
+objectClass: top
+uid: tempuser
+description: temporary user
+cn: Temp
+loginShell: /usr/bin/tcsh
+sn: User
+userPassword: password
+homeDirectory: 
+uidNumber: 19988
+gidNumber: 205
+
+dn: uid=tempuser,ou=people,dc=2,dc=com
+objectClass: person
+objectClass: inetOrgPerson
+objectClass: organizationalPerson
+objectClass: shadowAccount
+objectClass: posixAccount
+objectClass: top
+uid: tempuser
+description: temporary user
+cn: Temp
+loginShell: /usr/bin/tcsh
+sn: User
+userPassword: password
+homeDirectory: 
+uidNumber: 19988
+gidNumber: 205
+

@@ -1,0 +1,53 @@
+#!/bin/bash
+
+# TEST CASE SPEC FILE
+# This file is generated/updated using the test framework web interface.
+# Manual updates on test servers are lost when the test package is re-installed.
+#
+# Last modified: Friday 31st of May 2013 9:45:15
+#
+
+# These settings must be in BASH script format, they are sourced by other scripts.
+SPEC_FA_NAME="LDAP"
+SPEC_UC_NAME="LDAP_COM_ALIAS_MODIFY_REMOVE"
+SPEC_TC_ID=592
+SPEC_TC_SLOGAN="Invalid options on remove role from alias"
+SPEC_TC_TYPE="FT"
+SPEC_TC_POLARITY="negative"
+SPEC_TC_PRIORITY="low"
+SPEC_TC_AUTOMATED=1
+SPEC_TC_DEPENDENT_ONLY=0
+SPEC_TC_TIMEOUT=300
+SPEC_TC_TEST_PASSCODE=0
+SPEC_TC_AUTHOR="xamamcg"
+SPEC_TC_AUTOMATOR="xsimrea"
+# this parameter is not interpreted by harness
+SPEC_TC_DISABLED=0
+
+# Please do not remove the comment lines below.
+# They are used as section locators by the test harness.
+
+# BEGIN_PRE_CONDITIONS
+#1. alias a592a exists with role r592a and r592b and r592c
+#2. alias a592b exists with role r592a and r592b and r592c
+# END_PRE_CONDITIONS
+
+
+# BEGIN_MANUAL_STEPS
+#1. !manage_COM.bsh -m alias -A a592a -R r592a,r592b -x -y
+#2. !manage_COM.bsh -m alias -A a592a -R r592b -x -n
+#3. !manage_COM.bsh -m alias -A a592a -R r592b -x -y -e
+#4. !manage_COM.bsh -m alias -A a592a,a592b -R r592b -x -y
+#5. !manage_COM.bsh -m alias -A a592a -R a592b -x -y
+#6. !manage_COM.bsh -m alias -A r592a -R r592b -x -y
+# END_MANUAL_STEPS
+
+# BEGIN_POST_CONDITIONS
+#1. CONSOLE_OUTPUT_CONTAINS <error message indicating can only supply one role>
+#2. CONSOLE_OUTPUT_CONTAINS <error message indicating -n is invalid option>
+#3. CONSOLE_OUTPUT_CONTAINS <error message indicating -e is invalid option>
+#4. CONSOLE_OUTPUT_CONTAINS <error message indicating can only supply one alias>
+#5. CONSOLE_OUTPUT_CONTAINS <error message indicating a592b is not a role>
+#6. CONSOLE_OUTPUT_CONTAINS <error message indicating r592a is not an alias>
+#7. No change to alias definitions of a592a and a592b
+# END_POST_CONDITIONS

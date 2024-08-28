@@ -1,0 +1,413 @@
+#!/bin/bash
+#################################################################################
+#
+#
+#       COPYRIGHT (C) ERICSSON RADIO SYSTEMS AB, Sweden
+#
+#       The copyright to the document(s) herein is the property of
+#       Ericsson Radio Systems AB, Sweden.
+#
+#       The document(s) may be used and/or copied only with the written
+#       permission from Ericsson Radio Systems AB or in accordance with
+#       the terms and conditions stipulated in the agreement/contract
+#       under which the document(s) have been supplied.
+#
+#################################################################################
+
+
+# ATCOMINF Test Callback Library
+
+# Revision History
+# <date>	<signum>	<details>
+
+# Complete the callbacks in this library to automate the test case.
+#
+# Callbacks are stateless, it is not possible to set a global variable in one callback 
+# and access it it in another.
+#
+# Callbacks are called by the test harness in the following order:
+#
+# tc_setup() 		# Called only for independent TC execution mode to setup TC
+# tc_precon()		# Conditions that should exist before TC can run
+# tc_test()		# Runs the test for this TC
+# tc_postcon()		# Conditions that should/should not exist after successful TC 
+# tc_cleanup()		# Called only for independent TC execution mode to cleanup after TC
+
+# All callbacks must PASS for a TC PASS result
+
+#################################################################################
+#
+# CALLBACK: TC_SETUP
+#
+# This callback function is only called if the harness execution mode is 'AT_INDEPENDENT'
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_setup() {
+
+	# Coded to fail in case TC_AUTOMATED=1 before automation completed
+	# Change return code as required
+
+	return 0 
+
+}
+#################################################################################
+
+#################################################################################
+#
+# CALLBACK: TC_PRECON
+#
+# This callback function checks the correct conditions exist to run the TC.
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+ 
+tc_precon() {
+
+	# Coded to fail in case TC_AUTOMATED=1 before automation completed
+	# Change return code as required
+
+	return 0 
+
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_TEST
+#
+# This callback function runs the test.
+# The harness compares the return code to the SPEC_TC_TEST_PASSCODE value set in the test spec.
+#
+# Return or exit codes:
+#    SPEC_TC_TEST_PASSCODE 	success
+# != SPEC_TC_TEST_PASSCODE 	failure
+ 
+tc_test() {
+
+	# Coded to fail in case TC_AUTOMATED=1 before automation complete
+	# Change return code as required
+# To check for Shipment
+
+export a=`${IST_RUN} -v`
+
+export a=`${IST_RUN} -v | awk 'NR == 3' | grep "Shipment" | awk '{print $3}' | cut -c22-28`
+
+export b=`${IST_RUN} -v | awk 'NR == 3' | grep "Shipment" | awk '{print $3}' | cut -c22-23`
+
+export c=`${IST_RUN} -v | awk 'NR == 3' | grep "Shipment" | awk '{print $3}' | cut -c25`
+
+export d=`${IST_RUN} -v | awk 'NR == 3' | grep "Shipment" | awk '{print $3}' | cut -c27-28`
+
+if [[ $b -ge 14 && $c -ge 0 && $d -ge 0 ]]; then
+
+   echo "Shipment greater than or equal to 14.0"
+
+else
+
+  echo "Shipment less than 14.0"
+
+  exit 1
+
+fi
+
+
+ #1. Verify the server is jumped with OSS-RC 14.0.5 shipment. 
+
+IST_RUN=/opt/ericsson/sck/bin/ist_run
+export a=`${IST_RUN} -v` 
+
+echo "1. Shipment :\n$a \n" 
+
+export a=`${IST_RUN} -v | awk 'NR == 3' | grep "Shipment" | awk '{print $3}' | cut -c22-28`
+
+s=$a
+
+if [ "$(echo $a '>=' $s)" ]; then
+
+
+  echo "Correct Shipment" 
+
+else 
+
+  echo "Wrong Shipment" 
+
+  exit 1  
+
+fi
+
+export a=`${IST_RUN} -v | grep "REV" | awk '{print $5}'` 
+
+R=$a
+
+echo "$R" 
+
+
+if [[ "$a" == "$R" ]]; then 
+
+  echo "Correct Revision" 
+
+else
+
+  echo "Wrong Revision" 
+
+  exit 1
+
+fi
+
+#IST_RUN=/opt/ericsson/sck/bin/ist_run
+export a=`${IST_RUN} -v | grep "System Revision" | awk '{print $3}'` 
+
+R=$a
+
+echo "$R" 
+
+if [ "$a" == "$R" ]; then 
+
+  echo "Correct System Revision"
+
+else
+
+  echo "Wrong System Revision"
+
+  exit 1 
+
+fi
+
+# 2. Verify the correct version of ECONFsystem is installed on the initial installed servers. 
+
+export b=`pkginfo -l ECONFsystem` 
+
+echo "2. Version of ECONFsystem :\n$b \n" 
+
+export b=`pkginfo -l ECONFsystem | grep "VERSION" | awk '{print $2}'` 
+
+V=$b
+
+echo "$V" 
+
+if [[ "$b" == "$V" ]]; then 
+
+  echo "Correct VERSION" 
+
+else
+
+  echo "Wrong VERSION" 
+
+  exit 1
+
+fi
+
+
+# 3. verify the Start order for NAM to change the Start Order for NAM MCs (NAMUpdateServer and NAMRepositoryServer ) from 17 to 22..
+
+export c=`cat /ericsson/templates/system/mc_config.ini | grep NAMUpdateServer` 
+
+echo "3. Start order for NAMUpdateServer :\n$c \n" 
+
+export c=`cat /ericsson/templates/system/mc_config.ini | grep "NAMUpdateServer" | cut -d '=' -f1 | awk 'NR == 1'`
+
+S=$c
+
+if [[ $c == $S ]]; then 
+
+  echo " Correct Start Order for NAMUpdateServer" 
+
+else
+
+  echo "Wrong Start Order for NAMUpdateServer" 
+
+  exit 1
+
+fi
+
+export c=`cat /ericsson/templates/system/mc_config.ini | grep "NAMUpdateServer" | cut -d '=' -f1 | awk 'NR == 2'`
+
+S=$c
+
+if [[ $c == $S ]]; then 
+
+  echo " Correct Start Order for NAMUpdateServer" 
+
+else
+
+  echo "Wrong Start Order for NAMUpdateServer" 
+
+  exit 1
+
+fi
+
+export d=`cat /ericsson/templates/system/mc_config.ini | grep NAMRepositoryServer`
+
+echo "3. Start order for NAMRepositoryServer :\n $d \n" 
+
+export d=`cat /ericsson/templates/system/mc_config.ini | grep "NAMRepositoryServer" | cut -d '=' -f1 | awk 'NR == 1'`
+
+O=$d
+
+if [[ $d == $O ]]; then 
+
+  echo " Correct Start Order for NAMRepositoryServer" 
+
+else
+
+  echo "Wrong Start Order for NAMRepositoryServer"
+
+  exit 1 
+
+fi
+
+export d=`cat /ericsson/templates/system/mc_config.ini | grep "NAMRepositoryServer" | cut -d '=' -f1 | awk 'NR == 2'`
+
+O=$d
+
+if [[ $d == $O ]]; then 
+
+  echo " Correct Start Order for NAMRepositoryServer" 
+
+else
+
+  echo "Wrong Start Order for NAMRepositoryServer" 
+
+  exit 1
+
+fi
+
+
+# 4. Verify the start order for NAM MCs is 22.
+
+smtool=/opt/ericsson/nms_cif_sm/bin/smtool
+
+export e=`cd /ericsson/templates/system | ${smtool} config NAMRepositoryServer|grep start`
+
+echo "4. Start order for NAMRepositoryServer :$e" 
+
+export e=`cd /ericsson/templates/system | ${smtool} config NAMRepositoryServer|grep start | awk '{print $2}'`
+
+S=$e
+
+if [[ $e == $S ]]; then 
+
+  echo "Correct Start Order" 
+
+else
+
+  echo "Wrong Start Order" 
+
+  exit 1
+
+fi
+
+export f=`cd /ericsson/templates/system | ${smtool} config NAMRepositoryServer | grep stop`
+
+echo "4. Stop order for NAMRepositoryServer :$f" 
+
+export f=`cd /ericsson/templates/system | ${smtool} config NAMRepositoryServer | grep stop | awk '{print $2}'`
+
+O=$f
+
+if [[ $f == $O ]]; then 
+
+  echo "Correct Stop Order" 
+
+else
+
+  echo "Wrong Stop Order"
+
+  exit 1 
+
+fi
+
+export g=`cd /ericsson/templates/system | ${smtool} config NAMUpdateServer | grep start`
+
+echo "4. Start order for NAMUpdateServer :$g"  
+
+export g=`cd /ericsson/templates/system | ${smtool} config NAMUpdateServer | grep start | awk '{print $2}'`
+
+S=$g
+
+if [[ $g == $S ]]; then 
+
+  echo "Correct Start Order" 
+
+else
+
+  echo "Wrong Start Order" 
+
+  exit 1
+
+fi
+
+export h=`cd /ericsson/templates/system | ${smtool} config NAMUpdateServer | grep stop`
+
+echo "4. Stop order for NAMUpdateServer :$h"  
+
+export h=`cd /ericsson/templates/system | ${smtool} config NAMUpdateServer | grep stop | awk '{print $2}'`
+
+O=$h
+
+if [[ $h == $O ]]; then 
+
+  echo "Correct Stop Order"
+
+else
+
+  echo "Wrong Stop Order"
+
+  exit 1 
+
+fi
+
+
+	return 0 
+
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_POSTCON
+#
+# This callback function checks expected results.
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_postcon() {
+
+	# Coded to fail in case TC_AUTOMATED=1 before automation complete.
+	# Change return code as required
+
+	return 0 
+
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_CLEANUP
+#
+# This callback function is only called if the harness execution mode is 'AT_INDEPENDENT'
+# 
+# This callback restores the target system to the state it was in before the TC 
+# was run. It rolls back changes made by callbacks tc_setup() and tc_test()
+# 
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_cleanup() {
+
+	# Coded to fail in case TC_AUTOMATED=1 before automation complete
+	# Change return code as required
+
+	return 0 
+
+}

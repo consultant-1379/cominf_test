@@ -1,0 +1,49 @@
+#!/bin/bash
+
+# TEST CASE SPEC FILE
+# This file is generated/updated using the test framework web interface.
+# Manual updates on test servers are lost when the test package is re-installed.
+#
+# Last modified: Sunday 31st of March 2013 20:37:23
+#
+
+# These settings must be in BASH script format, they are sourced by other scripts.
+SPEC_FA_NAME="DHCP"
+SPEC_UC_NAME="DHCP_SERVICE_RUN"
+SPEC_TC_ID=23
+SPEC_TC_SLOGAN="Verify that DHCP service is running"
+SPEC_TC_TYPE="FT"
+SPEC_TC_POLARITY="positive"
+SPEC_TC_PRIORITY="high"
+SPEC_TC_AUTOMATED=1
+SPEC_TC_DEPENDENT_ONLY=0
+SPEC_TC_TIMEOUT=300
+SPEC_TC_TEST_PASSCODE=0
+SPEC_TC_AUTHOR="ecilosh"
+SPEC_TC_AUTOMATOR="ecilosh"
+# this parameter is not interpreted by harness
+SPEC_TC_DISABLED=0
+
+# Please do not remove the comment lines below.
+# They are used as section locators by the test harness.
+
+# BEGIN_PRE_CONDITIONS
+#DHCP_SERVER_INSTALLED
+# END_PRE_CONDITIONS
+
+
+# BEGIN_MANUAL_STEPS
+#1/ Determine whether IPv4 and/or IPv6 are required
+#2/ Execute command ps -ef | grep -i dhcp 
+#
+# END_MANUAL_STEPS
+
+# BEGIN_POST_CONDITIONS
+#1/ Configuration file specifies IPv4 and/or IPv6
+#2/ Verify that the relevant process is running for IPv4 and/or IPv6.
+#
+#root 644 1 0 18:08:04 ? 0:00 /usr/local/sbin/dhcpd -q -lf /var/lib/dhcp/dhcpd.leases -cf /usr/local/etc/dhcp
+#root 647 1 0 18:08:04 ? 0:01 /usr/local/sbin/dhcpd -6 -q -lf /var/lib/dhcp/dhcpd6.leases -cf /usr/local/etc/
+#
+#
+# END_POST_CONDITIONS

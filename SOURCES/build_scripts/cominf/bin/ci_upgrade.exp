@@ -1,0 +1,21 @@
+set timeout 600
+set command [lindex $argv 0]
+#set args [lindex $argv 1]
+eval spawn $command
+proc timedout {} {
+        send_error "The current command has timed out, exiting.\n"
+        exit 1
+}
+
+expect {
+      "LDAP Directory Manager passwor" {
+            send "ldappass\r"
+            exp_continue
+      }
+      "ossrc master*" {
+            send "shroot\r"
+            expect "\[Re-enter password\]*"
+            send "shroot\r"
+            interact
+      }
+}

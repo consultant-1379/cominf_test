@@ -1,0 +1,71 @@
+#!/bin/bash
+
+# TEST CASE SPEC FILE
+# This file is generated/updated using the test framework web interface.
+# Manual updates on test servers are lost when the test package is re-installed.
+#
+# Last modified: Tuesday 14th of May 2013 7:55:46
+#
+
+# These settings must be in BASH script format, they are sourced by other scripts.
+SPEC_FA_NAME="LDAP"
+SPEC_UC_NAME="LDAP_DOMAIN_REPL_AGREEMENT_ADD"
+SPEC_TC_ID=115
+SPEC_TC_SLOGAN="Test to verify changes are being replicated after an agreement is added"
+SPEC_TC_TYPE="FT"
+SPEC_TC_POLARITY="positive"
+SPEC_TC_PRIORITY="high"
+SPEC_TC_AUTOMATED=1
+SPEC_TC_DEPENDENT_ONLY=0
+SPEC_TC_TIMEOUT=300
+SPEC_TC_TEST_PASSCODE=0
+SPEC_TC_AUTHOR="xdansan"
+SPEC_TC_AUTOMATOR="xdansan"
+# this parameter is not interpreted by harness
+SPEC_TC_DISABLED=0
+
+# Please do not remove the comment lines below.
+# They are used as section locators by the test harness.
+
+# BEGIN_PRE_CONDITIONS
+#1- At least one domain with replication enabled for both servers
+#2- An ldif file with the changes you want to introduce is available e.g
+#
+#[root@atclvm425 bin]# cat /tmp/newuser.ldif
+#dn: cn=msadmin2,dc=1,dc=com
+#objectClass: person
+#objectClass: top
+#description: something here
+#cn: MasterServer Admin
+#cn: msadmin2
+#sn: MasterServer Admin
+#[root@atclvm425 bin]#
+#
+#3- An ldif file to remove the changes that are introduced is available e.g
+#
+#[root@atclvm425 bin]# cat /tmp/deletenewuser.ldif
+#dn: cn=msadmin2,dc=1,dc=com
+#changetype: delete
+#[root@atclvm425 bin]#
+# END_PRE_CONDITIONS
+
+
+# BEGIN_MANUAL_STEPS
+#in the steps below atclvm425 is the host name for the primary server and atclvm426 is the host name for the secondary. Please replace the host names as necessary.
+#
+#1- Ensure replication is enabled for the domain you are targeting by running /ericsson/sdee/bin/prepReplication.sh -l domain -d <domain name here>
+#2- Conduct an ldapsearch and ensure msadmin2 is not listed in any of the servers
+#3- Run ./ldapmodify -h atclvm425 -p 389 -D "cn=Directory Manager" -w shroot12 -f /tmp/newuser.ldif to insert the new user to the primary server
+#4- Conduct the same search performed in step 2. This time the msadmin2 record is listed on both servers. Running the command in step 1 should show the entries being incremented
+#5- Run ./ldapmodify -h atclvm425 -p 389 -D "cn=Directory Manager" -w shroot12 -f /tmp/deletenewuser.ldif
+#6- Conduct an ldapsearch and ensure msadmin2 is not listed in any of the servers. Running the command in step 1 should show the entries being decremented
+#7- Run ./ldapmodify -h atclvm426 -p 389 -D "cn=Directory Manager" -w shroot12 -f /tmp/newuser.ldif to insert the new user to the secondary server
+#8- Conduct the same search performed in step 2. This time the msadmin2 record is listed on both servers. Running the command in step 1 should show the entries being incremented
+#9- Run ./ldapmodify -h atclvm426 -p 389 -D "cn=Directory Manager" -w shroot12 -f /tmp/deletenewuser.ldif
+#10- Conduct an ldapsearch and ensure msadmin2 is not listed in any of the servers. Running the command in step 1 should show the entries being decremented
+#
+# END_MANUAL_STEPS
+
+# BEGIN_POST_CONDITIONS
+#N/A
+# END_POST_CONDITIONS

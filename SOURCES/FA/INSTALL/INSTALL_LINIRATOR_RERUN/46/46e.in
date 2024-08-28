@@ -1,0 +1,32 @@
+Enter Deployment type: (basic standard)
+standard
+Enter IP address of the NTP Source:
+2.4.5.6
+Do you want to setup DHCP on this server? (y n)
+y
+Enter password for BSIM user bsim:
+password
+Confirm password for BSIM user bsim:
+password
+Do you want to setup DHCP for IPv6 on this server? (y n)
+y
+IPv6 address for
+009::
+IPv6 subnet for
+2001:1b70:82a1::/64
+Enter DNS Domain Name <e.g. dns.companyname.com>:
+x.com
+Enter the host name of the O&M Services Secondary:
+a-b
+Enter the IP address of the O&M Services Secondary:
+1.1.1.1
+Enter IPv6 address of the O&M Services Secondary:
+2001:1b70:82a1:b:0:3008:36:1
+Enter the installation type (inst_type) of the O&M Services Secondary: (cominf security)
+cominf
+Enter root password of the O&M Services Secondary:
+shroot
+Confirm root password of the O&M Services Secondary:
+shroot
+Enter LDAP Directory Manager DN: \\\[cn=Directory Manager\\\]
+\003

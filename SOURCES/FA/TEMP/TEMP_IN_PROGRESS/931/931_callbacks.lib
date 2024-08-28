@@ -1,0 +1,355 @@
+#!/bin/bash
+#################################################################################
+#
+#
+#       COPYRIGHT (C) ERICSSON RADIO SYSTEMS AB, Sweden
+#
+#       The copyright to the document(s) herein is the property of
+#       Ericsson Radio Systems AB, Sweden.
+#
+#       The document(s) may be used and/or copied only with the written
+#       permission from Ericsson Radio Systems AB or in accordance with
+#       the terms and conditions stipulated in the agreement/contract
+#       under which the document(s) have been supplied.
+#
+#################################################################################
+
+RELEASE=$(awk '/CP_STATUS/ {print $2}' /var/opt/ericsson/sck/data/cp.status | cut -d "_" -f1,2,3)
+SHIPMENT=$(awk '/CP_STATUS/ {print $2}' /var/opt/ericsson/sck/data/cp.status | cut -d "_" -f5-)
+MANIFESTFILEPATH="/var/tmp"
+
+
+bloutputfile="/var/tmp/baseline.txt"
+bloutputfile1="/var/tmp/baseline_error.txt"
+blerrorfile="/var/tmp/error_log.txt"
+
+# ATCOMINF Test Callback Library
+
+# Revision History
+# <date>	<signum>	<details>
+
+# Complete the callbacks in this library to automate the test case.
+#
+# Callbacks are stateless, it is not possible to set a global variable in one callback 
+# and access it it in another.
+#
+# Callbacks are called by the test harness in the following order:
+#
+# tc_setup() 		# Called only for independent TC execution mode to setup TC
+# tc_precon()		# Conditions that should exist before TC can run
+# tc_test()		# Runs the test for this TC
+# tc_postcon()		# Conditions that should/should not exist after successful TC 
+# tc_cleanup()		# Called only for independent TC execution mode to cleanup after TC
+
+# All callbacks must PASS for a TC PASS result
+
+#################################################################################
+#
+# CALLBACK: TC_SETUP
+#
+# This callback function is only called if the harness execution mode is 'AT_INDEPENDENT'
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_setup() {
+
+	# Coded to fail in case TC_AUTOMATED=1 before automation completed
+	# Change return code as required
+
+	return 0 
+
+}
+#################################################################################
+
+#################################################################################
+#
+# CALLBACK: TC_PRECON
+#
+# This callback function checks the correct conditions exist to run the TC.
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+ 
+tc_precon() {
+	# Coded to fail in case TC_AUTOMATED=1 before automation completed
+	# Change return code as required
+
+#EXPECT=/usr/local/bin/expect
+#ManifestFilePath="/JUMP/OSSRC_MEDIA/${RELEASE}/${SHIPMENT}/ossrc_base_sw/eric_app/manifest_i386
+serverHostName1="atmws4-bup1.athtem.eei.ericsson.se"
+serverHostName2="atmws5-bup1.athtem.eei.ericsson.se"
+serverHostName3="nfdbuild220.athtem.eei.ericsson.se"
+
+$EXPECT << EOF1
+
+    puts "Checking the manifest file in $serverHostName1 server "
+
+    spawn ssh root@$serverHostName1 "ls -l /JUMP/OSSRC_MEDIA/${RELEASE}/${SHIPMENT}/ossrc_base_sw/eric_app/manifest_i386 >/dev/null 2>&1; echo \$?"
+
+    expect {
+       Password: {send "shroot12\r"; exp_continue}
+    }
+
+    if {"\$expect_out(buffer)" == "0"} {
+     
+      puts "---- copying the manifest file from $serverHostName1 ----"  
+
+      spawn scp root@$serverHostName1:/JUMP/OSSRC_MEDIA/${RELEASE}/${SHIPMENT}/ossrc_base_sw/eric_app/manifest_i386 $MANIFESTFILEPATH
+
+      expect {
+          Password: {send "shroot12\r"; exp_continue}
+      }
+
+
+    } else {
+            
+        puts " Manifest File not Found in $serverHostName1 "
+
+        puts "Checking the manifest file in $serverHostName2 server " 
+ 
+        spawn ssh root@$serverHostName2 "ls -l /JUMP/OSSRC_MEDIA/${RELEASE}/${SHIPMENT}/ossrc_base_sw/eric_app/manifest_i386 >/dev/null 2>&1; echo \$?"
+
+        expect {
+                 Password: {send "shroot12\r"; exp_continue}
+               }
+         
+        if {"\$expect_out(buffer)" == "0"} {
+          
+           puts "---- copying the manifest file from $serverHostName2 ----"
+
+           spawn scp root@$serverHostName2:/JUMP/OSSRC_MEDIA/${RELEASE}/${SHIPMENT}/ossrc_base_sw/eric_app/manifest_i386 $MANIFESTFILEPATH     
+
+           expect {
+                Password: {send "shroot12\r"; exp_continue}
+           }
+
+
+        } else {
+
+            puts " Manifest File not Found in $serverHostName2 "
+
+            puts "Checking the manifest file in $serverHostName3 server "  
+
+            spawn ssh root@$serverHostName3 "ls -l /JUMP/OSSRC_MEDIA/${RELEASE}/${SHIPMENT}/ossrc_base_sw/eric_app/manifest_i386 >/dev/null 2>&1; echo \$?"
+
+            expect {
+                   Password: {send "beepbeep\r"; exp_continue}
+            }
+            if {"\$expect_out(buffer)" == "0"} {
+
+                 puts "---- copying the manifest file from $serverHostName3 ----"
+
+                 spawn scp root@$serverHostName3:/JUMP/OSSRC_MEDIA/${RELEASE}/${SHIPMENT}/ossrc_base_sw/eric_app/manifest_i386 $MANIFESTFILEPATH 
+
+                 expect {
+                     Password: {send "beepbeep\r"; exp_continue}
+                 } 
+
+
+            } else {
+      
+                    puts " Manifest File not Found in $serverHostName3 "
+                    puts "Mani fest File not found"
+                    puts "Please Verify the Manifest File Location" 
+
+                    return 1
+
+             }
+        }
+   }
+EOF1
+
+	return 0 
+
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_TEST
+#
+# This callback function runs the test.
+# The harness compares the return code to the SPEC_TC_TEST_PASSCODE value set in the test spec.
+#
+# Return or exit codes:
+#    SPEC_TC_TEST_PASSCODE 	success
+# != SPEC_TC_TEST_PASSCODE 	failure
+ 
+tc_test() {
+
+	# Coded to fail in case TC_AUTOMATED=1 before automation complete
+	# Change return code as required
+
+    if [ -f /var/tmp/manifest_i386 ]; then
+
+    echo "manifest_i386 found"
+    
+    echo " Comaparing manifest File"            
+
+    /opt/ericsson/sck/bin/baseline_compare.bsh -r $MANIFESTFILEPATH/manifest_i386 > $bloutputfile 
+
+<<COMMENT
+                
+    echo "Verifing ERICopendj Package " 
+
+    pkginfo -l ERICopendj
+
+    echo "Verifing ERICopendj Package "
+
+    pkginfo -l EXTRopendj
+
+    echo "Verifing ERICpmsjni Package "         
+
+    pkginfo -l ERICpmsjni
+
+    echo "Verifing ERICpdmjni Package "
+
+    pkginfo -l ERICpdmjni
+
+    echo "Verifing pms_jni Feature "
+
+    /opt/ericsson/nms_cif_ist/bin/cist -status | grep nms_umts_apr_pms_jni
+
+    echo "Verifing ccpdm_jni Feature "
+
+    /opt/ericsson/nms_cif_ist/bin/cist -status | grep ccpdm_jni
+COMMENT
+
+   
+   else
+
+      echo "Unable to run Base Line script Due to manifest file not available in that path"
+
+      echo " Please Verify and re-run the test case" 
+
+      return 1
+
+    fi
+
+    return 0 
+
+}
+ #################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_POSTCON
+#
+# This callback function checks expected results.
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_postcon() {
+
+VALID_ERROR1="Creating a baseline called /tmp/Server_baseline.txt|\
+This may take a few minutes...|Baseline created|\
+Comparing server baseline /tmp/Server_baseline.txt with the Software
+baseline /var/tmp/manifest_i386|\
+omtools|freeware|peer_tools|Patches|storage|ldap|bootstrap|security|ddc|ombs|blade|selfmon|Liveupgrade|ERICsct|ERICmvc|EMC|ERICrndbi|iptool|sfs|\
+DU|ERICusck|Pkg|SERVER_RSTATE|BASELINE"
+
+VALID_ERROR2="Creating a baseline called /tmp/Server_baseline.txt|\
+This may take a few minutes...|Baseline created|\
+Comparing server baseline /tmp/Server_baseline.txt with the Software
+baseline /var/tmp/manifest_i386|\
+omtools|freeware|peer_tools|Patches|storage|ldap|bootstrap|security|ddc|ombs|blade|selfmon|Liveupgrade|ERICsct|ERICmvc|EMC|ERICrndbi|iptool|sfs|\
+DU|Pkg|SERVER_RSTATE|BASELINE"
+
+	# Coded to fail in case TC_AUTOMATED=1 before automation complete.
+	# Change return code as required
+#    bloutputfile="/var/tmp/baseline.txt"
+#    bloutputfile1="/var/tmp/baseline_error.txt"
+#    blerrorfile="/var/tmp/error_log.txt"
+
+#
+function BaseLineErrorLog()
+{
+                 _file="$1"
+                 if [ -s "$_file" ] 
+                 then
+                     echo "--------Below SERVER_RSTATE values are Mismatched with BASELINE-------"
+                     echo " Pkg             SERVER_RSTATE   BASELINE"
+                     cat $blerrorfile
+                     echo "----------------------------------------------------------------------"
+                else
+#                   echo "Base Line Error $blerrorfile is empty."
+                    echo " No Errors found in Base Line log file :$blerrorfile"
+                    return 0
+                fi
+}
+
+     if [ -f "$bloutputfile" ]
+     then
+         echo "Base Line Check Log File Found : $file "
+         grep '^..' $bloutputfile > $bloutputfile1
+         echo "Base Line Check Log :"
+         echo "---------------------"
+         cat  $bloutputfile1
+         /bin/pkginfo -l ERICusck >/dev/null 2>&1 
+         pretVal=$?
+         if [ "$pretVal" -ne 0 ]
+         then
+                 egrep -v "$VALID_ERROR1" $bloutputfile1 > $blerrorfile
+                 BaseLineErrorLog $blerrorfile
+                 return 1
+         else
+                    BRSTATE=$(awk < $bloutputfile1 '/ERICusck/ {print $2}')
+                    SRSTATE=$(awk < $bloutputfile1 '/ERICusck/ {print $3}')
+#                   echo $BRSTATE
+#                   echo $SRSTATE
+                     if [ "$BRSTATE" == "$SRSTATE" ]
+                     then
+                         egrep -v "$VALID_ERROR1" $bloutputfile1 > $blerrorfile
+                         BaseLineErrorLog $blerrorfile  
+                     return 1
+                     else
+                         egrep -v "$VALID_ERROR2" $bloutputfile1 > $blerrorfile
+                         BaseLineErrorLog $blerrorfile
+                     return 1 
+                     fi
+          fi
+    else
+         echo " $bloutputfile file not Found "
+         return 1
+    fi
+        return 0
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_CLEANUP
+#
+# This callback function is only called if the harness execution mode is 'AT_INDEPENDENT'
+# 
+# This callback restores the target system to the state it was in before the TC 
+# was run. It rolls back changes made by callbacks tc_setup() and tc_test()
+# 
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_cleanup() {
+
+	# Coded to fail in case TC_AUTOMATED=1 before automation complete
+	# Change return code as required
+
+
+      rm $bloutputfile 
+
+      rm $bloutputfile1 
+
+      rm $MANIFESTFILEPATH/manifest_i386
+     
+
+      return 0 
+
+}

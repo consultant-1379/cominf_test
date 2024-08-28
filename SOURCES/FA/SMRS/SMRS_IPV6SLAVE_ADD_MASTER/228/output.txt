@@ -1,0 +1,6 @@
+SubNetwork=ONRM_ROOT_MO,FtpServer=SMRSSLAVE-LRAN-V6SlaveM1,FtpService=l-sws-V6SlaveM1
+SubNetwork=ONRM_ROOT_MO,FtpServer=SMRSSLAVE-LRAN-V6SlaveM1,FtpService=l-key-V6SlaveM1
+SubNetwork=ONRM_ROOT_MO,FtpServer=SMRSSLAVE-LRAN-V6SlaveM1,FtpService=l-back-V6SlaveM1
+SubNetwork=ONRM_ROOT_MO,FtpServer=SMRSSLAVE-WRAN-V6SlaveM1,FtpService=w-sws-V6SlaveM1
+SubNetwork=ONRM_ROOT_MO,FtpServer=SMRSSLAVE-WRAN-V6SlaveM1,FtpService=w-key-V6SlaveM1
+SubNetwork=ONRM_ROOT_MO,FtpServer=SMRSSLAVE-WRAN-V6SlaveM1,FtpService=w-back-V6SlaveM1

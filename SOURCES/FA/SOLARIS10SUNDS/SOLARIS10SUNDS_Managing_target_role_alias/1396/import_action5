@@ -1,0 +1,4 @@
+DOMAIN vts.com
+ACTION remove
+OBJECT alias
+t139601 target139601:alias13961

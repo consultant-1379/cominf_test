@@ -1,0 +1,74 @@
+#!/bin/bash
+
+# TEST CASE SPEC FILE
+# This file is generated/updated using the test framework web interface.
+# Manual updates on test servers are lost when the test package is re-installed.
+#
+# Last modified: Monday 16th of December 2013 9:45:23
+#
+
+# These settings must be in BASH script format, they are sourced by other scripts.
+SPEC_FA_NAME="SOLARIS10INSTALL"
+SPEC_UC_NAME="SOLARIS10INSTALL_DHCP_AI_Manager"
+SPEC_TC_ID=1374
+SPEC_TC_SLOGAN="Test check ip function "
+SPEC_TC_TYPE="FT"
+SPEC_TC_POLARITY="positive"
+SPEC_TC_PRIORITY="high"
+SPEC_TC_AUTOMATED=1
+SPEC_TC_DEPENDENT_ONLY=0
+SPEC_TC_TIMEOUT=300
+SPEC_TC_TEST_PASSCODE=0
+SPEC_TC_AUTHOR="xgansre"
+SPEC_TC_AUTOMATOR="xgansre"
+# this parameter is not interpreted by harness
+SPEC_TC_DISABLED=0
+
+# Please do not remove the comment lines below.
+# They are used as section locators by the test harness.
+
+# BEGIN_PRE_CONDITIONS
+#
+#
+#Mars Path <Initial Installation/DHCP/AI Manager>
+#
+#
+# END_PRE_CONDITIONS
+
+
+# BEGIN_MANUAL_STEPS
+#Verify that a range exists for a network under ai_manager.sh –list nets
+#
+#Test 1:
+#Use the function, ai_manager.sh -check ip, to check and see if an ip address THAT IS IN THE DYNAMIC RANGE is valid for assignment.
+#
+#Test 2: 
+#Use the function, ai_manager.sh -check ip, to check and see if an ip address THAT IS NOT IN THE DYNAMIC RANGE is valid for assignment.
+#
+#Test 3:
+#Use the function , ai_manager.sh -check ip, to check and see if an ip address of a network that hasn’t been added to the DHCP server is valid for assignment. 
+#
+#Negative Testing.
+#Test trying to check an ip address with the following mistakes
+#(non numerical ip) ; Non numeric in the IP Address [10.xx.38.0]
+#(non 4 octets) ; Must have 4 octets in the IP Address [10.4238.0]
+#(out of range) ; Out of range in the IP Address [10.42.999.50]
+#(belonging to another network than -n) ; Beginning IP for the range not valid
+#
+# END_MANUAL_STEPS
+
+# BEGIN_POST_CONDITIONS
+#Acceptance Test 1:
+#Ai_manager.sh -check ip function returns a failure
+#
+#Acceptance Test 2:
+#Ai_manager.sh -check ip function returns a success
+#
+#Acceptance Test 3:
+#Ai_manager.sh -check ip function returns a success. (The responsibility is on the operator in this situation to make sure there is no IP address conflict as they have most likely opted to use a third party DHCP server)
+#
+#Acceptance Test (Negative Testing)
+#The check ip function will return an error if the above ip addresses scenarios are attempted 
+#
+#
+# END_POST_CONDITIONS

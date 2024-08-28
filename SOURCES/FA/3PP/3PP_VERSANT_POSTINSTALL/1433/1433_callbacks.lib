@@ -1,0 +1,221 @@
+#!/bin/bash
+#################################################################################
+#
+#
+#       COPYRIGHT (C) ERICSSON RADIO SYSTEMS AB, Sweden
+#
+#       The copyright to the document(s) herein is the property of
+#       Ericsson Radio Systems AB, Sweden.
+#
+#       The document(s) may be used and/or copied only with the written
+#       permission from Ericsson Radio Systems AB or in accordance with
+#       the terms and conditions stipulated in the agreement/contract
+#       under which the document(s) have been supplied.
+#
+#################################################################################
+
+
+# ATCOMINF Test Callback Library
+
+# Revision History
+# <date>	<signum>	<details>
+
+# Complete the callbacks in this library to automate the test case.
+#
+# Callbacks are stateless, it is not possible to set a global variable in one callback 
+# and access it it in another.
+#
+# Callbacks are called by the test harness in the following order:
+#
+# tc_setup() 		# Called only for independent TC execution mode to setup TC
+# tc_precon()		# Conditions that should exist before TC can run
+# tc_test()		# Runs the test for this TC
+# tc_postcon()		# Conditions that should/should not exist after successful TC 
+# tc_cleanup()		# Called only for independent TC execution mode to cleanup after TC
+
+# All callbacks must PASS for a TC PASS result
+
+#################################################################################
+#
+# CALLBACK: TC_SETUP
+#
+# This callback function is only called if the harness execution mode is 'AT_INDEPENDENT'
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_setup() {
+
+	# Coded to fail in case TC_AUTOMATED=1 before automation completed
+	# Change return code as required
+
+	return 0
+
+}
+#################################################################################
+
+#################################################################################
+#
+# CALLBACK: TC_PRECON
+#
+# This callback function checks the correct conditions exist to run the TC.
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+ 
+tc_precon() {
+
+	# Coded to fail in case TC_AUTOMATED=1 before automation completed
+	# Change return code as required
+
+	return 0
+
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_TEST
+#
+# This callback function runs the test.
+# The harness compares the return code to the SPEC_TC_TEST_PASSCODE value set in the test spec.
+#
+# Return or exit codes:
+#    SPEC_TC_TEST_PASSCODE 	success
+# != SPEC_TC_TEST_PASSCODE 	failure
+ 
+tc_test() {
+
+	# Coded to fail in case TC_AUTOMATED=1 before automation complete
+	# Change return code as required
+
+	#return 0
+        
+        ECHO=/usr/bin/echo
+        DATE=/usr/bin/date
+        VRSNT_BACKUP_SCRIPT=/ericsson/versant/bin/vrsnt_dbdump
+        VRSNT_DAILY_BACKUP=/ericsson/versant/etc/vrsnt_daily_backup.sh
+        BACKUP_DIR="/ossrc/versant/dbdumps/db"
+        CONSISTENCY_CHECK_DB="DMDB ONRM_CS WRAN_SUBNETWORK_MIRROR_CS"
+        EGREP=/usr/xpg4/bin/egrep
+        SYSTEM_ENV=/etc/opt/ericsson/system.env
+
+        dirlist=" $BACKUP_DIR"
+        filelist="$SYSTEM_ENV $VRSNT_BACKUP_SCRIPT $VRSNT_DAILY_BACKUP"
+
+        retcode=0
+
+        # check for needed files
+        for file in $filelist; do
+                if [ -f $file ]; then
+                        echo "$file found"
+                else
+                        echo "$file not found cannot proceed"
+                        return 1
+
+                fi
+        done
+
+        # check for needed dirs
+        for dir in $dirlist; do
+                if [ -d $dir ]; then
+                        echo "$dir found"
+                else
+                        echo "$dir not found cannot proceed"
+                        return 1
+                fi
+        done
+
+
+        # Source needed files
+        echo "Sourcing $SYSTEM_ENV "
+          . $SYSTEM_ENV
+
+        # remove db dir
+        if [ -d $BACKUP_DIR ]; then
+            echo "Removing $BACKUP_DIR"
+            rm -r $BACKUP_DIR
+            if [ $? -ne 0 ]; then
+                echo "$BACKUP_DIR was not removed cleanly "
+                retcode=$(($retcode+1))
+            fi
+
+        fi
+
+        # Now call daily backup and test for failing return code 
+        echo "/n Calling daily backup"
+        $VRSNT_DAILY_BACKUP
+        if [ $? -ne 0 ]; then
+            echo "$VRSNT_BACKUP_SCRIPT returned a non zero value "
+            retcode=$(($retcode+1))
+        fi
+
+        # Verify it recreates backup dir
+        if [ -d $BACKUP_DIR ]; then
+                echo " Sucess  $BACKUP_DIR sucessfully recreated "
+        else
+                echo " Test Case Failure $BACKUP_DIR  not found"
+                retcode=$(($retcode+1))
+        fi
+
+        #  Check running total retcode 
+        if [ $retcode -ne 0 ]; then
+                echo -e "  $BACKUP_DIR did not get re-created automatically as expected"
+                return 1
+        else
+                return 0
+        fi
+
+
+
+
+
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_POSTCON
+#
+# This callback function checks expected results.
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_postcon() {
+
+	# Coded to fail in case TC_AUTOMATED=1 before automation complete.
+	# Change return code as required
+
+	return 0
+
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_CLEANUP
+#
+# This callback function is only called if the harness execution mode is 'AT_INDEPENDENT'
+# 
+# This callback restores the target system to the state it was in before the TC 
+# was run. It rolls back changes made by callbacks tc_setup() and tc_test()
+# 
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_cleanup() {
+
+	# Coded to fail in case TC_AUTOMATED=1 before automation complete
+	# Change return code as required
+
+	return 0
+
+}

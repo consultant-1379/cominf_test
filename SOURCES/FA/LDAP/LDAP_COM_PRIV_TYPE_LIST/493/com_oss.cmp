@@ -1,0 +1,6 @@
+
+LDAP Directory Manager password: 
+uid      | userType   | uidNumber | gidNumber | homeDirectory        | loginShell      | domain
+--------------------------------------------------------------------------------------------------------------
+u493     | COM_OSS    | 1493      | 205       | /home/u493           | /usr/bin/tcsh   | 1.com
+u493b    | COM_OSS    | 2493      | 205       | /home/u493b          | /usr/bin/tcsh   | 1.com

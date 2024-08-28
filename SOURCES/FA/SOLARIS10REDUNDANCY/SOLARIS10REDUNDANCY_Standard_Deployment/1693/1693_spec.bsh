@@ -1,0 +1,116 @@
+#!/bin/bash
+
+# TEST CASE SPEC FILE
+# This file is generated/updated using the test framework web interface.
+# Manual updates on test servers are lost when the test package is re-installed.
+#
+# Last modified: Tuesday 17th of December 2013 6:52:03
+#
+
+# These settings must be in BASH script format, they are sourced by other scripts.
+SPEC_FA_NAME="SOLARIS10REDUNDANCY"
+SPEC_UC_NAME="SOLARIS10REDUNDANCY_Standard_Deployment"
+SPEC_TC_ID=1693
+SPEC_TC_SLOGAN="Verify redundancy of Infra Servers in Standard Deployment "
+SPEC_TC_TYPE="FT"
+SPEC_TC_POLARITY="positive"
+SPEC_TC_PRIORITY="high"
+SPEC_TC_AUTOMATED=0
+SPEC_TC_DEPENDENT_ONLY=0
+SPEC_TC_TIMEOUT=300
+SPEC_TC_TEST_PASSCODE=0
+SPEC_TC_AUTHOR="xsripin"
+SPEC_TC_AUTOMATOR="xsripin"
+# this parameter is not interpreted by harness
+SPEC_TC_DISABLED=0
+
+# Please do not remove the comment lines below.
+# They are used as section locators by the test harness.
+
+# BEGIN_PRE_CONDITIONS
+#<path under "Verification Specification for Cominf Feature Test for 14.0 ":
+#Redundancy/Redundancy of Infra Servers in Standard Deployment 
+#
+#>  
+#The test-case ensures redundancy of primary and secondary infra servers in a standard deployment. (Applies after initial install and upgrade)
+#Precondition: 
+#
+#Standard deployment is configured successfully. It is possible publish applications. âEuro ldaplistâEuro  command is executed and output is stored.
+#
+# END_PRE_CONDITIONS
+
+
+# BEGIN_MANUAL_STEPS
+#Action 1: 
+#
+#On the Primary Infra server disable the DS Service using the command
+## svcadm disable svc:/application/sun/ds:ds--varâEuro ds
+## svcs âEuro a | grep ds
+#
+#Action 2 
+#
+#Ensure the Secondary infra is now being used âEuro  Publish the applications (one) and check the entries in ldap using the command
+## ldaplist
+#Action 3:
+#
+#On the Secondary Infra disable the DS Service using the command
+## svcadm disable svc:/application/sun/ds:ds--varâEuro ds
+## svcs âEuro a | grep ds
+#Action 4:
+#
+#Attempt to publish the applications (one) and check the entries in ldap using the command
+## ldaplist
+#Action 5:
+#
+#Restart the DS service on the secondary infra using the command
+## svcadm enable svc:/application/sun/ds:ds--varâEuro ds
+##svcs âEuro a | grep ds
+#Action 6:
+#
+#Attempt to publish the applications and check the entries in ldap using the command
+##ldaplist
+#Action 7:
+#
+#Restart the DS service on the primary infra using the command
+## svcadm enable svc:/application/sun/ds:ds--varâEuro ds
+## svcs âEuro a | grep ds
+#Action 8:
+#
+#Attempt to publish the applications and check the entries in ldap using the command
+## ldaplist
+#
+# END_MANUAL_STEPS
+
+# BEGIN_POST_CONDITIONS
+#Result 1: 
+#
+#The DS service offlines successfully on the primary infra
+#
+#Result 2:
+#
+#It is possible to publish the applications (launch the gui) and the ldaplist command returns the same output as when run at start.
+#
+#Result 3:
+#
+#The DS service is offlines successfully on the secondary infra. The DS service is now offline on both the primary and secondary infra.
+#
+#Result 4:
+#
+#It is not possible to publish the applications (launch the gui) and the ldaplist command returns an error.
+#
+#Result 5:
+#
+#The DS service is started on the secondary infra
+#
+#Result 6:
+#
+#It is possible to publish the applications (launch the gui) and the ldaplist command returns the same output as when run at start.
+#
+#Result 7:
+#
+#The DS service is started on the primary infra
+#
+#Result 8:
+#
+#It is possible to publish the applications (launch the gui) and the ldaplist command returns the same output as when run at start
+# END_POST_CONDITIONS

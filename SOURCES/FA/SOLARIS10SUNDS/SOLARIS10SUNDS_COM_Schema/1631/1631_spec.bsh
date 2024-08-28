@@ -1,0 +1,67 @@
+#!/bin/bash
+
+# TEST CASE SPEC FILE
+# This file is generated/updated using the test framework web interface.
+# Manual updates on test servers are lost when the test package is re-installed.
+#
+# Last modified: Tuesday 17th of December 2013 5:19:51
+#
+
+# These settings must be in BASH script format, they are sourced by other scripts.
+SPEC_FA_NAME="SOLARIS10SUNDS"
+SPEC_UC_NAME="SOLARIS10SUNDS_COM_Schema"
+SPEC_TC_ID=1631
+SPEC_TC_SLOGAN="Negative Testing: Re-enabling COM on ldap server "
+SPEC_TC_TYPE="FT"
+SPEC_TC_POLARITY="positive"
+SPEC_TC_PRIORITY="high"
+SPEC_TC_AUTOMATED=1
+SPEC_TC_DEPENDENT_ONLY=0
+SPEC_TC_TIMEOUT=300
+SPEC_TC_TEST_PASSCODE=0
+SPEC_TC_AUTHOR="xvinkat"
+SPEC_TC_AUTOMATOR="xvinkat"
+# this parameter is not interpreted by harness
+SPEC_TC_DISABLED=0
+
+# Please do not remove the comment lines below.
+# They are used as section locators by the test harness.
+
+# BEGIN_PRE_CONDITIONS
+#<path to the testcase>
+#
+#SUN-DS/COM LDAP - User Management for 
+#COM-Enabled Nodes/COM schema in the OSS LDAP database
+#
+#Following servers are successfully configured on 13.0.x and above version.
+#1.O&M primary
+#2.O&M Secondary
+#3.OSS 
+# END_PRE_CONDITIONS
+
+
+# BEGIN_MANUAL_STEPS
+#1.Execute enable_COM.bsh on O&M primary server.
+#/ericsson/sdee/bin/enable_COM.bsh 
+# END_MANUAL_STEPS
+
+# BEGIN_POST_CONDITIONS
+#The script should not throw any error and it should say that "COM has already been enabled"
+#
+#bash-3.2# ./enable_COM.bsh
+#
+#*******************************************************************************
+#WARNING: This script will enable COM/APG functionality in this Name Service
+#environment.
+#*******************************************************************************
+#
+#Please confirm that you are ready to proceed ? - Yes or No [No] Yes
+#
+#LDAP Directory Manager password:
+#
+#INFO : COM has already been enabled.
+#
+#bash-3.2#
+#
+#Note: When enable_COM.bsh is executed on the server which is being upgraded from prior 13.0.5 to the later shipment of 13.0.5, enable_COM.bsh should be executed and should enable COM on all local domains. 
+# END_POST_CONDITIONS

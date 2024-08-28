@@ -1,0 +1,273 @@
+#!/bin/bash
+#################################################################################
+#
+#
+#       COPYRIGHT (C) ERICSSON RADIO SYSTEMS AB, Sweden
+#
+#       The copyright to the document(s) herein is the property of
+#       Ericsson Radio Systems AB, Sweden.
+#
+#       The document(s) may be used and/or copied only with the written
+#       permission from Ericsson Radio Systems AB or in accordance with
+#       the terms and conditions stipulated in the agreement/contract
+#       under which the document(s) have been supplied.
+#
+#################################################################################
+
+
+# ATCOMINF Test Callback Library
+
+# Revision History
+# 2012-06-06	xsimrea	Initial version
+
+# Complete the callbacks in this library to automate the test case.
+#
+# Callbacks are stateless, it is not possible to set a global variable in one callback 
+# and access it it in another.
+#
+# Callbacks are called by the test harness in the following order:
+#
+# tc_setup() 		# Called only for independent TC execution mode to setup TC
+# tc_precon()		# Conditions that should exist before TC can run
+# tc_test()		# Runs the test for this TC
+# tc_postcon()		# Conditions that should/should not exist after successful TC 
+# tc_cleanup()		# Called only for independent TC execution mode to clenup after TC
+
+# All callbacks must PASS for a TC PASS result
+
+LDAP_BIN="/ericsson/sdee/bin"
+
+CONFIG="/ericsson/sdee/ldap_domain_settings/"
+
+TEST_DOMAIN="1.com"
+TEST_ALIAS="tstalias"
+TEST_ROLE1="tstrole1"
+TEST_ROLE2="tstrole2"
+TEST_ROLE3="tstrole3"
+
+OUTFILE="tmpout.tmp"
+
+#################################################################################
+#
+# CALLBACK: TC_SETUP
+#
+# This callback function is only called if the harness execution mode is 'AT_INDEPENDENT'
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_setup() {
+
+    
+    
+    
+
+   
+
+    # Ensure the enviornment does not exceed 8 domains in order to avoid timeout by the harness framework
+    [[ `ls /ericsson/sdee/ldap_domain_settings/ | wc -l ` -ge 9 ]] && {
+        echo "${CONFIG} contains more than 8 domains - harness will timeout"
+        return 4
+    }
+
+    
+
+    # Replace PASSWD and other fields in input file(s) with the correct credentials or data
+    for ii in *.in; do
+        sed -e "s/^PASSWD$/$LDAP_SUPERUSER_PASSWD/" \
+            -e "s/TESTUSER/$OSS_USER/" \
+            -e "s/TESTALIAS/$TEST_ALIAS/" \
+            -e "s/TESTROLE1/$TEST_ROLE1/" \
+            -e "s/TESTROLE2/$TEST_ROLE2/" \
+            -e "s/TESTROLE3/$TEST_ROLE3/" \
+            -e "s/TESTDOM/$TEST_DOMAIN/" $ii > $ii.tmp || {
+            echo "Failed to replace LDAP superuser password holder etc in /usr/local/bin/expect input file $ii, rc $?"
+            return 6
+        }
+    done
+
+	
+
+	# Add desired roles to $TEST_DOMAIN domain
+    ${AT_BIN}/con_ex.bsh -d justpasswd.in.tmp -o add_role1.exp -c "$LDAP_BIN/manage_COM.bsh -a role -d ${TEST_DOMAIN} -R ${TEST_ROLE1} -y " -r
+    /usr/local/bin/expect add_role1.exp || {
+        # Failed to add role
+        echo "Add role ${TEST_ROLE1} to $TEST_DOMAIN domain failed - rc $?"
+		return 8
+    }
+    ${AT_BIN}/con_ex.bsh -d justpasswd.in.tmp -o add_role2.exp -c "$LDAP_BIN/manage_COM.bsh -a role -d ${TEST_DOMAIN} -R ${TEST_ROLE2} -y " -r
+    /usr/local/bin/expect add_role2.exp || {
+        # Failed to add role
+        echo "Add role ${TEST_ROLE2} to $TEST_DOMAIN domain failed - rc $?"
+		return 8
+    }
+    ${AT_BIN}/con_ex.bsh -d justpasswd.in.tmp -o add_role3.exp -c "$LDAP_BIN/manage_COM.bsh -a role -d ${TEST_DOMAIN} -R ${TEST_ROLE3} -y " -r
+    /usr/local/bin/expect add_role3.exp || {
+        # Failed to add role
+        echo "Add role ${TEST_ROLE3} to $TEST_DOMAIN domain failed - rc $?"
+		return 8
+    }
+
+    return 0
+
+}
+#################################################################################
+
+#################################################################################
+#
+# CALLBACK: TC_PRECON
+#
+# This callback function checks the correct conditions exist to run the TC.
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+ 
+tc_precon() {
+
+    LDAP_SERVER_UP || {
+        echo "LDAP is not running. LDAP_SERVER_UP returned $?" 
+        return 1
+    }
+
+	# Check that the desired roles are in $TEST_DOMAIN domain, and take a log of all of them
+    ${AT_BIN}/con_ex.bsh -d justpasswd.in.tmp -o list_role.exp -c "$LDAP_BIN/manage_COM.bsh -l role -d ${TEST_DOMAIN}" -r
+    /usr/local/bin/expect list_role.exp > role_lst.tmp || {
+        # Failed to list roles
+        echo "List role in $TEST_DOMAIN domain failed - rc $?"
+		return 8
+    }
+	tr -d '\015' < role_lst.tmp > role_prelst.tmp
+
+	grep -i "${TEST_ROLE1}" role_prelst.tmp
+	rc1=$?
+	grep -i "${TEST_ROLE2}" role_prelst.tmp
+	rc2=$?
+	grep -i "${TEST_ROLE3}" role_prelst.tmp
+	rc3=$?
+	[ $rc1 -eq 0 -a $rc2 -eq 0 -a $rc3 -eq 0 ] || {
+		echo "Could not find roles we have just added, rc $rc1 for ${TEST_ROLE1}, $rc2 for ${TEST_ROLE2}, $rc3 for ${TEST_ROLE3}"
+		echo "Pre-test list is:"
+		cat role_prelst.tmp
+		echo "End of list"
+		return 9
+	}
+
+    return 0
+
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_TEST
+#
+# This callback function runs the test.
+# The harness compares the return code to the SPEC_TC_TEST_PASSCODE value set in the test spec.
+#
+# Return or exit codes:
+#    SPEC_TC_TEST_PASSCODE 	success
+# != SPEC_TC_TEST_PASSCODE 	failure
+ 
+tc_test() {
+
+    >$OUTFILE
+
+    # remove two of the three new roles from the $TEST_DOMAIN domain
+	# but use SPACEs to separate list
+    echo "Test 1: Remove roles from $TEST_DOMAIN domain - supply domain and space-separated roles, /usr/local/bin/expect no prompts"
+	$LDAP_BIN/manage_COM.bsh -r role -d "${TEST_DOMAIN}" -R "${TEST_ROLE1} ${TEST_ROLE2}" -y < /dev/null 2>&1 | tr '\n' ' ' > remdom.tmp
+	grep "ERROR : " remdom.tmp || {
+		echo "Test 1: Removal of space-separated roles did not return error - output was:" >> $OUTFILE
+		cat remdom.tmp >> $OUTFILE
+		echo "End of output" >> $OUTFILE
+		: return 2
+	}
+
+    # return 0 and let tc_postcon identify errors
+    return 0
+
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_POSTCON
+#
+# This callback function checks expected results.
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_postcon() {
+
+    rc=0
+
+    # report on any failed removal attempts
+    [[ -s $OUTFILE ]] && {
+        echo "Some remove role attempts failed:"
+        cat $OUTFILE
+        return 1
+    }
+
+	# Check that the desired roles have been removed from $TEST_DOMAIN domain
+    ${AT_BIN}/con_ex.bsh -d justpasswd.in.tmp -o list_role.exp -c "$LDAP_BIN/manage_COM.bsh -l role -d ${TEST_DOMAIN}" -r
+    if /usr/local/bin/expect list_role.exp > role_lst.tmp ; then
+		# Lose the ^Ms, and the line which says there are no aliases.  The latter was not
+		# done on the prelst, because we want to know if that one *does* contain the string!
+		tr -d '\015' < role_lst.tmp | sed '/No roles found for domain/d' > role_postlst.tmp
+
+		# Got role list - now check that no entries have been removed
+		diff role_prelst.tmp role_postlst.tmp || {
+			echo "Pre-test list is not same as post-test list" 
+			echo "Pre-test list was:"
+			cat role_prelst.tmp
+			echo "Post-test list is:"
+			cat role_postlst.tmp
+			echo "End of lists"
+			rc=$(expr $rc + 8)
+		}
+	else
+        # Failed to list roles
+        echo "Failed to list roles in $TEST_DOMAIN domain - rc $?"
+		rc=$(expr $rc + 2)
+	fi
+
+    return $rc
+
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_CLEANUP
+#
+# This callback function is only called if the harness execution mode is 'AT_INDEPENDENT'
+# 
+# This callback restores the target system to the state it was in before the TC 
+# was run. It rolls back changes made by callbacks tc_setup() and tc_test()
+# 
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_cleanup() {
+
+    rc=0
+
+    # remove the generated working files
+    rm -f *.tmp *.exp || {
+        echo "Failed to remove the generated working files"
+        return 1
+    }
+
+	
+
+    return $rc
+
+}

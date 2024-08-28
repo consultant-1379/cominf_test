@@ -1,0 +1,210 @@
+#!/bin/bash
+#################################################################################
+#
+#
+#       COPYRIGHT (C) ERICSSON RADIO SYSTEMS AB, Sweden
+#
+#       The copyright to the document(s) herein is the property of
+#       Ericsson Radio Systems AB, Sweden.
+#
+#       The document(s) may be used and/or copied only with the written
+#       permission from Ericsson Radio Systems AB or in accordance with
+#       the terms and conditions stipulated in the agreement/contract
+#       under which the document(s) have been supplied.
+#
+#################################################################################
+
+
+# ATCOMINF Test Callback Library
+
+# Revision History
+# <date>	<signum>	<details>
+# 2012-08-17    xfeldan    Initial version
+
+# Complete the callbacks in this library to automate the test case.
+#
+# Callbacks are stateless, it is not possible to set a global variable in one callback 
+# and access it it in another.
+#
+# Callbacks are called by the test harness in the following order:
+#
+# tc_setup() 		# Called only for independent TC execution mode to setup TC
+# tc_precon()		# Conditions that should exist before TC can run
+# tc_test()		# Runs the test for this TC
+# tc_postcon()		# Conditions that should/should not exist after successful TC 
+# tc_cleanup()		# Called only for independent TC execution mode to clenup after TC
+
+# All callbacks must PASS for a TC PASS result
+
+#################################################################################
+#
+# CALLBACK: TC_SETUP
+#
+# This callback function is only called if the harness execution mode is 'AT_INDEPENDENT'
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_setup() {
+
+	#create bsim user if it doesn't exist
+
+        POSIX_USER_EXISTS $BSIM_USER || {
+                echo "Creating bsim user"
+                ${AT_BIN}/con_ex.bsh -d delete1.in -o expect.exp -c "/ericsson/ocs/bin/create_bsim.sh"
+                /usr/local/bin/expect expect.exp &>/dev/null|| {
+                        echo "Creating bsim user failed"
+                         return 2
+                }
+                touch created.tmp
+        }
+
+	echo "Test 1: create Networks"
+        /ericsson/ocs/bin/ai_manager.sh -add net -a 10.98.95.0 -m 255.255.255.0 -r 10.98.95.1 -d conservapedia.org -n 1.1.1.1 -q || {
+        echo "/ericsson/ocs/bin/ai_manager.sh -add net -a 10.98.95.0 -m 255.255.255.0 -r 10.98.95.1 -d conservapedia.org -n 1.1.1.1 -q NOT CREATED"
+                return 1
+        }
+
+        /ericsson/ocs/bin/ai_manager.sh -add net -a 10.67.1.0 -m 255.255.255.0 -r 10.67.1.1 -d conservapedia.org -n 1.1.1.1 -q || {
+        echo "/ericsson/ocs/bin/ai_manager.sh -add net -a 10.67.1.0 -m 255.255.255.0 -r 10.67.1.1 -d conservapedia.org -n 1.1.1.1 -q NOT CREATED"
+                return 2
+        }
+
+
+return 0
+
+
+}
+#################################################################################
+
+#################################################################################
+#
+# CALLBACK: TC_PRECON
+#
+# This callback function checks the correct conditions exist to run the TC.
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+ 
+tc_precon() {
+
+	DHCP_SERVER_INSTALLED || {
+		echo "DHCP server not installed"
+		return 1
+	}
+
+	DHCP_SERVER_RUNNING || {
+		echo "DHCP server not running"
+		return 2
+	}
+
+
+	grep "om_serv_master" /ericsson/config/ericsson_use_config || {
+	echo "Its not OM SERVICES SERVER" 
+	return 3
+	}
+	[ -n "$BSIM_USER" ] || {
+		echo "\$BSIM_USER variable not defined"
+		return 4
+	}
+
+	id $BSIM_USER&>/dev/null || {
+		echo "BSIM user not present"
+		return 5
+	}
+	return 0
+
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_TEST
+#
+# This callback function runs the test.
+# The harness compares the return code to the SPEC_TC_TEST_PASSCODE value set in the test spec.
+#
+# Return or exit codes:
+#    SPEC_TC_TEST_PASSCODE 	success
+# != SPEC_TC_TEST_PASSCODE 	failure
+ 
+tc_test() {
+
+	echo "Test 2: Adding clients to the networks"
+	/ericsson/ocs/bin/ai_manager.sh -add client -a 10.98.95.2 -h RBS151_SITE1 -i RBS151_SITE1 -s 10.0.2.111 -p /WRAN/smrsslave1/AIF/Site1RBS15/summaryFile.xml || {
+	echo "Client is not added as a ROOT user"
+	return 3
+	}
+
+	#adding a client as a bsim user
+	su - bsim -c "/ericsson/ocs/bin/ai_manager.sh -add client -a 10.67.1.2 -h site1RBS121 -i RBS121_SITE1 -s 10.0.2.111 -p /WRAN/smrsslave1/AIF/Site1RBS15/summaryFile.xml" || {
+	echo "Client is not created as BSIM user"
+	return 4
+	}
+
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_POSTCON
+#
+# This callback function checks expected results.
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_postcon() {
+	grep "#START of RBS151_SITE1" /usr/local/etc/dhcpd.conf_static || {
+	echo "Client entry was not found in /usr/local/etc/dhcpd.conf_static"
+		return 1
+	}
+	return 0
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_CLEANUP
+#
+# This callback function is only called if the harness execution mode is 'AT_INDEPENDENT'
+# 
+# This callback restores the target system to the state it was in before the TC 
+# was run. It rolls back changes made by callbacks tc_setup() and tc_test()
+# 
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_cleanup() {
+	# Remove test client
+	/ericsson/ocs/bin/ai_manager.sh -delete client -i  RBS151_SITE1 -q || {
+	echo "Client RBS151_SITE1 could not be deleted"
+	return 5
+	}
+	
+	/ericsson/ocs/bin/ai_manager.sh -delete client -i  RBS121_SITE1 -q || {
+	 echo "Client  RBS121_SITE1 could not be deleted"
+	return 6
+	}
+
+	# Remove network
+	/ericsson/ocs/bin/ai_manager.sh -delete net -a 10.98.95.0 -q || {
+	echo "Network 10.98.95.0 could not be deleted"
+	return 7
+	}
+
+	/ericsson/ocs/bin/ai_manager.sh -delete net -a 10.67.1.0 -q || {
+	echo "Network 10.67.1.0 could not be deleted"
+	return 8
+	}
+
+	return 0
+
+}

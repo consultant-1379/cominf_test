@@ -1,0 +1,310 @@
+#!/bin/bash
+#################################################################################
+#
+#
+#	   COPYRIGHT (C) ERICSSON RADIO SYSTEMS AB, Sweden
+#
+#	   The copyright to the document(s) herein is the property of
+#	   Ericsson Radio Systems AB, Sweden.
+#
+#	   The document(s) may be used and/or copied only with the written
+#	   permission from Ericsson Radio Systems AB or in accordance with
+#	   the terms and conditions stipulated in the agreement/contract
+#	   under which the document(s) have been supplied.
+#
+#################################################################################
+
+
+# ATCOMINF Test Callback Library
+
+# Revision History
+# 28/09/12	xamamcg		Initial test for remove target from COM_ONLY user
+
+# Complete the callbacks in this library to automate the test case.
+#
+# Callbacks are stateless, it is not possible to set a global variable in one callback 
+# and access it it in another.
+#
+# Callbacks are called by the test harness in the following order:
+#
+# tc_setup() 		# Called only for independent TC execution mode to setup TC
+# tc_precon()		# Conditions that should exist before TC can run
+# tc_test()		# Runs the test for this TC
+# tc_postcon()		# Conditions that should/should not exist after successful TC 
+# tc_cleanup()		# Called only for independent TC execution mode to clenup after TC
+
+# All callbacks must PASS for a TC PASS result
+
+#################################################################################
+#
+# CALLBACK: TC_SETUP
+#
+# This callback function is only called if the harness execution mode is 'AT_INDEPENDENT'
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_setup() {
+
+
+
+
+
+	
+	# Replace PASSWD with the correct credentials or data
+	for ii in *.in; do
+		sed -e "s/^PASSWD$/$LDAP_SUPERUSER_PASSWD/" $ii > $ii.tmp || {
+			echo "Failed to replace LDAP superuser password holder etc in /usr/local/bin/expect input file $ii, rc $?"
+			return 2
+		}
+	done
+
+#-------------------------------------------------------------------------------
+# Create a test user  
+#-------------------------------------------------------------------------------
+
+	CMD='/ericsson/sdee/bin/add_user.sh -t COM_ONLY -d 1.com -n u539 -i 1539 -C bhavana -y'
+	${AT_BIN}/con_ex.bsh -d 539adduser.in.tmp -o 539adduser.exp -c "$CMD" || {
+		echo "Failed to generate /usr/local/bin/expect script, $?"
+		return 3
+	}
+
+	/usr/local/bin/expect 539adduser.exp || {
+		echo "Failed to create user, error code $?"
+		return 4
+	}
+#-------------------------------------------------------------------------------
+# Create a test role
+#-------------------------------------------------------------------------------
+
+	CMD='/ericsson/sdee/bin/manage_COM.bsh -a role -d 1.com -R r539 -y'
+	${AT_BIN}/con_ex.bsh -d 539.in.tmp -o 539role.exp -c "$CMD" || {
+		echo "Failed to generate /usr/local/bin/expect script, $?"
+		return 5
+	}
+
+	/usr/local/bin/expect 539role.exp || {
+		echo "Failed to create role, error code $?"
+		return 6
+	}
+#-------------------------------------------------------------------------------
+# Add target to user
+#-------------------------------------------------------------------------------
+
+	CMD='/ericsson/sdee/bin/manage_COM_privs.bsh -a target -d 1.com -T target1 -u u539 -y'
+	${AT_BIN}/con_ex.bsh -d 539.in.tmp -o 539role.exp -c "$CMD" || {
+		echo "Failed to generate /usr/local/bin/expect script, $?"
+		return 9
+	}
+
+	/usr/local/bin/expect 539role.exp || {
+		echo "Failed to create target, error code $?"
+		return 10
+	}
+	return 0
+}
+#################################################################################
+
+#################################################################################
+#
+# CALLBACK: TC_PRECON
+#
+# This callback function checks the correct conditions exist to run the TC.
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+ 
+tc_precon() {
+
+#-------------------------------------------------------------------------------
+#  Check LDAP is running
+#-------------------------------------------------------------------------------
+
+	LDAP_SERVER_UP || {
+		echo "LDAP server not running"
+		return 1
+	}
+
+#-------------------------------------------------------------------------------
+#  Test user is present
+#-------------------------------------------------------------------------------
+
+	/usr/bin/ldapsearch -D 'cn=Directory Manager' -w $LDAP_SUPERUSER_PASSWD -b uid=u539,ou=people,dc=1,dc=com objectclass=* | grep "ericssonUserAuthenticationScope: target1" || {
+		echo "Found no target for user u539"
+		return 1
+	}
+	# Check output shows  user is type com_only
+
+	CONSOLE_OUTPUT_CONTAINS "Creating LDAP entry for local user [u539] in local domain [1.com] as user type [COM_ONLY] ... OK" || {
+		echo "User is wrong type"
+		return 2
+	}
+	return 0
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_TEST
+#
+# This callback function runs the test.
+# The harness compares the return code to the SPEC_TC_TEST_PASSCODE value set in the test spec.
+#
+# Return or exit codes:
+#	SPEC_TC_TEST_PASSCODE 	success
+# != SPEC_TC_TEST_PASSCODE 	failure
+ 
+tc_test() {
+
+	CMD='/ericsson/sdee/bin/manage_COM_privs.bsh -r target -u u539 -T target2 -y'
+	${AT_BIN}/con_ex.bsh -d 539.in.tmp -o 539remtarget.exp -c "$CMD" || {
+		echo "Failed to generate /usr/local/bin/expect script, $?"
+		return 1
+	}
+
+	/usr/local/bin/expect 539remtarget.exp
+	retval=$?
+	[ $retval -eq 1 ] || {
+		echo "Removed absent target, error code $?"
+		return 2
+	}
+
+	
+	/ericsson/sdee/bin/manage_COM_privs.bsh -r targets -u u539 -T target1 -y
+	retval=$?
+	[ $retval -eq 1 ] || {
+		echo "Wrong error on targets error code $?"
+		return 3
+	}
+	
+	/ericsson/sdee/bin/manage_COM_privs.bsh -r target -u u539 -T target1 -n
+	retval=$?
+	[ $retval -eq 1 ] || {
+		echo "Wrong error on -n error code $?"
+		return 4
+	}
+
+	/ericsson/sdee/bin/manage_COM_privs.bsh -r target -u u539 -T target1 -y -e
+	retval=$?
+	[ $retval -eq 1 ] || {
+		echo "Wrong error on -e error code $?"
+		return 5
+	}
+
+	CMD='/ericsson/sdee/bin/manage_COM_privs.bsh -r target -d wrong.com -u u539 -T target1 -y'
+	${AT_BIN}/con_ex.bsh -d 539.in.tmp -o 539remtarget.exp -c "$CMD" || {
+		echo "Failed to generate /usr/local/bin/expect script, $?"
+		return 6
+	}
+
+	/usr/local/bin/expect 539remtarget.exp
+	retval=$?
+	[ $retval -eq 1 ] || {
+		echo "Removed wrong domain, error code $?"
+		return 7
+	}
+
+	CMD='/ericsson/sdee/bin/manage_COM_privs.bsh -r target -d 1.com -u uNOTExist -T target1 -y'
+	${AT_BIN}/con_ex.bsh -d 539.in.tmp -o 539remtarget.exp -c "$CMD" || {
+		echo "Failed to generate /usr/local/bin/expect script, $?"
+		return 8
+	}
+
+	/usr/local/bin/expect 539remtarget.exp
+	retval=$?
+	[ $retval -eq 1 ] || {
+		echo "Removed wrong user, error code $?"
+		return 9
+	}
+
+	/ericsson/sdee/bin/manage_COM_privs.bsh -r target -u u539 -R r539 -y 
+	retval=$?
+	[ $retval -eq 1 ] || {
+		echo "Wrong error on -R error code $?"
+		return 10
+	}
+	return 0
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_POSTCON
+#
+# This callback function checks expected results.
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_postcon() {
+
+	# Check user is in database 
+	/usr/bin/ldapsearch -D 'cn=Directory Manager' -w $LDAP_SUPERUSER_PASSWD -b uid=u539,ou=people,dc=1,dc=com objectclass=* | grep "uid: u539" || {
+		echo "u539 user does not exists ... This wasn't expected"
+		return 1
+	}
+	# Check user has one target still
+	/usr/bin/ldapsearch -D 'cn=Directory Manager' -w $LDAP_SUPERUSER_PASSWD -b uid=u539,ou=people,dc=1,dc=com objectclass=* | grep "ericssonUserAuthenticationScope: target1" || {
+		echo "u539 user has no targets... This wasn't expected"
+		return 2
+	}
+	
+	CONSOLE_OUTPUT_CONTAINS "ERROR : checkOptionUsage: Default domain is set to globaldomain. Use the [-d] option to specify a local domain." || { echo "No target2 error msg"; return 4; }
+	CONSOLE_OUTPUT_CONTAINS "ERROR : checkOptionUsage: Default domain is set to globaldomain. Use the [-d] option to specify a local domain." || { echo "No targets error msg"; return 5; }
+	CONSOLE_OUTPUT_CONTAINS "/ericsson/sdee/bin/manage_COM_privs.bsh: illegal option -- n" || { echo "No illegal option n error msg"; return 6; }
+	CONSOLE_OUTPUT_CONTAINS "ERROR : checkOptionUsage: Domain [wrong.com] does not exist in LDAP." || { echo "No domain wrong.com error msg"; return 8; }
+	CONSOLE_OUTPUT_CONTAINS "ERROR : Requested user [uNOTExist] does not exist in domain [1.com]" || { echo "Non existant user error msg"; return 9; }
+	CONSOLE_OUTPUT_CONTAINS "Invalid option combination" || { echo "No invalid option combination msg"; return 10; }
+
+
+	return 0
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_CLEANUP
+#
+# This callback function is only called if the harness execution mode is 'AT_INDEPENDENT'
+# 
+# This callback restores the target system to the state it was in before the TC 
+# was run. It rolls back changes made by callbacks tc_setup() and tc_test()
+# 
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_cleanup() {
+
+CMD='/ericsson/sdee/bin/del_user.sh -d 1.com -n u539 -y'
+	${AT_BIN}/con_ex.bsh -d 539adduser.in.tmp -o 539deluser.exp -c "$CMD" || {
+		echo "Failed to generate /usr/local/bin/expect script, $?"
+		return 3
+	}
+
+	/usr/local/bin/expect 539deluser.exp && {
+		echo "Failed to delete user, error code $?"
+		return 4
+	}
+CMD='/ericsson/sdee/bin/manage_COM.bsh -r role -d 1.com -R r539 -y'
+	${AT_BIN}/con_ex.bsh -d 539.in.tmp -o 539role.exp -c "$CMD" || {
+		echo "Failed to generate /usr/local/bin/expect script, $?"
+		return 5
+	}
+
+	/usr/local/bin/expect 539role.exp || {
+		echo "Failed to delete role, error code $?"
+		return 6
+	}
+	
+	rm -f *.exp
+	rm -f *.out
+	rm -f *.in.tmp
+	return 0
+}

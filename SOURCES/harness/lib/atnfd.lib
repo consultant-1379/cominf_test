@@ -1,0 +1,2054 @@
+#!/bin/bash
+#################################################################################
+#
+#
+#       COPYRIGHT (C) ERICSSON RADIO SYSTEMS AB, Sweden
+#
+#       The copyright to the document(s) herein is the property of
+#       Ericsson Radio Systems AB, Sweden.
+#
+#       The document(s) may be used and/or copied only with the written
+#       permission from Ericsson Radio Systems AB or in accordance with
+#       the terms and conditions stipulated in the agreement/contract
+#       under which the document(s) have been supplied.
+#
+#################################################################################
+
+# NFD function library
+# NOTE: Please keep function names consistent and meaningful. i.e use 'get','set','is' 
+#       Please use a variable called RESULT to store the result of a Function, or preferably 
+#       echo the string so that the funtion name can be used as the return string as indicated in the example below.
+# E.G.  [[ $(getHostname) == "atrcxb2214" ]]
+
+# Revision History
+# 10/08/2012    eeidle         Initial script
+#   Provides a set of library functions related to SCK,USCK, STG and SOLARIS Teams
+
+###################
+# GLOBAL VARIABLES
+###################
+
+ARCH="`uname -p`"
+HASTATUS=${HASTATUS:-/opt/VRTS/bin/hastatus}
+HAGRP=${HAGRP:-/opt/VRTS/bin/hagrp}
+HASYS=${HASYS:-/opt/VRTS/bin/hasys}
+HACLUS=${HACLUS:-/opt/VRTS/bin/haclus}
+
+LDAPLIST=${LDAPLIST:-/bin/ldaplist}
+LDAPCLIENT=${LDAPCLIENT:-/bin/ldapclient}
+LDAP_CLIENT_FILE="/var/ldap/ldap_client_file"
+
+AWK=${AWK:-/bin/awk}
+#CAT=${CAT:-/bin/cat}
+#ECHO=${ECHO:-/bin/echo}
+GREP=/usr/xpg4/bin/grep #The other version of grep doesnt support -q and some other options.
+SED=${SED:-/bin/sed}
+UNIQ=${UNIQ:-/bin/uniq}
+WC=${WC:-/bin/wc}
+
+ETCHOSTS=${ETCHOSTS:-"/etc/hosts"}
+
+G_SSH_SETUPSCRIPT=$G_SCRIPTDIR/ssh_setup.sh
+G_SMTOOL=/opt/ericsson/nms_cif_sm/bin/smtool
+GEGREP=/usr/sfw/bin/gegrep
+DMTOOL=/ericsson/dmr/bin/dmtool
+G_EXPECT_DIR="${AT_LIB}/exp_files"
+G_BASH_DIR="${AT_LIB}/bash_files"
+G_LIC_SERVER="159.107.220.96"
+G_usr_LIC_SERVER="ossread"
+G_pwd_LIC_SERVER="ossread"
+
+[[ $(uname) == "Linux" ]] && {
+			PING=/bin/ping
+			EXPECT=/usr/bin/expect
+			BANNER=bashBanner
+			CP=/bin/cp
+			CAT=/bin/cat
+			ECHO=/bin/echo
+			RM=/bin/rm
+			SLEEP=/bin/sleep
+	}
+
+[[ $(uname) == "SunOS" ]] && {
+			PING=/usr/sbin/ping
+			EXPECT=/usr/local/bin/expect
+			BANNER=/bin/banner
+			CP=/usr/bin/cp
+			CAT=/usr/bin/cat
+			ECHO=/usr/bin/echo
+			RM=/usr/bin/rm
+			SLEEP=/usr/bin/sleep
+	}
+
+#[[ $(uname) == "Linux" ]] && EXPECT=/usr/bin/expect
+#[[ $(uname) == "SunOS" ]] && EXPECT=/usr/local/bin/expect
+#[[ $(uname) == "Linux" ]] && BANNER=bashBanner
+#[[ $(uname) == "SunOS" ]] && BANNER=/bin/banner
+#[[ $(uname) == "Linux" ]] && CP=/bin/cp
+#[[ $(uname) == "SunOS" ]] && CP=/usr/bin/cp
+#[[ $(uname) == "Linux" ]] && CAT=/bin/cat
+#[[ $(uname) == "SunOS" ]] && CAT=/usr/bin/cat
+#[[ $(uname) == "Linux" ]] && ECHO=/bin/echo
+#[[ $(uname) == "SunOS" ]] && ECHO=/usr/bin/echo
+#[[ $(uname) == "Linux" ]] && RM=/bin/rm
+#[[ $(uname) == "SunOS" ]] && RM=/usr/bin/rm
+#[[ $(uname) == "Linux" ]] && SLEEP=/bin/sleep
+#[[ $(uname) == "SunOS" ]] && SLEEP=/usr/bin/sleep
+
+
+###################
+# FUNCTIONS
+###################
+# Function: getHAsysNames
+# Purpose: Sets variables "SYS_#" to the hostname for each cluster member
+# Usage: : getHAsysNames 
+#
+# Arguments:
+# None
+#
+# Return Values:
+# 0     Completed OK
+# 1     Something went wrong
+#
+## Input globals accessed by this function
+# none
+#
+# Output globals set by this function
+# SYS_1 ; SYS_2; etc 
+# HA_ClusterSize (number of hosts in the cluster)
+# HA_RunningHosts (Number of hosts which are running)
+function getHAsysNames() {
+
+local count=0
+
+	for host in `${HASYS} -list` ;do
+		(( count++ ))
+		export SYS_${count}="${host}"
+		
+	done
+HA_ClusterSize=${count}
+HA_RunningHosts=`$HASYS -state |grep -c "RUNNING"`
+
+
+}
+
+###################
+# FUNCTIONS
+###################
+# Function: checkHAgrps
+# Purpose: check all defined groups in HA to see if running
+# Usage: : checkHAgrps 
+#
+# Arguments:
+# None
+#
+# Return Values:
+# 0     All HA groups are online
+# 1     One or more HA groups are incorrectly offline.
+# 2	HA groups are online on more hosts than should be
+#
+## Input globals accessed by this function
+# none
+#
+# Output globals set by this function
+# HA_GRP_STATUS  can be used for post function parsing.  ie. use StringSearch to check the file after this function
+#
+
+function checkHAgrps() {
+
+local _date=`date +%Y%m%d.%H%M%S`
+local _logdir="/var/tmp/platform_taf/LOGS"
+local _logfile="/var/tmp/platform_taf/LOGS/checkHAgrps_${_date}"
+local _tmpfile="/var/tmp/HA_grp_status"
+
+	[[ ! -d ${Logdir} ]] && mkdir -p ${_logdir}
+	cat /dev/null > $_tmpfile
+
+# Capture status to log file if required for later.
+`$HASTATUS -sum > "${_logfile}"`
+echo -e "\n========================================================================" >> ${_logfile}
+
+
+getHAsysNames
+
+
+echo "
+=====================================================
+Cluster size: [$HA_ClusterSize]
+Number of hosts currently running in the cluster: [$HA_RunningHosts]
+Log file: [$_logfile]
+=====================================================
+" 
+
+	for grp in `$HAGRP -list | awk '{print $1}' | uniq` ;do
+
+		local parallel=`$HAGRP -display "${grp}" -attribute Parallel |tail -1 |awk '{print $4}'`
+		grp_state=`$HAGRP -state "${grp}" | grep ${grp} | tr -d \| | awk '{print $1" "$3" "$4}'`
+		
+
+		if [ ${parallel} == 1 ] ; then
+			num_grps=99
+			num_grps=`echo "${grp_state}" | $GEGREP -wo "ONLINE" | grep -c "ONLINE"`
+			
+			[[ ${num_grps} -lt ${HA_RunningHosts} ]] && echo "[NOK] Group: [${grp}] is running on [${num_grps}] hosts. Should be [${HA_RunningHosts}]." >> ${_tmpfile}
+			[[ ${num_grps} -eq ${HA_RunningHosts} ]] && echo "[OK] Group: [${grp}] is running on [${num_grps}] hosts. Should be [${HA_RunningHosts}]." >> ${_tmpfile}
+			[[ ${num_grps} -gt ${HA_RunningHosts} ]] && echo "[ERROR] Group: [${grp}] is running on [${num_grps}] hosts. Should be [${HA_RunningHosts}]." >> ${_tmpfile}
+
+		elif [ ${parallel} == 0 ] ; then
+			num_grps=99
+			num_grps=`echo "${grp_state}" | $GEGREP -wo "ONLINE" | grep -c "ONLINE"`
+
+			[[ ${num_grps} -lt 1 ]] && echo "[NOK] Group: [${grp}] is running on [${num_grps}] hosts. Should be [1]." >> ${_tmpfile}
+			[[ ${num_grps} -eq 1 ]] && echo "[OK] Group: [${grp}] is running on [${num_grps}] hosts. Should be [1]." >> ${_tmpfile}
+			[[ ${num_grps} -gt 1 ]] && echo "[ERROR] Group: [${grp}] is running on [${num_grps}] hosts. Should be [1]." >> ${_tmpfile}
+			
+		fi
+	
+	done
+
+	export HA_GRP_STATUS=${_tmpfile}    # to give direct access to the result file to other external functions.
+	cat ${_tmpfile} >> ${_logfile}   # save a copy of the processed group status to the log.
+
+# below line can be used for negative testing
+#echo -e "[NOK] test 1\n[ERROR] test2\ntest3 [NOK]\ntest4 [ERROR]" >> ${_tmpfile}	
+
+	local _errors=`grep "^\[NOK\]" ${_tmpfile}`
+	local _warnings=`grep "^\[ERROR\]" ${_tmpfile}`
+	[[ -n ${_errors} ]] && banner error! && echo -e "Errors found:\n===============\n${_errors}" && return 1
+	[[ -n ${_warnings} ]] && banner warning! && echo -e "Warnings found:\n===============\n${_warnings}" && return 2
+
+
+	echo -e "==========================================================\nHA groups are OK:\n==========================================================\n`cat ${_tmpfile}`\n==========================================================\n"
+
+return 0
+}
+
+###################
+# FUNCTIONS
+###################
+# Function: isCmdExecutable
+# Purpose: Validate that a command that is specified exists on the server and is executable
+# Usage: : isCmdExecutable <full path to command>
+#
+# Arguments:
+# $1 Full path to command
+#
+# Return Values:
+# 0     Success, command found and is executable by 
+# 1     Failure, command not found.
+#
+## Input globals accessed by this function
+# none
+#
+# Output globals set by this function
+# none
+#
+
+function isCmdExecutable() { # <full path to command>
+        local cmd=$1
+
+        if [[ -x "${cmd}" ]]; then
+                echo "${cmd} is executable"
+                return 0
+        else
+                echo "ERROR:${cmd} not executable, exiting function ${FUNCNAME} ${@}"
+                return 1
+        fi
+}
+
+
+##############################
+# Function: StringSearch()
+# Purpose: To check for a string in a log file, directory, or command output.
+# Usage: : StringSearch -f <file> | -d <directory> | -c <command> -s <string> [-e <exclude_list>] [-w <warn_list>]
+#
+# Return Values:
+#      0        String not found
+#      1        String found
+#      2        Something went wrong
+#      255      String found but is classed as a warning (currently returns 0)
+#
+# Input globals accessed by this function
+# GEGREP
+#
+# Output globals set by this function
+# ERRORS
+# WARNINGS
+#
+function StringSearch() {
+unset ExcludeList
+unset WarnList
+
+while getopts e:f:d:c:s:w: opt; do
+        case ${opt} in
+
+        f)      FileName=$OPTARG
+               [ ! -f ${FileName} ] && echo -e "${FileName} not found or not a file" && return 2
+               ;;
+        d)      DirName=$OPTARG
+               [ ! -d ${DirName} ] && echo -e "${DirName} not found or not a directoy" && return 2
+                ;;
+        c)      CmdName=$OPTARG
+               [ ! -e ${CmdName} ] && echo -e "${CmdName} not found" && return 2
+                ;;
+        s)      ErrString=$OPTARG
+                [[ -z ${ErrString} ]] && echo -e "-s option used without a value" && return 2
+                ;;
+        e)      ExcludeList=${OPTARG}
+		[[ -z ${ExcludeList} ]] && echo -e "-e option used without a value" && return 2
+                ;;
+        w)      WarnList=${OPTARG}
+		[[ -z ${WarnList} ]] && echo -e "-w option used without a value" && return 2
+                ;;
+
+        esac
+
+done
+
+
+        [[ ( -z ${FileName} )  &&  ( -z ${DirName} )  &&  ( -z ${CmdName} ) ]] && echo -e "one of -f -d -c must be set" && return 2
+        [ -z ${ErrString} ] && echo -e "Error String is null\n" && return 2
+
+
+echo "
+FileName: ${FileName}
+DirName: ${DirName}
+CmdName: ${CmdName}
+ErrString: ${ErrString}
+ExcludeList: "${ExcludeList}"
+WarnList: ${WarnList}
+"
+
+
+
+        if [[ -n "${ExcludeList}" ]];then
+                [[ -n ${FileName} ]] && RESULTS1=`cat ${FileName} | $GEGREP -i "${ErrString}" | $GEGREP -v "${ExcludeList}"`
+                [[ -n ${DirName} ]] && RESULTS2=`$GEGREP -i "${ErrString}" "${DirName}"/* | $GEGREP -v "${ExcludeList}"`
+                [[ -n ${CmdName} ]] && RESULTS3=`${CmdName} | $GEGREP -i "${ErrString}" | $GEGREP -v "${ExcludeList}"`
+
+        else
+		echo "exclude list has no value"
+                [[ -n ${FileName} ]] && RESULTS1=`cat ${FileName} | $GEGREP -i "${ErrString}"`
+                [[ -n ${DirName} ]] && RESULTS2=`$GEGREP -i "${ErrString}" "${DirName}"/*`
+                [[ -n ${CmdName} ]] && RESULTS3=`${CmdName} | $GEGREP -i "${ErrString}"`
+        fi
+
+
+
+
+
+        RESULTS=`echo -e "${RESULTS1}\n${RESULTS2}\n${RESULTS3}"`
+        [[ -z "${RESULTS}" ]] && echo "no errors" && return 0
+
+
+        if [[ -n "${WarnList}" ]];then
+		echo "Warn List is NOT empty"
+                ERRORS=`echo "${RESULTS}"  | $GEGREP -v "${WarnList}"`
+                [[ -n "${ERRORS}" ]] && banner "ERROR found" && echo -e "Error List:\n$ERRORS\n" && return 1
+                WARNINGS=`echo "${RESULTS}"  | $GEGREP "${WarnList}"`
+                [[ -n "${WARNINGS}" ]] && banner "WA found" && echo -e "Warnings found:\n$WARNINGS\n" && return 0
+        else
+		echo "Warn List is empty."
+		banner "ERROR found" && echo -e "Error List:\n$RESULTS\n" && return 1
+        fi
+
+export ERRORS
+export WARNINGS
+
+}
+
+##############################
+# Function: BuildMCExcludeList()
+# Purpose: To generate a list of MCs whos status can be ignored based on the architecture/release
+# Usage: : BuildMCExcludeList
+#
+# Return Values:
+#      0        Success
+#      1        Failure
+#
+# Input globals accessed by this function
+# MC_EXCLUDE_FILE
+#
+# Output globals set by this function
+# MC_EXCLUDE_LIST
+function BuildMCExcludeList() {
+
+MC_EXCLUDE_FILE=${AT_ROOT}/excluded_mcs.txt
+local sparcMCs=""
+local x86MCs=""
+local commonMCs="BI_SMRS_MC\nnetop_ems"
+
+
+	echo -e ${commonMCs} > ${MC_EXCLUDE_FILE}
+	[ ! -f ${MC_EXCLUDE_FILE} ] && return 1 
+
+
+	case ${ARCH} in
+        
+        i386|x86*)   
+                echo -e ${x86MCs} >> ${MC_EXCLUDE_FILE}
+                ;;
+        sparc)
+                echo -e ${sparcMCs} >> ${MC_EXCLUDE_FILE}
+                ;;
+        esac
+
+
+	MC_EXCLUDE_LIST=`cat ${MC_EXCLUDE_FILE} | sed '/^$/d' |sed -e :a -e '$!N; s/\n/|/; ta'`
+
+return 0
+}
+
+
+
+
+
+
+##############################
+# Function: areAllManagedComponents()
+# Purpose: Validate that All managed components except those listed are <-online> or <-offline>
+# Usage: : areAllManagedComponents <-online|-offline> [-except <MC1>,<MC2>|-exceptthosein <file>]
+#
+# Return Values: 
+#      0	Success
+#      1	Failure
+#
+# Input globals accessed by this function
+# none
+#
+# Output globals set by this function
+# none
+function areAllManagedComponents() { # <-online|-offline> [-except <MC1>,<MC2>|-exceptthosein <file>]
+	# -exceptthosein <file> is not implemented yet
+	#set -xv
+	if (( ${#} > 3 )) ; then
+		${ECHO} "Usage: Too many arguments: AreManagedComponents <-online|-offline> [-except <MC1>,<MC2>|-exceptthosein <file>]"
+		return 1
+	fi
+	local ACTION=$1  # -online|-offline
+	local EXCEPT=$2  # -except|-exceptthosein
+	local MCS_TO_EXCLUDE="$3"
+	local MC_COUNT=""
+	local MCS_NOT_MEETING_CRITERIA
+	#replace , with | for egrep arguments. 
+	#Using text EXCLUDE_LIST as a cheat so that egrep will never have empty argument.
+	MCS_TO_EXCLUDE=$($ECHO "${MCS_TO_EXCLUDE}|EXCLUDE_LIST" | sed s'/,/\|/g')
+	
+	if [ "$ACTION" = "-online" ]; then
+		ACTION="started"
+	fi
+	if [ "$ACTION" = "-offline" ]; then
+		ACTION="offline"
+
+	fi
+	echo "Checking if all the Managed Components are $ACTION" #| tee -a ${LOGFILE}
+	echo "-------------------------------------------------" #| tee -a ${LOGFILE}
+	MC_COUNT=$(${G_SMTOOL} list | egrep -v $ACTION | egrep -v "${MCS_TO_EXCLUDE}" | wc -l)
+
+	if [ $MC_COUNT == 0 ] ;then
+			echo "All Required Managed Components (MCs) are $ACTION" #| tee -a ${LOGFILE}
+			return 0
+	else
+			MCS_NOT_MEETING_CRITERIA=$($G_SMTOOL list | grep -v $ACTION | egrep -v "${MCS_TO_EXCLUDE}")
+			echo "The below MC's are NOT $ACTION" #| tee -a ${LOGFILE}
+			echo "$MCS_NOT_MEETING_CRITERIA" #| tee -a ${LOGFILE}
+			return 1
+	fi
+	
+}
+
+############################# Start: Functions related to HA status #############################
+
+##############################
+# Function: getAdmin1Hostname
+# Purpose: Get the hostname of the current Admin1
+# Usage: getAdmin1Hostname
+#
+# Return Values:
+#      0        Success
+#      1        Failure
+# RESULT        The hostname of Admin1
+#
+# Input globals accessed by this function
+# none
+#
+# Output globals set by this function
+# RESULT
+##############################
+function getAdmin1Hostname() {
+
+        # Admin1 is the node which has the Oss state ONLINE
+
+        # Before that we will ensure that there is no issue with hastatus
+        if [[ $(${HASTATUS} -sum >/dev/null 2>&1) -ne 0 ]] ; then
+                ${ECHO} "ERROR: getAdmin1Hostname"
+                return 1
+        fi
+
+        RESULT=$(${HAGRP} -display Oss -attribute State | ${GREP} ONLINE | ${AWK} '{print $3}')
+        ${ECHO} "${RESULT}"
+
+        return 0
+}
+
+##############################
+# Function: getAdmin2Hostname
+# Purpose: Get the hostname of the current Admin2
+# Usage: getAdmin2Hostname
+#
+# Return Values:
+#      0        Success
+#      1        Failure
+# RESULT        The hostname of Admin2
+#
+# Input globals accessed by this function
+# none
+#
+# Output globals set by this function
+# RESULT
+##############################
+function getAdmin2Hostname() {
+
+        # Admin2 is the node which has the Oss state OFFLINE
+
+        # Before that we will ensure that there is no issue with hastatus
+        if [[ $(${HASTATUS} -sum >/dev/null 2>&1) -ne 0 ]] ; then
+                ${ECHO} "ERROR: getAdmin2Hostname"
+                return 1
+        fi
+
+        RESULT=$(${HAGRP} -display Oss -attribute State | ${GREP} OFFLINE | ${AWK} '{print $3}')
+        ${ECHO} "${RESULT}"
+
+        return 0
+}
+
+##############################
+# Function: isServerAdmin1
+# Purpose: Check if the specified server is Admin1
+# Usage: isServerAdmin1 <servername>
+#
+# Return Values:
+# 0     <servername> is not Admin1
+# 1     <servername> is Admin1
+# 2     Error in fetching hostname
+#
+# Input globals accessed by this function
+# none
+#
+# Output globals set by this function
+# RESULT
+##############################
+function isServerAdmin1() {
+
+        if (( ${#} < 1 )) ; then
+                ${ECHO} "Usage: isServerAdmin1 <servername>"
+                return 2
+        fi
+
+        # Get the hostname of the Admin1
+        getAdmin1Hostname
+
+        if [[ $? -eq 1 || "${RESULT}" == "" ]] ; then
+                ${ECHO} "ERROR: isServerAdmin1"
+                return 2
+        fi
+
+        if [[ "${RESULT}" == "$1" ]] ; then
+                ${ECHO} "1"
+                return 1
+        fi
+
+        ${ECHO} "0"
+        return 0
+}
+
+##############################
+# Function: isServerAdmin2
+# Purpose: Check if the specified server is Admin2
+# Usage: isServerAdmin2 <servername>
+#
+# Return Values:
+# 0     <servername> is not Admin2
+# 1     <servername> is Admin2
+# 2     Error in fetching hostname
+#
+# Input globals accessed by this function
+# none
+#
+# Output globals set by this function
+# RESULT
+##############################
+function isServerAdmin2() {
+
+        if (( ${#} < 1 )) ; then
+                ${ECHO} "Usage: isServerAdmin2 <servername>"
+                return 2
+        fi
+
+        # Get the hostname of the Admin1
+        getAdmin2Hostname
+
+        if [[ $? -eq 1 || "${RESULT}" == "" ]] ; then
+                ${ECHO} "ERROR: isServerAdmin2"
+                return 2
+        fi
+
+        if [[ "${RESULT}" == "$1" ]] ; then
+                ${ECHO} "1"
+                return 1
+        fi
+
+        ${ECHO} "0"
+        return 0
+}
+
+##############################
+# Function: isHaGroupOnline
+# Purpose: Check if the server is Online for specified groupname and hostname
+# Usage: isHaGroupOnline <groupname> <hostname>
+#
+# Return Values:
+# 0     <groupname> is offline
+# 1     <groupname> is online
+# 2     Error in fetching group details
+#
+# Input globals accessed by this function
+# none
+#
+# Output globals set by this function
+# RESULT
+##############################
+function isHaGroupOnline() {
+
+        if (( ${#} < 2 )) ; then
+                ${ECHO} "Usage: isHaGroupOnline <groupname> <hostname>"
+                return 2
+        fi
+
+        RESULT=$(${HAGRP} -state "${1}" -sys "${2}")
+        if [[ "${RESULT}" == "ONLINE" ]] ; then
+                ${ECHO} "1"
+                return 1
+        elif [[ "${RESULT}" == "OFFLINE" ]] ; then
+                ${ECHO} "0"
+                return 0
+        else
+                ${ECHO} "ERROR: isHaGroupOnline ${1} ${2}"
+                return 2
+        fi
+}
+
+##############################
+# Function: isHaStateRunningForServer
+# Purpose: Check if the server is running for specified hostname
+# Usage: isHaStateRunningForServer <hostname>
+#
+# Return Values:
+# 0     <hostname> is RUNNING
+# 1     <hostname> has EXITED
+# 2     Error in fetching state details
+#
+# Input globals accessed by this function
+# none
+#
+# Output globals set by this function
+# RESULT
+##############################
+function isHaStateRunningForServer() {
+
+        if (( ${#} < 1 )) ; then
+                ${ECHO} "Usage: isHaStateRunningForServer <hostname>"
+                return 2
+        fi
+
+        RESULT=$(${HASYS} -state "${1}")
+
+        if [[ "${RESULT}" == "RUNNING" ]] ; then
+                ${ECHO} "0"
+                return 0
+        elif [[ "${RESULT}" == "EXITED" ]] ; then
+                ${ECHO} "1"
+                return 1
+        else
+                ${ECHO} "ERROR: isHaStateRunningForServer ${1}"
+                return 2
+        fi
+}
+
+##############################
+# Function: isHaStateRunningForCluster
+# Purpose: Check if the server is running for specified cluster
+# Usage: isHaStateRunningForCluster <clustername>
+#
+# Return Values:
+# 0     <clustername> is RUNNING
+# 1     <clustername> has EXITED
+# 2     Error in fetching state details
+#
+# Input globals accessed by this function
+# none
+#
+# Output globals set by this function
+# RESULT
+##############################
+function isHaStateRunningForCluster() {
+
+        if (( ${#} < 1 )) ; then
+                ${ECHO} "Usage: isHaStateRunningForCluster <clustername>"
+                return 2
+        fi
+
+        RESULT=$(${HACLUS} -state "${1}")
+
+        if [[ "${RESULT}" == "RUNNING" ]] ; then
+                ${ECHO} "0"
+                return 0
+        elif [[ "${RESULT}" == "EXITED" ]] ; then
+                ${ECHO} "1"
+                return 1
+        else
+                ${ECHO} "ERROR: isHaStateRunningForCluster ${1}"
+                return 2
+        fi
+}
+
+##############################
+# Function: isHaStatusNormal
+# Purpose: Check if the services are running normally for admin1 and admin2
+# Usage: isHaStatusNormal
+#
+# Return Values:
+# 0     HA status is normal
+# 1     HA status is not normal
+# 2     Error in fetching service details
+#
+# Input globals accessed by this function
+# none
+#
+# Output globals set by this function
+# RESULT
+##############################
+#function isHaStatusNormal() {
+#}
+
+#function isHaClusterSplit() {
+#        return 1
+#}
+#
+
+############################# End: Functions related to HA status ###############################
+
+############################# Start: Functions related to /etc/passwd and /etc/hosts ############
+
+##############################
+# Function: isUserInEtcPasswd
+# Purpose: Check if the specified user is in /etc/passwd file
+# Usage: isUserInEtcPasswd <username>
+#
+# Return Values:
+# 0     <username> is present in /etc/passwd
+# 1     <username> is not present in /etc/passwd
+# 2     Error in fetching username details
+#
+# Input globals accessed by this function
+# none
+#
+# Output globals set by this function
+# RESULT
+##############################
+function isUserInEtcPasswd() {
+
+        ETCPASSWD="/etc/passwd"
+
+        if (( ${#} < 1 )) ; then
+                ${ECHO} "Usage: isUserInEtcPasswd <username>"
+                RESULT=2
+                return 2
+        fi
+
+        if [[ ! -r ${ETCPASSWD} ]] ; then
+                ${ECHO} "ERROR: isUserInEtcPasswd"
+                RESULT=2
+                return 2
+        fi
+
+        if [[ $(${GREP} -w "^${1}" ${ETCPASSWD} >/dev/null 2>&1) -eq 0 ]] ; then
+                ${ECHO} "0"
+                RESULT=0
+                return 0
+        fi
+
+        RESULT=1
+        ${ECHO} "1"
+        return 1
+}
+
+##############################
+# Function: getEtcHostsIpAddressfor
+# Purpose: Get the Ip Address for specified hostname/nickname from /etc/hosts file
+# Usage: getEtcHostsIpAddressfor <hostname/nickname>
+#
+# Return Values:
+#      0        Success
+#      1        Failure
+# RESULT        The IP Address for specified hostname/nickname
+#
+# Input globals accessed by this function
+# none
+#
+# Output globals set by this function
+# RESULT
+##############################
+function getEtcHostsIpAddressfor() { # <name in /etc/hosts>
+
+        if (( ${#} < 1 )) ; then
+                ${ECHO} "Usage: getEtcHostsIpAddressfor <hostname/nickname>"
+                RESULT=""
+                return 2
+        fi
+
+        #TODO: <Validate the input "name" as given in  "man hosts">
+
+        RESULT=$(${GREP} -v "^[         ]*#" ${ETCHOSTS} | ${SED} 's/\(.*\)#.*/\1/' | ${GREP} -wi ${1} | ${AWK} '{print $1}')
+
+        if [[ "${RESULT}" == "" ]] ; then
+                return 1
+        fi
+
+        return 0
+}
+
+##############################
+# Function: isIpAddressInEtcHosts
+# Purpose: Check if the specified Ip Address is in /etc/hosts file
+# Usage: isIpAddressInEtcHosts <ipaddress>
+#
+# Return Values:
+# 0     <ipaddress> is present in /etc/hosts
+# 1     <ipaddress> is not present in /etc/hosts
+# 2     Error in fetching hosts details or invalid input
+#
+# Input globals accessed by this function
+# none
+#
+# Output globals set by this function
+# RESULT
+##############################
+function isIpAddressInEtcHosts() {
+
+        if (( ${#} < 1 )) ; then
+                ${ECHO} "Usage: isIpAddressInEtcHosts <ipaddress>"
+                RESULT=2
+                return 2
+        fi
+
+        if [[ ! -r ${ETCHOSTS} ]] ; then
+                ${ECHO} "ERROR: isIpAddressInEtcHosts: Cannot read ${ETCHOSTS}"
+                RESULT=2
+                return 2
+        fi
+
+        #TODO: <Need to check if IP Address is valid>
+
+        if [[ $(${GREP} -w "^${1}" ${ETCHOSTS} >/dev/null 2>&1) -eq 0 ]] ; then
+                ${ECHO} "0"
+                RESULT=0
+                return 0
+        fi
+
+        RESULT=1
+        ${ECHO} "1"
+        return 1
+}
+
+##############################
+# Function: isHostnameInEtcHosts
+# Purpose: Check if the specified hostname is in /etc/hosts file
+# Usage: isHostnameInEtcHosts <hostname>
+#
+# Return Values:
+# 0     <hostname> is present in /etc/hosts
+# 1     <hostname> is not present in /etc/hosts
+# 2     Error in fetching hosts details or invalid input
+#
+# Input globals accessed by this function
+# none
+#
+# Output globals set by this function
+# RESULT
+##############################
+function isHostnameInEtcHosts() {
+
+        if (( ${#} < 1 )) ; then
+                ${ECHO} "Usage: isHostnameInEtcHosts <hostname>"
+                RESULT=2
+                return 2
+        fi
+
+        if [[ ! -r ${ETCHOSTS} ]] ; then
+                ${ECHO} "ERROR: isHostnameInEtcHosts: Cannot read ${ETCHOSTS}"
+                RESULT=2
+                return 2
+        fi
+
+        #TODO: <Need to check if hostname is valid>
+
+        # Domain names are case insensitive
+        if [[ $(${GREP} -v "^[  ]*#" ${ETCHOSTS} | ${AWK} '{print $2}' | ${GREP} -q -i ${1}) -eq 0 ]] ; then
+                ${ECHO} "0"
+                RESULT=0
+                return 0
+        fi
+
+        RESULT=1
+        ${ECHO} "1"
+        return 1
+}
+
+##############################
+# Function: areAllIpAddressesUniqueInEtcHosts
+# Purpose: Check if  all the ipaddresses in /etc/hosts are unique
+# Usage: areAllIpAddressesUniqueInEtcHosts
+#
+# Return Values:
+# 0     All the ipaddresses in /etc/hosts are unique
+# 1     IpAddresses are not unique
+# 2     Error in fetching hosts details
+#
+##############################
+function areAllIpAddressesUniqueInEtcHosts() {
+
+        if [[ ! -r ${ETCHOSTS} ]] ; then
+                ${ECHO} "ERROR: areAllIpAddressesUniqueInEtcHosts: Cannot read ${ETCHOSTS}"
+                RESULT=2
+                return 2
+        fi
+
+        etchosts_ips=$(${CAT} ${ETCHOSTS} | ${AWK} '{print $1}' | ${UNIQ} -d)
+
+        if [[ -z "${etchosts_ips}" ]]; then
+                return 0
+        else
+                return 1
+        fi
+}
+
+##############################
+# Function: getNasConsoleForServer
+# Purpose: Get the Nas Console Ip Address 
+# Usage: getNasConsoleForServer
+#
+# Return Values:
+#      0        Success
+#      1        Failure
+# RESULT        The Nas Console IP Address
+#
+# Input globals accessed by this function
+# none
+#
+# Output globals set by this function
+# RESULT
+##############################
+function getNasConsoleForServer() {
+
+        if [[ ! -r ${ETCHOSTS} ]] ; then
+                ${ECHO} "ERROR: getNasConsoleForServer: Cannot read ${ETCHOSTS}"
+                RESULT=""
+                return 1
+        fi
+
+        # NR == 1 check for making sure we pick first one if more than one entry found for nasconsole
+        RESULT=$(${GREP} -v "^[     ]*#" ${ETCHOSTS} | 
+                 ${GREP} -w -i "nasconsole" ${ETCHOSTS} | ${AWK} 'NR == 1 {print $1}')
+
+        # nasconsole was not present in /etc/hosts
+        if [[ -z "${RESULT}" ]] ; then
+                return 1
+        fi
+
+        ${ECHO} "${RESULT}"
+       
+        return 0
+}
+
+##############################
+# Function: getNas1IpAddressForServer
+# Purpose: Get the Nas1 Ip Address 
+# Usage: getNas1IpAddressForServer
+#
+# Return Values:
+#      0        Success
+#      1        Failure
+# RESULT        The Nas 1 IP Address
+#
+# Input globals accessed by this function
+# none
+#
+# Output globals set by this function
+# RESULT
+##############################
+function getNas1IpAddressForServer() {
+
+        if [[ ! -r ${ETCHOSTS} ]] ; then
+                ${ECHO} "ERROR: getNas1IpAddressForServer: Cannot read ${ETCHOSTS}"
+                RESULT=""
+                return 1
+        fi
+
+        # NR == 1 check for making sure we pick first one if more than one entry found for nas 1
+        RESULT=$(${GREP} -v "^[     ]*#" ${ETCHOSTS} | 
+                 ${GREP} -w -i "nas1" ${ETCHOSTS} | ${AWK} 'NR == 1 {print $1}')
+
+        # nas1 was not present in /etc/hosts
+        if [[ -z "${RESULT}" ]] ; then
+                return 1
+        fi
+
+        ${ECHO} "${RESULT}"
+       
+        return 0
+}
+
+
+##############################
+# Function: getNas2IpAddressForServer
+# Purpose: Get the Nas 2 Ip Address 
+# Usage: getNas2IpAddressForServer
+#
+# Return Values:
+#      0        Success
+#      1        Failure
+# RESULT        The Nas 2 IP Address
+#
+# Input globals accessed by this function
+# none
+#
+# Output globals set by this function
+# RESULT
+##############################
+function getNas2IpAddressForServer() {
+
+        if [[ ! -r ${ETCHOSTS} ]] ; then
+                ${ECHO} "ERROR: getNas2IpAddressForServer: Cannot read ${ETCHOSTS}"
+                RESULT=""
+                return 1
+        fi
+
+        # NR == 1 check for making sure we pick first one if more than one entry found for nas 2
+        RESULT=$(${GREP} -v "^[     ]*#" ${ETCHOSTS} | 
+                 ${GREP} -w -i "nas2" ${ETCHOSTS} | ${AWK} 'NR == 1 {print $1}')
+
+        # nas2 was not present in /etc/hosts
+        if [[ -z "${RESULT}" ]] ; then
+                return 1
+        fi
+
+        ${ECHO} "${RESULT}"
+       
+        return 0
+}
+
+
+##############################
+# Function: areCorrectPermissionsOnFile
+# Purpose: Check if a file has the matching permissions as specified
+#
+# Usage: areCorrectPermissionsOnFile <filename> <permissions>
+#
+# Return Values:
+# 0     File does not have matching permissions as specified
+# 1     File has matching permissions as specified
+# 2     Error in fetching details or invalid input
+#
+# Input globals accessed by this function
+# none
+#
+# Output globals set by this function
+# RESULT
+##############################
+function areCorrectPermissionsOnFile() {
+
+        if (( ${#} < 2 )) ; then
+                ${ECHO} "Usage: areCorrectPermissionsOnFile <filename> <permissions>"
+                ${ECHO} "Refer man chmod for syntax of file permissions"
+                RESULT=2
+                return 2
+        fi
+
+        if [[ ! -f "${1}" ]] ; then
+                ${ECHO} "ERROR: areCorrectPermissionsOnFile: File does not exist: ${1}"
+                RESULT=2
+                return 2
+        fi
+
+        # If the permissions match, then the find command will return the filename
+        RESULT=$(${FIND} "${1}" -prune -perm "${2}" -name "${1}" 2>&1)
+        retVal=$?
+
+        # retVal is not zero indicates a problem in find.
+        if [[ $retVal -ne 0 ]] ; then
+                ${ECHO} "ERROR: areCorrectPermissionsOnFile: Incorrect permissions entered: ${2}"
+                ${ECHO} "Refer man chmod for syntax of file permissions"
+                RESULT=2
+                return 2
+
+        fi
+
+        if [[ "${RESULT}" != "${1}" ]] ; then
+                RESULT=1
+                return 1
+        fi
+
+        RESULT=0
+        return 0
+}
+
+##############################
+# Function: areCorrectPermissionsOnDirectory
+# Purpose: Check if a directory has the matching permissions as specified
+#
+# Usage: areCorrectPermissionsOnDirectory <dirname> <permissions>
+#
+# Return Values:
+
+# 0     Directory have matching permissions as specified
+# 1     Directory does not exist
+# 2     Error in fetching details or invalid input
+#
+# Input globals accessed by this function
+# none
+#
+# Output globals set by this function
+# RESULT
+##############################
+function areCorrectPermissionsOnDirectory() {
+
+if (( ${#} < 2 )) ; then
+                ${echo} "Usage: areCorrectPermissionsOnDirectory <dirname> <permissions>"
+                ${echo} "Refer man chmod for syntax of file permissions"
+                return 2
+        fi
+
+        if [[ ! -d "${1}" ]] ; then
+                ${echo} "ERROR: areCorrectPermissionsOnDirectory: Dir does not exist: ${1}"
+                return 1
+        fi
+
+        # If the permissions match, then the find command will return the filename
+
+        RESULT=$(find "$1" -prune "-perm" "$2" 2>/dev/null)
+        retVal=$?
+
+        if [ "$RESULT" == "$1" ]; then
+        echo "Directory permission of $1 match with $2"
+        return 0
+        fi
+
+}
+
+##############################
+# Function: isPmsVipOnSeparateIpAddress
+# Purpose: Check if pms vip has a separate IP Address
+# Usage: isPmsVipOnSeparateIpAddress
+#
+# Return Values:
+# 0     pms vip is the same as masterservice ip
+# 1     pms vip is not the same as masterservice ip
+# 2     Error in fetching hosts details
+#
+# Input globals accessed by this function
+# none
+#
+# Output globals set by this function
+# RESULT
+##############################
+function isPmsVipOnSeparateIpAddress() {
+
+        if [[ ! -r ${ETCHOSTS} ]] ; then
+                ${ECHO} "ERROR: isPmsVipOnSeparateIpAddress: Cannot read ${ETCHOSTS}"
+                RESULT=2
+                return 2
+        fi
+
+        masterservice_ip=$(${GREP} -v "[ 	]*#" ${ETCHOSTS} | 
+                           ${GREP} -w -i "masterservice" | ${AWK} 'NR == 1 {print $1}')
+
+        pms_vip=$(${GREP} -v "[        ]*#" ${ETCHOSTS} |
+                  ${GREP} -w -i "pms-vip" | ${AWK} 'NR == 1 {print $1}')
+
+        if [[ "${masterservice_ip}" == "${pms_vip}" ]] ; then
+                RESULT=1
+                return 1
+        fi
+
+        RESULT=0
+        return 0
+}
+
+##############################
+# Function: isCmsVipOnSeparateIpAddress
+# Purpose: Check if cms vip has a separate IP Address
+# Usage: isCmsVipOnSeparateIpAddress
+#
+# Return Values:
+# 0     cms vip is the same as masterservice ip
+# 1     cms vip is not the same as masterservice ip
+# 2     Error in fetching hosts details
+#
+# Input globals accessed by this function
+# none
+#
+# Output globals set by this function
+# RESULT
+##############################
+function isCmsVipOnSeparateIpAddress() {
+
+        if [[ ! -r ${ETCHOSTS} ]] ; then
+                ${ECHO} "ERROR: isCmsVipOnSeparateIpAddress: Cannot read ${ETCHOSTS}"
+                RESULT=2
+                return 2
+        fi
+
+        masterservice_ip=$(${GREP} -v "[ 	]*#" ${ETCHOSTS} | 
+                           ${GREP} -w -i "masterservice" | ${AWK} 'NR == 1 {print $1}')
+
+        cms_vip=$(${GREP} -v "[        ]*#" ${ETCHOSTS} |
+                  ${GREP} -w -i "cms-vip" | ${AWK} 'NR == 1 {print $1}')
+
+        if [[ "${masterservice_ip}" == "${cms_vip}" ]] ; then
+                RESULT=1
+                return 1
+        fi
+
+        RESULT=0
+        return 0
+}
+
+##############################
+# Function: getAdmin1StorageVip
+# Purpose: Get the Admin 1 Storage Vip
+# Usage: getAdmin1StorageVip
+#
+# Return Values:
+#      0        Success
+#      1        Failure
+# RESULT        The Admin 1 storage vip
+#
+# Input globals accessed by this function
+# none
+#
+# Output globals set by this function
+# RESULT
+##############################
+function getAdmin1StorageVip() {
+        
+        # Get the hostname of the Admin1
+        getAdmin1Hostname
+        if [[ $? -eq 1 || "${RESULT}" == "" ]] ; then
+                ${ECHO} "ERROR: getAdmin1StorageVip : Could not fetch Admin1 hostname details"
+                return 1
+        fi
+
+        admin1_hostname="${RESULT}"
+
+        RESULT=$(${NAWK} -F"=" '/systemname='"${admin1_hostname}"'/,/storIPaddress=/ 
+                 { if(match($0,/storIPaddress/)){print $2} }' /ericsson/config/cluster.ini)
+
+        if [[ -z "${RESULT}" ]] ; then
+                ${ECHO} "ERROR: getAdmin1StorageVip : Could not fetch Admin1 Storage Vip"
+                return 1
+        fi
+
+        #TODO: Nice to have: Check if RESULT is in a proper IP Address format.
+
+        return 0
+}
+
+##############################
+# Function: getAdmin2StorageVip
+# Purpose: Get the Admin 2 Storage Vip
+# Usage: getAdmin2StorageVip
+#
+# Return Values:
+#      0        Success
+#      1        Failure
+# RESULT        The Admin 2 storage vip
+#
+# Input globals accessed by this function
+# none
+#
+# Output globals set by this function
+# RESULT
+##############################
+function getAdmin2StorageVip() {
+        
+        # Get the hostname of the Admin2
+        getAdmin2Hostname
+        if [[ $? -eq 1 || "${RESULT}" == "" ]] ; then
+                ${ECHO} "ERROR: getAdmin2StorageVip : Could not fetch Admin2 hostname details"
+                return 1
+        fi
+
+        admin2_hostname="${RESULT}"
+
+        RESULT=$(${NAWK} -F"=" '/systemname='"${admin2_hostname}"'/,/storIPaddress=/ 
+                 { if(match($0,/storIPaddress/)){print $2} }' /ericsson/config/cluster.ini)
+
+        if [[ -z "${RESULT}" ]] ; then
+                ${ECHO} "ERROR: getAdmin2StorageVip : Could not fetch Admin2 Storage Vip"
+                return 1
+        fi
+
+        #TODO: Nice to have: Check if RESULT is in a proper IP Address format.
+
+        return 0
+}
+
+
+############################# End: Functions related to /etc/passwd and /etc/hosts ##############
+
+############################# Start: Functions related to LDAP ##################################
+
+##############################
+# Function: isUserInLDAP
+# Purpose: Check if the specified user is configured in LDAP
+# Usage: isUserInLDAP <username>
+#
+# Return Values:
+# 0     <username> is not present in LDAP
+# 1     <username> is present in LDAP
+# 2     Error in fetching LDAP details
+#
+# Input globals accessed by this function
+# none
+#
+# Output globals set by this function
+# RESULT
+##############################
+function isUserInLDAP() {
+
+        if (( ${#} < 1 )) ; then
+                ${ECHO} "Usage: isUserInLDAP <username>"
+                RESULT=2
+                return 2
+        fi
+
+        #Check if LDAP client is configured, if not flag error
+
+        if [[ ! -f "${LDAP_CLIENT_FILE}" ]] ; then
+                ${ECHO} "ERROR: isUserInLDAP : LDAP client not configured"
+                RESULT=2
+                return 2
+        fi
+
+        if [[ $(${LDAPLIST} passwd -l "${1}" >/dev/null 2>&1) -eq 0 ]] ; then
+                RESULT=1
+                ${ECHO} "1"
+                return 1
+        else
+                RESULT=0
+                ${ECHO} "0"
+                return 0
+        fi
+}
+
+##############################
+# Function: areLDAPPrimaryAndSecondaryConfigured
+# Purpose: Check if LDAP Primary and Secondary are configured in LDAP
+# Usage: areLDAPPrimaryAndSecondaryConfigured
+#
+# Return Values:
+# 0     Primary and Secondary are not configured in LDAP
+# 1     Primary and Secondary are configured in LDAP
+# 2     Error in fetching LDAP details
+#
+# Input globals accessed by this function
+# none
+#
+# Output globals set by this function
+# RESULT
+##############################
+function areLDAPPrimaryAndSecondaryConfigured() {
+
+        #Check if LDAP client is configured, if not flag error
+
+        if [[ ! -f "${LDAP_CLIENT_FILE}" ]] ; then
+                ${ECHO} "ERROR: areLDAPPrimaryAndSecondaryConfigured : LDAP client not configured"
+                RESULT=2
+                return 2
+        fi
+
+        # When primary and secondary are configured, the output of ldapclient list should show a line similar to:
+        # NS_LDAP_SERVERS= 10.42.36.224, 10.42.36.226 
+        # Hence if this line has 3 entries, it should mean that primary and secondary are configured
+
+        if [[ $(${LDAPCLIENT} list | ${AWK} '/NS_LDAP_SERVERS/ {print NF}') -eq 3 ]] ; then
+               RESULT=1
+               ${ECHO} "1"
+               return 1
+        else
+               RESULT=0
+               ${ECHO} "0"
+               return 0
+        fi
+}
+
+##############################
+# Function: getTotalNumberOfUsersDefinedInLDAP
+# Purpose: Get the total number of users defined in LDAP
+# Usage: getTotalNumberOfUsersDefinedInLDAP
+#
+# Return Values:
+#      0        Success
+#      1        Failure
+# RESULT        Total number of users defined in LDAP
+#
+# Input globals accessed by this function
+# none
+#
+# Output globals set by this function
+# RESULT
+##############################
+function getTotalNumberOfUsersDefinedInLDAP() {
+
+        #Check if LDAP client is configured, if not flag error
+
+        if [[ ! -f ${LDAP_CLIENT_FILE} ]] ; then
+                ${ECHO} "ERROR: getTotalNumberOfUsersDefinedInLDAP : LDAP client not configured"
+                return 1
+        fi
+
+        RESULT=0
+        RESULT=$(${LDAPLIST} passwd | ${SED} '/^$/d' | ${WC} -l )
+
+        if [[ "${RESULT}" -lt 1 ]] ; then
+                ${ECHO} "ERROR: getTotalNumberOfUsersDefinedInLDAP : LDAP client not configured"
+                return 1
+        fi
+
+        ${ECHO} "${RESULT}"
+
+        return 0
+}
+
+#function getNumberOfSysadmUsersDefinedInLDAP() {
+#        echo "" # number
+#        return 1
+#}
+
+
+#function getNumberOfUsersDefinedInLdapWithExpiredPassword() { # <ldapdomain>
+#        echo "" # number
+#        return 1
+#}
+
+##############################
+# Function: getLdapDomain
+# Purpose: Get the LDAP domain
+# Usage: getLdapDomain
+#
+# Return Values:
+#      0        Success
+#      1        Failure
+# RESULT        LDAP domain
+#
+# Input globals accessed by this function
+# none
+#
+# Output globals set by this function
+# RESULT
+##############################
+function getLdapDomain() {
+
+        #Check if LDAP client is configured, if not flag error
+
+        if [[ ! -f ${LDAP_CLIENT_FILE} ]] ; then
+                ${ECHO} "ERROR: getTotalNumberOfUsersDefinedInLDAP : LDAP client not configured"
+                return 1
+        fi
+
+        RESULT=$(${LDAPCLIENT} list | ${GREP} "^NS_LDAP_BINDDN=" | ${SED} 's/dc=//g' | ${AWK} -F"," '{print $3"."$4}')
+
+        if [[ -z "${RESULT}" ]] ; then
+                return 1
+        fi
+
+        return 0
+}
+
+##############################
+# Function: getPrimaryLdapServerIpAddress
+# Purpose: Get the primary LDAP server IP Address
+# Usage: getPrimaryLdapServerIpAddress
+#
+# Return Values:
+#      0        Success
+#      1        Failure
+# RESULT        IP Address of primary LDAP server
+#
+# Input globals accessed by this function
+# none
+#
+# Output globals set by this function
+# RESULT
+##############################
+function getPrimaryLdapServerIpAddress() {
+
+        #Check if LDAP client is configured, if not flag error
+
+        if [[ ! -f ${LDAP_CLIENT_FILE} ]] ; then
+                ${ECHO} "ERROR: getPrimaryLdapServerIpAddress : LDAP client not configured"
+                return 1
+        fi
+
+        RESULT=$(${LDAPCLIENT} list | ${GREP} NS_LDAP_SERVERS | ${AWK} '{print $2}' | ${CUT} -d"," -f1)
+
+        if [[ -z "${RESULT}" ]] ; then
+                ${ECHO} "ERROR: getPrimaryLdapServerIpAddress : NS_LDAP_SERVERS not defined"
+                return 1
+        fi
+
+        ${ECHO} "${RESULT}"
+
+        return 0
+}
+
+##############################
+# Function: getSecondaryLdapServerIpAddress
+# Purpose: Get the secondary LDAP server IP Address
+# Usage: getSecondaryLdapServerIpAddress
+#
+# Return Values:
+#      0        Success
+#      1        Failure
+# RESULT        IP Address of secondary LDAP server
+#
+# Input globals accessed by this function
+# none
+#
+# Output globals set by this function
+# RESULT
+##############################
+function getSecondaryLdapServerIpAddress() {
+
+        #Check if LDAP client is configured, if not flag error
+
+        if [[ ! -f ${LDAP_CLIENT_FILE} ]] ; then
+                ${ECHO} "ERROR: getSecondaryLdapServerIpAddress : LDAP client not configured"
+                return 1
+        fi
+
+        RESULT=$(${LDAPCLIENT} list | ${GREP} NS_LDAP_SERVERS | ${AWK} '{print $2}' | ${CUT} -d"," -f2)
+
+        if [[ "${RESULT}" == "" ]] ; then
+                ${ECHO} "ERROR: getSecondaryLdapServerIpAddress : NS_LDAP_SERVERS not defined"
+                return 1
+        fi
+
+        ${ECHO} "${RESULT}"
+
+        return 0
+
+}
+
+############################# End: Functions related to LDAP ####################################
+
+
+
+
+##############################
+# Function: isSolarisServiceOnline
+# Purpose: Check if the service is online 
+# Usage: isSolarisServiceOnline <service>
+#
+# Return Values:
+# 0     <service> is online
+# 1     <service> is not in online state
+#
+# Input globals accessed by this function
+# none
+#
+# Output globals set by this function
+# none
+##############################
+function isSolarisServiceOnline (){  #<servicename>
+	isSolarisServiceOnline=$(svcs -H ${1} )
+	if [[ ${#} != 1 ]];
+		then
+			echo "Usage: ${FUNCNAME} <service>"
+			return 1
+	elif [[ "$isSolarisServiceOnline" =~ "online" ]]
+		then
+		return 0
+	else
+		return 1
+	fi
+}
+##############################
+# Function: getPackageVersion
+#Purpose: Check the package version
+# Usage: getPackageVersion <package>
+#
+# Return Values:
+# 0      <package> not given
+# 1      <package> version given
+#
+# Input globals accessed by this function
+# none
+#
+# Output globals set by this function
+# none
+##############################
+function getPackageVersion (){
+        getPackageVersion=$(pkginfo -l $1 | grep -v "version:")
+        if [[ ${#} != 1 ]];
+                then
+                        echo "Usage: ${FUNCNAME} <package>"
+                        return 1
+        elif [[ $? != 0 ]];
+                then
+                        echo "(Package $1 does not exist)"
+                        return 1
+        else echo $getPackageVersion
+                return 0
+        fi
+}
+##############################
+# Function: startLog         
+# Purpose: Start Log file            
+# Usage: startLog <log directory> <log filename>
+#
+# Return Values:
+# 0      
+# 1      
+#
+# Input globals accessed by this function
+# none
+#
+# Output globals set by this function
+# LOGFILE
+##############################
+
+function startLog () {
+
+
+        LOG_DIR=$1
+        LOG_FILE=$2                                                  
+        SCK_TMP="/tmp/sck.$$"
+        [[ ! -d ${LOG_DIR} ]] && mkdir -p ${LOG_DIR}
+        [[ ! -d ${SCK_TMP} ]] && mkdir -p ${SCK_TMP}
+
+        LOGFILE=${LOG_DIR}/${LOG_FILE}
+
+        touch ${LOGFILE}
+
+        [ -e ${SCK_TMP}/sug.fifo ] && rm -f ${SCK_TMP}/sug.fifo
+        mkfifo ${SCK_TMP}/sug.fifo
+        # save stdout/stderr to 3 & 4
+        exec 3>&1 4>&2
+
+        # start tee in the background
+        tee -a ${LOGFILE} < ${SCK_TMP}/sug.fifo >&3 &
+        tee_pid=$!
+
+        # redirect stdout/stderr to the named pipe
+        exec >${SCK_TMP}/sug.fifo 2>&1
+
+        echo "Starting log file :" $LOGFILE
+
+}
+
+####################################
+# Purpose: Stop Log                  
+# Usage: stopLog 
+#
+# Return Values:
+# 0      
+#
+# Input globals accessed by this function
+# none
+#
+# Output globals set by this function
+# none
+##############################
+
+function stopLog () {
+
+        # Stop log
+
+        # restore fds, close 3 & 4
+        exec 1>&3 3>&- 2>&4 4>&-
+
+        # sleep for a bit, to allow tee to die on its own
+        sleep 6
+                if [[ ${tee_pid} -ne 0 ]]; then
+                ps -p $tee_pid 1>/dev/null && kill $tee_pid
+        fi
+        return 0
+
+}
+
+####################################
+# Purpose: Confirm it is possible to connect to a node
+# Usage: confirmConnection <node>
+#
+# Return Values:
+# 0 success
+# 1 failure
+#
+# Input globals accessed by this function
+# server ip address or server full name e.g. atrcus1234.athtem.eei.ericsson.se
+#
+# Output globals set by this function
+# none
+##############################
+
+function confirmConnection () {
+
+        ${PING} -c 3 $1  > /dev/null
+        if [[ $? -ne 0 ]]; then
+                echo "WARNING: Could not contact $1 "
+                return 1
+        else
+                echo "INFO: Successfully contacted $1"
+                return 0
+        fi
+}
+####################################
+# Purpose: Get ADMIN1 and ADMIN2 server names from cluster.ini
+# Usage: getServers 
+#
+# Return Values:
+# 0 success
+# 1 failure
+#
+# Input globals accessed by this function
+# -                                            
+#
+# Output globals set by this function
+# ADMIN1
+# ADMIN2
+##############################
+
+function getServers () {
+
+
+CLUSTER_INI=/ericsson/config/cluster.ini
+
+        if [[ -f ${CLUSTER_INI} ]]; then
+                NUM_NODES=$(cat /ericsson/config/cluster.ini |grep systemname | wc -l)
+                if [[ $NUM_NODES -eq 2 ]]; then
+                        ADMIN1=$(cat /ericsson/config/cluster.ini |grep systemname |head -1 |awk -F'=' '{print $2}')
+                        ADMIN2=$(cat /ericsson/config/cluster.ini |grep systemname |tail -1 |awk -F'=' '{print $2}')
+                        return 0
+                else
+                        echo "ERROR: Not a 2 node cluster"
+                        return 1
+                fi
+        else
+                echo "ERROR: No add_cluster_node file found"
+                return 1
+        fi
+}
+####################################
+# Purpose: Check both servers are RUNNING in cluster
+# Usage: checkServers
+#
+# Return Values:
+# 0 success
+# 1 failure
+#
+# Input globals accessed by this function
+# - 
+#
+# Output globals set by this function
+# - 
+##############################
+
+function checkServers () {
+        getServers
+
+        ADMIN1_STATE=`${HASYS} -state ${ADMIN1}`
+        ADMIN2_STATE=`${HASYS} -state ${ADMIN2}`
+
+        if [ ${ADMIN1_STATE} != "RUNNING" ]; then
+                echo "ERROR: Cluster not in running state on ${ADMIN1}"
+                return 1
+        else
+                echo "INFO: Cluster running OK on ${ADMIN1}"
+        fi
+
+        if [ ${ADMIN2_STATE} != "RUNNING" ]; then
+                echo "ERROR: Cluster not in running state on ${ADMIN2}"
+                return 1
+        else
+                echo "INFO: Cluster running OK on ${ADMIN2}"
+                return 0
+        fi
+}
+####################################
+# Purpose: Switck HA Group from the server it is ONLINE to the other server
+# Usage: SwitchGroup <GROUP>        
+#
+# Return Values:
+# 0 success
+# 1 failure
+#
+# Input globals accessed by this function
+# Group (Oss or Sybase1)
+#
+# Output globals set by this function
+# TO_SERVER    (The server group is swiched to)
+##############################
+function switchGroup () {
+        GROUP=$1
+        getServers 
+
+        MAX_TIMER=600
+        [[ ${GROUP} == "Oss" ]] && MAX_TIMER=1800
+
+        ADMIN1_GRP_STATE=`${HAGRP} -state ${GROUP} -sys ${ADMIN1}`
+        ADMIN2_GRP_STATE=`${HAGRP} -state ${GROUP} -sys ${ADMIN2}`
+
+        if [[ ${ADMIN1_GRP_STATE} == "ONLINE" && ${ADMIN2_GRP_STATE} == "OFFLINE" ]]; then
+                TO_SERVER=${ADMIN2}
+        elif [[ ${ADMIN2_GRP_STATE} == "ONLINE" && ${ADMIN1_GRP_STATE} == "OFFLINE" ]]; then
+                TO_SERVER=${ADMIN1}
+        else
+                echo "ERROR: ${GROUP} group not ONLINE on either server or ${GROUP} is a parallel group"
+                echo "ERROR: Not possible to switch ${GROUP} group"
+                return 1
+        fi
+
+        echo -e "\nSwitching ${GROUP} group to ${TO_SERVER}"
+        ${HAGRP} -switch ${GROUP} -to ${TO_SERVER}
+        if [[ $? -ne 0 ]]; then
+                echo -e "\nERROR: Switching ${GROUP} Group order failed"
+                return 1
+        fi
+        MYTIMER=0
+        while : ; do
+                count=`${HAGRP} -state ${GROUP} -sys ${TO_SERVER} | grep "ONLINE" | wc -l`
+                if [ $count -eq 1 ];then
+                        echo -e "\nINFO: ${GROUP} started OK after switch"
+                        return 0
+                else
+                        if [ $MYTIMER -gt $MAX_TIMER ];then
+                                echo -e  "\nError: ${GROUP} faild to come ONLINE after $MYTIMER seconds"
+                                return 1
+                        fi
+                        sleep 15; ((MYTIMER=MYTIMER+15))
+                        echo  -e '.\c'
+                fi
+        done
+}
+
+
+# Purpose: To check whether II or Upgrade is successful
+# Return Values:
+#  1     II is successful
+# -1     II is not successful
+#  2     Upgrade is successful
+# -2     Upgrade is not successful 
+#  3     one of the keyfiles doesn't exist or empty
+#
+# Input globals accessed by this function
+# none
+#
+##############################
+
+function IsIIorUpgradeSuccessful () {
+
+if [ ! \( -s "/ericsson/config/.iistage" -a -s "/ericsson/config/next_stage" -a -s "/var/opt/ericsson/sck/data/cp.history" \) ]
+then
+        echo "Error: one of the keyfiles doesn't exist or empty and the system is not Initial Installed or upgraded"
+        return 3
+else
+
+IIST=`cat /ericsson/config/.iistage`
+IINXT=`tail -1 /ericsson/config/next_stage |grep cleanup |awk '{print $1}'`
+CP_HISTORY=/var/opt/ericsson/sck/data/cp.history
+II=`cat $CP_HISTORY | grep "Initial Installation" |awk '{print $4}'`
+COUNT=`cat $CP_HISTORY | wc -l`
+OLD=`tail -1 $CP_HISTORY |grep Upgrade |awk '{print $5}'`
+NEW=`tail -1 $CP_HISTORY|grep Upgrade |awk '{print $8}'`
+
+if [ "$COUNT" -eq 1 -a "$IIST" == done  -a  "$IINXT" == cleanup ]; then
+        echo "II to $II is Successful "
+        return 1
+elif [ "$COUNT" -eq 1 -a "$IIST" != done  -o "$IINXT" != cleanup ]
+then
+        echo "II to $II is not successful"
+        return -1
+fi
+
+if [ $COUNT -gt 1 ]; then
+
+grep -i "from $OLD to $NEW stage: done" /var/opt/ericsson/sck/log/SUG/$NEW/system_ug_to_*_4_* 1>/dev/null 2>/dev/null
+if [ $? -eq 0 ]; then
+        echo "upgrade is successful from $OLD to $NEW"
+        return 2
+else
+        echo "upgrade is not successful from $OLD to $NEW"
+        return -2
+fi
+fi
+fi
+
+}
+
+
+####################################
+# Purpose: create output like Solaris "banner" command
+# Usage: bashBanner <text>
+#
+# Return Values:
+# 0 success
+# 1 failure
+#
+# Input globals accessed by this function
+# Group (Oss or Sybase1)
+#
+# Output globals set by this function
+# TO_SERVER    (The server group is swiched to)
+##############################
+bashBanner ()
+{
+
+A=$((1<<0))
+B=$((1<<1))
+C=$((1<<2))
+D=$((1<<3))
+E=$((1<<4))
+F=$((1<<5))
+G=$((1<<6))
+H=$((1<<7))
+
+function outLine
+{
+  typeset r=0 scan
+  for scan
+  do
+    typeset l=${#scan}
+    typeset line=0
+    for ((p=0; p<l; p++))
+    do
+      line="$((line+${scan:$p:1}))"
+    done
+    for ((column=0; column<8; column++))
+      do
+        [[ $((line & (1<<column))) == 0 ]] && n=" " || n="#"
+        raw[r]="${raw[r]}$n"
+      done
+      r=$((r+1))
+    done
+}
+
+function outChar
+{
+    case "$1" in
+    (" ") outLine "" "" "" "" "" "" "" "" ;;
+    ("0") outLine "BCDEF" "AFG" "AEG" "ADG" "ACG" "ABG" "BCDEF" "" ;;
+    ("1") outLine "F" "EF" "F" "F" "F" "F" "F" "" ;;
+    ("2") outLine "BCDEF" "AG" "G" "CDEF" "B" "A" "ABCDEFG" "" ;;
+    ("3") outLine "BCDEF" "AG" "G" "CDEF" "G" "AG" "BCDEF" "" ;;
+    ("4") outLine "AF" "AF" "AF" "BCDEFG" "F" "F" "F" "" ;;
+    ("5") outLine "ABCDEFG" "A" "A" "ABCDEF" "G" "AG" "BCDEF" "" ;;
+    ("6") outLine "BCDEF" "A" "A" "BCDEF" "AG" "AG" "BCDEF" "" ;;
+    ("7") outLine "BCDEFG" "G" "F" "E" "D" "C" "B" "" ;;
+    ("8") outLine "BCDEF" "AG" "AG" "BCDEF" "AG" "AG" "BCDEF" "" ;;
+    ("9") outLine "BCDEF" "AG" "AG" "BCDEF" "G" "G" "BCDEF" "" ;;
+    ("a") outLine "" "" "BCDE" "F" "BCDEF" "AF" "BCDEG" "" ;;
+    ("b") outLine "B" "B" "BCDEF" "BG" "BG" "BG" "ACDEF" "" ;;
+    ("c") outLine "" "" "CDE" "BF" "A" "BF" "CDE" "" ;;
+    ("d") outLine "F" "F" "BCDEF" "AF" "AF" "AF" "BCDEG" "" ;;
+    ("e") outLine "" "" "BCDE" "AF" "ABCDEF" "A" "BCDE" "" ;;
+    ("f") outLine "CDE" "B" "B" "ABCD" "B" "B" "B" "" ;;
+    ("g") outLine "" "" "BCDEG" "AF" "AF" "BCDE" "F" "BCDE" ;;
+    ("h") outLine "B" "B" "BCDE" "BF" "BF" "BF" "ABF" "" ;;
+    ("i") outLine "C" "" "BC" "C" "C" "C" "ABCDE" "" ;;
+    ("j") outLine "D" "" "CD" "D" "D" "D" "AD" "BC" ;;
+    ("k") outLine "B" "BE" "BD" "BC" "BD" "BE" "ABEF" "" ;;
+    ("l") outLine "AB" "B" "B" "B" "B" "B" "ABC" "" ;;
+    ("m") outLine "" "" "ACEF" "ABDG" "ADG" "ADG" "ADG" "" ;;
+    ("n") outLine "" "" "BDE" "BCF" "BF" "BF" "BF" "" ;;
+    ("o") outLine "" "" "BCDE" "AF" "AF" "AF" "BCDE" "" ;;
+    ("p") outLine "" "" "ABCDE" "BF" "BF" "BCDE" "B" "AB" ;;
+    ("q") outLine "" "" "BCDEG" "AF" "AF" "BCDE" "F" "FG" ;;
+    ("r") outLine "" "" "ABDE" "BCF" "B" "B" "AB" "" ;;
+    ("s") outLine "" "" "BCDE" "A" "BCDE" "F" "ABCDE" "" ;;
+    ("t") outLine "C" "C" "ABCDE" "C" "C" "C" "DE" "" ;;
+    ("u") outLine "" "" "AF" "AF" "AF" "AF" "BCDEG" "" ;;
+    ("v") outLine "" "" "AG" "BF" "BF" "CE" "D" "" ;;
+    ("w") outLine "" "" "AG" "AG" "ADG" "ADG" "BCEF" "" ;;
+    ("x") outLine "" "" "AF" "BE" "CD" "BE" "AF" "" ;;
+    ("y") outLine "" "" "BF" "BF" "BF" "CDE" "E" "BCD" ;;
+    ("z") outLine "" "" "ABCDEF" "E" "D" "C" "BCDEFG" "" ;;
+    ("A") outLine "D" "CE" "BF" "AG" "ABCDEFG" "AG" "AG" "" ;;
+    ("B") outLine "ABCDE" "AF" "AF" "ABCDE" "AF" "AF" "ABCDE" "" ;;
+    ("C") outLine "CDE" "BF" "A" "A" "A" "BF" "CDE" "" ;;
+    ("D") outLine "ABCD" "AE" "AF" "AF" "AF" "AE" "ABCD" "" ;;
+    ("E") outLine "ABCDEF" "A" "A" "ABCDE" "A" "A" "ABCDEF" "" ;;
+    ("F") outLine "ABCDEF" "A" "A" "ABCDE" "A" "A" "A" "" ;;
+    ("G") outLine "CDE" "BF" "A" "A" "AEFG" "BFG" "CDEG" "" ;;
+    ("H") outLine "AG" "AG" "AG" "ABCDEFG" "AG" "AG" "AG" "" ;;
+    ("I") outLine "ABCDE" "C" "C" "C" "C" "C" "ABCDE" "" ;;
+    ("J") outLine "BCDEF" "D" "D" "D" "D" "BD" "C" "" ;;
+    ("K") outLine "AF" "AE" "AD" "ABC" "AD" "AE" "AF" "" ;;
+    ("L") outLine "A" "A" "A" "A" "A" "A" "ABCDEF" "" ;;
+    ("M") outLine "ABFG" "ACEG" "ADG" "AG" "AG" "AG" "AG" "" ;;
+    ("N") outLine "AG" "ABG" "ACG" "ADG" "AEG" "AFG" "AG" "" ;;
+    ("O") outLine "CDE" "BF" "AG" "AG" "AG" "BF" "CDE" "" ;;
+    ("P") outLine "ABCDE" "AF" "AF" "ABCDE" "A" "A" "A" "" ;;
+    ("Q") outLine "CDE" "BF" "AG" "AG" "ACG" "BDF" "CDE" "FG" ;;
+    ("R") outLine "ABCD" "AE" "AE" "ABCD" "AE" "AF" "AF" "" ;;
+    ("S") outLine "CDE" "BF" "C" "D" "E" "BF" "CDE" "" ;;
+    ("T") outLine "ABCDEFG" "D" "D" "D" "D" "D" "D" "" ;;
+    ("U") outLine "AG" "AG" "AG" "AG" "AG" "BF" "CDE" "" ;;
+    ("V") outLine "AG" "AG" "BF" "BF" "CE" "CE" "D" "" ;;
+    ("W") outLine "AG" "AG" "AG" "AG" "ADG" "ACEG" "BF" "" ;;
+    ("X") outLine "AG" "AG" "BF" "CDE" "BF" "AG" "AG" "" ;;
+    ("Y") outLine "AG" "AG" "BF" "CE" "D" "D" "D" "" ;;
+    ("Z") outLine "ABCDEFG" "F" "E" "D" "C" "B" "ABCDEFG" "" ;;
+    (".") outLine "" "" "" "" "" "" "D" "" ;;
+    (",") outLine "" "" "" "" "" "E" "E" "D" ;;
+    (":") outLine "" "" "" "" "D" "" "D" "" ;;
+    ("!") outLine "D" "D" "D" "D" "D" "" "D" "" ;;
+    ("/") outLine "G" "F" "E" "D" "C" "B" "A" "" ;;
+    ("\\") outLine "A" "B" "C" "D" "E" "F" "G" "" ;;
+    ("|") outLine "D" "D" "D" "D" "D" "D" "D" "D" ;;
+    ("+") outLine "" "D" "D" "BCDEF" "D" "D" "" "" ;;
+    ("-") outLine "" "" "" "BCDEF" "" "" "" "" ;;
+    ("*") outLine "" "BDF" "CDE" "D" "CDE" "BDF" "" "" ;;
+    ("=") outLine "" "" "BCDEF" "" "BCDEF" "" "" "" ;;
+    ("~") outLine "BC" "ADG" "EF" "" "" "" "" "" ;;
+    ("_") outLine "" "" "" "" "" "" "" "ABCDEFGH" ;;
+    (">") outLine "C" "D" "E" "F" "E" "D" "C" "" ;;
+    ("<") outLine "F" "E" "D" "C" "D" "E" "F" "" ;;
+
+    (*) outLine "ABCDEFGH" "AH" "AH" "AH" "AH" "AH" "AH" "ABCDEFGH" ;;
+    esac
+}
+
+function outArg
+{
+  typeset l=${#1} c r
+  for ((c=0; c<l; c++))
+  do
+    outChar "${1:$c:1}"
+  done
+  echo
+  for ((r=0; r<8; r++))
+  do
+    printf "%-*.*s\n" "${COLUMNS:-80}" "${COLUMNS:-80}" "${raw[r]}"
+    raw[r]=""
+  done
+}
+
+for i
+do
+  outArg "$i"
+  echo
+done
+}

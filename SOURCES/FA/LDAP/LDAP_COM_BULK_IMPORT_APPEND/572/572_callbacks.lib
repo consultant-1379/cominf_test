@@ -1,0 +1,187 @@
+#!/bin/bash
+#################################################################################
+#
+#
+#	   COPYRIGHT (C) ERICSSON RADIO SYSTEMS AB, Sweden
+#
+#	   The copyright to the document(s) herein is the property of
+#	   Ericsson Radio Systems AB, Sweden.
+#
+#	   The document(s) may be used and/or copied only with the written
+#	   permission from Ericsson Radio Systems AB or in accordance with
+#	   the terms and conditions stipulated in the agreement/contract
+#	   under which the document(s) have been supplied.
+#
+#################################################################################
+
+
+# ATCOMINF Test Callback Library
+
+# Revision History
+# 8-10-2012	xamamcg		test domains not matching
+
+# Complete the callbacks in this library to automate the test case.
+#
+# Callbacks are stateless, it is not possible to set a global variable in one callback 
+# and access it it in another.
+#
+# Callbacks are called by the test harness in the following order:
+#
+# tc_setup() 		# Called only for independent TC execution mode to setup TC
+# tc_precon()		# Conditions that should exist before TC can run
+# tc_test()		# Runs the test for this TC
+# tc_postcon()		# Conditions that should/should not exist after successful TC 
+# tc_cleanup()		# Called only for independent TC execution mode to clenup after TC
+
+# All callbacks must PASS for a TC PASS result
+
+LDAP_BIN="/ericsson/sdee/bin"
+#################################################################################
+#
+# CALLBACK: TC_SETUP
+#
+# This callback function is only called if the harness execution mode is 'AT_INDEPENDENT'
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_setup() {
+
+
+
+	
+
+	# Replace PASSWD with the correct credentials
+	for ii in *.in; do
+		sed "s/^PASSWD$/$LDAP_SUPERUSER_PASSWD/" $ii > $ii.tmp
+	done
+	return 0
+
+}
+#################################################################################
+
+#################################################################################
+#
+# CALLBACK: TC_PRECON
+#
+# This callback function checks the correct conditions exist to run the TC.
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+ 
+tc_precon() {
+
+
+
+	LDAP_SERVER_UP || {
+		echo "LDAP is not running. LDAP_SERVER_UP returned $?" 
+		return 1
+	}
+
+
+#-------------------------------------------------------------------------------
+#  check role1 is not listed
+#-------------------------------------------------------------------------------
+
+	${AT_BIN}/con_ex.bsh -d 572_list.in.tmp -o 572_list.exp -c "$LDAP_BIN/manage_COM.bsh -l role"
+	/usr/local/bin/expect 572_list.exp > role.out || { echo "list role failed"; return 2; }
+	grep ^role1 role.out && {
+		echo "role1 is listed, this wasn't expected ..."
+		return 1
+	}
+
+	return 0
+
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_TEST
+#
+# This callback function runs the test.
+# The harness compares the return code to the SPEC_TC_TEST_PASSCODE value set in the test spec.
+#
+# Return or exit codes:
+#	SPEC_TC_TEST_PASSCODE 	success
+# != SPEC_TC_TEST_PASSCODE 	failure
+ 
+tc_test() {
+
+
+#-------------------------------------------------------------------------------
+#  test with a valid file but differing domain name
+#-------------------------------------------------------------------------------
+
+	${AT_BIN}/con_ex.bsh -d 572_bulk.in.tmp -o 572_bulk.exp -c "$LDAP_BIN/manage_COM.bsh -a import -d 2.com -f bulk1.txt"
+	/usr/local/bin/expect 572_bulk.exp && {
+		echo "file could be imported, rc $?"
+		return 1
+	}
+
+	return 0
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_POSTCON
+#
+# This callback function checks expected results.
+#
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_postcon() {
+
+
+#-------------------------------------------------------------------------------
+#  check role1 is listed 
+#-------------------------------------------------------------------------------
+
+	${AT_BIN}/con_ex.bsh -d 572_list.in.tmp -o 572_list.exp -c "$LDAP_BIN/manage_COM.bsh -l role"
+	/usr/local/bin/expect 572_list.exp > list.out
+
+	grep ^role1 list.out && {
+		echo "role1 could be listed, rc $?"
+		return 1
+	}
+
+	CONSOLE_OUTPUT_CONTAINS "Domain [1.com] in import file does not match domain [2.com]" || { echo "No domain msg"; return 4; }
+
+
+
+	return 0
+
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_CLEANUP
+#
+# This callback function is only called if the harness execution mode is 'AT_INDEPENDENT'
+# 
+# This callback restores the target system to the state it was in before the TC 
+# was run. It rolls back changes made by callbacks tc_setup() and tc_test()
+# 
+# Return or exit codes:
+#  0	success
+# >0 	failure
+
+tc_cleanup() {
+
+
+
+		
+	rm -f *.out
+	rm -f *.exp
+	rm -f *.tmp
+
+}

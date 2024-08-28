@@ -1,0 +1,79 @@
+#!/bin/bash
+
+# TEST CASE SPEC FILE
+# This file is generated/updated using the test framework web interface.
+# Manual updates on test servers are lost when the test package is re-installed.
+#
+# Last modified: Monday 16th of December 2013 9:28:14
+#
+
+# These settings must be in BASH script format, they are sourced by other scripts.
+SPEC_FA_NAME="SOLARIS10INSTALL"
+SPEC_UC_NAME="SOLARIS10INSTALL_DHCP_AI_Manager"
+SPEC_TC_ID=1346
+SPEC_TC_SLOGAN="Deleting Networks from the DHCP server"
+SPEC_TC_TYPE="FT"
+SPEC_TC_POLARITY="positive"
+SPEC_TC_PRIORITY="high"
+SPEC_TC_AUTOMATED=1
+SPEC_TC_DEPENDENT_ONLY=0
+SPEC_TC_TIMEOUT=300
+SPEC_TC_TEST_PASSCODE=0
+SPEC_TC_AUTHOR="xgansre"
+SPEC_TC_AUTOMATOR="xgansre"
+# this parameter is not interpreted by harness
+SPEC_TC_DISABLED=0
+
+# Please do not remove the comment lines below.
+# They are used as section locators by the test harness.
+
+# BEGIN_PRE_CONDITIONS
+#To verify the deletion of networks.
+#Infra server is configured correctly for DHCP.IPV4 and IPV6 deamons runnings.Networks are added to the DHCP server.
+#
+#
+#Mars Path <Initial Installation/DHCP/AI Manager>
+# END_PRE_CONDITIONS
+
+
+# BEGIN_MANUAL_STEPS
+#Action 1:
+#Execute the following command to delete a particular network that has clients associated with it.
+##/ericsson/ocs/bin/ai_manager.sh -delete net -a <network_address>
+#
+#
+#Action 2:
+#Verify that a network has been removed by executing the following command:
+## /ericsson/ocs/bin/ai_manager.sh -list nets
+#
+#Action 3:
+#Verify that any associated clients that were deleted are also removed from the ai_hosts file:
+##more /ericsson/ocs/etc/aif_hosts
+#
+#Action 4: 
+#Repeat Actions 1 âEuro 3 for a network that has no associated client.
+#
+#Action 5:
+#Verify deleting a non existing client/network by executing the following command:
+##/ericsson/ocs/bin/ai_manager.sh -delete net -a <network_address>
+#
+#
+# END_MANUAL_STEPS
+
+# BEGIN_POST_CONDITIONS
+#Result 1:
+#The network should be deleted successfully. Any clients associated with that network are removed. The user is issued with a warning that the associated clients will be removed.
+#
+#Result 2:
+#There should be no instance of the network which is deleted by executing the above command.
+#
+#Result 3:
+#There should be no instance of the deleted clients.
+#
+#Result 4: 
+#The user is prompted that any associated clients will be deleted however not prompted to delete any clients. No client entries are removed from the ai_hosts file.
+#
+#Result 5:
+#An error message saying client/network does not exist should get displayed.
+#
+# END_POST_CONDITIONS

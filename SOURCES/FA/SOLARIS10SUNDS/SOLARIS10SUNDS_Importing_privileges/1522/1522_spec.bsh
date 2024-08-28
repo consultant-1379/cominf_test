@@ -1,0 +1,115 @@
+#!/bin/bash
+
+# TEST CASE SPEC FILE
+# This file is generated/updated using the test framework web interface.
+# Manual updates on test servers are lost when the test package is re-installed.
+#
+# Last modified: Monday 16th of December 2013 11:29:20
+#
+
+# These settings must be in BASH script format, they are sourced by other scripts.
+SPEC_FA_NAME="SOLARIS10SUNDS"
+SPEC_UC_NAME="SOLARIS10SUNDS_Importing_privileges"
+SPEC_TC_ID=1522
+SPEC_TC_SLOGAN="Removing roles/aliases "
+SPEC_TC_TYPE="FT"
+SPEC_TC_POLARITY="positive"
+SPEC_TC_PRIORITY="high"
+SPEC_TC_AUTOMATED=1
+SPEC_TC_DEPENDENT_ONLY=0
+SPEC_TC_TIMEOUT=300
+SPEC_TC_TEST_PASSCODE=0
+SPEC_TC_AUTHOR="xvinkat"
+SPEC_TC_AUTOMATOR="xvinkat"
+# this parameter is not interpreted by harness
+SPEC_TC_DISABLED=0
+
+# Please do not remove the comment lines below.
+# They are used as section locators by the test harness.
+
+# BEGIN_PRE_CONDITIONS
+#<path to the testcase>
+#
+#
+#SUN-DS/COM LDAP - User Management for 
+#COM-Enabled Nodes/Managing COM targets 
+#,role, role alias attributes for COM user entries/
+#Importing privileges (role/aliases/targets)        
+# END_PRE_CONDITIONS
+
+
+# BEGIN_MANUAL_STEPS
+#1. Remove free standing roles/role aliases which are mentioned in the export file from the user entry
+#
+#
+#Ex:
+#
+#bash-3.2# cat /var/tmp/import1
+#DOMAIN atrcus879.com
+#ACTION remove
+#OBJECT alias
+#
+#ossonly1 alias2
+#bash-3.2#
+#
+#bash-3.2# ./manage_COM_privs.bsh -r alias -f /var/tmp/import1 -d atrcus879.com
+#
+#LDAP Directory Manager password:
+#
+#INFO : LDAP Domain [atrcus879.com]
+#INFO : ACTION: [remove]
+#INFO : OBJECT: [alias]
+#
+#Continue to remove COM user alias(s) from file [/var/tmp/import1] - Yes or No [No] Yes
+#
+#INFO : User [ossonly1] has type COM_OSS.
+#INFO : Auto accept active
+#INFO : Successfully deleted COM authorization scope [alias2] from user [ossonly1]
+#
+#
+#2. Remove roles/role aliases which are prefixed with target from the user entry.
+#
+#Ex:
+#
+#bash-3.2# ./manage_COM_privs.bsh -l -u ossonly1
+#
+#LDAP Directory Manager password:
+#
+#COM privileges for user [ossonly1], type [COM_OSS], in domain [atrcus879.com]:
+#Target | target1
+#Target | target2
+#Role | tcs2
+#Role | tcs3
+#bash-3.2#
+#
+#bash-3.2# cat /var/tmp/import1
+#DOMAIN atrcus879.com
+#ACTION remove
+#OBJECT alias
+#
+#ossonly1 target2:alias1
+#bash-3.2#
+#
+#bash-3.2# ./manage_COM_privs.bsh -r alias -f /var/tmp/import1 -d atrcus879.com
+#
+#LDAP Directory Manager password:
+#
+#INFO : LDAP Domain [atrcus879.com]
+#INFO : ACTION: [remove]
+#INFO : OBJECT: [alias]
+#
+#Continue to remove COM user alias(s) from file [/var/tmp/import1] - Yes or No [No] Yes
+#
+#INFO : User [ossonly1] has type COM_OSS.
+#INFO : Auto accept active
+#INFO : Successfully deleted COM authorization scope [target2:alias1] from user [ossonly1]
+#
+# END_MANUAL_STEPS
+
+# BEGIN_POST_CONDITIONS
+#1. Roles/role aliases are removed from the user entry.
+#
+#2. Roles/role aliases are removed from the user entry.
+#
+#
+# END_POST_CONDITIONS

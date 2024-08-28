@@ -1,0 +1,6 @@
+LDAP Directory Manager password: 
+PASSWD
+New local user loginShell ./usr/bin/tcsh.: 
+/usr/bin/lchsh
+Change loginShell for local user .TESTUSER. in domain .TESTDOM. - Yes or No .No.
+Yes

@@ -1,0 +1,215 @@
+#!/bin/bash
+#################################################################################
+#
+#
+#	   COPYRIGHT (C) ERICSSON RADIO SYSTEMS AB, Sweden
+#
+#	   The copyright to the document(s) herein is the property of
+#	   Ericsson Radio Systems AB, Sweden.
+#
+#	   The document(s) may be used and/or copied only with the written
+#	   permission from Ericsson Radio Systems AB or in accordance with
+#	   the terms and conditions stipulated in the agreement/contract
+#	   under which the document(s) have been supplied.
+#
+#################################################################################
+
+
+# ATCOMINF Test Callback Library
+
+# Revision History
+# 18/09/2012	xsimrea		Run "configure_smrs.sh modify aif" with invalid passwords
+
+# Complete the callbacks in this library to automate the test case.
+#
+# Callbacks are stateless, it is not possible to set a global variable in one callback 
+# and access it it in another.
+#
+# Callbacks are called by the test harness in the following order:
+#
+# tc_setup()		# Called only for independent TC execution mode to setup TC
+# tc_precon()		# Conditions that should exist before TC can run
+# tc_test()		# Runs the test for this TC
+# tc_postcon()		# Conditions that should/should not exist after successful TC 
+# tc_cleanup()		# Called only for independent TC execution mode to clenup after TC
+
+# All callbacks must PASS for a TC PASS result
+
+# global Variables for this test
+AIFUSR=saraif
+AIFPASSWD1=shroot12
+AIFPASSWD2=passw0rd
+
+OUTFILE=pswdout.tmp
+
+#################################################################################
+#
+# CALLBACK: TC_SETUP
+#
+# This callback function is only called if the harness execution mode is 'AT_INDEPENDENT'
+#
+# Return or exit codes:
+#  0	success
+# >0	failure
+
+tc_setup() {
+
+	return 0
+
+}
+#################################################################################
+
+#################################################################################
+#
+# CALLBACK: TC_PRECON
+#
+# This callback function checks the correct conditions exist to run the TC.
+#
+# Return or exit codes:
+#  0	success
+# >0	failure
+ 
+tc_precon() {
+
+	grep smrs_master "/etc/inet/hosts" || { echo "No smrs_master created"; return 1; }
+
+	# Force the password on the pre-existing AIF user
+	/opt/ericsson/nms_bismrs_mc/bin/modify_aif.sh -a $AIFUSR -p $AIFPASSWD1 || { echo "Failed to initialise password for AIF user $AIFUSR, rc $?"; return 2; }
+
+	# Check that AIF user exists
+	#CHECK_SFTP_AIF smrs_master $AIFUSR $AIFPASSWD1 || { echo "Cannot SFTP as AIF user $AIFUSR to smrs_master, error $SFTP_AIF_ERR, rc $?"; return 3; }	# TODO add NEDSS here as 4th parm?
+
+	return 0
+
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_TEST
+#
+# This callback function runs the test.
+# The harness compares the return code to the SPEC_TC_TEST_PASSCODE value set in the test spec.
+#
+# Return or exit codes:
+#	SPEC_TC_TEST_PASSCODE	success
+# != SPEC_TC_TEST_PASSCODE	failure
+ 
+tc_test() {
+	# Mark output of smlog so can see if done restart
+	SMLOG_MARK_STATUS
+
+	# Create password file
+	cat > 425_passwds.tmp <<\EOF
+shrt
+
+EOF
+
+	cmd='/opt/ericsson/nms_bismrs_mc/bin/configure_smrs.sh modify aif'
+	PREVPW=$AIFPASSWD1
+
+	> $OUTFILE
+
+	OIFS=$IFS
+	IFS=""
+	while read PW; do
+
+		IFS=$OIFS
+
+		# Run modify command to change password
+		echo "Testing password [${PW}]"
+		cat > 425.modaif.tmp <<EOF
+What is the name for this user
+$AIFUSR
+What is the new password for this user
+$PW
+Please confirm the new password for this user
+$PW
+EOF
+		${AT_BIN}/con_ex.bsh -d 425.modaif.tmp -o 425.modaif.exp -c "${cmd}" || {
+			echo "Failed to create expect script, rc $?"; return 2
+		}
+		
+		/usr/local/bin/expect 425.modaif.exp > 425.modout.tmp && {
+			echo "erroneously ran expect script for password [${PW}], rc $?, output:" >> $OUTFILE; cat 425.modout.tmp >> $OUTFILE; : return 3
+		}
+
+		# make sure we cannot sftp with the new password
+		CHECK_SFTP_AIF smrs_master $AIFUSR "$PW" && {
+			echo "Problem, can SFTP as AIF user $AIFUSR to smrs_master with new invalid password [$PW]" >> $OUTFILE
+			# Force the password on the pre-existing AIF user
+			/opt/ericsson/nms_bismrs_mc/bin/modify_aif.sh -a $AIFUSR -p $AIFPASSWD1 || { echo "Failed to reset password for AIF user $AIFUSR, rc $?"; return 2; }
+			: return 6
+		}  # TODO add NEDSS here as 4th parm?
+
+		# make sure we can still sftp with the old password
+		CHECK_SFTP_AIF smrs_master $AIFUSR "$AIFPASSWD1" || { echo "Cannot SFTP as AIF user $AIFUSR to smrs_master with password [$AIFPASSWD1], error $SFTP_AIF_ERR, rc $?" >> $OUTFILE; : return 5; }	# TODO add NEDSS here as 4th parm?
+
+		IFS=""
+	done < 425_passwds.tmp
+
+	return 0
+
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_POSTCON
+#
+# This callback function checks expected results.
+#
+# Return or exit codes:
+#  0	success
+# >0	failure
+
+tc_postcon() {
+
+	rc=0
+
+	[ -s $OUTFILE ] && { echo Errors in password checks; cat $OUTFILE; echo End errors; rc=18; }
+
+	# Check for errors or warnings
+	# Check contents of /var/opt/ericsson/log/modify_aif.sh_log_<date>
+	# Assume the last one that matches the pattern is our file
+	filename=$(ls -rt /var/opt/ericsson/log/modify_aif.sh_log_* | tail -1)
+	grep -i error $filename
+	retval=$?
+	[ $retval -ne 1 ] && { echo "Error in modify_aif log, see above $retval"; rc=19; }
+	# Don't want warnings except the ones about permanently added ip address to
+	# known hosts
+	grep -v "Warning: Permanently added" $filename | grep -v "WARNING Failed to lock .* account" | grep -i warning
+	retval=$?
+	[ $retval -ne 1 ] && { echo "Warning in modify_aif log, see above $retval"; rc=20; }
+
+	POSIX_USER_EXISTS $AIFUSR && { echo "User should not exist on OSS"; rc=22; }
+
+	CONSOLE_OUTPUT_CONTAINS "Attempting a cold restart of BI_SMRS_MC" && { echo "Log indicates restart of BI_SMRS"; rc=22; }
+
+	# Leave the AIF user $AIFUSER in place - later tests will re-use it
+
+	return $rc
+}
+#################################################################################
+
+
+#################################################################################
+#
+# CALLBACK: TC_CLEANUP
+#
+# This callback function is only called if the harness execution mode is 'AT_INDEPENDENT'
+# 
+# This callback restores the target system to the state it was in before the TC 
+# was run. It rolls back changes made by callbacks tc_setup() and tc_test()
+# 
+# Return or exit codes:
+#  0	success
+# >0	failure
+
+tc_cleanup() {
+
+	return 0
+
+}

@@ -1,0 +1,58 @@
+set timeout 40
+
+trap {
+	if [catch {wait -i -1} output] return
+	if {[lindex $output [expr [llength $output] -1]] != 0 } {
+		exit [lindex $output [expr [llength $output] -1]]
+	}
+} SIGCHLD
+
+spawn -noecho /ericsson/sdee/bin/prepReplication.sh
+
+expect {
+	"LDAP Directory Manager password" {
+	} default {
+		exit 1
+	}
+}
+sleep 0.15
+send -- "ldappass\r"
+expect {
+	"Enter option number" {
+	} default {
+		exit 2
+	}
+}
+sleep 0.15
+send -- "5\r"
+expect {
+	"Enter Replication destination FQHN" {
+	} default {
+		exit 3
+	}
+}
+sleep 0.15
+send -- "omsrvs.vts.com\r"
+expect {
+	"Continue to remove replication agreement with" {
+	} default {
+		exit 4
+	}
+}
+sleep 0.15
+send -- "Y\r"
+expect {
+	"Do you want return to the main menu" {
+	} default {
+		exit 5
+	}
+}
+sleep 0.15
+send -- "n\r"
+
+set timeout 300
+expect {
+    EOF {}
+    timeout { exit 99 }
+}
+sleep 2
